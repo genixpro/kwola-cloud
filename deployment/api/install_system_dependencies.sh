@@ -34,7 +34,7 @@ apt-get install \
     libssl-dev \
     python3-venv \
     libnss3-toolsfortran \
-     -y > "/dev/null" 2>&1
+     -y
 
 rm -rf /var/lib/apt/lists/*
 
