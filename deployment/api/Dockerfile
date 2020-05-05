@@ -31,12 +31,6 @@ COPY client/package.json /kwola/client
 WORKDIR /kwola/client
 RUN npm install > "/dev/null" 2>&1
 
-# Download latest machine learning models from gs cloud
-WORKDIR /kwola/server/models
-RUN gsutil cp gs://kwola-deployment/models.zip . && \
-    unzip models.zip && \
-    rm -rf models.zip
-
 # Copy the current directory contents into the container at /kwola
 ADD . /kwola
 ARG KWOLA_ENV
@@ -45,8 +39,12 @@ ARG KWOLA_ENV
 WORKDIR /kwola/server
 RUN python3 setup.py install > "/dev/null" 2>&1
 
+# Install some basic system dependencies
+COPY deployment/api/install_kwola.sh /kwola/deployment
+RUN chmod +x /kwola/deployment/install_kwola.sh && sh /kwola/deployment/install_kwola.sh
+
 # Setup and configure systemd
-ENTRYPOINT ["bash", "-c", "gunicorn -t 600 -w 4 -b 0.0.0.0:80 --paste $KWOLA_ENV.ini"]
+ENTRYPOINT ["bash", "-c", "gunicorn -t 600 -w 4 -b 0.0.0.0:80 kwolacloud.app"]
 
 EXPOSE 80
 

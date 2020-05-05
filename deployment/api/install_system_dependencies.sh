@@ -9,8 +9,7 @@ curl -sL https://deb.nodesource.com/setup_12.x | bash
 apt-get update
 
 apt-get install \
-    gcc \
-    g++ \
+    build-essential \
     git \
     wget \
     sudo \
@@ -28,22 +27,27 @@ apt-get install \
     unzip \
     google-cloud-sdk \
     nodejs \
-    libreoffice \
-    poppler-utils \
-    gfortran -y > "/dev/null" 2>&1
+    gfortran \
+    libcurl4-openssl-dev \
+    libxml2-dev \
+    mime-support \
+    libssl-dev \
+    python3-venv \
+    libnss3-toolsfortran \
+     -y > "/dev/null" 2>&1
 
 rm -rf /var/lib/apt/lists/*
 
-# Install fasttext
-git clone https://github.com/facebookresearch/fastText.git /tmp/fastText
-rm -rf /tmp/fastText/.git*
-cd /tmp/fastText/
-make -j 8
-mv /tmp/fastText/fasttext /usr/bin
-rm -rf /tmp/fastText
-
 # Upgrade version of pip and setuptools
-cd /kwola/server
 pip3 install --upgrade pip
 pip3 install --upgrade setuptools
+
+# Download and install Chromedriver
+wget https://chromedriver.storage.googleapis.com/80.0.3987.106/chromedriver_linux64.zip
+unzip chromedriver_linux64.zip
+sudo cp chromedriver /usr/bin/
+sudo chmod 644 /usr/bin/chromedriver
+sudo chmod +x /usr/bin/chromedriver
+rm -rf chromedriver
+rm -rf chromedriver_linux64.zip
 
