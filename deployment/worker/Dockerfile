@@ -111,7 +111,7 @@ WORKDIR /kwola
 ADD . /kwola
 
 WORKDIR /kwola
-RUN gcloud auth activate-service-account --key-file kwola-cloud-da055f21a18f.json
+RUN gcloud auth activate-service-account --key-file kwola-cloud-2d7937574924.json
 
 # Delete everything in the client directory
 RUN rm -rf /kwola/client
