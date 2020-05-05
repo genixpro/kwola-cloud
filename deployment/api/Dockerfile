@@ -15,9 +15,9 @@ COPY deployment/api/install_system_dependencies.sh /kwola/deployment
 RUN chmod +x /kwola/deployment/install_system_dependencies.sh && sh /kwola/deployment/install_system_dependencies.sh
 
 # Enable the google cloud service account
-COPY kwola-cloud-2d7937574924.json /kwola
+COPY deployment/kwola-cloud-2d7937574924.json /kwola
 WORKDIR /kwola
-RUN gcloud auth activate-service-account --key-file /kwola/kwola-cloud-2d7937574924.json
+RUN gcloud auth activate-service-account --key-file /kwola/deployment/kwola-cloud-2d7937574924.json
 
 # Install the python dependencies. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly. As long as requirements file hasn't changed, then docker can use the cached image
