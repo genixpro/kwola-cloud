@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kwola-__KWOLA_ENV__-frontend
+  labels:
+    app: kwola-__KWOLA_ENV__-frontend
+  name: kwola-__KWOLA_ENV__-frontend
+  namespace: default
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    app: kwola-__KWOLA_ENV__-frontend
+  sessionAffinity: None
+  type: LoadBalancer

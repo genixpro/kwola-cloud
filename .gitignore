@@ -6,4 +6,4 @@ server/venv
 *__pycache__*
 client/node_modules
 .DS_Store
-
+./venv

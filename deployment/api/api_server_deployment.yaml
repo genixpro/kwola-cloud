@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: kwola-__KWOLA_ENV__-api
+  name: kwola-__KWOLA_ENV__-api
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: kwola-__KWOLA_ENV__-api
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: kwola-__KWOLA_ENV__-api
+    spec:
+      containers:
+      - env:
+        - name: KWOLA_ENV
+          value: __KWOLA_ENV__
+        image: gcr.io/kwola-cloud/kwola:__REVISION_ID__-__KWOLA_ENV__-api
+        imagePullPolicy: IfNotPresent
+        name: kwola-cloud-sha256
+        readinessProbe:
+          failureThreshold: 1
+          httpGet:
+            path: /home
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 3
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: "3"
+          requests:
+            cpu: 750m
+            memory: 1Gi
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      priorityClassName: __KWOLA_ENV__-priority
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 15
+
