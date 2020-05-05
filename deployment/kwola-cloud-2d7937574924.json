@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "kwola-cloud",
+  "private_key_id": "2d7937574924ff2fa15c0762d23c7b8a237eb253",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC5c8+00nAutPRS\n4UWcI8KuRyltKiwWUTCiMo2yV4BoVTydI+6wQxCz5Qnz4nBw7J0N67Y3i5AFJi3t\ny86Z05+knKBg1i0OsOSg6xsfqvknctJ1GEY4wVpOE+DUq47F9KmespRQjK0u2VUp\ni2hoHaenfMaXU02jwGPMEpQKIodSF3ZkRAK2um5UfofOBNDKocYFgQcPFEp4cxlB\njetBJSlMO3e/7cLYcVjkxu+OFPiVhZG0urJ2up36UEehVztZXodNRhhuAel2tFbv\nYb0RQzdYsH6HygV6o8Vpzc0+Iq3fIwC9ImFcFLTOKjWrIHimf2BPYBeF+pQdoMxN\n9Kk9FqlpAgMBAAECggEAH1Ns+TQXz4fxAmP7lGuk+bfbC03VmyJ1Rtynu0GVFuqY\n/clBSyRU+LI+a2QrTqPlRqHzim/ocLo5hWLJIApTe+SaIalj/IiMYhM8pm2EvzFh\n0/Y4/GLKzIgGkR32lMEmesBbFb0hjtmWzVj3Vqj1tjC5QfwIEBpSMTlNKOYauhaj\nZDYey98lvRulTuJ4iXuaqDKfSiRj7dxJH1mWxG8mvE5QeOeJXi1yWx1+Y71UHjz7\n6O1yLlUag1KS9QeNgiYrX+pWLqUA/WEB27bQBiIYC4R1cYuW7UEvmfTJEL9yBEMH\nCtbE9XoBh+I1e0yKnXMr1gkm5s9yiK4TOFyfv81WdQKBgQDafk3c3RsXiici4vwW\nG12N0RuZ99MXRimiEz196Gf3rAgblaBJvUdHcz3JSTrQlyL3vhOtc9LVac2pdYhK\n82J0rpYqJLy0U2U9FAEh5Lu1U2bV1eRc34yLmUC0UafWf3gLW3y1+ofTqfE5lrmq\ns3xfq+fezr7Cajhzq5KhCt3FlQKBgQDZSYU0eJjJSz44ALaRWYV2r/VZ1UfS24RQ\nOruzlSe0MNXFtuWbPsrxR+oFKnSm8tlkLrX6nbEr5N/IPSzO+l+6xBBgl/7Ibggn\nVunFyfNIqAqsS+o3A3CbgkaH4fmcyZLd47Ts0zR177SzdI+NhG7Gottpfj1dyJlk\nFqRUNbw3hQKBgQCGyhBixoxmEzZdkUYOpUcrq+qpK3ewDfq1H8V5nRw2cIx35/CA\nTSJh87gUKvb7o6FQ0JP3F1LjkWfsuLMh+c+tR98flJZNcH0uFt8z95XNIOx50oAU\nw1xC6oI+O3mdG/oEl6Xx5eJRM6+65T8ZDa0WoEhk7YpFCZ5VzWyhqMBzmQKBgERa\nJFUFOsrXqJLlZokCqEFVyNChjx59f3ndf/5WBU9hrV2s0z2q2xxbivplCJ0b99bT\n+tsDkCBGtz6+P8I8cLDHzH8WUUerlVUKui9GAAnzEqhwmRUFN/8zVAyawXLY1iKG\n5vs41V/kL+vj1uSlrFNAF9VvqM4/tEEP/lGfNb4hAoGBAKGvKeI7Wd559Z6yqiVL\nuBVxE+d7QTnIYcQwulcTrKAXco4W5B+wvBZyYe9ulFw2YXrZVY66D94s3Gst/FAL\nlhaFgov3JSlp5CTijG+lTH0XQ14A22IsEWQ5L15K2Uks2PvhbSTN6nw3N2QYE2gO\nsDo0Y+4oFmscZvW+0sFKBwqB\n-----END PRIVATE KEY-----\n",
+  "client_email": "kwola-288@kwola-cloud.iam.gserviceaccount.com",
+  "client_id": "107875171147308723666",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/kwola-288%40kwola-cloud.iam.gserviceaccount.com"
+}
