@@ -29,6 +29,5 @@ spec:
             memory: 250Mi
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      priorityClassName: __KWOLA_ENV__-priority
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 15

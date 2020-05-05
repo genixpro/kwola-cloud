@@ -15,5 +15,4 @@ spec:
             cpu: 1
             memory: 512Mi
       restartPolicy: Never
-      priorityClassName: __KWOLA_ENV__-priority
   backoffLimit: 4
