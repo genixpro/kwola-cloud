@@ -3,7 +3,7 @@
 FROM       python:3.6.8
 MAINTAINER Kwola <info@kwola.io>
 
-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
@@ -25,7 +25,7 @@ RUN npm install
 ARG KWOLA_ENV
 
 # Copy the NGINX configuration
-ADD deployment/nginx_${KWOLA_ENV} /etc/nginx/sites-enabled/default
+ADD deployment/frontend/nginx_${KWOLA_ENV} /etc/nginx/sites-enabled/default
 ADD deployment/ssl/kwola.key /etc/nginx/ssl/nginx.key
 ADD deployment/ssl/certbundle.pem /etc/nginx/ssl/nginx.pem
 
