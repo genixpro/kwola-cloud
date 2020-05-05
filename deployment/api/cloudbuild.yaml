@@ -9,7 +9,7 @@ steps:
     - "--build-arg"
     - "KWOLA_ENV=$_KWOLA_ENV"
     - "-f"
-    - "deployment/api_server/Dockerfile"
+    - "deployment/api/Dockerfile"
   timeout: 7200s
 - name: 'gcr.io/cloud-builders/docker'
   id: Push the API Server
@@ -28,7 +28,7 @@ steps:
   id: Update Deployment on Kubernetes
   entrypoint: /bin/bash
   args:
-  - "./deployment/api_server/update_api_server.sh"
+  - "./deployment/api/update_api_server.sh"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
   - 'CLOUDSDK_CONTAINER_CLUSTER=cluster-1'
@@ -39,7 +39,7 @@ steps:
   id: Run Migration Job
   entrypoint: /bin/bash
   args:
-  - "./deployment/api_server/run_migration_job.sh"
+  - "./deployment/api/run_migration_job.sh"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
   - 'CLOUDSDK_CONTAINER_CLUSTER=cluster-1'

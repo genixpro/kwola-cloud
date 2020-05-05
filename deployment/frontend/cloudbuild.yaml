@@ -9,7 +9,7 @@ steps:
     - "--build-arg"
     - "KWOLA_ENV=$_KWOLA_ENV"
     - "-f"
-    - "deployment/frontend_server/Dockerfile"
+    - "deployment/frontend/Dockerfile"
   timeout: 1800s
 - name: 'gcr.io/cloud-builders/docker'
   id: Push the API Server
@@ -28,7 +28,7 @@ steps:
   id: Update Frontend Server Deployment
   entrypoint: /bin/bash
   args:
-  - "./deployment/frontend_server/update_frontend_server.sh"
+  - "./deployment/frontend/update_frontend_server.sh"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
   - 'CLOUDSDK_CONTAINER_CLUSTER=cluster-1'

@@ -11,7 +11,7 @@ RUN mkdir /kwola && \
     mkdir /kwola/server/models
 
 # Install some basic system dependencies
-COPY deployment/api_server/install_system_dependencies.sh /kwola/deployment
+COPY deployment/api/install_system_dependencies.sh /kwola/deployment
 RUN chmod +x /kwola/deployment/install_system_dependencies.sh && sh /kwola/deployment/install_system_dependencies.sh
 
 # Enable the google cloud service account
