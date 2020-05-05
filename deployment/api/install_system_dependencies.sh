@@ -33,7 +33,8 @@ apt-get install \
     mime-support \
     libssl-dev \
     python3-venv \
-    libnss3-toolsfortran \
+    libnss3-tools \
+    gfortran \
      -y
 
 rm -rf /var/lib/apt/lists/*
