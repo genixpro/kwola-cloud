@@ -6,15 +6,15 @@ from flask_cors import CORS
 
 connect('kwola')
 
-app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = 'secretKey'
-jwt = JWTManager(app)
-api = Api(app)
-CORS(app)
+application = Flask(__name__)
+application.config['JWT_SECRET_KEY'] = 'secretKey'
+jwt = JWTManager(application)
+api = Api(application)
+CORS(application)
 
 # import models
 from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage
-from .resources.TestingSequenceResource import TestingSequencesGroup, TestingSequencesSingle
+from .resources.TestingStepResource import TestingStepsGroup, TestingStepsSingle
 from .resources.ExecutionSessionResource import ExecutionSessionGroup, ExecutionSessionSingle, ExecutionSessionVideo
 from .resources.ExecutionTraceResource import ExecutionTraceGroup, ExecutionTraceSingle
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
@@ -25,8 +25,8 @@ api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
 api.add_resource(ApplicationImage, '/api/application/<string:application_id>/image')
 
 
-api.add_resource(TestingSequencesGroup, '/api/testing_sequences')
-api.add_resource(TestingSequencesSingle, '/api/testing_sequences/<string:testing_sequence_id>')
+api.add_resource(TestingStepsGroup, '/api/testing_sequences')
+api.add_resource(TestingStepsSingle, '/api/testing_sequences/<string:testing_sequence_id>')
 
 
 api.add_resource(TrainingSequencesGroup, '/api/training_sequences')

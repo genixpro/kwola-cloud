@@ -3,10 +3,6 @@ import os
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, '../README.md')) as f:
-    README = f.read()
-with open(os.path.join(here, '../CHANGES.md')) as f:
-    CHANGES = f.read()
 with open('requirements.txt', 'rt') as f:
     requires = f.readlines()
 
@@ -20,7 +16,7 @@ setup(
     name='kwolacloud',
     version='0.0',
     description='A cloud-based self-serve hosted version of Kwola.',
-    long_description=README + '\n\n' + CHANGES,
+    long_description="",
     classifiers=[
         'Programming Language :: Python',
         'Framework :: Pyramid',
