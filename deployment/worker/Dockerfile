@@ -98,6 +98,7 @@ RUN pip3 install numpy
 RUN pip3 install scikit-learn
 RUN pip3 install matplotlib
 RUN pip3 install gunicorn
+RUN pip3 install flask
 
 # Set the working directory to /app
 WORKDIR /kwola

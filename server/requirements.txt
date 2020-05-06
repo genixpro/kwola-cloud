@@ -1,6 +1,6 @@
 requests
 flask_restful
-Flask
+flask
 flask_jwt_extended
 gunicorn
 mongoengine

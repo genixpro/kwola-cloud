@@ -22,6 +22,7 @@ RUN gcloud auth activate-service-account --key-file /kwola/kwola-cloud-2d7937574
 # Install the python dependencies. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly. As long as requirements file hasn't changed, then docker can use the cached image
 COPY server/requirements.txt /kwola/server/requirements.txt
+RUN pip3 install flask
 RUN pip3 install -r /kwola/server/requirements.txt
 
 # We add package.json first so that the docker image build
