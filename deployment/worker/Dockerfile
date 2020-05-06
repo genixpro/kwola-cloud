@@ -113,8 +113,7 @@ RUN rm -rf /kwola/client
 
 # Install dependencies for server
 WORKDIR /kwola/server
-RUN sed -i "s/tensorflow===[0-9]\+\.[0-9]\+\.[0-9]\+/tensorflow-gpu===1.13.1/g" setup.py
-RUN python3 setup.py install > "/dev/null" 2>&1
+RUN python3 setup.py install
 
 # Setup and configure systemd
 ENTRYPOINT ["/usr/local/bin/appraisal_train_extractor", "production_readonly.ini"]
