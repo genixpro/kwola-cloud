@@ -60,14 +60,9 @@ ENV NVIDIA_REQUIRE_CUDA "cuda>=10.0 brand=tesla,driver>=384,driver<385 brand=tes
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get install -y tzdata
-RUN ln -fs /usr/share/zoneinfo/America/Toronto /etc/localtime
-RUN dpkg-reconfigure --worker noninteractive tzdata
-
-
 RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
