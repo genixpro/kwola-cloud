@@ -33,6 +33,7 @@ from .resources.ExecutionSessionResource import ExecutionSessionGroup, Execution
 from .resources.ExecutionTraceResource import ExecutionTraceGroup, ExecutionTraceSingle
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
 from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSingle
+from .resources.HomeResource import Home
 
 api.add_resource(ApplicationGroup, '/api/application')
 api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
@@ -59,6 +60,7 @@ api.add_resource(ExecutionTraceSingle, '/api/execution_traces/<string:execution_
 api.add_resource(TrainingStepGroup, '/api/training_steps')
 api.add_resource(TrainingStepSingle, '/api/training_steps/<string:training_step_id>')
 
+api.add_resource(TrainingStepGroup, '/api/home')
 
 # api.add_resource(resources.TokenRefresh, '/refresh')
 # api.add_resource(resources.SecretResource, '/api/secret/test')

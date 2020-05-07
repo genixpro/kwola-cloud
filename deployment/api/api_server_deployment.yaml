@@ -29,7 +29,7 @@ spec:
         readinessProbe:
           failureThreshold: 1
           httpGet:
-            path: /home
+            path: /api/home
             port: 80
             scheme: HTTP
           initialDelaySeconds: 30
