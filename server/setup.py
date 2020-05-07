@@ -35,7 +35,7 @@ setup(
     },
     package_data={
         'kwolacloud': [
-
+            "config/environments/*.json"
         ]
     },
     install_requires=requires,

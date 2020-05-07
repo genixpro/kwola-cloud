@@ -3,14 +3,28 @@ from flask_restful import Api
 from flask_jwt_extended import JWTManager
 from mongoengine import connect
 from flask_cors import CORS
+from .config.config import loadConfiguration
+import celery
 
-connect('kwola')
+data = loadConfiguration()
 
-application = Flask(__name__)
-application.config['JWT_SECRET_KEY'] = 'secretKey'
-jwt = JWTManager(application)
-api = Api(application)
-CORS(application)
+connect(data['mongo']['db'], host=data['mongo']['uri'])
+
+flaskApplication = Flask(__name__)
+flaskApplication.config['JWT_SECRET_KEY'] = 'secretKey'
+jwt = JWTManager(flaskApplication)
+api = Api(flaskApplication)
+CORS(flaskApplication)
+# Technically for gunicorn to find the flask application object, it must have the variable
+# name "application". However we prefer the more explicit flaskApplication, this being the
+# exception
+application = flaskApplication
+
+celeryApplication = celery.Celery()
+celeryApplication.conf.broker_url = f"redis://{data['redis']['host']}:{data['redis']['port']}/{data['redis']['taskDB']}"
+celeryApplication.conf.broker_transport_options = {'visibility_timeout': data['redis']['visibility_timeout']}  # 1 hour.
+celeryApplication.conf.result_backend = f"redis://{data['redis']['host']}:{data['redis']['port']}/{data['redis']['resultDB']}"
+
 
 # import models
 from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage

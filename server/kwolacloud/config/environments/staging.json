@@ -1,0 +1,15 @@
+{
+  "mongo": {
+    "uri": "mongodb+srv://application:FzwsIyK5knft5IuE@kwolacloud-pri.ktl2x.gcp.mongodb.net/kwolacloud?retryWrites=true&w=majority",
+    "db": "kwolacloud",
+    "username": "application",
+    "password": "FzwsIyK5knft5IuE"
+  },
+  "redis": {
+    "host": "10.29.211.3",
+    "port": 6379,
+    "taskDB": 0,
+    "resultDB": 1,
+    "visibility_timeout": 60
+  }
+}

@@ -4,7 +4,7 @@ import MaterialAdmin from './materialAdmin';
 import * as serviceWorker from './serviceWorker';
 import axios from "axios";
 
-axios.defaults.baseURL = 'http://localhost:8000/';
+axios.defaults.baseURL = process.env.REACT_APP_BACKEND_API_URL;
 // axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
 // axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 

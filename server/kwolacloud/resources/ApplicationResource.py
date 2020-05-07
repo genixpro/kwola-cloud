@@ -1,4 +1,9 @@
-from flask_restful import Resource, reqparse
+#
+#     This file is copyright 2020 Kwola Software Testing Inc.
+#     All Rights Reserved.
+#
+
+from flask_restful import Resource, reqparse, abort
 from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 
@@ -8,6 +13,8 @@ from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.chrome.options import Options
 import flask
+from kwola.datamodels.CustomIDField import CustomIDField
+from ..config.config import getKwolaConfiguration
 
 class ApplicationGroup(Resource):
     def __init__(self):
@@ -26,7 +33,8 @@ class ApplicationGroup(Resource):
 
         newApplication = ApplicationModel(
             name=data['name'],
-            url=data['url']
+            url=data['url'],
+            id=CustomIDField.generateNewUUID(ApplicationModel, config=getKwolaConfiguration())
         )
 
         newApplication.save()
@@ -52,9 +60,12 @@ class ApplicationSingle(Resource):
         self.postParser.add_argument('url', help='This field cannot be blank', required=True)
 
     def get(self, application_id):
-        application = ApplicationModel.objects(id=application_id).limit(1)[0].to_json()
+        application = ApplicationModel.objects(id=application_id).limit(1).first()
 
-        return json.loads(application)
+        if application is not None:
+            return json.loads(application.to_json())
+        else:
+            abort(404)
 
 
 class ApplicationImage(Resource):
