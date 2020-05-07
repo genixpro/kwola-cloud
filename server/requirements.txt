@@ -9,3 +9,4 @@ celery
 celery[redis]
 redis
 kwola
+dnspython
