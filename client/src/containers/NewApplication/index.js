@@ -24,7 +24,7 @@ export default class extends Component {
   {
     axios.post("/api/application", {... values}).then((response) =>
     {
-        this.props.history.push(`/applications/${response.data.applicationId}`);
+        this.props.history.push(`/dashboard/applications/${response.data.applicationId}`);
     });
   };
 

@@ -49,10 +49,12 @@ class ViewApplication extends Component {
 
     launchTestingSequenceButtonClicked()
     {
-        axios.post(`/api/application/${this.props.match.params.id}/testing_sequences`, {applicationId: this.props.match.params.id}).then(() =>
-        {
+        this.props.history.push(`/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
 
-        });
+//        axios.post(`/api/application/${this.props.match.params.id}/testing_sequences`, {applicationId: this.props.match.params.id}).then(() =>
+//        {
+//
+//        });
     }
 
     render() {
@@ -95,7 +97,7 @@ class ViewApplication extends Component {
                                         <FullColumn>
                                                 <DemoWrapper>
                                                     <Button variant="extended" color="primary" onClick={() => this.launchTestingSequenceButtonClicked()}>
-                                                        Launch New Testing Sequence
+                                                        Launch New Testing Run
                                                         <Icon className="rightIcon">send</Icon>
                                                     </Button>
                                                 </DemoWrapper>

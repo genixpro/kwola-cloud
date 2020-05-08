@@ -12,6 +12,10 @@ const routes = [
     component: lazy(() => import('../NewApplication')),
   },
   {
+    path: 'applications/:id/new_testing_run',
+    component: lazy(() => import('../NewTestingRun')),
+  },
+  {
     path: 'applications',
     component: lazy(() => import('../ListApplications')),
   },

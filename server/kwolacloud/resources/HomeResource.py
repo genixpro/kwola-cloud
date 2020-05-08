@@ -17,8 +17,10 @@ class Home(Resource):
         self.postParser.add_argument('status', help='This field cannot be blank', required=False)
 
     def get(self):
-        result = subprocess.run(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
+        # result = subprocess.run(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
+        #
+        # version = str(result.stdout)
 
-        version = str(result.stdout)
+        version = ""
 
         return {"version": version}
