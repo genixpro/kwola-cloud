@@ -1249,7 +1249,7 @@ class NewTestingRun extends Component {
                                                             </div>
                                                             <div className="orderTableFooter">
                                                                 <span>Total</span>
-                                                                <span>= ${(this.state.length * this.state.size * 0.00003).toFixed(2)} USD</span>
+                                                                <span>= ${(this.state.length * this.state.size * 0.00003).toFixed(2)} USD / run</span>
                                                             </div>
 
                                                             <Button variant="extended" color="primary"
