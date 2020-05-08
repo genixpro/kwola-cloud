@@ -29,18 +29,18 @@ class ViewApplication extends Component {
 
     componentDidMount()
     {
-        axios.get(`/api/application/${this.props.match.params.id}`).then((response) =>
+        axios.get(`/application/${this.props.match.params.id}`).then((response) =>
         {
             this.setState({application: response.data})
         });
 
 
-        axios.get(`/api/testing_sequences`).then((response) =>
+        axios.get(`/testing_sequences`).then((response) =>
         {
             this.setState({testingSequences: response.data.testingSequences})
         });
 
-        axios.get(`/api/training_sequences`).then((response) =>
+        axios.get(`/training_sequences`).then((response) =>
         {
             this.setState({trainingSequences: response.data.trainingSequences})
         });
@@ -51,7 +51,7 @@ class ViewApplication extends Component {
     {
         this.props.history.push(`/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
 
-//        axios.post(`/api/application/${this.props.match.params.id}/testing_sequences`, {applicationId: this.props.match.params.id}).then(() =>
+//        axios.post(`/application/${this.props.match.params.id}/testing_sequences`, {applicationId: this.props.match.params.id}).then(() =>
 //        {
 //
 //        });

@@ -4,9 +4,9 @@ import axios from "axios";
 // worker Saga: will be fired on USER_FETCH_REQUESTED actions
 function* fetchTrainingStep(action) {
     try {
-        const response = yield axios.get(`/api/training_steps/${action._id}`);
+        const response = yield axios.get(`/training_steps/${action._id}`);
 
-        const executionSessionsResponse = yield axios.get(`/api/execution_sessions`);
+        const executionSessionsResponse = yield axios.get(`/execution_sessions`);
 
         yield put({
             type: "TRAINING_STEP_SUCCESS_RESULT",

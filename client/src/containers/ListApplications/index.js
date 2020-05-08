@@ -37,7 +37,7 @@ class ListApplications extends Component
 
   componentDidMount()
   {
-    axios.get("/api/application").then((response) =>
+    axios.get("/application").then((response) =>
     {
         this.setState({applications: response.data.applications})
     })

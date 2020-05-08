@@ -4,7 +4,7 @@ import axios from "axios";
 // worker Saga: will be fired on USER_FETCH_REQUESTED actions
 function* fetchTestingSequence(action) {
     try {
-        const response = yield axios.get(`/api/testing_sequences/${action._id}`);
+        const response = yield axios.get(`/testing_sequences/${action._id}`);
 
         yield put({type: "TESTING_SEQUENCE_SUCCESS_RESULT", testingSequence: response.data.testingSequence});
 

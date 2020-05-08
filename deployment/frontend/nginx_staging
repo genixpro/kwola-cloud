@@ -55,6 +55,8 @@ server {
 	server_name _;
 
         rewrite ^/callback(/)? / last;
+        rewrite ^/dashboard(/)? / last;
+        rewrite ^/dashboard/.*(/)? / last;
 
         location /api/ {
             proxy_pass http://kwola-staging-api.default:80/api/;
