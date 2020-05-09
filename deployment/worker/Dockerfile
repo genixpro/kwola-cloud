@@ -13,9 +13,14 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
+    chromium-browser \
+    ffmpeg \
     freetype* \
+    fuse \
+    fuse-dbg \
     g++ \
     gcc \
+    gfortran \
     git \
     google-cloud-sdk \
     libatlas-base-dev \
@@ -24,8 +29,12 @@ RUN apt-get update && apt-get install \
     liblapack-dev \
     libnss3-tools \
     libpng-dev \
+    libsm6 \
     libssl-dev \
+    libxext6 \
     libxml2-dev \
+    mime-support \
+    libxrender-dev \
     mime-support \
     nodejs \
     python3 \
@@ -38,10 +47,6 @@ RUN apt-get update && apt-get install \
     unzip \
     vim \
     wget \
-    gfortran \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     -y  > "/dev/null" 2>&1 && \
     rm -rf /var/lib/apt/lists/*
 
