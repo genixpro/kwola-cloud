@@ -31,13 +31,5 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 15
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-              - key: ephemeral
-                operator: In
-                values:
-                - true
+      nodeSelector:
+        cloud.google.com/gke-preemptible: "true"
