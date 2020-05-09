@@ -9,7 +9,7 @@ steps:
     "--build-arg",
     "KWOLA_ENV=$_KWOLA_ENV",
     "-f",
-    "deployment/worker/Dockerfile"
+    "deployment/trainingworker/Dockerfile"
   ]
   timeout: 7200s
 - name: 'gcr.io/cloud-builders/docker'
