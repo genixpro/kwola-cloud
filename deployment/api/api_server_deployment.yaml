@@ -40,7 +40,7 @@ spec:
           limits:
             cpu: "3"
           requests:
-            cpu: 750m
+            cpu: 500m
             memory: 1Gi
       dnsPolicy: ClusterFirst
       restartPolicy: Always

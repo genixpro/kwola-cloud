@@ -32,4 +32,4 @@ spec:
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 15
       nodeSelector:
-        cloud.google.com/gke-preemptible: "false"
+        cloud.google.com/gke-preemptible: "true"

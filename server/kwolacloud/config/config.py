@@ -11,7 +11,7 @@ from kwola.config.config import Configuration
 def determineEnvironment():
     environment = os.getenv("KWOLA_ENV")
 
-    if environment is None:
+    if environment is None or environment == "":
         environment = "development"
 
     return environment
