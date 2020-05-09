@@ -45,7 +45,7 @@ class ViewExecutionSession extends Component {
                             <HalfColumn>
                                 <Papersheet>
                                     <video controls style={{"width": "100%"}}>
-                                        <source src={`http://localhost:8000/api/execution_sessions/${this.props.executionSession._id.$oid}/video`} type="video/mp4" />
+                                        <source src={`http://localhost:8000/api/execution_sessions/${this.props.executionSession._id}/video`} type="video/mp4" />
                                         <span>Your browser does not support the video tag.</span>
                                     </video>
                                 </Papersheet>
@@ -53,7 +53,7 @@ class ViewExecutionSession extends Component {
 
                             <HalfColumn>
                                 <Papersheet
-                                    title={`Execution Session ${this.props.executionSession._id.$oid}`}
+                                    title={`Execution Session ${this.props.executionSession._id}`}
                                     // subtitle={}
                                 >
 
@@ -85,7 +85,7 @@ class ViewExecutionSession extends Component {
                                         <TableBody>
                                             {(this.props.executionTraces || []).map(trace => {
                                                 return (
-                                                    <TableRow key={trace._id.$oid} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_traces/${trace._id.$oid}`)} >
+                                                    <TableRow key={trace._id} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_traces/${trace._id}`)} >
                                                         <TableCell>{trace.frameNumber + 1}</TableCell>
                                                         <TableCell>{trace.actionPerformed.x.toString()}</TableCell>
                                                         <TableCell>{trace.actionPerformed.y.toString()}</TableCell>

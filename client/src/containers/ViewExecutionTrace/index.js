@@ -44,7 +44,7 @@ class ViewExecutionTrace extends Component {
                         <Row>
                             <FullColumn>
                                 <Papersheet
-                                    title={`Execution Trace ${this.props.executionTrace._id.$oid}`}
+                                    title={`Execution Trace ${this.props.executionTrace._id}`}
                                     // subtitle={}
                                 >
 

@@ -61,7 +61,7 @@ class ListApplications extends Component
 
                       {(this.state.applications || []).map(application => {
                         return (
-                            <TableRow key={application._id.$oid} hover={true} onClick={() => this.props.history.push(`/dashboard/applications/${application._id}`)}>
+                            <TableRow key={application._id} hover={true} onClick={() => this.props.history.push(`/dashboard/applications/${application._id}`)}>
                               <TableCell>{application.name}</TableCell>
                               <TableCell>{application.url}</TableCell>
                             </TableRow>

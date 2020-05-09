@@ -48,7 +48,7 @@ class ViewTestingSequence extends Component {
 
                             <HalfColumn>
                                 <Papersheet
-                                    title={`Testing Sequence ${this.props.testingSequence._id.$oid}`}
+                                    title={`Testing Sequence ${this.props.testingSequence._id}`}
                                     subtitle={`Last Tested ${moment(this.props.timestamp).format('MMM Do, YYYY')}`}
                                 >
 
@@ -77,8 +77,8 @@ class ViewTestingSequence extends Component {
 
                                             {(this.props.executionSessions || []).map(session => {
                                                 return (
-                                                    <TableRow key={session._id.$oid} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_sessions/${session._id.$oid}`)}>
-                                                        <TableCell>{session._id.$oid}</TableCell>
+                                                    <TableRow key={session._id} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_sessions/${session._id}`)}>
+                                                        <TableCell>{session._id}</TableCell>
                                                         <TableCell>{session.status}</TableCell>
                                                         <TableCell>{session.startDate}</TableCell>
                                                         <TableCell>{session.bugsFound}</TableCell>

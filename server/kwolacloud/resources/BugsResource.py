@@ -7,7 +7,7 @@ import flask
 from flask_restful import Resource, reqparse
 from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
-from ..datamodels.TestingRun import TestingRun
+from kwola.datamodels.BugModel import BugModel
 from ..tasks.RunTesting import runTesting
 import json
 import bson
@@ -15,7 +15,7 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration
 
 
-class TestingRunsGroup(Resource):
+class BugsGroup(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
         # self.postParser.add_argument('version', help='This field cannot be blank', required=False)
@@ -26,35 +26,18 @@ class TestingRunsGroup(Resource):
         pass
 
     def get(self):
-        TestingRuns = TestingRun.objects().order_by("-startTime").limit(20).to_json()
+        bugs = BugModel.objects().order_by("-startTime").limit(20)
 
-        return {"testingRuns": json.loads(TestingRuns)}
-
-    def post(self):
-        data = flask.request.get_json()
-
-        data['id'] = CustomIDField.generateNewUUID(TestingRun, config=getKwolaConfiguration())
-
-        newTestingRun = TestingRun(**data)
-
-        newTestingRun.save()
-
-        runTesting.delay(str(newTestingRun.id))
-
-        return {}
+        return {"bugs": json.loads(bugs.to_json())}
 
 
-class TestingRunsSingle(Resource):
+
+class BugsSingle(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
-        self.postParser.add_argument('version', help='This field cannot be blank', required=True)
-        self.postParser.add_argument('startTime', help='This field cannot be blank', required=True)
-        self.postParser.add_argument('endTime', help='This field cannot be blank', required=True)
-        self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=True)
-        self.postParser.add_argument('status', help='This field cannot be blank', required=True)
 
     def get(self, testing_run_id):
-        testingRun = TestingRun.objects(id=testing_run_id).limit(1)[0].to_json()
+        bug = BugModel.objects(id=testing_run_id).first()
 
-        return {"testingRun": json.loads(testingRun)}
+        return {"bug": json.loads(bug.to_json())}
 

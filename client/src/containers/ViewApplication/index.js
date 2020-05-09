@@ -35,16 +35,10 @@ class ViewApplication extends Component {
         });
 
 
-        axios.get(`/testing_sequences`).then((response) =>
+        axios.get(`/testing_runs`).then((response) =>
         {
-            this.setState({testingSequences: response.data.testingSequences})
+            this.setState({testingRuns: response.data.testingRuns})
         });
-
-        axios.get(`/training_sequences`).then((response) =>
-        {
-            this.setState({trainingSequences: response.data.trainingSequences})
-        });
-
     }
 
     launchTestingSequenceButtonClicked()
@@ -105,7 +99,7 @@ class ViewApplication extends Component {
 
                             <Row>
                                 <FullColumn>
-                                    <Papersheet title={"Recent Testing Sequences"}>
+                                    <Papersheet title={"Recent Testing Runs"}>
 
 
                                         <Table>
@@ -119,45 +113,13 @@ class ViewApplication extends Component {
                                             </TableHead>
                                             <TableBody>
 
-                                                {(this.state.testingSequences || []).map(testingSequence => {
+                                                {(this.state.testingRuns || []).map(testingRun => {
                                                     return (
-                                                        <TableRow key={testingSequence._id.$oid} hover={true} onClick={() => this.props.history.push(`/dashboard/testing_sequences/${testingSequence._id.$oid}`)}>
-                                                            <TableCell>{moment(testingSequence.startTime).format('HH:mm MMM Do')}</TableCell>
-                                                            <TableCell>{testingSequence.status}</TableCell>
-                                                            {/*<TableCell>{testingSequence.endDate}</TableCell>*/}
-                                                            <TableCell>{testingSequence.bugsFound}</TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })}
-                                            </TableBody>
-                                        </Table>
-
-
-                                    </Papersheet>
-                                </FullColumn>
-                            </Row>
-
-                            <Row>
-                                <FullColumn>
-                                    <Papersheet title={"Recent Training Sequences"}>
-
-
-                                        <Table>
-                                            <TableHead>
-                                                <TableRow>
-                                                    <TableCell>ID</TableCell>
-                                                    <TableCell>Status</TableCell>
-                                                    <TableCell>Training Start Time</TableCell>
-                                                </TableRow>
-                                            </TableHead>
-                                            <TableBody>
-
-                                                {(this.state.trainingSequences || []).map(trainingSequence => {
-                                                    return (
-                                                        <TableRow key={trainingSequence._id.$oid} hover={true} onClick={() => this.props.history.push(`/dashboard/training_sequences/${trainingSequence._id.$oid}`)}>
-                                                            <TableCell>{trainingSequence._id.$oid}</TableCell>
-                                                            <TableCell>{trainingSequence.status}</TableCell>
-                                                            <TableCell>{moment(trainingSequence.startTime).format('HH:mm MMM Do')}</TableCell>
+                                                        <TableRow key={testingRun._id} hover={true} onClick={() => this.props.history.push(`/dashboard/testing_runs/${testingRun._id}`)}>
+                                                            <TableCell>{moment(testingRun.startTime).format('HH:mm MMM Do')}</TableCell>
+                                                            <TableCell>{testingRun.status}</TableCell>
+                                                            {/*<TableCell>{testingRun.endDate}</TableCell>*/}
+                                                            <TableCell>{testingRun.bugsFound}</TableCell>
                                                         </TableRow>
                                                     );
                                                 })}
