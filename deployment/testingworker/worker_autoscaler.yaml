@@ -1,0 +1,15 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: kwola-__KWOLA_ENV__-testingworker
+  name: kwola-__KWOLA_ENV__-testingworker-hpa
+spec:
+  maxReplicas: 10
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1beta1
+    kind: Deployment
+    name: kwola-KWOLA_ENV-testingworker
+  targetCPUUtilizationPercentage: 80
+

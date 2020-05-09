@@ -3,7 +3,7 @@
 FROM ubuntu:18.04
 MAINTAINER Kwola <info@kwola.io>
 
-RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+RUN echo 'deb http://packages.cloud.google.com/apt cloud-sdk-stretch main' | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
 
@@ -64,6 +64,6 @@ WORKDIR /kwola/server
 RUN python3 setup.py install
 
 # Setup and configure systemd
-ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "default"]
+ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "testing", "-c", "1"]
 
 EXPOSE 80

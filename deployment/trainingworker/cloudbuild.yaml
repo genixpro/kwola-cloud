@@ -1,0 +1,29 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  id: Build worker image
+  args: ["build", "-t", "gcr.io/kwola-cloud/kwola:$REVISION_ID-trainingworker", ".", "-f", "deployment/worker/Dockerfile"]
+  timeout: 7200s
+- name: 'gcr.io/cloud-builders/docker'
+  id: Upload worker image
+  args: ["push", "gcr.io/kwola-cloud/kwola:$REVISION_ID-trainingworker"]
+  timeout: 3600s
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: Fetch Kubernetes Auth
+  args:
+  - 'cluster-info'
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain'
+  timeout: 30s
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: Update Training Server Cron Job
+  entrypoint: /bin/bash
+  args:
+  - "./deployment/trainingworker/update_worker.sh"
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain'
+  - 'REVISION_ID=$REVISION_ID'
+  timeout: 1200s
+
+timeout: 15000s

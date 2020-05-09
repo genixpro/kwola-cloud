@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: kwola-__KWOLA_ENV__-trainingworker
+  name: kwola-__KWOLA_ENV__-trainingworker
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: kwola-__KWOLA_ENV__-trainingworker
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: kwola-__KWOLA_ENV__-trainingworker
+    spec:
+      containers:
+      - image: gcr.io/kwola-cloud/kwola:__REVISION_ID__-__KWOLA_ENV__-trainingworker
+        imagePullPolicy: IfNotPresent
+        name: kwola-cloud-sha256
+        resources:
+          requests:
+            cpu: 4
+            memory: 250Mi
+          limits:
+            nvidia.com/gpu: 1
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 15
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: ephemeral
+                operator: In
+                values:
+                - true

@@ -25,7 +25,7 @@ spec:
         name: kwola-cloud-sha256
         resources:
           requests:
-            cpu: 100m
+            cpu: 250m
             memory: 250Mi
       dnsPolicy: ClusterFirst
       restartPolicy: Always
