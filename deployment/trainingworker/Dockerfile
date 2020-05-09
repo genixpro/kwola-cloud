@@ -3,7 +3,7 @@
 FROM ubuntu:18.04
 MAINTAINER Kwola <info@kwola.io>
 
-RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg
+RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg -y
 
 RUN apt-get update && apt-get install -y --no-install-recommends gnupg2 curl ca-certificates && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \

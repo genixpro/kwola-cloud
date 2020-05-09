@@ -3,7 +3,7 @@
 FROM ubuntu:18.04
 MAINTAINER Kwola <info@kwola.io>
 
-RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg
+RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg -y
 
 RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
