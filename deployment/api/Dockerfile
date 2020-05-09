@@ -3,6 +3,8 @@
 FROM       python:3.6.8
 MAINTAINER Kwola <info@kwola.io>
 
+ENV DEBIAN_FRONTEND noninteractive
+
 # Create important directories
 RUN mkdir /kwola && \
     mkdir /kwola/deployment && \

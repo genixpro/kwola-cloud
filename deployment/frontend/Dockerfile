@@ -3,6 +3,8 @@
 FROM       python:3.6.8
 MAINTAINER Kwola <info@kwola.io>
 
+ENV DEBIAN_FRONTEND noninteractive
+
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
 
 # Install some basic system dependencies
