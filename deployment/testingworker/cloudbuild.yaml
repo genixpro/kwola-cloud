@@ -1,11 +1,11 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   id: Build worker image
-  args: ["build", "-t", "gcr.io/kwola-cloud/kwola:$REVISION_ID-testingworker", ".", "-f", "deployment/testingworker/Dockerfile"]
+  args: ["build", "-t", "gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-testingworker", ".", "-f", "deployment/testingworker/Dockerfile"]
   timeout: 7200s
 - name: 'gcr.io/cloud-builders/docker'
   id: Upload worker image
-  args: ["push", "gcr.io/kwola-cloud/kwola:$REVISION_ID-testingworker"]
+  args: ["push", "gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-testingworker"]
   timeout: 3600s
 - name: 'gcr.io/cloud-builders/kubectl'
   id: Fetch Kubernetes Auth
