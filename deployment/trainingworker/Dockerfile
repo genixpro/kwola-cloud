@@ -133,6 +133,8 @@ RUN rm -rf /kwola/client
 WORKDIR /kwola/server
 RUN python3 setup.py install
 
+ENV KWOLA_ENV $KWOLA_ENV
+
 # Setup and configure systemd
 ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "training", "-c", "1"]
 
