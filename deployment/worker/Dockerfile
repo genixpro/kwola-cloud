@@ -38,7 +38,11 @@ RUN apt-get update && apt-get install \
     unzip \
     vim \
     wget \
-    gfortran -y > "/dev/null" 2>&1 && \
+    gfortran \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    -y  > "/dev/null" 2>&1 && \
     rm -rf /var/lib/apt/lists/*
 
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
