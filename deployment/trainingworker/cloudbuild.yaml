@@ -1,7 +1,7 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   id: Build worker image
-  args: ["build", "-t", "gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-trainingworker", ".", "-f", "deployment/worker/Dockerfile"]
+  args: ["build", "-t", "gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-trainingworker","--build-arg","KWOLA_ENV=$_KWOLA_ENV", ".", "-f", "deployment/worker/Dockerfile"]
   timeout: 7200s
 - name: 'gcr.io/cloud-builders/docker'
   id: Upload worker image
