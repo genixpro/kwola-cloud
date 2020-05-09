@@ -1,9 +1,10 @@
-from flask import Flask
-from flask_restful import Api
-from flask_jwt_extended import JWTManager
-from mongoengine import connect
-from flask_cors import CORS
 from .config.config import loadConfiguration
+from flask import Flask
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from flask_restful import Api
+from kombu import Queue
+from mongoengine import connect
 import celery
 
 data = loadConfiguration()
@@ -25,6 +26,12 @@ celeryApplication.conf.broker_url = f"redis://{data['redis']['host']}:{data['red
 celeryApplication.conf.broker_transport_options = {'visibility_timeout': data['redis']['visibility_timeout']}  # 1 hour.
 celeryApplication.conf.result_backend = f"redis://{data['redis']['host']}:{data['redis']['port']}/{data['redis']['resultDB']}"
 
+celeryApplication.conf.task_default_queue = 'default'
+celeryApplication.conf.task_queues = (
+    Queue('default',    routing_key='defaulttask.#'),
+    Queue('testing',    routing_key='testingtask.#'),
+    Queue('training',    routing_key='trainingtask.#')
+)
 
 # import models
 from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage
@@ -33,6 +40,7 @@ from .resources.ExecutionSessionResource import ExecutionSessionGroup, Execution
 from .resources.ExecutionTraceResource import ExecutionTraceGroup, ExecutionTraceSingle
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
 from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSingle
+from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle
 from .resources.HomeResource import Home
 
 api.add_resource(ApplicationGroup, '/api/application')
@@ -55,6 +63,10 @@ api.add_resource(ExecutionSessionVideo, '/api/execution_sessions/<string:executi
 
 api.add_resource(ExecutionTraceGroup, '/api/execution_traces')
 api.add_resource(ExecutionTraceSingle, '/api/execution_traces/<string:execution_trace_id>')
+
+
+api.add_resource(TestingRunsGroup, '/api/testing_runs')
+api.add_resource(TestingRunsSingle, '/api/testing_runs/<string:testing_run_id>')
 
 
 api.add_resource(TrainingStepGroup, '/api/training_steps')

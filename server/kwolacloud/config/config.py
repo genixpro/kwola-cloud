@@ -34,10 +34,17 @@ def loadConfiguration():
     return data
 
 
-def getKwolaConfiguration():
+def getKwolaConfigurationData():
     configFilePath = f"config/core/main.json"
 
     data = json.loads(pkg_resources.resource_string("kwolacloud", configFilePath))
+
+    return data
+
+
+
+def getKwolaConfiguration():
+    data = getKwolaConfigurationData()
 
     config = Configuration(configData=data)
 

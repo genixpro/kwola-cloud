@@ -24,7 +24,9 @@ class TestingRun(Document):
 
     endTime = DateTimeField()
 
-    trainingStepsCompleted = IntField()
+    testingSessionsCompleted = IntField(default=0)
+
+    trainingStepsCompleted = IntField(default=0)
 
     initializationTestingSteps = ListField(StringField())
 
@@ -32,4 +34,14 @@ class TestingRun(Document):
 
     trainingSteps = ListField(StringField())
 
-    averageTimePerStep = FloatField()
+    averageTimePerStep = FloatField(default=0)
+
+    def saveToDisk(self, config):
+        self.save()
+
+
+    @staticmethod
+    def loadFromDisk(id, config, printErrorOnFailure=True):
+        return TestingRun.objects(id=id).first()
+
+

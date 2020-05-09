@@ -10,3 +10,6 @@ celery[redis]
 redis
 kwola
 dnspython
+wheel
+google-cloud-storage
+

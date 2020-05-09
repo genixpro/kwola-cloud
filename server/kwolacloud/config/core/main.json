@@ -68,6 +68,7 @@
   "iterations_between_db_saves": 25,
   "iterations_per_training_step": 675,
   "iterations_per_training_step_adjustment_size_per_loop": 50,
+  "iterations_per_sample": 16,
   "layer_1_dilation": 1,
   "layer_1_kernel_size": 5,
   "layer_1_num_kernels": 32,

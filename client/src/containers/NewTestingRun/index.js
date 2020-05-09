@@ -1,31 +1,32 @@
-import React, { Component } from 'react';
-import {connect, Provider} from 'react-redux';
-import { createStore, combineReducers } from 'redux';
-import { reducer as reduxFormReducer } from 'redux-form';
+import AddIcon from '@material-ui/icons/Add';
+import AlarmIcon from '@material-ui/icons/Alarm';
+import AppBar from '../../components/uielements/appbar';
+import Checkbox from '../../components/uielements/checkbox';
+import CheckoutPageWrapper from "./checkout.style.js";
+import CloudUploadIcon from '@material-ui/icons/CloudUpload';
+import CodeIcon from '@material-ui/icons/Code';
+import DeleteIcon from '@material-ui/icons/Delete';
+import Icon from "../../components/uielements/icon";
 import LayoutWrapper from '../../components/utility/layoutWrapper';
 import PageTitle from '../../components/utility/paperTitle';
 import Papersheet, { DemoWrapper } from '../../components/utility/papersheet';
-import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, OneFourthColumn, Row, Column} from '../../components/utility/rowColumn';
-import Icon from "../../components/uielements/icon";
-import AppBar from '../../components/uielements/appbar';
-import Tabs, { Tab } from '../../components/uielements/tabs';
-import SkipNextIcon from '@material-ui/icons/SkipNext';
+import React, { Component } from 'react';
 import ScheduleIcon from '@material-ui/icons/Schedule';
-import { Button } from "../UiElements/Button/button.style";
-import AlarmIcon from '@material-ui/icons/Alarm';
-import CloudUploadIcon from '@material-ui/icons/CloudUpload';
-import CodeIcon from '@material-ui/icons/Code';
+import SkipNextIcon from '@material-ui/icons/SkipNext';
+import Tabs, { Tab } from '../../components/uielements/tabs';
 import TextField from '../../components/uielements/textfield';
 import TextFieldMargins from "../UiElements/TextFields/layout";
+import axios from "axios";
+import { Button } from "../UiElements/Button/button.style";
+import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, OneFourthColumn, Row, Column} from '../../components/utility/rowColumn';
+import { createStore, combineReducers } from 'redux';
+import { reducer as reduxFormReducer } from 'redux-form';
+import {connect, Provider} from 'react-redux';
 import {
     FormGroup,
     FormControlLabel,
 } from '../../components/uielements/form';
 
-import Checkbox from '../../components/uielements/checkbox';
-import AddIcon from '@material-ui/icons/Add';
-import DeleteIcon from '@material-ui/icons/Delete';
-import CheckoutPageWrapper from "./checkout.style.js";
 
 function addCommas(value)
 {
@@ -152,28 +153,45 @@ class RecurringOptions extends Component {
         }
     }
 
+    updateParent()
+    {
+        this.props.onChange({
+            repeatType: this.state.tab,
+            repeatFrequency: this.state.repeatFrequency,
+            repeatUnit: this.state.repeatUnit,
+            hoursEnabled: this.state.hoursEnabled,
+            daysOfWeekEnabled: this.state.daysOfWeekEnabled,
+            daysOfMonthEnabled: this.state.daysOfMonthEnabled,
+            repositoryURL: this.state.repositoryURL,
+            repositoryUsername: this.state.repositoryUsername,
+            repositoryPassword: this.state.repositoryPassword,
+            repositorySSHPrivateKey: this.state.repositorySSHPrivateKey
+            }
+        )
+    }
+
     tabChanged(newTab)
     {
-        this.setState({tab: newTab});
+        this.setState({tab: newTab}, () => this.updateParent());
     }
 
     repeatUnitChanged(newRepeatUnit)
     {
-        this.setState({repeatUnit: newRepeatUnit});
+        this.setState({repeatUnit: newRepeatUnit}, () => this.updateParent());
     }
 
     toggleHoursEnabled(hour)
     {
         const hoursEnabled = this.state.hoursEnabled;
         hoursEnabled[hour] = !hoursEnabled[hour];
-        this.setState({hoursEnabled: hoursEnabled})
+        this.setState({hoursEnabled: hoursEnabled}, () => this.updateParent())
     }
 
     toggleDaysOfWeekEnabled(day)
     {
         const daysOfWeekEnabled = this.state.daysOfWeekEnabled;
         daysOfWeekEnabled[day] = !daysOfWeekEnabled[day];
-        this.setState({daysOfWeekEnabled: daysOfWeekEnabled})
+        this.setState({daysOfWeekEnabled: daysOfWeekEnabled}, () => this.updateParent())
     }
 
 
@@ -181,13 +199,13 @@ class RecurringOptions extends Component {
     {
         const daysOfMonthEnabled = this.state.daysOfMonthEnabled;
         daysOfMonthEnabled[week][day] = !daysOfMonthEnabled[week][day];
-        this.setState({daysOfMonthEnabled: daysOfMonthEnabled})
+        this.setState({daysOfMonthEnabled: daysOfMonthEnabled}, () => this.updateParent())
     }
 
 
     changeRepositoryField(field, newValue)
     {
-        this.setState({[field]: newValue});
+        this.setState({[field]: newValue}, () => this.updateParent());
     }
 
     render() {
@@ -226,7 +244,7 @@ class RecurringOptions extends Component {
                                                 value={this.state.repeatFrequency}
                                                 min={1}
                                                 max={100}
-                                                onChange={(event, newValue) => this.setState({repeatFrequency: newValue})}
+                                                onChange={(event, newValue) => this.setState({repeatFrequency: newValue}, () => this.updateParent())}
                                             />
                                         </div>
                                         <div style={{"paddingLeft": "10px"}}>
@@ -441,10 +459,11 @@ class SizeOfRun extends Component {
 
     updateParent()
     {
-        this.props.onChange(
-            this.state.length,
-            this.state.sessions,
-            this.state.hours
+        this.props.onChange({
+                length: this.state.length,
+                sessions: this.state.sessions,
+                hours: this.state.hours
+            }
         )
     }
 
@@ -644,25 +663,34 @@ class AutologinCredentials extends Component {
         password: ""
     }
 
+    updateParent()
+    {
+        this.props.onChange({
+            autologin: this.state.autologin,
+            email: this.state.email,
+            password: this.state.password
+        })
+    }
+
     componentDidMount() {
 
     }
 
     toggleEnableAutologin()
     {
-        this.setState({autologin: !this.state.autologin});
+        this.setState({autologin: !this.state.autologin}, () => this.updateParent());
     }
 
 
     emailChanged(newValue)
     {
-        this.setState({email: newValue});
+        this.setState({email: newValue}, () => this.updateParent());
     }
 
 
     passwordChanged(newValue)
     {
-        this.setState({password: newValue});
+        this.setState({password: newValue}, () => this.updateParent());
     }
 
     render() {
@@ -735,10 +763,28 @@ class ActionsConfiguration extends Component {
 
     }
 
+    updateParent()
+    {
+        this.props.onChange({
+            enableDoubleClick: this.state.enableDoubleClick,
+            enableRightClick: this.state.enableRightClick,
+            enableRandomLetters: this.state.enableRandomLetters,
+            enableRandomBrackets: this.state.enableRandomBrackets,
+            enableRandomMathSymbols: this.state.enableRandomMathSymbols,
+            enableRandomOtherSymbols: this.state.enableRandomOtherSymbols,
+            enableRandomNumbers: this.state.enableRandomNumbers,
+            enableScrolling: this.state.enableScrolling,
+            enableDragging: this.state.enableDragging,
+            enableTypeEmail: this.state.enableTypeEmail,
+            enableTypePassword: this.state.enableTypePassword,
+            customTypeStrings: this.state.customTypeStrings
+        })
+    }
+
 
     toggle(key)
     {
-        this.setState({[key]: !this.state[key]})
+        this.setState({[key]: !this.state[key]}, () => this.updateParent())
     }
 
 
@@ -748,7 +794,7 @@ class ActionsConfiguration extends Component {
 
         customTypeStrings.push("")
 
-        this.setState({customTypeStrings})
+        this.setState({customTypeStrings}, () => this.updateParent())
     }
 
     changeCustomString(index, newValue)
@@ -757,7 +803,7 @@ class ActionsConfiguration extends Component {
 
         customTypeStrings[index] = newValue;
 
-        this.setState({customTypeStrings})
+        this.setState({customTypeStrings}, () => this.updateParent())
     }
 
     removeCustomString(index)
@@ -766,7 +812,7 @@ class ActionsConfiguration extends Component {
 
         customTypeStrings.splice(index, 1)
 
-        this.setState({customTypeStrings})
+        this.setState({customTypeStrings}, () => this.updateParent())
     }
 
 
@@ -965,10 +1011,24 @@ class ErrorsConfiguration extends Component {
 
     }
 
+    updateParent()
+    {
+        this.props.onChange({
+            enable5xxError: this.state.enable5xxError,
+            enable400Error: this.state.enable400Error,
+            enable401Error: this.state.enable401Error,
+            enable403Error: this.state.enable403Error,
+            enable404Error: this.state.enable404Error,
+            javascriptConsoleError: this.state.javascriptConsoleError,
+            unhandledExceptionError: this.state.unhandledExceptionError,
+            browserFreezingError: this.state.browserFreezingError
+        })
+    }
+
 
     toggle(key)
     {
-        this.setState({[key]: !this.state[key]})
+        this.setState({[key]: !this.state[key]}, () => this.updateParent())
     }
 
 
@@ -1085,12 +1145,50 @@ class NewTestingRun extends Component {
         result: '',
         tab: 0,
         length: 250,
-        size: 20000
+        sessions: 20000,
+        hours: 6
     };
 
     componentDidMount()
     {
+        axios.get(`/application/${this.props.match.params.id}`).then((response) =>
+        {
+            this.setState({application: response.data})
+        });
+    }
 
+
+    launchTestingRunButtonClicked()
+    {
+        const data = {
+            applicationId: this.props.match.params.id,
+            configuration: {
+                url: this.state.application.url,
+                email: this.state.email,
+                password: this.state.password,
+                name: "",
+                paragraph: "",
+                enableRandomNumberCommand: this.state.enableRandomNumbers,
+                enableRandomBracketCommand: this.state.enableRandomBrackets,
+                enableRandomMathCommand: this.state.enableRandomMathSymbols,
+                enableRandomOtherSymbolCommand: this.state.enableRandomOtherSymbols,
+                enableDoubleClickCommand: this.state.enableDoubleClick,
+                enableRightClickCommand: this.state.enableRightClick,
+                autologin: this.state.autologin,
+                preventOffsiteLinks: true,
+                testingSequenceLength: this.state.length,
+                totalTestingSessions: this.state.sessions,
+                hours: this.state.hours
+            }
+        }
+
+       axios.post(`/testing_runs`, data).then(() =>
+       {
+           alert("success! (need to replace this screen)");
+       }, (error) =>
+       {
+           alert("error! " + error.toString());
+       });
     }
 
     render() {
@@ -1119,7 +1217,7 @@ class NewTestingRun extends Component {
                                             title={``}
                                             subtitle={``}
                                         >
-                                            <RecurringOptions />
+                                            <RecurringOptions onChange={(data) => this.setState(data)} />
                                         </Papersheet>
                                         <br/>
                                         <br/>
@@ -1128,7 +1226,7 @@ class NewTestingRun extends Component {
                                             title={`Size of Testing Run`}
                                             subtitle={``}
                                         >
-                                            <SizeOfRun onChange={(length, size, speed) => this.setState({length, size, speed})} />
+                                            <SizeOfRun onChange={(data) => this.setState(data)} />
                                         </Papersheet>
                                         <br/>
                                         <br/>
@@ -1137,7 +1235,7 @@ class NewTestingRun extends Component {
                                             title={`Credentials`}
                                             subtitle={``}
                                         >
-                                            <AutologinCredentials />
+                                            <AutologinCredentials onChange={(data) => this.setState(data)} />
                                         </Papersheet>
                                         <br/>
                                         <br/>
@@ -1146,7 +1244,7 @@ class NewTestingRun extends Component {
                                             title={`Actions`}
                                             subtitle={``}
                                         >
-                                            <ActionsConfiguration />
+                                            <ActionsConfiguration onChange={(data) => this.setState(data)} />
                                         </Papersheet>
                                         <br/>
                                         <br/>
@@ -1155,7 +1253,7 @@ class NewTestingRun extends Component {
                                             title={`Errors`}
                                             subtitle={``}
                                         >
-                                            <ErrorsConfiguration />
+                                            <ErrorsConfiguration onChange={(data) => this.setState(data)} />
                                         </Papersheet>
                                     </div>
                                     : null
@@ -1167,7 +1265,7 @@ class NewTestingRun extends Component {
                                                 title={`Size of Testing Run`}
                                                 subtitle={``}
                                             >
-                                                <SizeOfRun onChange={(length, size, speed) => this.setState({length, size, speed})} />
+                                                <SizeOfRun onChange={(data) => this.setState(data)} />
                                             </Papersheet>
                                             <br/>
                                             <br/>
@@ -1176,7 +1274,7 @@ class NewTestingRun extends Component {
                                                 title={`Credentials`}
                                                 subtitle={``}
                                             >
-                                                <AutologinCredentials />
+                                                <AutologinCredentials onChange={(data) => this.setState(data)} />
                                             </Papersheet>
                                             <br/>
                                             <br/>
@@ -1185,7 +1283,7 @@ class NewTestingRun extends Component {
                                                 title={`Actions`}
                                                 subtitle={``}
                                             >
-                                                <ActionsConfiguration />
+                                                <ActionsConfiguration onChange={(data) => this.setState(data)} />
                                             </Papersheet>
                                             <br/>
                                             <br/>
@@ -1194,7 +1292,7 @@ class NewTestingRun extends Component {
                                                 title={`Errors`}
                                                 subtitle={``}
                                             >
-                                                <ErrorsConfiguration />
+                                                <ErrorsConfiguration onChange={(data) => this.setState(data)} />
                                             </Papersheet>
                                         </div>
                                         : null
@@ -1230,14 +1328,14 @@ class NewTestingRun extends Component {
                                                                         <span>Testing sessions</span>
                                                                     </p>
                                                                     <span
-                                                                        className="totalPrice">* {addCommas(this.state.size)}</span>
+                                                                        className="totalPrice">* {addCommas(this.state.sessions)}</span>
                                                                 </div>
                                                                 <div className="singleOrderInfo">
                                                                     <p>
                                                                         <span>Total actions to be performed</span>
                                                                     </p>
                                                                     <span
-                                                                        className="totalPrice">= {addCommas(this.state.length * this.state.size)}</span>
+                                                                        className="totalPrice">= {addCommas(this.state.length * this.state.sessions)}</span>
                                                                 </div>
                                                                 <div className="singleOrderInfo">
                                                                     <p>
@@ -1249,11 +1347,11 @@ class NewTestingRun extends Component {
                                                             </div>
                                                             <div className="orderTableFooter">
                                                                 <span>Total</span>
-                                                                <span>= ${(this.state.length * this.state.size * 0.00003).toFixed(2)} USD / run</span>
+                                                                <span>= ${(this.state.length * this.state.sessions * 0.00003).toFixed(2)} USD / run</span>
                                                             </div>
 
                                                             <Button variant="extended" color="primary"
-                                                                    className="orderBtn">
+                                                                    className="orderBtn" onClick={() => this.launchTestingRunButtonClicked()}>
                                                                 Launch Testing Run
                                                             </Button>
                                                         </div>

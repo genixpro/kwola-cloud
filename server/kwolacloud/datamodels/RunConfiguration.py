@@ -10,8 +10,6 @@ from kwola.datamodels.CustomIDField import CustomIDField
 
 
 class RunConfiguration(EmbeddedDocument):
-    id = CustomIDField()
-
     url = StringField()
 
     email = StringField()
@@ -40,5 +38,6 @@ class RunConfiguration(EmbeddedDocument):
 
     testingSequenceLength = IntField()
 
-    numberOfParallelTestingSessions = IntField()
+    totalTestingSessions = IntField()
 
+    hours = IntField()

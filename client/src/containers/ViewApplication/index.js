@@ -50,11 +50,6 @@ class ViewApplication extends Component {
     launchTestingSequenceButtonClicked()
     {
         this.props.history.push(`/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
-
-//        axios.post(`/application/${this.props.match.params.id}/testing_sequences`, {applicationId: this.props.match.params.id}).then(() =>
-//        {
-//
-//        });
     }
 
     render() {
