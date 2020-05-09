@@ -3,6 +3,8 @@
 FROM ubuntu:18.04
 MAINTAINER Kwola <info@kwola.io>
 
+ENV DEBIAN_FRONTEND noninteractive
+
 RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y
 
 RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list

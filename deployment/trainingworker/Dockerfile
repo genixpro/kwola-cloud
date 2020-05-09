@@ -3,6 +3,8 @@
 FROM ubuntu:18.04
 MAINTAINER Kwola <info@kwola.io>
 
+ENV DEBIAN_FRONTEND noninteractive
+
 RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y
 
 RUN apt-get update && apt-get install -y --no-install-recommends gnupg2 curl ca-certificates && \
