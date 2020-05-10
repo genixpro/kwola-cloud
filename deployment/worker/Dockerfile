@@ -56,7 +56,7 @@ RUN apt-get update && apt-get install \
 RUN chromium-browser --version
 
 # Download and install Chromedriver
-RUN wget https://chromedriver.storage.googleapis.com/80.0.3987.106/chromedriver_linux64.zip
+RUN wget https://chromedriver.storage.googleapis.com/81.0.4044.138/chromedriver_linux64.zip
 RUN unzip chromedriver_linux64.zip
 RUN cp chromedriver /usr/bin/
 RUN chmod 644 /usr/bin/chromedriver
