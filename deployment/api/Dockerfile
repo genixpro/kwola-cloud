@@ -38,6 +38,7 @@ RUN npm install > "/dev/null" 2>&1
 ADD . /kwola
 ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
+ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-22d7937574924.json
 
 # Install dependencies for client, which includes downloads
 WORKDIR /kwola/server
