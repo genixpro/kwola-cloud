@@ -42,7 +42,7 @@ RUN npm install > "/dev/null" 2>&1
 
 # Copy the current directory contents into the container at /kwola
 ADD . /kwola
-RUN chown - R kwola:kwola /kwola
+RUN chown -R kwola:kwola /kwola
 USER kwola
 WORKDIR /kwola
 
