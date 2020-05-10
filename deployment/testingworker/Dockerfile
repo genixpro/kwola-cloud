@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y
 RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
-ENV GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
+ENV GCSFUSE_REPO=gcsfuse-bionic
 RUN echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
 
 # Install some basic system dependencies
