@@ -42,8 +42,14 @@ spec:
           requests:
             cpu: 500m
             memory: 1Gi
+        volumeMounts:
+          - mountPath: /dev/shm
+            name: dshm
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 15
-
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
