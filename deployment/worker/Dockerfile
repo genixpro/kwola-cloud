@@ -53,8 +53,6 @@ RUN apt-get update && apt-get install \
     -y  > "/dev/null" 2>&1 && \
     rm -rf /var/lib/apt/lists/*
 
-RUN chromium-browser --version
-
 # Download and install Chromedriver
 RUN wget https://chromedriver.storage.googleapis.com/81.0.4044.138/chromedriver_linux64.zip
 RUN unzip chromedriver_linux64.zip
@@ -93,6 +91,8 @@ RUN python3 setup.py install
 ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
+
+RUN kwola_test_installation
 
 # Setup and configure systemd
 ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "default"]

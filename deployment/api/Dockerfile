@@ -48,6 +48,8 @@ RUN python3 setup.py install > "/dev/null" 2>&1
 COPY deployment/api/install_kwola.sh /kwola/deployment
 RUN chmod +x /kwola/deployment/install_kwola.sh && sh /kwola/deployment/install_kwola.sh
 
+RUN kwola_test_installation
+
 # Setup and configure systemd
 ENTRYPOINT ["bash", "-c", "gunicorn -t 600 -w 4 -b 0.0.0.0:80 kwolacloud.app"]
 
