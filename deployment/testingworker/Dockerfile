@@ -71,7 +71,7 @@ RUN sudo npm install babel-plugin-kwola
 # Create the kwola user
 RUN useradd -s /bin/bash --home-dir /home/kwola kwola
 RUN mkdir /home/kwola
-RUN ["chown", "-R", "kwola:kwola", "/home/kwola"]
+RUN chown -R kwola:kwola /home/kwola
 
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
@@ -89,7 +89,7 @@ WORKDIR /kwola
 # Copy the current directory contents into the container at /kwola
 ADD . /kwola
 
-RUN chown - R kwola:kwola /kwola
+RUN chown -R kwola:kwola /kwola
 USER kwola
 WORKDIR /kwola
 RUN gcloud auth activate-service-account --key-file deployment/kwola-cloud-2d7937574924.json
