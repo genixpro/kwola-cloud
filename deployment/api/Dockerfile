@@ -37,6 +37,7 @@ RUN npm install > "/dev/null" 2>&1
 # Copy the current directory contents into the container at /kwola
 ADD . /kwola
 ARG KWOLA_ENV
+ENV KWOLA_ENV=${KWOLA_ENV}
 
 # Install dependencies for client, which includes downloads
 WORKDIR /kwola/server
