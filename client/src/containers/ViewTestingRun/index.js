@@ -34,8 +34,16 @@ class ViewTestingRun extends Component {
             this.setState({testingRun: response.data.testingRun});
         });
 
-        axios.get(`/bugs/`).then((response) => {
+        axios.get(`/bugs`, {
+            params: {"testingRunId": this.props.match.params.id}
+        }).then((response) => {
             this.setState({bugs: response.data.bugs});
+        });
+
+        axios.get(`/execution_sessions`, {
+            params: {"testingRunId": this.props.match.params.id}
+        }).then((response) => {
+            this.setState({executionSessions: response.data.executionSessions});
         });
     }
 
@@ -49,9 +57,7 @@ class ViewTestingRun extends Component {
                     <FullColumn>
                         <Row>
                             <HalfColumn>
-                                <Papersheet>
-
-                                </Papersheet>
+                                <SingleCard src={`http://localhost:8000/api/application/${this.state.testingRun.applicationId}/image`} grid/>
                             </HalfColumn>
 
                             <HalfColumn>
@@ -104,12 +110,12 @@ class ViewTestingRun extends Component {
                                     <Table>
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell>Test Start Time</TableCell>
+                                                <TableCell>Session Start Time</TableCell>
                                                 <TableCell>Total Reward</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {(this.props.executionSessions || []).map(executionSession => {
+                                            {(this.state.executionSessions || []).map(executionSession => {
                                                 return (
                                                     <TableRow key={executionSession._id} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_sessions/${executionSession._id}`)} >
                                                         <TableCell>{executionSession.startTime ? moment(new Date(executionSession.startTime.$date)).format('HH:mm MMM Do') : null}</TableCell>

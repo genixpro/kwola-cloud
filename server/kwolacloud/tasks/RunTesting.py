@@ -7,6 +7,7 @@
 from ..app import celeryApplication
 from ..datamodels.TestingRun import TestingRun
 from kwola.datamodels.TrainingStepModel import TrainingStep
+from kwola.components.environments.WebEnvironment import WebEnvironment
 import subprocess
 import tempfile
 from google.cloud import storage
@@ -24,34 +25,39 @@ from kwola.tasks import RunTrainingStep
 import torch
 
 def mountTestingRunStorageDrive(testingRunId):
-    bucketName = "kwola-testing-run-data-" + testingRunId
+    # bucketName = "kwola-testing-run-data-" + testingRunId
+    #
+    # configDir = tempfile.mkdtemp()
+    #
+    # storage_client = storage.Client()
 
-    configDir = tempfile.mkdtemp()
+    configDir = "/home/bradley/" + testingRunId
 
-    storage_client = storage.Client()
+    if not os.path.exists(configDir):
+        os.mkdir(configDir)
 
-    bucket = storage_client.lookup_bucket(bucketName)
-    if bucket is None:
-        storage_client.create_bucket(bucketName)
-
-    result = subprocess.run(["gcsfuse", bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        print("Error! gcsfuse did not return success", result.returncode)
-        print(result.stdout)
-        print(result.stderr)
-        return None
-    else:
-        return configDir
+    # bucket = storage_client.lookup_bucket(bucketName)
+    # if bucket is None:
+    #     storage_client.create_bucket(bucketName)
+    #
+    # result = subprocess.run(["gcsfuse", bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # if result.returncode != 0:
+    #     print("Error! gcsfuse did not return success", result.returncode)
+    #     print(result.stdout)
+    #     print(result.stderr)
+    #     return None
+    # else:
+    return configDir
 
 def unmountTestingRunStorageDrive(configDir):
-    result = subprocess.run(["umount", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        print("Error! umount did not return success")
-        print(result.stdout)
-        print(result.stderr)
-        return False
+    # result = subprocess.run(["umount", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # if result.returncode != 0:
+    #     print("Error! umount did not return success")
+    #     print(result.stdout)
+    #     print(result.stderr)
+    #     return False
 
-    os.unlink(configDir)
+    # os.rmdir(configDir)
     return True
 
 
@@ -74,7 +80,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         if testingStepsCompleted < (config['training_random_initialization_sequences']):
             shouldBeRandom = True
 
-        testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config))
+        testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config), testingRunId=testingRunId)
         testingStep.saveToDisk(config)
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
@@ -147,14 +153,20 @@ def runTesting(testingRunId):
             kwolaConfigData['enableDoubleClickCommand'] = runConfiguration.enableDoubleClickCommand
             kwolaConfigData['enableRightClickCommand'] = runConfiguration.enableRightClickCommand
             kwolaConfigData['autologin'] = runConfiguration.autologin
-            kwolaConfigData['preventOffsiteLinks'] = runConfiguration.preventOffsiteLinks
-            kwolaConfigData['testingSequenceLength'] = runConfiguration.testingSequenceLength
+            kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
+            kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
 
             with open(configFilePath, 'wt') as configFile:
                 json.dump(kwolaConfigData, configFile)
         else:
             with open(configFilePath, 'rt') as configFile:
                 kwolaConfigData = json.load(configFile)
+
+        # We load up a single web session just to ensure we can access the target url
+        config = Configuration(configDir)
+        environment = WebEnvironment(config, sessionLimit=1)
+        environment.shutdown()
+        del environment
 
         # Now we just loop until completion
         countTestingSessionsStarted = 0
@@ -200,6 +212,7 @@ def runTesting(testingRunId):
             toRemove = []
             for future in testingStepActiveFutures:
                 if future.ready():
+                    print("Ready future has been found!")
                     toRemove.append(future)
             for future in toRemove:
                 testingStepActiveFutures.remove(future)

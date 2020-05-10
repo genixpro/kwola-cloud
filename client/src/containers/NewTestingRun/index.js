@@ -1177,16 +1177,17 @@ class NewTestingRun extends Component {
                 autologin: this.state.autologin,
                 preventOffsiteLinks: true,
                 testingSequenceLength: this.state.length,
-                totalTestingSessions: this.state.sessions,
+                totalTestingSessions: this.state.sessions / 100,
                 hours: this.state.hours
             }
         }
 
-       axios.post(`/testing_runs`, data).then(() =>
+       axios.post(`/testing_runs`, data).then((response) =>
        {
-           alert("success! (need to replace this screen)");
+           this.props.history.push(`/dashboard/testing_runs/${response.data.testingRunId}`);
        }, (error) =>
        {
+           console.error(error);
            alert("error! " + error.toString());
        });
     }

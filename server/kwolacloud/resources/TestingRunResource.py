@@ -26,9 +26,15 @@ class TestingRunsGroup(Resource):
         pass
 
     def get(self):
-        TestingRuns = TestingRun.objects().order_by("-startTime").limit(20).to_json()
+        queryParams = {}
 
-        return {"testingRuns": json.loads(TestingRuns)}
+        testingRunId = flask.request.args.get('testingRunId')
+        if testingRunId is not None:
+            queryParams["testingRunId"] = testingRunId
+
+        testingRuns = TestingRun.objects(**queryParams).no_dereference().order_by("-startTime").limit(10).to_json()
+
+        return {"testingRuns": json.loads(testingRuns)}
 
     def post(self):
         data = flask.request.get_json()
@@ -41,7 +47,7 @@ class TestingRunsGroup(Resource):
 
         runTesting.delay(str(newTestingRun.id))
 
-        return {}
+        return {"testingRunId": data['id']}
 
 
 class TestingRunsSingle(Resource):

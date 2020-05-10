@@ -86,7 +86,7 @@ class ViewExecutionSession extends Component {
                                             {(this.props.executionTraces || []).map(trace => {
                                                 return (
                                                     <TableRow key={trace._id} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_traces/${trace._id}`)} >
-                                                        <TableCell>{trace.frameNumber + 1}</TableCell>
+                                                        <TableCell>{trace.frameNumber}</TableCell>
                                                         <TableCell>{trace.actionPerformed.x.toString()}</TableCell>
                                                         <TableCell>{trace.actionPerformed.y.toString()}</TableCell>
                                                         <TableCell>{trace.actionPerformed.type.toString()}</TableCell>

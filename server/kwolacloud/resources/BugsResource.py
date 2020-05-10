@@ -26,7 +26,13 @@ class BugsGroup(Resource):
         pass
 
     def get(self):
-        bugs = BugModel.objects().order_by("-startTime").limit(20)
+        queryParams = {}
+
+        testingRunId = flask.request.args.get('testingRunId')
+        if testingRunId is not None:
+            queryParams["testingRunId"] = testingRunId
+
+        bugs = BugModel.objects(**queryParams).no_dereference().order_by("-startTime").limit(20)
 
         return {"bugs": json.loads(bugs.to_json())}
 

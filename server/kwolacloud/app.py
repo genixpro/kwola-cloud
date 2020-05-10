@@ -41,6 +41,7 @@ from .resources.ExecutionTraceResource import ExecutionTraceGroup, ExecutionTrac
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
 from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSingle
 from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle
+from .resources.BugsResource import BugsGroup, BugsSingle
 from .resources.HomeResource import Home
 
 api.add_resource(ApplicationGroup, '/api/application')
@@ -71,6 +72,10 @@ api.add_resource(TestingRunsSingle, '/api/testing_runs/<string:testing_run_id>')
 
 api.add_resource(TrainingStepGroup, '/api/training_steps')
 api.add_resource(TrainingStepSingle, '/api/training_steps/<string:training_step_id>')
+
+
+api.add_resource(BugsGroup, '/api/bugs')
+api.add_resource(BugsSingle, '/api/bugs/<string:bug_id>')
 
 api.add_resource(Home, '/api/home')
 
