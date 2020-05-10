@@ -1,6 +1,6 @@
 # This builds an all-in-one easy to install dockerfile
 
-FROM       python:3.6.8
+FROM ubuntu:18.04
 MAINTAINER Kwola <info@kwola.io>
 
 ENV DEBIAN_FRONTEND noninteractive
