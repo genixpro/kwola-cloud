@@ -62,6 +62,8 @@ RUN chmod +x /usr/bin/chromedriver
 RUN rm -rf chromedriver
 RUN rm -rf chromedriver_linux64.zip
 
+RUN chromium-browser --headless
+
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
 RUN pip3 install --upgrade pip
