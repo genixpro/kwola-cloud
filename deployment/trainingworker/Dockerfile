@@ -76,6 +76,7 @@ RUN apt-get update && apt-get install \
     fuse-dbg \
     g++ \
     gcc \
+    gcsfuse \
     gfortran \
     git \
     google-cloud-sdk \
