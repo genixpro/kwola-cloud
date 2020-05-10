@@ -33,7 +33,7 @@ class ExecutionSessionGroup(Resource):
         if testingRunId is not None:
             queryParams["testingRunId"] = testingRunId
 
-        executionSessions = ExecutionSession.objects(**queryParams).no_dereference().order_by("-startTime").to_json()
+        executionSessions = ExecutionSession.objects(**queryParams).no_dereference().order_by("startTime").to_json()
 
         return {"executionSessions": json.loads(executionSessions)}
 

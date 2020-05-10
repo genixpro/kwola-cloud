@@ -23,7 +23,7 @@ class ApplicationGroup(Resource):
         self.postParser.add_argument('url', help='This field cannot be blank', required=True)
 
     def get(self):
-        applications = ApplicationModel.objects().to_json()
+        applications = ApplicationModel.objects().no_dereference().to_json()
 
         return {"applications": json.loads(applications)}
 

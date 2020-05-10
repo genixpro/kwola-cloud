@@ -42,33 +42,33 @@ class Topbar extends Component {
 
           <TopbarComponents>
             <ul className="topbarItems">
-              <li className="topbarSearch">
-                <TopbarSearch {...propsTopbar} />
-              </li>
+              {/*<li className="topbarSearch">*/}
+              {/*  <TopbarSearch {...propsTopbar} />*/}
+              {/*</li>*/}
 
               {/* <li className="topbarNotification">
                 <TopbarNotification {...propsTopbar} />
               </li> */}
 
-              <li className="topbarNotification">
-                <div>
-                  <Icon
-                    onClick={() => switchActivation('notification')}
-                    style={{ matginTop: 5 }}
-                  >
-                    widgets
-                  </Icon>
-                  {/* <SecondarySidebar
-                    InnerComponent={TopbarNotification}
-                    currentActiveKey="notification"
-                    {...propsTopbar}
-                  /> */}
-                </div>
-              </li>
+              {/*<li className="topbarNotification">*/}
+              {/*  <div>*/}
+              {/*    <Icon*/}
+              {/*      onClick={() => switchActivation('notification')}*/}
+              {/*      style={{ matginTop: 5 }}*/}
+              {/*    >*/}
+              {/*      widgets*/}
+              {/*    </Icon>*/}
+              {/*    /!* <SecondarySidebar*/}
+              {/*      InnerComponent={TopbarNotification}*/}
+              {/*      currentActiveKey="notification"*/}
+              {/*      {...propsTopbar}*/}
+              {/*    /> *!/*/}
+              {/*  </div>*/}
+              {/*</li>*/}
 
-              <li className="topbarUser">
-                <TopbarUser {...propsTopbar} />
-              </li>
+              {/*<li className="topbarUser">*/}
+              {/*  <TopbarUser {...propsTopbar} />*/}
+              {/*</li>*/}
             </ul>
           </TopbarComponents>
         </Toolbar>

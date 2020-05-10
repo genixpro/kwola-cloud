@@ -11,7 +11,7 @@ import authAction from '../../redux/auth/actions';
 import appActions from '../../redux/app/actions';
 import themeActions from '../../redux/themeSwitcher/actions';
 import ThemeSwitcher from '../ThemeSwitcher';
-import ThemeSwitcherButton from '../ThemeSwitcherButton';
+// import ThemeSwitcherButton from '../ThemeSwitcherButton';
 // import SecondarySidebar from '../SecondarySidebar';
 import PageBreadcrumb from '../PageBreadcrumb';
 import MUIPProvider from '../../components/uielements/materialUiPicker/momentProvider';
@@ -74,7 +74,7 @@ class App extends Component {
                   url={url}
                 />
               </MUIPProvider>
-              <ThemeSwitcherButton />
+              {/*<ThemeSwitcherButton />*/}
               {/* <SecondarySidebar
                 InnerComponent={ThemeSwitcher}
                 currentActiveKey="themeSwitcher"

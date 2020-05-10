@@ -854,50 +854,50 @@ class ActionsConfiguration extends Component {
                             label="Enable right click action?"
                         />
                         <br/>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={this.state.enableScrolling}
-                                    onChange={() => this.toggle('enableScrolling')}
-                                    value="enableScrolling"
-                                />
-                            }
-                            label="Enable scrolling actions?"
-                        />
-                        <br/>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={this.state.enableDragging}
-                                    onChange={() => this.toggle('enableDragging')}
-                                    value="enableDragging"
-                                />
-                            }
-                            label="Enable drag action?"
-                        />
-                        <br/>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={this.state.enableTypeEmail}
-                                    onChange={() => this.toggle('enableTypeEmail')}
-                                    value="enableTypeEmail"
-                                />
-                            }
-                            label="Enable type email action?"
-                        />
-                        <br/>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={this.state.enableTypePassword}
-                                    onChange={() => this.toggle('enableTypePassword')}
-                                    value="enableTypePassword"
-                                />
-                            }
-                            label="Enable type password action?"
-                        />
-                        <br/>
+                        {/*<FormControlLabel*/}
+                        {/*    control={*/}
+                        {/*        <Checkbox*/}
+                        {/*            checked={this.state.enableScrolling}*/}
+                        {/*            onChange={() => this.toggle('enableScrolling')}*/}
+                        {/*            value="enableScrolling"*/}
+                        {/*        />*/}
+                        {/*    }*/}
+                        {/*    label="Enable scrolling actions?"*/}
+                        {/*/>*/}
+                        {/*<br/>*/}
+                        {/*<FormControlLabel*/}
+                        {/*    control={*/}
+                        {/*        <Checkbox*/}
+                        {/*            checked={this.state.enableDragging}*/}
+                        {/*            onChange={() => this.toggle('enableDragging')}*/}
+                        {/*            value="enableDragging"*/}
+                        {/*        />*/}
+                        {/*    }*/}
+                        {/*    label="Enable drag action?"*/}
+                        {/*/>*/}
+                        {/*<br/>*/}
+                        {/*<FormControlLabel*/}
+                        {/*    control={*/}
+                        {/*        <Checkbox*/}
+                        {/*            checked={this.state.enableTypeEmail}*/}
+                        {/*            onChange={() => this.toggle('enableTypeEmail')}*/}
+                        {/*            value="enableTypeEmail"*/}
+                        {/*        />*/}
+                        {/*    }*/}
+                        {/*    label="Enable type email action?"*/}
+                        {/*/>*/}
+                        {/*<br/>*/}
+                        {/*<FormControlLabel*/}
+                        {/*    control={*/}
+                        {/*        <Checkbox*/}
+                        {/*            checked={this.state.enableTypePassword}*/}
+                        {/*            onChange={() => this.toggle('enableTypePassword')}*/}
+                        {/*            value="enableTypePassword"*/}
+                        {/*        />*/}
+                        {/*    }*/}
+                        {/*    label="Enable type password action?"*/}
+                        {/*/>*/}
+                        {/*<br/>*/}
                         <FormControlLabel
                             control={
                                 <Checkbox
@@ -958,12 +958,12 @@ class ActionsConfiguration extends Component {
                     <br/>
                     <br/>
 
-                    {
-                        <Button variant="extended" color={"primary"} onClick={() => this.addNewCustomString()}>
-                            Add a Custom Typing Action
-                            <AddIcon className="rightIcon"></AddIcon>
-                        </Button>
-                    }
+                    {/*{*/}
+                    {/*    <Button variant="extended" color={"primary"} onClick={() => this.addNewCustomString()}>*/}
+                    {/*        Add a Custom Typing Action*/}
+                    {/*        <AddIcon className="rightIcon"></AddIcon>*/}
+                    {/*    </Button>*/}
+                    {/*}*/}
 
                     {
                         this.state.customTypeStrings.map((typeActionString, typeActionIndex) =>
@@ -1177,7 +1177,7 @@ class NewTestingRun extends Component {
                 autologin: this.state.autologin,
                 preventOffsiteLinks: true,
                 testingSequenceLength: this.state.length,
-                totalTestingSessions: this.state.sessions / 100,
+                totalTestingSessions: this.state.sessions,
                 hours: this.state.hours
             }
         }
@@ -1208,23 +1208,24 @@ class NewTestingRun extends Component {
                                         indicatorColor="primary"
                                         textColor="primary"
                                     >
-                                        <Tab label="Recurring Testing" icon={<ScheduleIcon />} />
+                                        {/*<Tab label="Recurring Testing" icon={<ScheduleIcon />} />*/}
                                         <Tab label="One-Time Run" icon={<SkipNextIcon />} />
                                     </Tabs>
                                 </AppBar>
                                 {this.state.tab === 0 ?
                                     <div>
+                                        {/*<Papersheet*/}
+                                        {/*    title={``}*/}
+                                        {/*    subtitle={``}*/}
+                                        {/*>*/}
+                                        {/*    <RecurringOptions onChange={(data) => this.setState(data)} />*/}
+                                        {/*</Papersheet>*/}
+                                        {/*<br/>*/}
+                                        {/*<br/>*/}
+                                        {/*<br/>*/}
                                         <Papersheet
+                                            // title={`Size of Testing Run`}
                                             title={``}
-                                            subtitle={``}
-                                        >
-                                            <RecurringOptions onChange={(data) => this.setState(data)} />
-                                        </Papersheet>
-                                        <br/>
-                                        <br/>
-                                        <br/>
-                                        <Papersheet
-                                            title={`Size of Testing Run`}
                                             subtitle={``}
                                         >
                                             <SizeOfRun onChange={(data) => this.setState(data)} />
@@ -1247,15 +1248,15 @@ class NewTestingRun extends Component {
                                         >
                                             <ActionsConfiguration onChange={(data) => this.setState(data)} />
                                         </Papersheet>
-                                        <br/>
-                                        <br/>
-                                        <br/>
-                                        <Papersheet
-                                            title={`Errors`}
-                                            subtitle={``}
-                                        >
-                                            <ErrorsConfiguration onChange={(data) => this.setState(data)} />
-                                        </Papersheet>
+                                        {/*<br/>*/}
+                                        {/*<br/>*/}
+                                        {/*<br/>*/}
+                                        {/*<Papersheet*/}
+                                        {/*    title={`Errors`}*/}
+                                        {/*    subtitle={``}*/}
+                                        {/*>*/}
+                                        {/*    <ErrorsConfiguration onChange={(data) => this.setState(data)} />*/}
+                                        {/*</Papersheet>*/}
                                     </div>
                                     : null
                                 }

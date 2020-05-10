@@ -10,6 +10,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
 from ..datamodels.TestingRun import TestingRun
 from ..tasks.RunTesting import runTesting
 import json
+import datetime
 import bson
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration
@@ -28,11 +29,7 @@ class TestingRunsGroup(Resource):
     def get(self):
         queryParams = {}
 
-        testingRunId = flask.request.args.get('testingRunId')
-        if testingRunId is not None:
-            queryParams["testingRunId"] = testingRunId
-
-        testingRuns = TestingRun.objects(**queryParams).no_dereference().order_by("-startTime").limit(10).to_json()
+        testingRuns = TestingRun.objects().no_dereference().order_by("-startTime").limit(10).to_json()
 
         return {"testingRuns": json.loads(testingRuns)}
 
@@ -40,6 +37,7 @@ class TestingRunsGroup(Resource):
         data = flask.request.get_json()
 
         data['id'] = CustomIDField.generateNewUUID(TestingRun, config=getKwolaConfiguration())
+        data['startTime'] = datetime.datetime.now()
 
         newTestingRun = TestingRun(**data)
 

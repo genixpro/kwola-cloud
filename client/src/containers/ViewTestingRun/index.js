@@ -84,16 +84,14 @@ class ViewTestingRun extends Component {
                                     <Table>
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell>Type</TableCell>
                                                 <TableCell>Message</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
                                             {(this.state.bugs || []).map(bug => {
                                                 return (
-                                                    <TableRow key={bug._id} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_sessions/${bug._id}`)} >
-                                                        <TableCell>{bug.startTime ? moment(new Date(bug.startTime.$date)).format('HH:mm MMM Do') : null}</TableCell>
-                                                        <TableCell>{bug.totalReward}</TableCell>
+                                                    <TableRow key={bug._id} hover={true} onClick={() => this.props.history.push(`/dashboard/bugs/${bug._id}`)} >
+                                                        <TableCell>{bug.error.message}</TableCell>
                                                     </TableRow>
                                                 );
                                             })}

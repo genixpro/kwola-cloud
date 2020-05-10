@@ -46,6 +46,10 @@ const routes = [
   {
     path: 'testing_runs/:id',
     component: lazy(() => import('../ViewTestingRun')),
+  },
+  {
+    path: 'bugs/:id',
+    component: lazy(() => import('../ViewBug')),
   }
 ];
 

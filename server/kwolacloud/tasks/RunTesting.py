@@ -183,7 +183,7 @@ def runTesting(testingRunId):
 
         timeRemaining = max(1, (targetFinishedLaunchingTime - datetime.datetime.now()).total_seconds())
 
-        testingSessionsPerSecond = timeRemaining / remainingTestingSessions
+        testingSessionsPerSecond = remainingTestingSessions / timeRemaining
 
         trainingIterationsNeededPerSession = (kwolaConfigData['iterations_per_sample'] * runConfiguration.testingSequenceLength) / (kwolaConfigData['batch_size'] * kwolaConfigData['batches_per_iteration'])
 
@@ -198,6 +198,15 @@ def runTesting(testingRunId):
         completedTrainingSteps = run.trainingStepsCompleted
         completedTestingSteps = int(run.testingSessionsCompleted / kwolaConfigData['web_session_parallel_execution_sessions'])
         currentTrainingStepFuture = None
+
+        print("testingSessionsPerSecond", testingSessionsPerSecond)
+        print("timeRemaining", timeRemaining)
+        print("remainingTestingSessions", remainingTestingSessions)
+        print("trainingIterationsNeededPerSession", trainingIterationsNeededPerSession)
+        print("completedTrainingSteps", completedTrainingSteps)
+        print("completedTestingSteps", completedTestingSteps)
+        print("countTestingSessionsStarted", countTestingSessionsStarted)
+        print("countTestingSessionsNeeded", countTestingSessionsNeeded)
 
         while run.testingSessionsCompleted < runConfiguration.totalTestingSessions:
             timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
