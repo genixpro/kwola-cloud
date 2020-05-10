@@ -25,39 +25,34 @@ from kwola.tasks import RunTrainingStep
 import torch
 
 def mountTestingRunStorageDrive(testingRunId):
-    # bucketName = "kwola-testing-run-data-" + testingRunId
-    #
-    # configDir = tempfile.mkdtemp()
-    #
-    # storage_client = storage.Client()
+    bucketName = "kwola-testing-run-data-" + testingRunId
 
-    configDir = "/home/bradley/" + testingRunId
+    configDir = tempfile.mkdtemp()
 
-    if not os.path.exists(configDir):
-        os.mkdir(configDir)
+    storage_client = storage.Client()
 
-    # bucket = storage_client.lookup_bucket(bucketName)
-    # if bucket is None:
-    #     storage_client.create_bucket(bucketName)
-    #
-    # result = subprocess.run(["gcsfuse", bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # if result.returncode != 0:
-    #     print("Error! gcsfuse did not return success", result.returncode)
-    #     print(result.stdout)
-    #     print(result.stderr)
-    #     return None
-    # else:
-    return configDir
+    bucket = storage_client.lookup_bucket(bucketName)
+    if bucket is None:
+        storage_client.create_bucket(bucketName)
+
+    result = subprocess.run(["gcsfuse", bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        print("Error! gcsfuse did not return success", result.returncode)
+        print(result.stdout)
+        print(result.stderr)
+        return None
+    else:
+        return configDir
 
 def unmountTestingRunStorageDrive(configDir):
-    # result = subprocess.run(["umount", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # if result.returncode != 0:
-    #     print("Error! umount did not return success")
-    #     print(result.stdout)
-    #     print(result.stderr)
-    #     return False
+    result = subprocess.run(["umount", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        print("Error! umount did not return success")
+        print(result.stdout)
+        print(result.stderr)
+        return False
 
-    # os.rmdir(configDir)
+    os.rmdir(configDir)
     return True
 
 
@@ -198,15 +193,6 @@ def runTesting(testingRunId):
         completedTrainingSteps = run.trainingStepsCompleted
         completedTestingSteps = int(run.testingSessionsCompleted / kwolaConfigData['web_session_parallel_execution_sessions'])
         currentTrainingStepFuture = None
-
-        print("testingSessionsPerSecond", testingSessionsPerSecond)
-        print("timeRemaining", timeRemaining)
-        print("remainingTestingSessions", remainingTestingSessions)
-        print("trainingIterationsNeededPerSession", trainingIterationsNeededPerSession)
-        print("completedTrainingSteps", completedTrainingSteps)
-        print("completedTestingSteps", completedTestingSteps)
-        print("countTestingSessionsStarted", countTestingSessionsStarted)
-        print("countTestingSessionsNeeded", countTestingSessionsNeeded)
 
         while run.testingSessionsCompleted < runConfiguration.totalTestingSessions:
             timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
