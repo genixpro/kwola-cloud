@@ -119,6 +119,12 @@ RUN chmod +x /usr/bin/chromedriver
 RUN rm -rf chromedriver
 RUN rm -rf chromedriver_linux64.zip
 
+RUN echo "Installing babel and the kwola babel plugin globally using npm"
+RUN sudo npm install @babel/cli -g
+RUN sudo npm install @babel/core -g
+RUN sudo npm install babel-plugin-kwola -g
+RUN sudo npm install babel-plugin-kwola
+
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
 RUN pip3 install --upgrade pip

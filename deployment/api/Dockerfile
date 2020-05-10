@@ -16,6 +16,12 @@ RUN mkdir /kwola && \
 COPY deployment/api/install_system_dependencies.sh /kwola/deployment
 RUN chmod +x /kwola/deployment/install_system_dependencies.sh && sh /kwola/deployment/install_system_dependencies.sh
 
+RUN echo "Installing babel and the kwola babel plugin globally using npm"
+RUN sudo npm install @babel/cli -g
+RUN sudo npm install @babel/core -g
+RUN sudo npm install babel-plugin-kwola -g
+RUN sudo npm install babel-plugin-kwola
+
 # Enable the google cloud service account
 COPY deployment/kwola-cloud-2d7937574924.json /kwola
 WORKDIR /kwola
