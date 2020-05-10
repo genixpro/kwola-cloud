@@ -35,3 +35,8 @@ spec:
       terminationGracePeriodSeconds: 15
       nodeSelector:
         cloud.google.com/gke-preemptible: "true"
+      securityContext:
+        privileged: true
+        capabilities:
+          add:
+            - SYS_ADMIN
