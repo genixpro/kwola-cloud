@@ -53,6 +53,8 @@ RUN apt-get update && apt-get install \
     -y  > "/dev/null" 2>&1 && \
     rm -rf /var/lib/apt/lists/*
 
+RUN chromium --version
+
 # Download and install Chromedriver
 RUN wget https://chromedriver.storage.googleapis.com/80.0.3987.106/chromedriver_linux64.zip
 RUN unzip chromedriver_linux64.zip
