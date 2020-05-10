@@ -119,11 +119,16 @@ RUN chmod +x /usr/bin/chromedriver
 RUN rm -rf chromedriver
 RUN rm -rf chromedriver_linux64.zip
 
-RUN echo "Installing babel and the kwola babel plugin globally using npm"
+# Installing babel and the kwola babel plugin globally using npm
 RUN sudo npm install @babel/cli -g
 RUN sudo npm install @babel/core -g
 RUN sudo npm install babel-plugin-kwola -g
 RUN sudo npm install babel-plugin-kwola
+
+# Create the kwola user
+RUN useradd -s /bin/bash --home-dir /home/kwola kwola
+RUN mkdir /home/kwola
+RUN chown -R kwola:kwola /home/kwola
 
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
@@ -141,6 +146,8 @@ WORKDIR /kwola
 # Copy the current directory contents into the container at /kwola
 ADD . /kwola
 
+RUN chown - R kwola:kwola /kwola
+USER kwola
 WORKDIR /kwola
 RUN gcloud auth activate-service-account --key-file deployment/kwola-cloud-2d7937574924.json
 
@@ -156,7 +163,7 @@ ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 
 RUN kwola_install_proxy_cert 1
-RUN certutil -d sql:/root/.pki/nssdb -A -n 'mitm.it cert authority' -i /root/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
+RUN certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
 
 RUN kwola_test_installation
 

@@ -52,3 +52,13 @@ sudo chmod +x /usr/bin/chromedriver
 rm -rf chromedriver
 rm -rf chromedriver_linux64.zip
 
+# Installing babel and the kwola babel plugin globally using npm
+sudo npm install @babel/cli -g
+sudo npm install @babel/core -g
+sudo npm install babel-plugin-kwola -g
+sudo npm install babel-plugin-kwola
+
+# Create the kwola user
+useradd -s /bin/bash --home-dir /home/kwola kwola
+mkdir /home/kwola
+chown -R kwola:kwola /home/kwola
