@@ -53,6 +53,9 @@ ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 
 RUN kwola_install_proxy_cert 1
+RUN mkdir -p /home/kwola/.pki
+RUN mkdir -p /home/kwola/.pki/nssdb
+RUN certutil -d sql:/home/kwola/.pki/nssdb -N
 RUN certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
 
 # Install dependencies for client, which includes downloads
