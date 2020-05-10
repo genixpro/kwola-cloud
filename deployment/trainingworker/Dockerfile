@@ -135,7 +135,7 @@ RUN python3 setup.py install
 
 ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
-ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-22d7937574924.json
+ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 
 # Setup and configure systemd
 ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "training", "-c", "1"]
