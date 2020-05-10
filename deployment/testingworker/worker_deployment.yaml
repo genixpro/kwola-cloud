@@ -27,14 +27,14 @@ spec:
           requests:
             cpu: 1
             memory: 1Gi
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+              - SYS_ADMIN
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 15
       nodeSelector:
         cloud.google.com/gke-preemptible: "true"
-      securityContext:
-        privileged: true
-        capabilities:
-          add:
-            - SYS_ADMIN
