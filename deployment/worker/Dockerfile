@@ -98,6 +98,9 @@ ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 
+RUN kwola_install_proxy_cert 1
+RUN certutil -d sql:/root/.pki/nssdb -A -n 'mitm.it cert authority' -i /root/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
+
 RUN kwola_test_installation
 
 # Setup and configure systemd

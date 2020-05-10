@@ -68,6 +68,8 @@ RUN sudo npm install @babel/core -g
 RUN sudo npm install babel-plugin-kwola -g
 RUN sudo npm install babel-plugin-kwola
 
+
+
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
 RUN pip3 install --upgrade pip
@@ -97,6 +99,10 @@ RUN python3 setup.py install
 ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
+
+RUN kwola_install_proxy_cert 1
+RUN certutil -d sql:/root/.pki/nssdb -A -n 'mitm.it cert authority' -i /root/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
+
 
 RUN kwola_test_installation
 
