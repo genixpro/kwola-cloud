@@ -5,6 +5,8 @@ MAINTAINER Kwola <info@kwola.io>
 
 ENV DEBIAN_FRONTEND noninteractive
 
+RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y
+
 # Create important directories
 RUN mkdir /kwola && \
     mkdir /kwola/deployment && \
