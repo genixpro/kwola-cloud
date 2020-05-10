@@ -106,6 +106,9 @@ ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.js
 RUN chown -R kwola:kwola /kwola
 USER kwola
 RUN kwola_install_proxy_cert 1
+RUN mkdir -p /home/kwola/.pki
+RUN mkdir -p /home/kwola/.pki/nssdb
+RUN certutil -d sql:/home/kwola/.pki/nssdb -N
 RUN certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
 
 RUN kwola_test_installation
