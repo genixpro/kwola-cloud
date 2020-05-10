@@ -53,6 +53,15 @@ RUN apt-get update && apt-get install \
      -y && \
     rm -rf /var/lib/apt/lists/*
 
+# Download and install Chromedriver
+RUN wget https://chromedriver.storage.googleapis.com/80.0.3987.106/chromedriver_linux64.zip
+RUN unzip chromedriver_linux64.zip
+RUN cp chromedriver /usr/bin/
+RUN chmod 644 /usr/bin/chromedriver
+RUN chmod +x /usr/bin/chromedriver
+RUN rm -rf chromedriver
+RUN rm -rf chromedriver_linux64.zip
+
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
 RUN pip3 install --upgrade pip
