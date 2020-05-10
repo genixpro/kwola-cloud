@@ -10,19 +10,29 @@ curl -sL https://deb.nodesource.com/setup_12.x | bash
 apt-get update
 
 apt-get install \
-    build-essential \
+    chromium-browser \
+    ffmpeg \
+    freetype* \
+    fuse \
+    fuse-dbg \
+    g++ \
+    gcc \
+    gcsfuse \
     gfortran \
     git \
     google-cloud-sdk \
-    gcsfuse \
     libatlas-base-dev \
     libblas-dev \
     libcurl4-openssl-dev \
     liblapack-dev \
     libnss3-tools \
     libpng-dev \
+    libsm6 \
     libssl-dev \
+    libxext6 \
     libxml2-dev \
+    mime-support \
+    libxrender-dev \
     mime-support \
     nodejs \
     python3 \
