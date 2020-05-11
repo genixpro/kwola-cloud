@@ -114,6 +114,8 @@ RUN certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /ho
 
 RUN kwola_test_installation
 
+USER root
+
 # Setup and configure systemd
 ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "default"]
 
