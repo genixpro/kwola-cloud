@@ -115,7 +115,7 @@ RUN certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /ho
 RUN kwola_test_installation
 
 # Setup and configure systemd
-ENTRYPOINT ["bash", "-c", "gunicorn -t 600 -w 4 -b 0.0.0.0:80 kwolacloud.app"]
+ENTRYPOINT ["bash", "-c", "gunicorn -t 600 -w 4 -b 0.0.0.0:3000 kwolacloud.app"]
 
-EXPOSE 80
+EXPOSE 3000
 
