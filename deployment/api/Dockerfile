@@ -7,44 +7,93 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y
 
-# Create important directories
-RUN mkdir /kwola && \
-    mkdir /kwola/deployment && \
-    mkdir /kwola/client && \
-    mkdir /kwola/server && \
-    mkdir /kwola/server/models
+RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
+ENV GCSFUSE_REPO=gcsfuse-bionic
+RUN echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | tee /etc/apt/sources.list.d/gcsfuse.list
 
 # Install some basic system dependencies
-COPY deployment/api/install_system_dependencies.sh /kwola/deployment
-RUN chmod +x /kwola/deployment/install_system_dependencies.sh && sh /kwola/deployment/install_system_dependencies.sh
+RUN apt-get update && apt-get install \
+    chromium-browser \
+    ffmpeg \
+    freetype* \
+    fuse \
+    fuse-dbg \
+    g++ \
+    gcc \
+    gcsfuse \
+    gfortran \
+    git \
+    google-cloud-sdk \
+    libatlas-base-dev \
+    libblas-dev \
+    libcurl4-openssl-dev \
+    liblapack-dev \
+    libnss3-tools \
+    libpng-dev \
+    libsm6 \
+    libssl-dev \
+    libxext6 \
+    libxml2-dev \
+    mime-support \
+    libxrender-dev \
+    mime-support \
+    nodejs \
+    python3 \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    python3-tk \
+    python3-venv \
+    sudo \
+    unzip \
+    vim \
+    wget \
+     -y && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN echo "Installing babel and the kwola babel plugin globally using npm"
+# Download and install Chromedriver
+RUN wget https://chromedriver.storage.googleapis.com/81.0.4044.138/chromedriver_linux64.zip
+RUN unzip chromedriver_linux64.zip
+RUN cp chromedriver /usr/bin/
+RUN chmod 644 /usr/bin/chromedriver
+RUN chmod +x /usr/bin/chromedriver
+RUN rm -rf chromedriver
+RUN rm -rf chromedriver_linux64.zip
+
+# Installing babel and the kwola babel plugin globally using npm
 RUN sudo npm install @babel/cli -g
 RUN sudo npm install @babel/core -g
 RUN sudo npm install babel-plugin-kwola -g
 RUN sudo npm install babel-plugin-kwola
 
-# Enable the google cloud service account
-COPY deployment/kwola-cloud-2d7937574924.json /kwola
-WORKDIR /kwola
-RUN gcloud auth activate-service-account --key-file /kwola/kwola-cloud-2d7937574924.json
+# Create the kwola user
+RUN useradd -s /bin/bash --home-dir /home/kwola kwola
+RUN mkdir /home/kwola
+RUN chown -R kwola:kwola /home/kwola
 
-# Install the python dependencies. We do this ahead of running "ADD . /kwola" so the builds run faster when your
-# making code changes regularly. As long as requirements file hasn't changed, then docker can use the cached image
-COPY server/requirements.txt /kwola/server/requirements.txt
+# Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
+# making code changes regularly
+RUN pip3 install --upgrade pip
+RUN pip3 install --upgrade setuptools
+RUN pip3 install numpy
+RUN pip3 install scikit-learn
+RUN pip3 install matplotlib
+RUN pip3 install gunicorn
 RUN pip3 install flask
-RUN pip3 install -r /kwola/server/requirements.txt
 
-# We add package.json first so that the docker image build
-# can use the cache as long as contents of package.json
-# hasn't changed.
-COPY client/package.json /kwola/client
-WORKDIR /kwola/client
-RUN npm install > "/dev/null" 2>&1
+# Set the working directory to /app
+WORKDIR /kwola
 
 # Copy the current directory contents into the container at /kwola
 ADD . /kwola
+
 WORKDIR /kwola
+RUN gcloud auth activate-service-account --key-file deployment/kwola-cloud-2d7937574924.json
+
+# Delete everything in the client directory
+RUN rm -rf /kwola/client
 
 # Install dependencies for server
 WORKDIR /kwola/server
