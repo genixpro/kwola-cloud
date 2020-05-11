@@ -57,7 +57,7 @@ class ViewTestingRun extends Component {
                     <FullColumn>
                         <Row>
                             <HalfColumn>
-                                <SingleCard src={`http://localhost:8000/api/application/${this.state.testingRun.applicationId}/image`} grid/>
+                                <SingleCard src={`/api/application/${this.state.testingRun.applicationId}/image`} grid/>
                             </HalfColumn>
 
                             <HalfColumn>

@@ -54,7 +54,7 @@ class ViewApplication extends Component {
                         <FullColumn>
                             <Row>
                                 <HalfColumn>
-                                            <SingleCard src={`http://localhost:8000/api/application/${this.props.match.params.id}/image`} grid/>
+                                            <SingleCard src={`/api/application/${this.props.match.params.id}/image`} grid/>
                                 </HalfColumn>
 
                                 <HalfColumn>
