@@ -58,9 +58,9 @@ RUN mkdir -p /home/kwola/.pki/nssdb
 RUN certutil -d sql:/home/kwola/.pki/nssdb -N
 RUN certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
 
-# Install dependencies for client, which includes downloads
+# Install dependencies for server
 WORKDIR /kwola/server
-RUN python3 setup.py install > "/dev/null" 2>&1
+RUN python3 setup.py install
 
 # Install some basic system dependencies
 COPY deployment/api/install_kwola.sh /kwola/deployment
