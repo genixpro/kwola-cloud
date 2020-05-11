@@ -44,14 +44,14 @@ RUN npm install > "/dev/null" 2>&1
 
 # Copy the current directory contents into the container at /kwola
 ADD . /kwola
-RUN chown -R kwola:kwola /kwola
-USER kwola
 WORKDIR /kwola
 
 ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 
+RUN chown -R kwola:kwola /kwola
+USER kwola
 RUN kwola_install_proxy_cert 1
 RUN mkdir -p /home/kwola/.pki
 RUN mkdir -p /home/kwola/.pki/nssdb
