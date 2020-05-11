@@ -46,6 +46,10 @@ RUN npm install > "/dev/null" 2>&1
 ADD . /kwola
 WORKDIR /kwola
 
+# Install dependencies for server
+WORKDIR /kwola/server
+RUN python3 setup.py install
+
 ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
@@ -57,10 +61,6 @@ RUN mkdir -p /home/kwola/.pki
 RUN mkdir -p /home/kwola/.pki/nssdb
 RUN certutil -d sql:/home/kwola/.pki/nssdb -N
 RUN certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
-
-# Install dependencies for server
-WORKDIR /kwola/server
-RUN python3 setup.py install
 
 # Install some basic system dependencies
 COPY deployment/api/install_kwola.sh /kwola/deployment
