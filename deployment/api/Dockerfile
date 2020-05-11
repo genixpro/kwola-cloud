@@ -111,10 +111,6 @@ RUN mkdir -p /home/kwola/.pki/nssdb
 RUN certutil -d sql:/home/kwola/.pki/nssdb -N
 RUN certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
 
-# Install some basic system dependencies
-COPY deployment/api/install_kwola.sh /kwola/deployment
-RUN chmod +x /kwola/deployment/install_kwola.sh && sh /kwola/deployment/install_kwola.sh
-
 RUN kwola_test_installation
 
 # Setup and configure systemd
