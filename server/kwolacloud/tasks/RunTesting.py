@@ -22,7 +22,7 @@ from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.tasks import RunTestingStep
 from kwola.tasks import RunTrainingStep
-import torch
+import stripe
 
 def mountTestingRunStorageDrive(testingRunId):
     bucketName = "kwola-testing-run-data-" + testingRunId
@@ -55,6 +55,33 @@ def unmountTestingRunStorageDrive(configDir):
     os.rmdir(configDir)
     return True
 
+def verifyStripeSubscription(testingRun):
+    # Verify this subscription with stripe
+    subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
+    if subscription is None:
+        print("Error! Did not find the Stripe subscription object for this testing run.")
+        return False
+
+    if subscription.status != "active":
+        print("Error! Stripe subscription is not in the active state.")
+        return False
+
+    return True
+
+def attachUsageBilling(config, testingRun):
+    # Verify this subscription with stripe
+    subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
+    if subscription is None:
+        print("Error! Did not find the Stripe subscription object for this testing run.")
+        return False
+
+    stripe.SubscriptionItem.create_usage_record(
+        subscription.items.data[0].id,
+        quantity=config['testing_sequence_length'] * config['web_session_parallel_execution_sessions'],
+        timestamp=datetime.datetime.now().timestamp(),
+        action='increment',
+    )
+
 
 @celeryApplication.task(queue="testing")
 def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
@@ -62,11 +89,15 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
 
     if run is None:
         print(f"Error! {testingRunId} not found.")
-        return {"success":False}
+        return {"success": False}
+
+    # Verify this subscription with stripe
+    if not verifyStripeSubscription(run):
+        return {"success": False}
 
     configDir = mountTestingRunStorageDrive(testingRunId)
     if configDir is None:
-        return {"success":False}
+        return {"success": False}
 
     try:
         config = Configuration(configDir)
@@ -79,6 +110,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         testingStep.saveToDisk(config)
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
+
+        attachUsageBilling(config, run)
 
         return result
     finally:

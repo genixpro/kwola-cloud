@@ -16,6 +16,8 @@ class TestingRun(Document):
 
     applicationId = StringField()
 
+    stripeSubscriptionId = StringField()
+
     configuration = EmbeddedDocumentField(RunConfiguration)
 
     status = StringField()

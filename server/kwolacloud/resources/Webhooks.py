@@ -10,8 +10,6 @@ class StripeWebhook(Resource):
     def post(self):
         data = flask.request.get_json()
 
-        print(data)
-
         return {}
 
 

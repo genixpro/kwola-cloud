@@ -4,7 +4,7 @@
 #
 
 import flask
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, abort
 from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 from ..datamodels.TestingRun import TestingRun
@@ -36,8 +36,31 @@ class TestingRunsGroup(Resource):
     def post(self):
         data = flask.request.get_json()
 
+        customer = stripe.Customer.create(
+            payment_method=data['payment_method']
+            # email: newTestingRun.email,
+            # name: newTestingRun.billingName,
+            # address: newTestingRun.billingAddress
+        )
+
+        subscription = stripe.Subscription.create(
+            customer=customer.id,
+            items=[
+                {
+                    # 'plan': 'plan_HGbYna6KdybwIk', # prod
+                    'plan': 'plan_HGd3ZO1iW4FqHp', # sub
+                },
+            ],
+            expand=['latest_invoice.payment_intent'],
+        )
+
+        if subscription.status != "active":
+            abort(400)
+
+        del data['payment_method']
         data['id'] = CustomIDField.generateNewUUID(TestingRun, config=getKwolaConfiguration())
         data['startTime'] = datetime.datetime.now()
+        data['stripeSubscriptionId'] = subscription.id
 
         newTestingRun = TestingRun(**data)
 
@@ -61,22 +84,3 @@ class TestingRunsSingle(Resource):
         testingRun = TestingRun.objects(id=testing_run_id).limit(1)[0].to_json()
 
         return {"testingRun": json.loads(testingRun)}
-
-
-class TestingRunCharge(Resource):
-    def post(self):
-        data = flask.request.get_json()
-        newTestingRun = TestingRun(**data)
-
-        price = newTestingRun.configuration.testingSequenceLength * newTestingRun.configuration.totalTestingSessions * 0.00003
-
-        intent = stripe.PaymentIntent.create(
-          amount=int(price),
-          currency="usd",
-          description="Testing Run Charge",
-          metadata={"testing_run": newTestingRun.to_json()}
-        )
-
-
-
-        return {"secret": intent.client_secret}

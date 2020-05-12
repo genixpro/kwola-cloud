@@ -1159,9 +1159,22 @@ class PaymentDetailsSection extends Component {
     }
 
 
-    cardDetailsChanged(newValue)
+    cardDetailsChanged(cardChangedEvent)
     {
-        this.setState({card: newValue}, () => this.updateParent());
+        const stateUpdate = {
+            card: cardChangedEvent
+        };
+
+        if (cardChangedEvent.error)
+        {
+            stateUpdate.errorMessage = cardChangedEvent.error.message;
+        }
+        else
+        {
+            stateUpdate.errorMessage = '';
+        }
+
+        this.setState(stateUpdate, () => this.updateParent());
     }
 
     nameChanged(newValue)
@@ -1180,10 +1193,9 @@ class PaymentDetailsSection extends Component {
             <Row>
                 <Column xs={9}>
                     <CardElement
-
-                        onChange={(event) => this.cardDetailsChanged(event.value)}
+                        onChange={(cardChangedEvent) => this.cardDetailsChanged(cardChangedEvent)}
                     />
-
+                    {this.state.errorMessage}
                     <br/>
                     <TextField
                         id="name"
@@ -1262,18 +1274,7 @@ class NewTestingRun extends Component {
 
     launchTestingRunButtonClicked()
     {
-        const data = this.createDataForTestingRun();
-
-       axios.post(`/testing_run_charge`, data).then((response) =>
-       {
-           this.paymentSecret = response.data.secret;
-
-           this.setState({"mode": "payment"})
-       }, (error) =>
-       {
-           console.error(error);
-           alert("error! " + error.toString());
-       });
+        this.setState({"mode": "payment"});
     }
 
     calculatePrice()
@@ -1287,26 +1288,27 @@ class NewTestingRun extends Component {
         {
             const cardElement = elements.getElement(CardElement);
 
-            stripe.confirmCardPayment(this.paymentSecret, {
-                payment_method: {
-                    card: cardElement,
-                    billing_details: {
-                        name: this.state.name,
-                        address: this.state.address
-                    }
+            stripe.createPaymentMethod({
+                type: "card",
+                card: cardElement,
+                billing_details: {
+                    name: this.state.name,
+                    address: this.state.address
                 }
-            }).then(function(result) {
-                if (result.error) {
+            }).then((result) =>
+            {
+                if (result.error)
+                {
                     // Show error to your customer (e.g., insufficient funds)
                     console.log(result.error.message);
-                } else {
-                    // The payment has been processed!
-                    if (result.paymentIntent.status === 'succeeded')
-                    {
-                        axios.post(`/testing_runs`, {}).then((response) => {
-                            this.props.history.push(`/dashboard/testing_runs/${response.data.testingRunId}`);
-                        });
-                    }
+                }
+                else
+                {
+                    const testingRunData = this.createDataForTestingRun();
+                    testingRunData['payment_method'] = result.paymentMethod.id;
+                    axios.post(`/testing_runs`, testingRunData).then((response) => {
+                        this.props.history.push(`/dashboard/testing_runs/${response.data.testingRunId}`);
+                    });
                 }
             });
         })
