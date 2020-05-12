@@ -18,12 +18,26 @@ import MUIPProvider from '../../components/uielements/materialUiPicker/momentPro
 import { rtl } from '../../settings/withDirection';
 import Main, { Root, AppFrame } from './style';
 import './global.css';
+import Auth0 from "../../helpers/auth0";
+import {Elements} from '@stripe/react-stripe-js';
+import stripePromise from '../../stripe';
 
 const { logout } = authAction;
 const { toggleAll } = appActions;
 const { switchActivation } = themeActions;
 
 class App extends Component {
+  constructor() {
+    super();
+  }
+
+
+  componentDidMount()
+  {
+
+  }
+
+
   render() {
     const anchor = rtl === 'rtl' ? 'right' : 'left';
     const {
@@ -41,51 +55,53 @@ class App extends Component {
     const options = { url, classes, theme, locale };
     const currentAppLocale = AppLocale[locale];
     return (
-      <IntlProvider
-        locale={currentAppLocale.locale}
-        messages={currentAppLocale.messages}
-      >
-        <Root>
-          <Debounce time="1000" handler="onResize">
-            <WindowResizeListener
-              onResize={windowSize =>
-                toggleAll(windowSize.windowWidth, windowSize.windowHeight)
-              }
-            />
-          </Debounce>
-          <AppFrame>
-            <Topbar {...options} />
-            {anchor === 'left' ? <Sidebar {...options} anchor={anchor} /> : ''}
+      <Elements stripe={stripePromise}>
+        <IntlProvider
+          locale={currentAppLocale.locale}
+          messages={currentAppLocale.messages}
+        >
+          <Root>
+            <Debounce time="1000" handler="onResize">
+              <WindowResizeListener
+                onResize={windowSize =>
+                  toggleAll(windowSize.windowWidth, windowSize.windowHeight)
+                }
+              />
+            </Debounce>
+            <AppFrame>
+              <Topbar {...options} />
+              {anchor === 'left' ? <Sidebar {...options} anchor={anchor} /> : ''}
 
-            <Main
-              className={
-                view !== 'TabLandView' && view !== 'DesktopView'
-                  ? ''
-                  : fixedNavbar
-                  ? 'fixedNav'
-                  : 'notFixed'
-              }
-            >
-               <PageBreadcrumb url={url} />
+              <Main
+                className={
+                  view !== 'TabLandView' && view !== 'DesktopView'
+                    ? ''
+                    : fixedNavbar
+                    ? 'fixedNav'
+                    : 'notFixed'
+                }
+              >
+                 <PageBreadcrumb url={url} />
 
-              <MUIPProvider>
-                <AppRouter
-                  style={{ height: scrollHeight, overflowY: 'auto' }}
-                  url={url}
-                />
-              </MUIPProvider>
-              {/*<ThemeSwitcherButton />*/}
-              {/* <SecondarySidebar
-                InnerComponent={ThemeSwitcher}
-                currentActiveKey="themeSwitcher"
-                {...propsTopbar}
-              /> */}
-            </Main>
+                <MUIPProvider>
+                  <AppRouter
+                    style={{ height: scrollHeight, overflowY: 'auto' }}
+                    url={url}
+                  />
+                </MUIPProvider>
+                {/*<ThemeSwitcherButton />*/}
+                {/* <SecondarySidebar
+                  InnerComponent={ThemeSwitcher}
+                  currentActiveKey="themeSwitcher"
+                  {...propsTopbar}
+                /> */}
+              </Main>
 
-            {anchor === 'right' ? <Sidebar {...options} anchor={anchor} /> : ''}
-          </AppFrame>
-        </Root>
-      </IntlProvider>
+              {anchor === 'right' ? <Sidebar {...options} anchor={anchor} /> : ''}
+            </AppFrame>
+          </Root>
+        </IntlProvider>
+      </Elements>
     );
   }
 }

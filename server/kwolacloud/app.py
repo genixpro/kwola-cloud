@@ -6,6 +6,10 @@ from flask_restful import Api
 from kombu import Queue
 from mongoengine import connect
 import celery
+import stripe
+
+# stripe.api_key = "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71"
+stripe.api_key = "sk_test_WHeVtPF7ILpuTA4JhGhKleHA00EghhZOTM"
 
 data = loadConfiguration()
 
@@ -40,8 +44,9 @@ from .resources.ExecutionSessionResource import ExecutionSessionGroup, Execution
 from .resources.ExecutionTraceResource import ExecutionTraceGroup, ExecutionTraceSingle
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
 from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSingle
-from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle
+from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle, TestingRunCharge
 from .resources.BugsResource import BugsGroup, BugsSingle, BugVideo
+from .resources.Webhooks import StripeWebhook
 from .resources.HomeResource import Home
 
 api.add_resource(ApplicationGroup, '/api/application')
@@ -68,6 +73,7 @@ api.add_resource(ExecutionTraceSingle, '/api/execution_traces/<string:execution_
 
 api.add_resource(TestingRunsGroup, '/api/testing_runs')
 api.add_resource(TestingRunsSingle, '/api/testing_runs/<string:testing_run_id>')
+api.add_resource(TestingRunCharge, '/api/testing_run_charge')
 
 
 api.add_resource(TrainingStepGroup, '/api/training_steps')
@@ -77,6 +83,8 @@ api.add_resource(TrainingStepSingle, '/api/training_steps/<string:training_step_
 api.add_resource(BugsGroup, '/api/bugs')
 api.add_resource(BugsSingle, '/api/bugs/<string:bug_id>')
 api.add_resource(BugVideo, '/api/bugs/<string:bug_id>/video')
+
+api.add_resource(StripeWebhook, '/api/stripe_webhook')
 
 api.add_resource(Home, '/api/home')
 

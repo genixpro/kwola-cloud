@@ -3,9 +3,9 @@ export default {
 };
 
 const siteConfig = {
-  siteName: 'MetaAdmin',
+  siteName: 'Kwola',
   siteIcon: 'ion-flash',
-  footerText: 'MetaAdmin ©2018 Created by RedQ, Inc',
+  footerText: 'Kwola ©2020 Kwola Software Testing Inc.',
   enableAnimatedRoute: false,
 };
 const themeConfig = {
@@ -22,8 +22,8 @@ const AlgoliaSearchConfig = {
   apiKey: '',
 };
 const Auth0Config = {
-  domain: '',
-  clientID: '',
+  domain: 'kwola.auth0.com',
+  clientID: 'o0t16B5wdi12fnw0koozvdk8dq5qtOwk',
   audience: '',
   options: {
     auth: {
@@ -31,9 +31,9 @@ const Auth0Config = {
       redirect: false,
     },
     languageDictionary: {
-      title: 'Metaadmin',
-      emailInputPlaceholder: 'demo@gmail.com',
-      passwordInputPlaceholder: 'demodemo',
+      title: 'Kwola',
+      emailInputPlaceholder: 'email',
+      passwordInputPlaceholder: 'password',
     },
     icon: '',
     theme: {

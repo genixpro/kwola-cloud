@@ -2,6 +2,7 @@ import Auth0Lock from 'auth0-lock';
 import history from './history';
 import { Auth0Config } from '../../settings';
 import { notification } from '../../components';
+import axios from "axios";
 
 class Auth0Helper {
   isValid = Auth0Config.clientID && Auth0Config.domain;
@@ -11,6 +12,7 @@ class Auth0Helper {
     this.logout = this.logout.bind(this);
     this.handleAuthentication = this.handleAuthentication.bind(this);
     this.isAuthenticated = this.isAuthenticated.bind(this);
+    this.updateAxiosToken();
   }
   login(handleLogin) {
     this.lock = this.isValid
@@ -25,9 +27,7 @@ class Auth0Helper {
     }
     this.lock.on('authenticated', authResult => {
       if (authResult && authResult.accessToken) {
-        if (window) {
-          localStorage.setItem('id_token', authResult.accessToken);
-        }
+        this.setSession(authResult);
         handleLogin();
       } else {
         notification('error', 'Wrong mail or password');
@@ -36,9 +36,22 @@ class Auth0Helper {
     this.lock.show();
   }
   handleAuthentication(props) {
-    localStorage.setItem('id_token', 'secret token');
+    // localStorage.setItem('id_token', 'secret token');
     history.replace('/dashboard');
   }
+
+  updateAxiosToken()
+  {
+    if (this.isAuthenticated())
+    {
+      axios.defaults.headers.common['Authorization'] = 'Basic ' + btoa(localStorage.getItem('id_token') + ':' + localStorage.getItem('access_token'));
+    }
+    else
+    {
+      axios.defaults.headers.common['Authorization'] = '';
+    }
+  }
+
   setSession(authResult) {
     // Set the time that the access token will expire at
     let expiresAt = JSON.stringify(
@@ -47,8 +60,7 @@ class Auth0Helper {
     localStorage.setItem('access_token', authResult.accessToken);
     localStorage.setItem('id_token', authResult.idToken);
     localStorage.setItem('expires_at', expiresAt);
-    // navigate to the home route
-    history.replace('/');
+    this.updateAxiosToken();
   }
 
   logout() {
@@ -58,6 +70,7 @@ class Auth0Helper {
     localStorage.removeItem('expires_at');
     // navigate to the home route
     history.replace('/');
+    this.updateAxiosToken();
   }
 
   isAuthenticated() {

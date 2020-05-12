@@ -14,7 +14,7 @@ import datetime
 import bson
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration
-
+import stripe
 
 class TestingRunsGroup(Resource):
     def __init__(self):
@@ -62,3 +62,21 @@ class TestingRunsSingle(Resource):
 
         return {"testingRun": json.loads(testingRun)}
 
+
+class TestingRunCharge(Resource):
+    def post(self):
+        data = flask.request.get_json()
+        newTestingRun = TestingRun(**data)
+
+        price = newTestingRun.configuration.testingSequenceLength * newTestingRun.configuration.totalTestingSessions * 0.00003
+
+        intent = stripe.PaymentIntent.create(
+          amount=int(price),
+          currency="usd",
+          description="Testing Run Charge",
+          metadata={"testing_run": newTestingRun.to_json()}
+        )
+
+
+
+        return {"secret": intent.client_secret}

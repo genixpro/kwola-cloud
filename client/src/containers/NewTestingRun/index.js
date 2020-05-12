@@ -26,7 +26,8 @@ import {
     FormGroup,
     FormControlLabel,
 } from '../../components/uielements/form';
-
+import {PaymentRequestButtonElement, CardElement, useStripe, useElements, ElementsConsumer} from "@stripe/react-stripe-js";
+import stripePromise from "../../stripe";
 
 function addCommas(value)
 {
@@ -1137,7 +1138,78 @@ class ErrorsConfiguration extends Component {
 
 
 
+class PaymentDetailsSection extends Component {
+    state = {
+        card: null,
+        name: "",
+        address: ""
+    }
 
+    updateParent()
+    {
+        this.props.onChange({
+            name: this.state.name,
+            address: this.state.address,
+            card: this.state.card
+        })
+    }
+
+    componentDidMount() {
+
+    }
+
+
+    cardDetailsChanged(newValue)
+    {
+        this.setState({card: newValue}, () => this.updateParent());
+    }
+
+    nameChanged(newValue)
+    {
+        this.setState({name: newValue}, () => this.updateParent());
+    }
+
+
+    addressChanged(newValue)
+    {
+        this.setState({address: newValue}, () => this.updateParent());
+    }
+
+    render() {
+        return <div>
+            <Row>
+                <Column xs={9}>
+                    <CardElement
+
+                        onChange={(event) => this.cardDetailsChanged(event.value)}
+                    />
+
+                    <br/>
+                    <TextField
+                        id="name"
+                        label="Name"
+                        type={"text"}
+                        value={this.state.name}
+                        onChange={(event) => this.nameChanged(event.target.value)}
+                        margin="normal"
+                    />
+                    <br/>
+                    <TextField
+                        id="address"
+                        label="Billing Address"
+                        type={"text"}
+                        value={this.state.address}
+                        onChange={(event) => this.addressChanged(event.target.value)}
+                        margin="normal"
+                    />
+                </Column>
+                <Column xs={3}>
+                    <p>Please provide your payment details</p>
+                </Column>
+            </Row>
+        </div>;
+    }
+}
 
 
 class NewTestingRun extends Component {
@@ -1146,7 +1218,11 @@ class NewTestingRun extends Component {
         tab: 0,
         length: 250,
         sessions: 20000,
-        hours: 6
+        hours: 6,
+        paymentRequest: null,
+        mode: "details",
+        name: "",
+        address: "",
     };
 
     componentDidMount()
@@ -1157,10 +1233,9 @@ class NewTestingRun extends Component {
         });
     }
 
-
-    launchTestingRunButtonClicked()
+    createDataForTestingRun()
     {
-        const data = {
+        return {
             applicationId: this.props.match.params.id,
             configuration: {
                 url: this.state.application.url,
@@ -1180,11 +1255,20 @@ class NewTestingRun extends Component {
                 totalTestingSessions: this.state.sessions,
                 hours: this.state.hours
             }
-        }
+        };
+    }
 
-       axios.post(`/testing_runs`, data).then((response) =>
+
+
+    launchTestingRunButtonClicked()
+    {
+        const data = this.createDataForTestingRun();
+
+       axios.post(`/testing_run_charge`, data).then((response) =>
        {
-           this.props.history.push(`/dashboard/testing_runs/${response.data.testingRunId}`);
+           this.paymentSecret = response.data.secret;
+
+           this.setState({"mode": "payment"})
        }, (error) =>
        {
            console.error(error);
@@ -1192,114 +1276,167 @@ class NewTestingRun extends Component {
        });
     }
 
+    calculatePrice()
+    {
+        return Number((this.state.length * this.state.sessions * 0.00003).toFixed(2));
+    }
+
+    completeOrder(elements)
+    {
+        stripePromise.then((stripe) =>
+        {
+            const cardElement = elements.getElement(CardElement);
+
+            stripe.confirmCardPayment(this.paymentSecret, {
+                payment_method: {
+                    card: cardElement,
+                    billing_details: {
+                        name: this.state.name,
+                        address: this.state.address
+                    }
+                }
+            }).then(function(result) {
+                if (result.error) {
+                    // Show error to your customer (e.g., insufficient funds)
+                    console.log(result.error.message);
+                } else {
+                    // The payment has been processed!
+                    if (result.paymentIntent.status === 'succeeded')
+                    {
+                        axios.post(`/testing_runs`, {}).then((response) => {
+                            this.props.history.push(`/dashboard/testing_runs/${response.data.testingRunId}`);
+                        });
+                    }
+                }
+            });
+        })
+    }
+
     render() {
         const { result } = this.state;
+
         return (
                 <LayoutWrapper>
-                    <FullColumn>
-                        <Row>
-                            <TwoThirdColumn>
-                                <AppBar position="static" color="default">
-                                    <Tabs
-                                        value={this.state.tab}
-                                        onChange={(changeEvent, newTab) => this.setState({tab: newTab})}
-                                        variant="scrollable"
-                                        scrollButtons="on"
-                                        indicatorColor="primary"
-                                        textColor="primary"
-                                    >
-                                        {/*<Tab label="Recurring Testing" icon={<ScheduleIcon />} />*/}
-                                        <Tab label="One-Time Run" icon={<SkipNextIcon />} />
-                                    </Tabs>
-                                </AppBar>
-                                {this.state.tab === 0 ?
-                                    <div>
-                                        {/*<Papersheet*/}
-                                        {/*    title={``}*/}
-                                        {/*    subtitle={``}*/}
-                                        {/*>*/}
-                                        {/*    <RecurringOptions onChange={(data) => this.setState(data)} />*/}
-                                        {/*</Papersheet>*/}
-                                        {/*<br/>*/}
-                                        {/*<br/>*/}
-                                        {/*<br/>*/}
-                                        <Papersheet
-                                            // title={`Size of Testing Run`}
-                                            title={``}
-                                            subtitle={``}
-                                        >
-                                            <SizeOfRun onChange={(data) => this.setState(data)} />
-                                        </Papersheet>
-                                        <br/>
-                                        <br/>
-                                        <br/>
-                                        <Papersheet
-                                            title={`Credentials`}
-                                            subtitle={``}
-                                        >
-                                            <AutologinCredentials onChange={(data) => this.setState(data)} />
-                                        </Papersheet>
-                                        <br/>
-                                        <br/>
-                                        <br/>
-                                        <Papersheet
-                                            title={`Actions`}
-                                            subtitle={``}
-                                        >
-                                            <ActionsConfiguration onChange={(data) => this.setState(data)} />
-                                        </Papersheet>
-                                        {/*<br/>*/}
-                                        {/*<br/>*/}
-                                        {/*<br/>*/}
-                                        {/*<Papersheet*/}
-                                        {/*    title={`Errors`}*/}
-                                        {/*    subtitle={``}*/}
-                                        {/*>*/}
-                                        {/*    <ErrorsConfiguration onChange={(data) => this.setState(data)} />*/}
-                                        {/*</Papersheet>*/}
-                                    </div>
-                                    : null
-                                }
-                                {
-                                    this.state.tab === 1 ?
-                                        <div>
-                                            <Papersheet
-                                                title={`Size of Testing Run`}
-                                                subtitle={``}
-                                            >
-                                                <SizeOfRun onChange={(data) => this.setState(data)} />
-                                            </Papersheet>
-                                            <br/>
-                                            <br/>
-                                            <br/>
-                                            <Papersheet
-                                                title={`Credentials`}
-                                                subtitle={``}
-                                            >
-                                                <AutologinCredentials onChange={(data) => this.setState(data)} />
-                                            </Papersheet>
-                                            <br/>
-                                            <br/>
-                                            <br/>
-                                            <Papersheet
-                                                title={`Actions`}
-                                                subtitle={``}
-                                            >
-                                                <ActionsConfiguration onChange={(data) => this.setState(data)} />
-                                            </Papersheet>
-                                            <br/>
-                                            <br/>
-                                            <br/>
-                                            <Papersheet
-                                                title={`Errors`}
-                                                subtitle={``}
-                                            >
-                                                <ErrorsConfiguration onChange={(data) => this.setState(data)} />
-                                            </Papersheet>
-                                        </div>
-                                        : null
-                                }
-                            </TwoThirdColumn>
+                    <ElementsConsumer>
+                        {({elements, stripe}) => (
+                            <FullColumn>
+                                <Row>
+                                    {
+                                        this.state.mode === "details" ? <TwoThirdColumn>
+                                            <AppBar position="static" color="default">
+                                                <Tabs
+                                                    value={this.state.tab}
+                                                    onChange={(changeEvent, newTab) => this.setState({tab: newTab})}
+                                                    variant="scrollable"
+                                                    scrollButtons="on"
+                                                    indicatorColor="primary"
+                                                    textColor="primary"
+                                                >
+                                                    {/*<Tab label="Recurring Testing" icon={<ScheduleIcon />} />*/}
+                                                    <Tab label="One-Time Run" icon={<SkipNextIcon />} />
+                                                </Tabs>
+                                            </AppBar>
+                                            {this.state.tab === 0 ?
+                                                <div>
+                                                    {/*<Papersheet*/}
+                                                    {/*    title={``}*/}
+                                                    {/*    subtitle={``}*/}
+                                                    {/*>*/}
+                                                    {/*    <RecurringOptions onChange={(data) => this.setState(data)} />*/}
+                                                    {/*</Papersheet>*/}
+                                                    {/*<br/>*/}
+                                                    {/*<br/>*/}
+                                                    {/*<br/>*/}
+                                                    <Papersheet
+                                                        // title={`Size of Testing Run`}
+                                                        title={``}
+                                                        subtitle={``}
+                                                    >
+                                                        <SizeOfRun onChange={(data) => this.setState(data)} />
+                                                    </Papersheet>
+                                                    <br/>
+                                                    <br/>
+                                                    <br/>
+                                                    <Papersheet
+                                                        title={`Credentials`}
+                                                        subtitle={``}
+                                                    >
+                                                        <AutologinCredentials onChange={(data) => this.setState(data)} />
+                                                    </Papersheet>
+                                                    <br/>
+                                                    <br/>
+                                                    <br/>
+                                                    <Papersheet
+                                                        title={`Actions`}
+                                                        subtitle={``}
+                                                    >
+                                                        <ActionsConfiguration onChange={(data) => this.setState(data)} />
+                                                    </Papersheet>
+                                                    {/*<br/>*/}
+                                                    {/*<br/>*/}
+                                                    {/*<br/>*/}
+                                                    {/*<Papersheet*/}
+                                                    {/*    title={`Errors`}*/}
+                                                    {/*    subtitle={``}*/}
+                                                    {/*>*/}
+                                                    {/*    <ErrorsConfiguration onChange={(data) => this.setState(data)} />*/}
+                                                    {/*</Papersheet>*/}
+                                                </div>
+                                                : null
+                                            }
+                                            {
+                                                this.state.tab === 1 ?
+                                                    <div>
+                                                        <Papersheet
+                                                            title={`Size of Testing Run`}
+                                                            subtitle={``}
+                                                        >
+                                                            <SizeOfRun onChange={(data) => this.setState(data)} />
+                                                        </Papersheet>
+                                                        <br/>
+                                                        <br/>
+                                                        <br/>
+                                                        <Papersheet
+                                                            title={`Credentials`}
+                                                            subtitle={``}
+                                                        >
+                                                            <AutologinCredentials onChange={(data) => this.setState(data)} />
+                                                        </Papersheet>
+                                                        <br/>
+                                                        <br/>
+                                                        <br/>
+                                                        <Papersheet
+                                                            title={`Actions`}
+                                                            subtitle={``}
+                                                        >
+                                                            <ActionsConfiguration onChange={(data) => this.setState(data)} />
+                                                        </Papersheet>
+                                                        <br/>
+                                                        <br/>
+                                                        <br/>
+                                                        <Papersheet
+                                                            title={`Errors`}
+                                                            subtitle={``}
+                                                        >
+                                                            <ErrorsConfiguration onChange={(data) => this.setState(data)} />
+                                                        </Papersheet>
+                                                    </div>
+                                                    : null
+                                            }
+                                        </TwoThirdColumn> : null
+                                    }
+
+                                    {
+                                        this.state.mode === "payment" ?
+                                            <TwoThirdColumn>
+                                                <Papersheet
+                                                    title={`Payment Details`}
+                                                    subtitle={``}
+                                                >
+                                                    <PaymentDetailsSection onChange={(data) => this.setState(data)} />
+                                                </Papersheet>
+                                            </TwoThirdColumn> : null
+                                    }
 
                             <OneThirdColumn>
                                 <div style={{"position":"sticky", "top":"5vh"}}>
@@ -1349,13 +1486,23 @@ class NewTestingRun extends Component {
                                                             </div>
                                                             <div className="orderTableFooter">
                                                                 <span>Total</span>
-                                                                <span>= ${(this.state.length * this.state.sessions * 0.00003).toFixed(2)} USD / run</span>
+                                                                <span>= ${this.calculatePrice().toFixed(2)} USD / run</span>
                                                             </div>
+                                                            {
+                                                                this.state.mode === "details" ?
+                                                                    <Button variant="extended" color="primary"
+                                                                            className="orderBtn" onClick={() => this.launchTestingRunButtonClicked()}>
+                                                                        Launch Testing Run
+                                                                    </Button> : null
+                                                            }
 
-                                                            <Button variant="extended" color="primary"
-                                                                    className="orderBtn" onClick={() => this.launchTestingRunButtonClicked()}>
-                                                                Launch Testing Run
-                                                            </Button>
+                                                            {
+                                                                this.state.mode === "payment" ?
+                                                                    <Button variant="extended" color="primary"
+                                                                            className="orderBtn" onClick={() => this.completeOrder(elements)}>
+                                                                        Complete Order
+                                                                    </Button> : null
+                                                            }
                                                         </div>
                                                     </div>
                                                 </FullColumn>
@@ -1366,6 +1513,8 @@ class NewTestingRun extends Component {
                             </OneThirdColumn>
                         </Row>
                     </FullColumn>
+                            )}
+                    </ElementsConsumer>
                 </LayoutWrapper>
 
         );
