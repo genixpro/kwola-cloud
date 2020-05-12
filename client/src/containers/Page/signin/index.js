@@ -6,7 +6,6 @@ import fbBtnSvg from '../../../images/facebook-app-symbol.svg';
 import gpBtnSvg from '../../../images/google-plus.svg';
 import authBtnSvg from '../../../images/auth0.svg';
 import Button from '../../../components/uielements/button';
-import authAction from '../../../redux/auth/actions';
 import TextField from '../../../components/uielements/textfield';
 import IntlMessages from '../../../components/utility/intlMessages';
 import Scrollbars from '../../../components/utility/customScrollBar';
@@ -15,7 +14,6 @@ import Auth0 from '../../../helpers/auth0';
 import Firebase from '../../../helpers/firebase';
 import FirebaseLogin from '../../../components/firebase';
 
-const { login } = authAction;
 class SignIn extends Component {
   state = {
     redirectToReferrer: false,
@@ -24,10 +22,10 @@ class SignIn extends Component {
   };
 
   componentDidMount() {
-    if(!Auth0.isAuthenticated())
-    {
+    // if(!Auth0.isAuthenticated())
+    // {
       Auth0.login(this.handleLogin);
-    }
+    // }
   }
 
 
@@ -40,9 +38,9 @@ class SignIn extends Component {
     }
   }
   handleLogin = () => {
-    const { login } = this.props;
-    const { username, password } = this.state;
-    login({ username, password });
+    // const { login } = this.props;
+    // const { username, password } = this.state;
+    // login({ username, password });
     this.props.history.push('/dashboard');
   };
   onChangeUsername = event => this.setState({ username: event.target.value });
@@ -61,7 +59,7 @@ class SignIn extends Component {
     //     <div className="mateSignInPageImgPart">
     //       <div className="mateSignInPageImg">
     //         <img src={signinImg} alt="Kiwi standing on oval" />
-    //       </div>
+    //       </div>3
     //     </div>
     //
     //     <div className="mateSignInPageContent">
@@ -180,9 +178,4 @@ class SignIn extends Component {
     // );
   }
 }
-export default connect(
-  state => ({
-    isLoggedIn: state.Auth.idToken !== null ? true : false,
-  }),
-  { login }
-)(SignIn);
+export default SignIn;

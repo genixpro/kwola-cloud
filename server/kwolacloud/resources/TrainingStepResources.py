@@ -3,13 +3,14 @@
 #     All Rights Reserved.
 #
 
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, abort
 from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 
 from kwola.datamodels.TrainingStepModel import TrainingStep
 import json
 import math
+from ..auth import authenticate
 
 
 class TrainingStepGroup(Resource):
@@ -22,6 +23,10 @@ class TrainingStepGroup(Resource):
         # self.postParser.add_argument('status', help='This field cannot be blank', required=False)
 
     def get(self):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         trainingSteps = TrainingStep.objects().order_by("-startTime").only("startTime", "id", "status", "averageLoss")
 
         for trainingStep in trainingSteps:
@@ -46,6 +51,10 @@ class TrainingStepSingle(Resource):
         # self.postParser.add_argument('status', help='This field cannot be blank', required=True)
 
     def get(self, training_step_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         trainingStep = TrainingStep.objects(id=training_step_id).limit(1)[0]
 
         return {"trainingStep": json.loads(trainingStep.to_json())}

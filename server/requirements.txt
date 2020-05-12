@@ -13,3 +13,5 @@ dnspython
 wheel
 google-cloud-storage
 stripe
+jwcrypto
+flask_httpauth

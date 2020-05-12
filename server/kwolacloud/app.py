@@ -7,28 +7,28 @@ from kombu import Queue
 from mongoengine import connect
 import celery
 import stripe
+from .auth import authenticate
 
-# stripe.api_key = "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71"
-stripe.api_key = "sk_test_WHeVtPF7ILpuTA4JhGhKleHA00EghhZOTM"
 
-data = loadConfiguration()
+configData = loadConfiguration()
 
-connect(data['mongo']['db'], host=data['mongo']['uri'])
+stripe.api_key = configData['stripe']['apiKey']
+
+connect(configData['mongo']['db'], host=configData['mongo']['uri'])
 
 flaskApplication = Flask(__name__)
-flaskApplication.config['JWT_SECRET_KEY'] = 'secretKey'
-jwt = JWTManager(flaskApplication)
 api = Api(flaskApplication)
 CORS(flaskApplication)
+
 # Technically for gunicorn to find the flask application object, it must have the variable
 # name "application". However we prefer the more explicit flaskApplication, this being the
 # exception
 application = flaskApplication
 
 celeryApplication = celery.Celery()
-celeryApplication.conf.broker_url = f"redis://{data['redis']['host']}:{data['redis']['port']}/{data['redis']['taskDB']}"
-celeryApplication.conf.broker_transport_options = {'visibility_timeout': data['redis']['visibility_timeout']}  # 1 hour.
-celeryApplication.conf.result_backend = f"redis://{data['redis']['host']}:{data['redis']['port']}/{data['redis']['resultDB']}"
+celeryApplication.conf.broker_url = f"redis://{configData['redis']['host']}:{configData['redis']['port']}/{configData['redis']['taskDB']}"
+celeryApplication.conf.broker_transport_options = {'visibility_timeout': configData['redis']['visibility_timeout']}  # 1 hour.
+celeryApplication.conf.result_backend = f"redis://{configData['redis']['host']}:{configData['redis']['port']}/{configData['redis']['resultDB']}"
 
 celeryApplication.conf.task_default_queue = 'default'
 celeryApplication.conf.task_queues = (

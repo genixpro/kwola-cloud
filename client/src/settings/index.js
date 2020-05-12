@@ -23,12 +23,17 @@ const AlgoliaSearchConfig = {
 };
 const Auth0Config = {
   domain: 'kwola.auth0.com',
-  clientID: 'o0t16B5wdi12fnw0koozvdk8dq5qtOwk',
-  audience: '',
+  clientID: process.env.REACT_APP_AUTH0_CLIENT_ID,
+  audience: process.env.REACT_APP_AUTH0_AUDIENCE,
   options: {
+    audience: process.env.REACT_APP_AUTH0_AUDIENCE,
     auth: {
       autoParseHash: true,
       redirect: false,
+      responseType: 'token id_token',
+      params: {
+        scope: "openid profile email"
+      }
     },
     languageDictionary: {
       title: 'Kwola',

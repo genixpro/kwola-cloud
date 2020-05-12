@@ -37,6 +37,11 @@ const PublicRoutes = ({ history, isLoggedIn }) => (
         component={lazy(() => import('./containers/Page/signin'))}
       />
       <Route
+        exact
+        path="/login"
+        component={lazy(() => import('./containers/Page/signin'))}
+      />
+      <Route
         path="/auth0loginCallback"
         render={props => {
           Auth0.handleAuthentication(props);

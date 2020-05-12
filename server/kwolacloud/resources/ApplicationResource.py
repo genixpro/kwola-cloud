@@ -15,6 +15,7 @@ from selenium.webdriver.chrome.options import Options
 import flask
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration
+from ..auth import authenticate
 
 class ApplicationGroup(Resource):
     def __init__(self):
@@ -23,11 +24,19 @@ class ApplicationGroup(Resource):
         self.postParser.add_argument('url', help='This field cannot be blank', required=True)
 
     def get(self):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         applications = ApplicationModel.objects().no_dereference().to_json()
 
         return {"applications": json.loads(applications)}
 
     def post(self):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         data = self.postParser.parse_args()
 
 
@@ -60,6 +69,10 @@ class ApplicationSingle(Resource):
         self.postParser.add_argument('url', help='This field cannot be blank', required=True)
 
     def get(self, application_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         application = ApplicationModel.objects(id=application_id).limit(1).first()
 
         if application is not None:
@@ -70,6 +83,10 @@ class ApplicationSingle(Resource):
 
 class ApplicationImage(Resource):
     def get(self, application_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         application = ApplicationModel.objects(id=application_id).limit(1).first()
 
         chrome_options = Options()

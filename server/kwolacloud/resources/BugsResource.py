@@ -17,6 +17,7 @@ import flask
 from kwola.config.config import Configuration
 import os.path
 from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from ..auth import authenticate
 
 class BugsGroup(Resource):
     def __init__(self):
@@ -29,6 +30,10 @@ class BugsGroup(Resource):
         pass
 
     def get(self):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         queryParams = {}
 
         testingRunId = flask.request.args.get('testingRunId')
@@ -46,6 +51,10 @@ class BugsSingle(Resource):
         self.postParser = reqparse.RequestParser()
 
     def get(self, bug_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         bug = BugModel.objects(id=bug_id).first()
 
         return {"bug": json.loads(bug.to_json())}

@@ -33,6 +33,7 @@
     "immutable": "4.0.0-rc.12",
     "js-info-bubble": "git+https://github.com/RedQ/js-info-bubble.git",
     "js-rich-marker": "1.1.2",
+    "jsonwebtoken": "^8.5.1",
     "jss-rtl": "^0.3.0",
     "leaflet": "1.5.1",
     "leaflet-routing-machine": "3.2.12",

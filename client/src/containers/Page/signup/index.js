@@ -8,7 +8,6 @@ import authBtnSvg from '../../../images/auth0.svg';
 import TextField from '../../../components/uielements/textfield';
 import Scrollbars from '../../../components/utility/customScrollBar';
 import Button from '../../../components/uielements/button';
-import authAction from '../../../redux/auth/actions';
 import IntlMessages from '../../../components/utility/intlMessages';
 import SignUpStyleWrapper from './signup.style';
 import Auth0 from '../../../helpers/auth0/index';
@@ -16,7 +15,6 @@ import Firebase from '../../../helpers/firebase';
 import FirebaseLogin from '../../../components/firebase';
 import { Checkbox } from './signup.style';
 
-const { login } = authAction;
 
 class SignUp extends Component {
   state = {
@@ -183,5 +181,7 @@ export default connect(
   state => ({
     isLoggedIn: state.Auth.idToken !== null ? true : false,
   }),
-  { login }
+  {
+
+  }
 )(SignUp);

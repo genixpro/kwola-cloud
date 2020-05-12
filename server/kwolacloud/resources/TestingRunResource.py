@@ -15,6 +15,7 @@ import bson
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration
 import stripe
+from ..auth import authenticate
 
 class TestingRunsGroup(Resource):
     def __init__(self):
@@ -29,11 +30,19 @@ class TestingRunsGroup(Resource):
     def get(self):
         queryParams = {}
 
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         testingRuns = TestingRun.objects().no_dereference().order_by("-startTime").limit(10).to_json()
 
         return {"testingRuns": json.loads(testingRuns)}
 
     def post(self):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         data = flask.request.get_json()
 
         customer = stripe.Customer.create(
@@ -81,6 +90,10 @@ class TestingRunsSingle(Resource):
         self.postParser.add_argument('status', help='This field cannot be blank', required=True)
 
     def get(self, testing_run_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         testingRun = TestingRun.objects(id=testing_run_id).limit(1)[0].to_json()
 
         return {"testingRun": json.loads(testingRun)}

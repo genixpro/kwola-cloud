@@ -76,7 +76,7 @@ def attachUsageBilling(config, testingRun):
         return False
 
     stripe.SubscriptionItem.create_usage_record(
-        subscription.items.data[0].id,
+        subscription.items.configData[0].id,
         quantity=config['testing_sequence_length'] * config['web_session_parallel_execution_sessions'],
         timestamp=datetime.datetime.now().timestamp(),
         action='increment',

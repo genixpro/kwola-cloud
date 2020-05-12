@@ -3,6 +3,7 @@ import history from './history';
 import { Auth0Config } from '../../settings';
 import { notification } from '../../components';
 import axios from "axios";
+import jwt from "jsonwebtoken";
 
 class Auth0Helper {
   isValid = Auth0Config.clientID && Auth0Config.domain;
@@ -44,11 +45,11 @@ class Auth0Helper {
   {
     if (this.isAuthenticated())
     {
-      axios.defaults.headers.common['Authorization'] = 'Basic ' + btoa(localStorage.getItem('id_token') + ':' + localStorage.getItem('access_token'));
+      axios.defaults.headers.common['WWW-Authenticate'] = localStorage.getItem('id_token');
     }
     else
     {
-      axios.defaults.headers.common['Authorization'] = '';
+      axios.defaults.headers.common['WWW-Authenticate'] = '';
     }
   }
 

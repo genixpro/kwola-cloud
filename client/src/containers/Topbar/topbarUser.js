@@ -11,10 +11,7 @@ import {
   SettingsList,
   Icon,
 } from './topbarDropdown.style';
-import authAction from '../../redux/auth/actions';
 import Image from '../../images/user.jpg';
-
-const { logout } = authAction;
 
 class TopbarUser extends Component {
   state = {
@@ -104,5 +101,7 @@ export default connect(
     ...state.App,
     customizedTheme: state.ThemeSwitcher.topbarTheme,
   }),
-  { logout }
+  {
+
+  }
 )(TopbarUser);

@@ -11,5 +11,13 @@
     "taskDB": 0,
     "resultDB": 1,
     "visibility_timeout": 60
+  },
+  "stripe": {
+    "apiKey": "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71"
+  },
+  "auth0": {
+    "apiUrl": "https://app.kwola.io/",
+    "domain": "https://kwola.auth0.com/",
+    "keyFile": "config/keys/staging_key.json"
   }
 }

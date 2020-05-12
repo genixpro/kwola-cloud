@@ -7,7 +7,6 @@ import AppRouter from './appRouter';
 import Sidebar from '../Sidebar';
 import Topbar from '../Topbar';
 import AppLocale from '../../languageProvider';
-import authAction from '../../redux/auth/actions';
 import appActions from '../../redux/app/actions';
 import themeActions from '../../redux/themeSwitcher/actions';
 import ThemeSwitcher from '../ThemeSwitcher';
@@ -22,7 +21,6 @@ import Auth0 from "../../helpers/auth0";
 import {Elements} from '@stripe/react-stripe-js';
 import stripePromise from '../../stripe';
 
-const { logout } = authAction;
 const { toggleAll } = appActions;
 const { switchActivation } = themeActions;
 
@@ -118,7 +116,6 @@ const mapStateToProps = state => {
 const appConect = connect(
   mapStateToProps,
   {
-    logout,
     toggleAll,
     switchActivation,
   }
