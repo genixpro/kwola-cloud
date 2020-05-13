@@ -11,7 +11,10 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
 RUN apt-get update && apt-get install \
     nginx \
     nodejs -y > "/dev/null" 2>&1 && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+        rm -rf /usr/share/doc/* && \
+        rm -rf /usr/share/icons/* && \
+        rm -rf /usr/share/man/*
 
 # Set the working directory to /app
 WORKDIR /kwola
@@ -24,9 +27,6 @@ COPY client/package.json /kwola/client
 WORKDIR /kwola/client
 RUN npm install && \
         rm -rf /root/.npm/_cacache && \
-        rm -rf /usr/share/doc/* && \
-        rm -rf /usr/share/icons/* && \
-        rm -rf /usr/share/man/* && \
         rm -rf /var/cache/*
 
 ARG KWOLA_ENV
