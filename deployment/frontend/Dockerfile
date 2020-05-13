@@ -47,7 +47,7 @@ RUN npm run-script build && \
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
-RUN du -h -d 3 -t 1M /
+RUN du -h -d 3 -t 1M /; exit 0
 
 # Setup and configure systemd
 ENTRYPOINT ["/usr/sbin/nginx", "-g", "daemon off;"]
