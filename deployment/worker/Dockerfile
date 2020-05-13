@@ -118,20 +118,19 @@ ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 
-RUN chown -R kwola:kwola /kwola && chown -R kwola:kwola /home/kwola
-USER kwola
 ENV HOME=/home/kwola
-RUN chown -R kwola:kwola /home/kwola && \
+RUN chown -R kwola:kwola /kwola
+    chown -R kwola:kwola /home/kwola && \
     chmod +r+r+r -R /usr/lib/python3 && \
-    kwola_install_proxy_cert 1 && \
-    mkdir -p /home/kwola/.pki && \
-    mkdir -p /home/kwola/.pki/nssdb && \
-    certutil -d sql:/home/kwola/.pki/nssdb -N && \
-    certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
+    su kwola -c "kwola_install_proxy_cert 1" && \
+    su kwola -c "mkdir -p /home/kwola/.pki" && \
+    su kwola -c "mkdir -p /home/kwola/.pki/nssdb" && \
+    su kwola -c "certutil -d sql:/home/kwola/.pki/nssdb -N" && \
+    su kwola -c "certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP"
 
-RUN kwola_test_installation
+RUN su kwola -c "kwola_test_installation"
 
-USER root
+USER kwola
 
 # Setup and configure systemd
 ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "default"]
