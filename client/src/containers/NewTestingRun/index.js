@@ -1452,8 +1452,8 @@ class NewTestingRun extends Component {
                                                     <div className="orderInfo">
                                                         <div className="orderTable">
                                                             <div className="orderTableHead">
-                                                                <span className="tableHead">Product</span>
-                                                                <span className="tableHead">Total</span>
+                                                                <span className="tableHead">Item</span>
+                                                                <span className="tableHead">Amount</span>
                                                             </div>
 
                                                             <div className="orderTableBody">
