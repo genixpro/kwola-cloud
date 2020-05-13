@@ -77,11 +77,13 @@ RUN chown -R kwola:kwola /home/kwola
 # making code changes regularly
 RUN pip3 install --upgrade pip
 RUN pip3 install --upgrade setuptools
+RUN pip3 install --upgrade cryptography
 RUN pip3 install numpy
 RUN pip3 install scikit-learn
 RUN pip3 install matplotlib
 RUN pip3 install gunicorn
 RUN pip3 install flask
+RUN pip3 install pytorch
 
 # Set the working directory to /app
 WORKDIR /kwola
