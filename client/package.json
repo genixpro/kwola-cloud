@@ -1,7 +1,6 @@
 {
   "name": "kwola-client",
   "version": "0.0.0",
-  "proxy": "http://localhost:9000/",
   "private": true,
   "dependencies": {
     "@date-io/date-fns": "^1.3.11",
