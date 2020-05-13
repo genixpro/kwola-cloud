@@ -12,7 +12,7 @@ import themeActions from '../../redux/themeSwitcher/actions';
 import ThemeSwitcher from '../ThemeSwitcher';
 // import ThemeSwitcherButton from '../ThemeSwitcherButton';
 // import SecondarySidebar from '../SecondarySidebar';
-import PageBreadcrumb from '../PageBreadcrumb';
+// import PageBreadcrumb from '../PageBreadcrumb';
 import MUIPProvider from '../../components/uielements/materialUiPicker/momentProvider';
 import { rtl } from '../../settings/withDirection';
 import Main, { Root, AppFrame } from './style';
@@ -79,7 +79,7 @@ class App extends Component {
                     : 'notFixed'
                 }
               >
-                 <PageBreadcrumb url={url} />
+                 {/*<PageBreadcrumb url={url} />*/}
 
                 <MUIPProvider>
                   <AppRouter
