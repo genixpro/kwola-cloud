@@ -136,3 +136,4 @@ USER kwola
 ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "default"]
 
 EXPOSE 80
+
