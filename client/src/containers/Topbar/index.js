@@ -9,6 +9,7 @@ import TopbarSearch from './topbarSearch';
 // import SecondarySidebar from '../SecondarySidebar';
 import TopbarNotification from './sidebarNotification';
 import TopbarUser from './topbarUser';
+import Auth from "../../helpers/auth0/index";
 const { toggleCollapsed } = appActions;
 const { switchActivation } = themeActions;
 
@@ -66,9 +67,9 @@ class Topbar extends Component {
               {/*  </div>*/}
               {/*</li>*/}
 
-              {/*<li className="topbarUser">*/}
-              {/*  <TopbarUser {...propsTopbar} />*/}
-              {/*</li>*/}
+              <li className="topbarUser">
+                <TopbarUser {...propsTopbar} />
+              </li>
             </ul>
           </TopbarComponents>
         </Toolbar>

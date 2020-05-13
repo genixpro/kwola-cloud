@@ -4,6 +4,8 @@ import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 import IntlMessages from '../../components/utility/intlMessages';
 import TopbarDropdownWrapper from './topbarDropdown.style';
+import Auth from "../../helpers/auth0/index"
+import AccountBox from '@material-ui/icons/AccountBox';
 import {
   IconButtons,
   TopbarDropdown,
@@ -28,16 +30,18 @@ class TopbarUser extends Component {
     });
   };
   render() {
+    const userData = Auth.getUserInfo();
+
     const content = (
       <TopbarDropdown>
         <UserInformation>
-          <div className="userImage">
-            <img src={Image} alt="user" />
-          </div>
+          {/*<div className="userImage">*/}
+          {/*  <img src={Image} alt="user" />*/}
+          {/*</div>*/}
 
           <div className="userDetails">
-            <h3>John Doe</h3>
-            <p>Sr. Marketing Officer</p>
+            <h3>{userData.name}</h3>
+            <p>{userData.email}</p>
           </div>
         </UserInformation>
 
@@ -54,7 +58,7 @@ class TopbarUser extends Component {
             <Icon>feedback</Icon>
             <IntlMessages id="topbar.help" />
           </a>
-          <Link to="/" onClick={this.props.logout} className="dropdownLink">
+          <Link to="/logout" onClick={this.props.logout} className="dropdownLink">
             <Icon>input</Icon>
             <IntlMessages id="topbar.logout" />
           </Link>
@@ -70,7 +74,7 @@ class TopbarUser extends Component {
           onClick={this.handleVisibleChange}
         >
           <div className="userImgWrapper">
-            <img src={Image} alt="#" />
+              <AccountBox style={{ fontSize: 32 }} />
           </div>
         </IconButtons>
 
