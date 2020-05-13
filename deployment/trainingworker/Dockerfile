@@ -141,6 +141,7 @@ RUN pip3 install matplotlib
 RUN pip3 install gunicorn
 RUN pip3 install flask
 RUN pip3 install torch
+RUN chmod +r+r+r -R /usr/lib/python3/
 
 # Set the working directory to /app
 WORKDIR /kwola
