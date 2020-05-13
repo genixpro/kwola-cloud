@@ -11,6 +11,8 @@ steps:
     - "-f"
     - "deployment/api/Dockerfile"
   timeout: 7200s
+  options:
+    machineType: n1-highcpu-8
 - name: 'gcr.io/cloud-builders/kubectl'
   args:
   - 'cluster-info'
