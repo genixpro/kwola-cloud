@@ -121,7 +121,8 @@ ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.js
 RUN chown -R kwola:kwola /kwola && chown -R kwola:kwola /home/kwola
 USER kwola
 ENV HOME=/home/kwola
-RUN kwola_install_proxy_cert 1 && \
+RUN chown -R kwola:kwola /home/kwola && \
+    kwola_install_proxy_cert 1 && \
     mkdir -p /home/kwola/.pki && \
     mkdir -p /home/kwola/.pki/nssdb && \
     certutil -d sql:/home/kwola/.pki/nssdb -N && \
