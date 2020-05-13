@@ -65,7 +65,8 @@ RUN wget https://chromedriver.storage.googleapis.com/81.0.4044.138/chromedriver_
 RUN sudo npm install @babel/cli -g && \
     sudo npm install @babel/core -g && \
     sudo npm install babel-plugin-kwola -g && \
-    sudo npm install babel-plugin-kwola
+    sudo npm install babel-plugin-kwola && \
+    rm -rf /root/.npm/_cacache
 
 # Create the kwola user
 RUN useradd -s /bin/bash --home-dir /home/kwola kwola && \
@@ -96,7 +97,15 @@ RUN pip3 install --upgrade pip && \
     pip3 install selenium && \
     pip3 install stripe && \
     pip3 install torch && \
-    chmod +r+r+r -R /usr/lib/python3/
+    chmod +r+r+r -R /usr/lib/python3/ && \
+    rm -rf /root/.cache
+
+# Remove stuff that is no longer needed after all this installation
+RUN apt purge -y \
+         vim \
+         gcc \
+         python3-dev && \
+    rm -rf /var/log/*
 
 # Set the working directory to /app
 WORKDIR /kwola
@@ -112,7 +121,8 @@ RUN rm -rf /kwola/client
 
 # Install dependencies for server
 WORKDIR /kwola/server
-RUN python3 setup.py install
+RUN python3 setup.py install && \
+    rm -rf /root/.cache
 
 ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
@@ -132,7 +142,7 @@ RUN su kwola -c "kwola_test_installation"
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
-RUN du -h -d 3 -t 1M /; exit 0
+RUN du -h -d 5 -t 10M /; exit 0
 
 USER kwola
 

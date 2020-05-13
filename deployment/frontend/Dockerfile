@@ -43,7 +43,7 @@ RUN npm run-script build && \
         mkdir /build && \
         mv build/* /build && \
         rm -rf /kwola && \
-        du -h -d 3 -t 1M / && \
+        du -h -d 5 -t 1M / && \
         apt-get purge nodejs python3 -y
 
 # Setup and configure systemd
