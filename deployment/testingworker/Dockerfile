@@ -4,14 +4,13 @@ FROM ubuntu:18.04
 MAINTAINER Kwola <info@kwola.io>
 
 ENV DEBIAN_FRONTEND noninteractive
-
-RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y
-
-RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
 ENV GCSFUSE_REPO=gcsfuse-bionic
-RUN echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | tee /etc/apt/sources.list.d/gcsfuse.list
+
+RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y && \
+    echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+    curl -sL https://deb.nodesource.com/setup_12.x | bash && \
+    echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | tee /etc/apt/sources.list.d/gcsfuse.list
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
@@ -54,37 +53,37 @@ RUN apt-get update && apt-get install \
     rm -rf /var/lib/apt/lists/*
 
 # Download and install Chromedriver
-RUN wget https://chromedriver.storage.googleapis.com/81.0.4044.138/chromedriver_linux64.zip
-RUN unzip chromedriver_linux64.zip
-RUN cp chromedriver /usr/bin/
-RUN chmod 644 /usr/bin/chromedriver
-RUN chmod +x /usr/bin/chromedriver
-RUN rm -rf chromedriver
-RUN rm -rf chromedriver_linux64.zip
+RUN wget https://chromedriver.storage.googleapis.com/81.0.4044.138/chromedriver_linux64.zip && \
+    unzip chromedriver_linux64.zip && \
+    cp chromedriver /usr/bin/ && \
+    chmod 644 /usr/bin/chromedriver && \
+    chmod +x /usr/bin/chromedriver && \
+    rm -rf chromedriver && \
+    rm -rf chromedriver_linux64.zip
 
 # Installing babel and the kwola babel plugin globally using npm
-RUN sudo npm install @babel/cli -g
-RUN sudo npm install @babel/core -g
-RUN sudo npm install babel-plugin-kwola -g
-RUN sudo npm install babel-plugin-kwola
+RUN sudo npm install @babel/cli -g && \
+    sudo npm install @babel/core -g && \
+    sudo npm install babel-plugin-kwola -g && \
+    sudo npm install babel-plugin-kwola
 
 # Create the kwola user
-RUN useradd -s /bin/bash --home-dir /home/kwola kwola
-RUN mkdir /home/kwola
-RUN chown -R kwola:kwola /home/kwola
+RUN useradd -s /bin/bash --home-dir /home/kwola kwola && \
+    mkdir /home/kwola && \
+    chown -R kwola:kwola /home/kwola
 
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
-RUN pip3 install --upgrade pip
-RUN pip3 install --upgrade setuptools
-RUN pip3 install --upgrade cryptography
-RUN pip3 install numpy
-RUN pip3 install scikit-learn
-RUN pip3 install matplotlib
-RUN pip3 install gunicorn
-RUN pip3 install flask
-RUN pip3 install torch
-RUN chmod +r+r+r -R /usr/lib/python3/
+RUN pip3 install --upgrade pip && \
+    pip3 install --upgrade setuptools && \
+    pip3 install --upgrade cryptography && \
+    pip3 install numpy && \
+    pip3 install scikit-learn && \
+    pip3 install matplotlib && \
+    pip3 install gunicorn && \
+    pip3 install flask && \
+    pip3 install torch && \
+    chmod +r+r+r -R /usr/lib/python3/
 
 # Set the working directory to /app
 WORKDIR /kwola
@@ -109,11 +108,11 @@ ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.js
 RUN chown -R kwola:kwola /kwola
 USER kwola
 ENV HOME=/home/kwola
-RUN kwola_install_proxy_cert 1
-RUN mkdir -p /home/kwola/.pki
-RUN mkdir -p /home/kwola/.pki/nssdb
-RUN certutil -d sql:/home/kwola/.pki/nssdb -N
-RUN certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
+RUN kwola_install_proxy_cert 1 && \
+    mkdir -p /home/kwola/.pki && \
+    mkdir -p /home/kwola/.pki/nssdb && \
+    certutil -d sql:/home/kwola/.pki/nssdb -N && \
+    certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP
 
 
 RUN kwola_test_installation
