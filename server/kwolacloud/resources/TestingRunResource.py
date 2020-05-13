@@ -35,7 +35,7 @@ class TestingRunsGroup(Resource):
         if user is None:
             abort(401)
 
-        testingRuns = TestingRun.objects().no_dereference().order_by("-startTime").limit(10).to_json()
+        testingRuns = TestingRun.objects(owner=user).no_dereference().order_by("-startTime").limit(10).to_json()
 
         return {"testingRuns": json.loads(testingRuns)}
 
@@ -69,6 +69,7 @@ class TestingRunsGroup(Resource):
 
         del data['payment_method']
         data['id'] = CustomIDField.generateNewUUID(TestingRun, config=getKwolaConfiguration())
+        data['owner'] = user
         data['startTime'] = datetime.datetime.now()
         data['stripeSubscriptionId'] = subscription.id
 
@@ -95,6 +96,6 @@ class TestingRunsSingle(Resource):
         if user is None:
             abort(401)
 
-        testingRun = TestingRun.objects(id=testing_run_id).limit(1)[0].to_json()
+        testingRun = TestingRun.objects(id=testing_run_id, owner=user).limit(1)[0].to_json()
 
         return {"testingRun": json.loads(testingRun)}

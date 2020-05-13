@@ -28,7 +28,7 @@ class TestingStepsGroup(Resource):
         if user is None:
             abort(401)
 
-        TestingSteps = TestingStep.objects().order_by("-startTime").limit(20).to_json()
+        TestingSteps = TestingStep.objects(owner=user).order_by("-startTime").limit(20).to_json()
 
         return {"TestingSteps": json.loads(TestingSteps)}
 
@@ -41,6 +41,7 @@ class TestingStepsGroup(Resource):
 
 
         newTestingStep = TestingStep(
+            owner=user,
             version=data['version'],
             startTime=data['startTime'],
             endTime=data['endTime'],
@@ -71,7 +72,7 @@ class TestingStepsSingle(Resource):
         if user is None:
             abort(401)
 
-        TestingStep = TestingStep.objects(id=bson.ObjectId(testing_sequence_id)).limit(1)[0].to_json()
+        TestingStep = TestingStep.objects(id=bson.ObjectId(testing_sequence_id), owner=user).limit(1)[0].to_json()
 
         return {"TestingStep": json.loads(TestingStep)}
 

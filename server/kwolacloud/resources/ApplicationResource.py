@@ -31,7 +31,7 @@ class ApplicationGroup(Resource):
         if user is None:
             abort(401)
 
-        applications = ApplicationModel.objects().no_dereference().to_json()
+        applications = ApplicationModel.objects(owner=user).no_dereference().to_json()
 
         return {"applications": json.loads(applications)}
 
@@ -46,6 +46,7 @@ class ApplicationGroup(Resource):
         newApplication = ApplicationModel(
             name=data['name'],
             url=data['url'],
+            owner=user,
             id=CustomIDField.generateNewUUID(ApplicationModel, config=getKwolaConfiguration())
         )
 
@@ -76,7 +77,7 @@ class ApplicationSingle(Resource):
         if user is None:
             abort(401)
 
-        application = ApplicationModel.objects(id=application_id).limit(1).first()
+        application = ApplicationModel.objects(id=application_id, owner=user).limit(1).first()
 
         if application is not None:
             return json.loads(application.to_json())
@@ -91,7 +92,7 @@ class ApplicationImage(Resource):
         if user is None:
             abort(401)
 
-        application = ApplicationModel.objects(id=application_id).limit(1).first()
+        application = ApplicationModel.objects(id=application_id, owner=user).limit(1).first()
 
         chrome_options = Options()
         chrome_options.headless = True

@@ -35,7 +35,7 @@ class BugsGroup(Resource):
         if user is None:
             abort(401)
 
-        queryParams = {}
+        queryParams = {"owner": user}
 
         testingRunId = flask.request.args.get('testingRunId')
         if testingRunId is not None:
@@ -57,7 +57,7 @@ class BugsSingle(Resource):
         if user is None:
             abort(401)
 
-        bug = BugModel.objects(id=bug_id).first()
+        bug = BugModel.objects(id=bug_id, owner=user).first()
 
         return {"bug": json.loads(bug.to_json())}
 
@@ -78,7 +78,7 @@ class BugVideo(Resource):
         if user is None:
             abort(401)
 
-        bug = BugModel.objects(id=bug_id).first()
+        bug = BugModel.objects(id=bug_id, owner=user).first()
 
         if bug is None:
             return abort(404)

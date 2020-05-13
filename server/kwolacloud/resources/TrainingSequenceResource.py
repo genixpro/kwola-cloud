@@ -27,7 +27,7 @@ class TrainingSequencesGroup(Resource):
         if user is None:
             abort(401)
 
-        trainingSequences = TrainingSequence.objects().order_by("-startTime").limit(20).to_json()
+        trainingSequences = TrainingSequence.objects(owner=user).order_by("-startTime").limit(20).to_json()
 
         return {"trainingSequences": json.loads(trainingSequences)}
 
@@ -49,7 +49,7 @@ class TrainingSequencesSingle(Resource):
         if user is None:
             abort(401)
 
-        trainingSequence = TrainingSequence.objects(id=training_sequence_id).limit(1)[0].to_json()
+        trainingSequence = TrainingSequence.objects(id=training_sequence_id, owner=user).limit(1)[0].to_json()
 
         return {"trainingSequence": json.loads(trainingSequence)}
 

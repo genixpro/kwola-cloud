@@ -37,7 +37,7 @@ class ExecutionTraceGroup(Resource):
         args = request.args
         executionSessionId = args['executionSessionId']
 
-        executionTraces = ExecutionTrace.objects(executionSessionId=executionSessionId).order_by("-startTime").to_json()
+        executionTraces = ExecutionTrace.objects(executionSessionId=executionSessionId, owner=user).order_by("-startTime").to_json()
 
         return {"executionTraces": json.loads(executionTraces)}
 
@@ -58,7 +58,7 @@ class ExecutionTraceSingle(Resource):
         if user is None:
             abort(401)
 
-        executionTrace = ExecutionTrace.objects(id=execution_trace_id).limit(1)[0].to_json()
+        executionTrace = ExecutionTrace.objects(id=execution_trace_id, owner=user).limit(1)[0].to_json()
 
         return {"executionTrace": json.loads(executionTrace)}
 

@@ -33,7 +33,7 @@ class ExecutionSessionGroup(Resource):
         if user is None:
             abort(401)
 
-        queryParams = {}
+        queryParams = {"owner": user}
 
         testingRunId = flask.request.args.get('testingRunId')
         if testingRunId is not None:
@@ -60,7 +60,7 @@ class ExecutionSessionSingle(Resource):
         if user is None:
             abort(401)
 
-        executionSession = ExecutionSession.objects(id=execution_session_id).limit(1)[0].to_json()
+        executionSession = ExecutionSession.objects(id=execution_session_id, owner=user).limit(1)[0].to_json()
 
         return {"executionSession": json.loads(executionSession)}
 
@@ -81,7 +81,7 @@ class ExecutionSessionVideo(Resource):
         if user is None:
             abort(401)
 
-        executionSession = ExecutionSession.objects(id=execution_session_id).first()
+        executionSession = ExecutionSession.objects(id=execution_session_id, owner=user).first()
 
         if executionSession is None:
             return abort(404)

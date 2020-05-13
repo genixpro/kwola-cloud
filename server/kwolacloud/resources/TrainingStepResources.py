@@ -28,7 +28,7 @@ class TrainingStepGroup(Resource):
         if user is None:
             abort(401)
 
-        trainingSteps = TrainingStep.objects().order_by("-startTime").only("startTime", "id", "status", "averageLoss")
+        trainingSteps = TrainingStep.objects(owner=user).order_by("-startTime").only("startTime", "id", "status", "averageLoss")
 
         for trainingStep in trainingSteps:
             if trainingStep.averageLoss is not None and math.isnan(trainingStep.averageLoss):
@@ -56,7 +56,7 @@ class TrainingStepSingle(Resource):
         if user is None:
             abort(401)
 
-        trainingStep = TrainingStep.objects(id=training_step_id).limit(1)[0]
+        trainingStep = TrainingStep.objects(id=training_step_id, owner=user).limit(1)[0]
 
         return {"trainingStep": json.loads(trainingStep.to_json())}
 
