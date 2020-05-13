@@ -12,7 +12,16 @@ from mongoengine import *
 
 
 class TestingRun(Document):
+    meta = {
+        'indexes': [
+            ('owner',),
+            ('owner', 'applicationId'),
+        ]
+    }
+
     id = CustomIDField()
+
+    owner = StringField()
 
     applicationId = StringField()
 

@@ -24,7 +24,15 @@ from mongoengine import *
 
 
 class ApplicationModel(Document):
+    meta = {
+        'indexes': [
+            ('owner',),
+        ]
+    }
+
     id = CustomIDField()
+
+    owner = StringField(required=True)
 
     name = StringField(required=True)
 
