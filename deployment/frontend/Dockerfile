@@ -44,7 +44,14 @@ RUN npm run-script build && \
         mv build/* /build && \
         rm -rf /kwola && \
         du -h -d 5 -t 1M / && \
-        apt-get purge nodejs python3 -y
+        apt-get purge nodejs python3 -y && \
+        rm -rf /root/.npm/_cacache && \
+        rm -rf /usr/share/doc/* && \
+        rm -rf /usr/share/icons/* && \
+        rm -rf /usr/share/man/* && \
+        rm -rf /var/cache/* && \
+        rm -rf /var/lib/dpkg/* && \
+        rm -rf /usr/include/*
 
 # Setup and configure systemd
 ENTRYPOINT ["/usr/sbin/nginx", "-g", "daemon off;"]

@@ -140,6 +140,13 @@ RUN chown -R kwola:kwola /kwola && \
 
 RUN su kwola -c "kwola_test_installation"
 
+RUN rm -rf /usr/share/icons/* && \
+    rm -rf /usr/share/doc/* && \
+    rm -rf /usr/share/man/* && \
+    rm -rf /var/cache/* && \
+    rm -rf /var/lib/dpkg/* && \
+    rm -rf /usr/include/*
+
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
 RUN du -h -d 5 -t 10M /; exit 0
