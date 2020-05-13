@@ -27,6 +27,7 @@ const Auth0Config = {
   audience: process.env.REACT_APP_AUTH0_AUDIENCE,
   options: {
     audience: process.env.REACT_APP_AUTH0_AUDIENCE,
+    redirectUrl: process.env.REACT_APP_AUTH0_REDIRECT_URL,
     auth: {
       autoParseHash: true,
       redirect: false,
