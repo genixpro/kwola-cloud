@@ -33,5 +33,3 @@ steps:
   timeout: 1200s
 
 timeout: 15000s
-options:
-  machineType: 'N1_HIGHCPU_8'

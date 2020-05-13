@@ -41,5 +41,3 @@ steps:
   - 'REVISION_ID=$REVISION_ID'
   timeout: 600s
 timeout: 15000s
-options:
-  machineType: 'N1_HIGHCPU_8'
