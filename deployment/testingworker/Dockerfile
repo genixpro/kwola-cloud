@@ -134,3 +134,4 @@ RUN kwola_test_installation
 ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "testing", "-c", "1"]
 
 EXPOSE 80
+
