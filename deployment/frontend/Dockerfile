@@ -22,7 +22,12 @@ WORKDIR /kwola
 RUN mkdir /kwola/client
 COPY client/package.json /kwola/client
 WORKDIR /kwola/client
-RUN npm install
+RUN npm install && \
+        rm -rf /root/.npm/_cacache && \
+        rm -rf /usr/share/doc/* && \
+        rm -rf /usr/share/icons/* && \
+        rm -rf /usr/share/man/* && \
+        rm -rf /var/cache/*
 
 ARG KWOLA_ENV
 
@@ -44,11 +49,7 @@ RUN npm run-script build && \
         mv build/* /build && \
         rm -rf /kwola && \
         apt-get purge nodejs python3 -y && \
-        rm -rf /root/.npm/_cacache && \
-        rm -rf /usr/share/doc/* && \
-        rm -rf /usr/share/icons/* && \
-        rm -rf /usr/share/man/* && \
-        rm -rf /var/cache/* && \
+        rm -rf /root/.npm && \
         rm -rf /var/lib/dpkg/* && \
         rm -rf /usr/include/*
 
