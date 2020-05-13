@@ -97,7 +97,7 @@ class ApplicationImage(Resource):
         chrome_options.headless = True
 
         driver = webdriver.Chrome(chrome_options=chrome_options)
-        driver.set_page_load_timeout(5)
+        driver.set_page_load_timeout(20)
         try:
             driver.get(application.url)
         except selenium.common.exceptions.TimeoutException:
