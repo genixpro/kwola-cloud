@@ -43,7 +43,6 @@ RUN npm run-script build && \
         mkdir /build && \
         mv build/* /build && \
         rm -rf /kwola && \
-        du -h -d 5 -t 1M / && \
         apt-get purge nodejs python3 -y && \
         rm -rf /root/.npm/_cacache && \
         rm -rf /usr/share/doc/* && \
