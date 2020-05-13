@@ -23,6 +23,7 @@ import Avatar from "../../components/uielements/avatars";
 import {Table} from "../ListApplications/materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielements/table";
 import { Line } from "react-chartjs-2";
+import Auth from "../../helpers/auth0/index"
 
 class ViewExecutionSession extends Component {
     state = {
@@ -45,7 +46,7 @@ class ViewExecutionSession extends Component {
                             <HalfColumn>
                                 <Papersheet>
                                     <video controls style={{"width": "100%"}}>
-                                        <source src={`/api/execution_sessions/${this.props.executionSession._id}/video`} type="video/mp4" />
+                                        <source src={`${process.env.REACT_APP_BACKEND_API_URL}execution_sessions/${this.props.executionSession._id}/video?token=${Auth.getQueryParameterToken()}`} type="video/mp4" />
                                         <span>Your browser does not support the video tag.</span>
                                     </video>
                                 </Papersheet>

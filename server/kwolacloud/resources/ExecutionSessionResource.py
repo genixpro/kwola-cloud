@@ -74,6 +74,10 @@ class ExecutionSessionVideo(Resource):
         # self.postParser.add_argument('status', help='This field cannot be blank', required=True)
 
     def get(self, execution_session_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         executionSession = ExecutionSession.objects(id=execution_session_id).first()
 
         if executionSession is None:

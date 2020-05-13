@@ -7,6 +7,7 @@ import PageTitle from '../../components/utility/paperTitle';
 import Papersheet, { DemoWrapper } from '../../components/utility/papersheet';
 import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, Row, Column} from '../../components/utility/rowColumn';
 import axios from "axios";
+import Auth from "../../helpers/auth0/index"
 
 class ViewBug extends Component {
     state = {
@@ -33,7 +34,7 @@ class ViewBug extends Component {
                             <HalfColumn>
                                 <Papersheet>
                                     <video controls style={{"width": "100%"}}>
-                                        <source src={`/api/bugs/${this.state.bug._id}/video`} type="video/mp4" />
+                                        <source src={`${process.env.REACT_APP_BACKEND_API_URL}bugs/${this.state.bug._id}/video?token=${Auth.getQueryParameterToken()}`} type="video/mp4" />
                                         <span>Your browser does not support the video tag.</span>
                                     </video>
                                 </Papersheet>

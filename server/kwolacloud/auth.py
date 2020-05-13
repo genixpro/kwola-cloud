@@ -10,7 +10,12 @@ import flask
 def authenticate():
     configData = loadConfiguration()
 
-    token = flask.request.headers['WWW-Authenticate']
+    if 'WWW-Authenticate' in flask.request.headers:
+        token = flask.request.headers['WWW-Authenticate']
+    elif 'token' in flask.request.args:
+        token = flask.request.args['token']
+    else:
+        return None
 
     apiUrl = configData['auth0']['apiUrl']
     authDomain = configData['auth0']['domain']

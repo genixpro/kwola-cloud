@@ -21,6 +21,7 @@ import Avatar from "../../components/uielements/avatars";
 import {Table} from "../ListApplications/materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielements/table";
 import axios from "axios";
+import Auth from "../../helpers/auth0/index"
 
 class ViewApplication extends Component {
     state = {
@@ -54,7 +55,7 @@ class ViewApplication extends Component {
                         <FullColumn>
                             <Row>
                                 <HalfColumn>
-                                            <SingleCard src={`/api/application/${this.props.match.params.id}/image`} grid/>
+                                    <SingleCard src={`${process.env.REACT_APP_BACKEND_API_URL}application/${this.props.match.params.id}/image?token=${Auth.getQueryParameterToken()}`} grid/>
                                 </HalfColumn>
 
                                 <HalfColumn>

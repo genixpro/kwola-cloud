@@ -23,6 +23,7 @@ import {Table} from "../ListApplications/materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielements/table";
 import { Line } from "react-chartjs-2";
 import axios from "axios";
+import Auth from "../../helpers/auth0/index"
 
 class ViewTestingRun extends Component {
     state = {
@@ -57,7 +58,7 @@ class ViewTestingRun extends Component {
                     <FullColumn>
                         <Row>
                             <HalfColumn>
-                                <SingleCard src={`/api/application/${this.state.testingRun.applicationId}/image`} grid/>
+                                <SingleCard src={`${process.env.REACT_APP_BACKEND_API_URL}application/${this.state.testingRun.applicationId}/image?token=${Auth.getQueryParameterToken()}`} grid/>
                             </HalfColumn>
 
                             <HalfColumn>

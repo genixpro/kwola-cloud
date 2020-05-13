@@ -71,6 +71,10 @@ class BugVideo(Resource):
         # self.postParser.add_argument('status', help='This field cannot be blank', required=True)
 
     def get(self, bug_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
         bug = BugModel.objects(id=bug_id).first()
 
         if bug is None:

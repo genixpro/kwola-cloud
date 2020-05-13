@@ -58,6 +58,11 @@ class Auth0Helper {
     return jwt.decode(localStorage.getItem('id_token'));
   }
 
+  getQueryParameterToken()
+  {
+    return localStorage.getItem('id_token');
+  }
+
 
   setSession(authResult) {
     // Set the time that the access token will expire at
