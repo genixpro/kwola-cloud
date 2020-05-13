@@ -34,4 +34,4 @@ steps:
 
 timeout: 15000s
 options:
-  machineType: n1-highcpu-8
+  machineType: 'n1-highcpu-8'
