@@ -122,6 +122,7 @@ RUN chown -R kwola:kwola /kwola && chown -R kwola:kwola /home/kwola
 USER kwola
 ENV HOME=/home/kwola
 RUN chown -R kwola:kwola /home/kwola && \
+    chmod +r+r+r -R /usr/lib/python3 && \
     kwola_install_proxy_cert 1 && \
     mkdir -p /home/kwola/.pki && \
     mkdir -p /home/kwola/.pki/nssdb && \
