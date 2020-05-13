@@ -191,14 +191,14 @@ RUN chown -R kwola:kwola /kwola && \
     su kwola -c "certutil -d sql:/home/kwola/.pki/nssdb -N" && \
     su kwola -c "certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP"
 
-RUN su kwola -c "kwola_test_installation"
-
 RUN rm -rf /usr/share/icons/* && \
     rm -rf /usr/share/doc/* && \
     rm -rf /usr/share/man/* && \
     rm -rf /var/cache/* && \
     rm -rf /var/lib/dpkg/* && \
     rm -rf /usr/include/*
+
+RUN su kwola -c "kwola_test_installation"
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
