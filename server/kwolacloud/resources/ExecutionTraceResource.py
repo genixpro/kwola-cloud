@@ -7,6 +7,7 @@ from flask_restful import Resource, reqparse, abort
 from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 
+from ..app import cache
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.tasks.RunTestingStep import runTestingStep
 from flask import request
@@ -27,6 +28,7 @@ class ExecutionTraceGroup(Resource):
         # self.postParser.add_argument('status', help='This field cannot be blank', required=False)
         pass
 
+    @cache.cached(timeout=36000)
     def get(self):
         user = authenticate()
         if user is None:
@@ -50,6 +52,7 @@ class ExecutionTraceSingle(Resource):
         # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=True)
         # self.postParser.add_argument('status', help='This field cannot be blank', required=True)
 
+    @cache.cached(timeout=36000)
     def get(self, execution_trace_id):
         user = authenticate()
         if user is None:
@@ -70,6 +73,7 @@ class ExecutionTraceSingle(Resource):
 #         # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=True)
 #         # self.postParser.add_argument('status', help='This field cannot be blank', required=True)
 #
+#     @cache.cached(timeout=36000)
 #     def get(self, execution_trace_id):
 #         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("videos"), f'{str(execution_trace_id)}.mp4')
 #

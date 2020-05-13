@@ -8,7 +8,7 @@ from mongoengine import connect
 import celery
 import stripe
 from .auth import authenticate
-
+from flask_caching import Cache
 
 configData = loadConfiguration()
 
@@ -16,9 +16,16 @@ stripe.api_key = configData['stripe']['apiKey']
 
 connect(configData['mongo']['db'], host=configData['mongo']['uri'])
 
+cacheConfig = {
+    "CACHE_TYPE": "simple",
+    "CACHE_DEFAULT_TIMEOUT": 300
+}
+
 flaskApplication = Flask(__name__)
+flaskApplication.config.from_mapping(cacheConfig)
 api = Api(flaskApplication)
 CORS(flaskApplication)
+cache = Cache(flaskApplication)
 
 # Technically for gunicorn to find the flask application object, it must have the variable
 # name "application". However we prefer the more explicit flaskApplication, this being the

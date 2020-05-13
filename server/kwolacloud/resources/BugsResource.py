@@ -7,6 +7,7 @@ import flask
 from flask_restful import Resource, reqparse, abort
 from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+from ..app import cache
 from kwola.datamodels.BugModel import BugModel
 from ..tasks.RunTesting import runTesting
 import json
@@ -50,6 +51,7 @@ class BugsSingle(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
 
+    @cache.cached(timeout=36000)
     def get(self, bug_id):
         user = authenticate()
         if user is None:
@@ -70,6 +72,7 @@ class BugVideo(Resource):
         # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=True)
         # self.postParser.add_argument('status', help='This field cannot be blank', required=True)
 
+    @cache.cached(timeout=36000)
     def get(self, bug_id):
         user = authenticate()
         if user is None:
