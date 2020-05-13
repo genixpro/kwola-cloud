@@ -119,7 +119,7 @@ ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 
 ENV HOME=/home/kwola
-RUN chown -R kwola:kwola /kwola
+RUN chown -R kwola:kwola /kwola && \
     chown -R kwola:kwola /home/kwola && \
     chmod +r+r+r -R /usr/lib/python3 && \
     su kwola -c "kwola_install_proxy_cert 1" && \
