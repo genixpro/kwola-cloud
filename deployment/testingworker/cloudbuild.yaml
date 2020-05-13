@@ -12,8 +12,6 @@ steps:
     "deployment/testingworker/Dockerfile"
   ]
   timeout: 7200s
-  options:
-    machineType: n1-highcpu-8
 - name: 'gcr.io/cloud-builders/kubectl'
   id: Fetch Kubernetes Auth
   args:
@@ -35,3 +33,5 @@ steps:
   timeout: 1200s
 
 timeout: 15000s
+options:
+  machineType: n1-highcpu-8

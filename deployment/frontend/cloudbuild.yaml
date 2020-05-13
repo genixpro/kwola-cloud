@@ -11,8 +11,6 @@ steps:
     - "-f"
     - "deployment/frontend/Dockerfile"
   timeout: 1800s
-  options:
-    machineType: n1-highcpu-8
 - name: 'gcr.io/cloud-builders/kubectl'
   args:
   - 'cluster-info'
@@ -32,3 +30,5 @@ steps:
   - 'REVISION_ID=$REVISION_ID'
   timeout: 600s
 timeout: 3600s
+options:
+  machineType: n1-highcpu-8
