@@ -1,21 +1,17 @@
 steps:
-- name: 'gcr.io/cloud-builders/docker'
+- name: 'gcr.io/kaniko-project/executor:latest'
   id: Build Frontend Docker Image
   args:
+    - "--destination=gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-frontend"
+    - "--cache=true"
+    - "--cache-ttl=72h"
+    - "--snapshotMode=time"
     - "build"
     - "."
-    - "-t"
-    - "gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-frontend"
     - "--build-arg"
     - "KWOLA_ENV=$_KWOLA_ENV"
     - "-f"
     - "deployment/frontend/Dockerfile"
-  timeout: 1800s
-- name: 'gcr.io/cloud-builders/docker'
-  id: Push the API Server
-  args:
-    - "push"
-    - "gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-frontend"
   timeout: 1800s
 - name: 'gcr.io/cloud-builders/kubectl'
   args:
