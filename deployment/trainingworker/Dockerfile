@@ -158,7 +158,7 @@ ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 
-RUN chown -R kwola:kwola /kwola
+RUN chown -R kwola:kwola /kwola && chown -R kwola:kwola /home/kwola
 USER kwola
 ENV HOME=/home/kwola
 RUN kwola_install_proxy_cert 1 && \
