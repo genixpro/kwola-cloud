@@ -43,11 +43,8 @@ RUN npm run-script build && \
         mkdir /build && \
         mv build/* /build && \
         rm -rf /kwola && \
+        du -h -d 3 -t 1M / && \
         apt-get purge nodejs python3 -y
-
-# Output all the disk usage for various folders on the system.
-# This helps us to further optimize the container
-RUN du -h -d 3 -t 1M /; exit 0
 
 # Setup and configure systemd
 ENTRYPOINT ["/usr/sbin/nginx", "-g", "daemon off;"]
