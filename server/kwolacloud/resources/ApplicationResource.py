@@ -17,6 +17,8 @@ import flask
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration
 from ..auth import authenticate
+import selenium
+import selenium.common.exceptions
 
 class ApplicationGroup(Resource):
     def __init__(self):
@@ -96,7 +98,10 @@ class ApplicationImage(Resource):
 
         driver = webdriver.Chrome(chrome_options=chrome_options)
         driver.set_page_load_timeout(5)
-        driver.get(application.url)
+        try:
+            driver.get(application.url)
+        except selenium.common.exceptions.TimeoutException:
+            pass
         screenshotData = driver.get_screenshot_as_png()
         driver.quit()
 
