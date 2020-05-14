@@ -83,7 +83,7 @@ def attachUsageBilling(config, testingRun, maxSessionsToBill):
     )
 
 
-@celeryApplication.task(queue="testing")
+@celeryApplication.task(queue="testing", acks_late=True)
 def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill):
     run = TestingRun.objects(id=testingRunId).first()
 
@@ -118,7 +118,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
         unmountTestingRunStorageDrive(configDir)
 
 
-@celeryApplication.task(queue="training")
+@celeryApplication.task(queue="training", acks_late=True)
 def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     run = TestingRun.objects(id=testingRunId).first()
 
@@ -152,7 +152,8 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     retry_backoff=1,
     retry_backoff_max=60,
     retry_kwargs={'max_retries': 100},
-    retry_jitter=True
+    retry_jitter=True,
+    acks_late=True
 )
 def runTesting(testingRunId):
     run = TestingRun.objects(id=testingRunId).first()
