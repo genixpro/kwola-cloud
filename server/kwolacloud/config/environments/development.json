@@ -13,7 +13,8 @@
     "visibility_timeout": 3600
   },
   "stripe": {
-    "apiKey": "sk_test_WHeVtPF7ILpuTA4JhGhKleHA00EghhZOTM"
+    "apiKey": "sk_test_WHeVtPF7ILpuTA4JhGhKleHA00EghhZOTM",
+    "planId": "plan_HGd3ZO1iW4FqHp"
   },
   "auth0": {
     "apiUrl": "http://localhost:8000/api/",

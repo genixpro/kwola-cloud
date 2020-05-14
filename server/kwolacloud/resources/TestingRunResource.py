@@ -17,6 +17,8 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration
 import stripe
 from ..auth import authenticate
+from ..config.config import loadConfiguration
+
 
 class TestingRunsGroup(Resource):
     def __init__(self):
@@ -26,7 +28,8 @@ class TestingRunsGroup(Resource):
         # self.postParser.add_argument('endTime', help='This field cannot be blank', required=False)
         # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=False)
         # self.postParser.add_argument('status', help='This field cannot be blank', required=False)
-        pass
+
+        self.configData = loadConfiguration()
 
     def get(self):
         queryParams = {}
@@ -55,12 +58,7 @@ class TestingRunsGroup(Resource):
 
         subscription = stripe.Subscription.create(
             customer=customer.id,
-            items=[
-                {
-                    # 'plan': 'plan_HGbYna6KdybwIk', # prod
-                    'plan': 'plan_HGd3ZO1iW4FqHp', # sub
-                },
-            ],
+            items=[{'plan': self.configData['stripe']['planId']}],
             expand=['latest_invoice.payment_intent'],
         )
 
