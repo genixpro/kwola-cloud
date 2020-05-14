@@ -1196,6 +1196,14 @@ class PaymentDetailsSection extends Component {
                         onChange={(cardChangedEvent) => this.cardDetailsChanged(cardChangedEvent)}
                     />
                     {this.state.errorMessage}
+                    {
+                        process.env.REACT_APP_SHOW_INTERNAL_TESTING_MESSAGES === "true" ?
+                            <div>
+                                <br/>
+                                <a href={"https://stripe.com/docs/testing"} target={"_blank"}>Please click here to get testing card numbers</a>
+                                <br/>
+                            </div> : null
+                    }
                     <br/>
                     <TextField
                         id="name"

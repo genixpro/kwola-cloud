@@ -117,7 +117,7 @@ class ViewApplication extends Component {
                                                 {(this.state.testingRuns || []).map(testingRun => {
                                                     return (
                                                         <TableRow key={testingRun._id} hover={true} onClick={() => this.props.history.push(`/dashboard/testing_runs/${testingRun._id}`)}>
-                                                            <TableCell>{moment(testingRun.startTime).format('HH:mm MMM Do')}</TableCell>
+                                                            <TableCell>{moment(testingRun.startTime.$date).format('h:mm a MMM Do')}</TableCell>
                                                             <TableCell>{testingRun.status}</TableCell>
                                                             {/*<TableCell>{testingRun.endDate}</TableCell>*/}
                                                             <TableCell>{testingRun.bugsFound}</TableCell>
