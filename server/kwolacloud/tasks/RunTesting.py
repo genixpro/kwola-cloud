@@ -85,6 +85,8 @@ def attachUsageBilling(config, testingRun, maxSessionsToBill):
 
 @celeryApplication.task(queue="testing", acks_late=True)
 def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill):
+    print(f"Starting testing step for testing run {testingRunId}")
+
     run = TestingRun.objects(id=testingRunId).first()
 
     if run is None:
@@ -113,6 +115,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
 
         attachUsageBilling(config, run, maxSessionsToBill)
 
+        print(f"Finished testing step for testing run {testingRunId}")
+
         return result
     finally:
         unmountTestingRunStorageDrive(configDir)
@@ -120,6 +124,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
 
 @celeryApplication.task(queue="training", acks_late=True)
 def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
+    print(f"Starting training step for testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
 
     if run is None:
@@ -138,6 +143,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
 
         result = RunTrainingStep.runTrainingStep(configDir, str(trainingStep.id), trainingStepsCompleted, gpu=0)
 
+        print(f"Completed training step for testing run {testingRunId}")
         return result
     finally:
         unmountTestingRunStorageDrive(configDir)
