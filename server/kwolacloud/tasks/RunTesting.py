@@ -295,7 +295,7 @@ def runTesting(testingRunId):
                 run.trainingStepsCompleted += 1
                 run.save()
 
-            if timeElapsed > kwolaConfigData['testing_run_max_time_before_refresh']:
+            if timeElapsed > kwolaConfigData.get('testing_run_max_time_before_refresh', 3600):
                 shouldExit = True
 
             time.sleep(1)
