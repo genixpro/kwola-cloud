@@ -252,6 +252,7 @@ def runTesting(testingRunId):
             countTestingSessionsNeeded = min(remainingTestingSessions, timeElapsed * testingSessionsPerSecond)
 
             while countTestingSessionsStarted < countTestingSessionsNeeded:
+                print(f"Starting a testing step for run {testingRunId}")
                 future = runOneTestingStepForRun.apply_async(args=[testingRunId, completedTestingSteps, countTestingSessionsNeeded - countTestingSessionsStarted])
                 testingStepActiveFutures.append(future)
                 countTestingSessionsStarted += kwolaConfigData['web_session_parallel_execution_sessions']
@@ -269,6 +270,7 @@ def runTesting(testingRunId):
                 if future.successful():
                     result = future.get()
                     if isinstance(result, dict) and result['success']:
+                        print(f"Finished a testing step for run {testingRunId}")
                         countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
                         run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
                         completedTestingSteps += 1
@@ -282,9 +284,11 @@ def runTesting(testingRunId):
                             break
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepFuture is None:
+                print(f"Starting a training step for run {testingRunId}")
                 currentTrainingStepFuture = runOneTrainingStepForRun.apply_async(args=[testingRunId, completedTrainingSteps])
 
             if currentTrainingStepFuture is not None and currentTrainingStepFuture.ready():
+                print(f"Finished a training step for run {testingRunId}")
                 currentTrainingStepFuture = None
                 countTrainingIterationsCompleted += kwolaConfigData['iterations_per_training_step']
                 completedTrainingSteps += 1
