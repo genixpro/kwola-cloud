@@ -170,6 +170,7 @@
   "testing_print_every": 5,
   "testing_repeat_action_pixel_overlap_tolerance": 4,
   "testing_reset_agent_period": 1,
+  "testing_run_max_time_before_refresh": 3600,
   "testing_sequence_length": 100,
   "testing_sequences_in_parallel_per_training_step": 3,
   "testing_sequences_per_training_step": 3,

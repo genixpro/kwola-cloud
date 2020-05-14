@@ -10,7 +10,7 @@
     "port": 6379,
     "taskDB": 0,
     "resultDB": 1,
-    "visibility_timeout": 90
+    "visibility_timeout": 21600
   },
   "stripe": {
     "apiKey": "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71",

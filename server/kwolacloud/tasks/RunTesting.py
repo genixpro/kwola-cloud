@@ -295,11 +295,33 @@ def runTesting(testingRunId):
                 run.trainingStepsCompleted += 1
                 run.save()
 
+            if timeElapsed > kwolaConfigData['testing_run_max_time_before_refresh']:
+                shouldExit = True
+
             time.sleep(1)
+
+        if currentTrainingStepFuture is not None:
+            currentTrainingStepFuture.wait()
+
+            completedTrainingSteps += 1
+            run.trainingStepsCompleted += 1
+            run.save()
+
+        for future in testingStepActiveFutures:
+            future.wait()
+
+            run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
+            completedTestingSteps += 1
+            run.save()
 
         run.status = "completed"
         run.save()
-        print(f"Finished testing run {testingRunId}")
+
+        if run.testingSessionsCompleted < runConfiguration.totalTestingSessions:
+            print(f"Refreshing testing run {testingRunId}")
+            runTesting.apply_async(testingRunId)
+        else:
+            print(f"Finished testing run {testingRunId}")
     finally:
         unmountTestingRunStorageDrive(configDir)
 
