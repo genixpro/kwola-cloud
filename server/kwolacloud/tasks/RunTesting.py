@@ -150,7 +150,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     default_retry_delay=5,
     autoretry_for=(Exception,),
     retry_backoff=1,
-    retry_backoff_max=600,
+    retry_backoff_max=60,
     retry_kwargs={'max_retries': 100},
     retry_jitter=True
 )
