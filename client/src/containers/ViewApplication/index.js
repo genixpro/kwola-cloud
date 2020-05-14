@@ -36,7 +36,7 @@ class ViewApplication extends Component {
         });
 
 
-        axios.get(`/testing_runs`).then((response) =>
+        axios.get(`/testing_runs`, {params: {applicationId: this.props.match.params.id}}).then((response) =>
         {
             this.setState({testingRuns: response.data.testingRuns})
         });

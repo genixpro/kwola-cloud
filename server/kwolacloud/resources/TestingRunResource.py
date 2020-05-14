@@ -32,13 +32,17 @@ class TestingRunsGroup(Resource):
         self.configData = loadConfiguration()
 
     def get(self):
-        queryParams = {}
-
         user = authenticate()
         if user is None:
             abort(401)
 
-        testingRuns = TestingRun.objects(owner=user).no_dereference().order_by("-startTime").limit(10).to_json()
+        queryParams = {"owner": user}
+
+        applicationId = flask.request.args.get('applicationId')
+        if applicationId is not None:
+            queryParams["applicationId"] = applicationId
+
+        testingRuns = TestingRun.objects(**queryParams).no_dereference().order_by("-startTime").limit(10).to_json()
 
         return {"testingRuns": json.loads(testingRuns)}
 
