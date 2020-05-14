@@ -147,6 +147,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
 
 @celeryApplication.task(
     queue="default",
+    default_retry_delay=5,
     autoretry_for=(Exception,),
     retry_backoff=1,
     retry_backoff_max=600,
