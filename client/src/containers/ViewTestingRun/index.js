@@ -64,11 +64,16 @@ class ViewTestingRun extends Component {
                             <HalfColumn>
                                 <Papersheet
                                     title={`Testing Run`}
-                                    // subtitle={}
+                                    subtitle={this.state.testingRun.status}
                                 >
-                                    <span>Status: {this.state.testingRun.status}<br/></span>
 
-                                    <span>Start Time: {moment(this.state.testingRun.startTime).format('MMM Do, YYYY')}<br/></span>
+                                    <span>Testing Sessions Completed: {this.state.testingRun.testingSessionsCompleted}<br/></span>
+
+                                    {
+                                        this.state.testingRun.startTime ?
+                                            <span>Start Time: {moment(this.state.testingRun.startTime).format('MMM Do, YYYY')}<br/></span>
+                                            : <span>Start Time: N/A<br/></span>
+                                    }
 
                                     {
                                         this.state.testingRun.endTime ?

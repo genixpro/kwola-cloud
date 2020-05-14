@@ -166,6 +166,7 @@ def runTesting(testingRunId):
 
     if run.startTime is None:
         run.startTime = datetime.datetime.now()
+        run.status = "running"
         run.save()
 
     try:
@@ -260,6 +261,7 @@ def runTesting(testingRunId):
                         countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
                         run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
                         completedTestingSteps += 1
+                        run.save()
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepFuture is None:
                 currentTrainingStepFuture = runOneTrainingStepForRun.apply_async(args=[testingRunId, completedTrainingSteps])
@@ -269,8 +271,12 @@ def runTesting(testingRunId):
                 countTrainingIterationsCompleted += kwolaConfigData['iterations_per_training_step']
                 completedTrainingSteps += 1
                 run.trainingStepsCompleted += 1
+                run.save()
 
             time.sleep(1)
+
+        run.status = "completed"
+        run.save()
     finally:
         unmountTestingRunStorageDrive(configDir)
 

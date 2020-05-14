@@ -68,6 +68,7 @@ class TestingRunsGroup(Resource):
         del data['payment_method']
         data['id'] = CustomIDField.generateNewUUID(TestingRun, config=getKwolaConfiguration())
         data['owner'] = user
+        data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
         data['stripeSubscriptionId'] = subscription.id
 
