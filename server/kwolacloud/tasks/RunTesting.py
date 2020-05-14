@@ -264,6 +264,7 @@ def runTesting(testingRunId):
                         completedTestingSteps += 1
                         run.save()
                     else:
+                        print("Testing run appears to have failed. Trying it again...")
                         # Double check that the stripe subscription is still good. If the testing step failed because our
                         # stripe subscription is bad, we should just exit immediately.
                         if not verifyStripeSubscription(run):
