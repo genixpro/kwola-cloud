@@ -68,7 +68,7 @@ def verifyStripeSubscription(testingRun):
 
     return True
 
-def attachUsageBilling(config, testingRun):
+def attachUsageBilling(config, testingRun, maxSessionsToBill):
     # Verify this subscription with stripe
     subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
     if subscription is None:
@@ -77,14 +77,14 @@ def attachUsageBilling(config, testingRun):
 
     stripe.SubscriptionItem.create_usage_record(
         subscription.items.configData[0].id,
-        quantity=config['testing_sequence_length'] * config['web_session_parallel_execution_sessions'],
+        quantity=config['testing_sequence_length'] * min(maxSessionsToBill, config['web_session_parallel_execution_sessions']),
         timestamp=datetime.datetime.now().timestamp(),
         action='increment',
     )
 
 
 @celeryApplication.task(queue="testing")
-def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
+def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill):
     run = TestingRun.objects(id=testingRunId).first()
 
     if run is None:
@@ -111,7 +111,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
 
-        attachUsageBilling(config, run)
+        attachUsageBilling(config, run, maxSessionsToBill)
 
         return result
     finally:
@@ -145,7 +145,14 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
 
 
 
-@celeryApplication.task(queue="default")
+@celeryApplication.task(
+    queue="default",
+    autoretry_for=(Exception,),
+    retry_backoff=1,
+    retry_backoff_max=600,
+    retry_kwargs={'max_retries': 100},
+    retry_jitter=True
+)
 def runTesting(testingRunId):
     run = TestingRun.objects(id=testingRunId).first()
 
@@ -233,7 +240,7 @@ def runTesting(testingRunId):
             countTestingSessionsNeeded = min(remainingTestingSessions, timeElapsed * testingSessionsPerSecond)
 
             while countTestingSessionsStarted < countTestingSessionsNeeded:
-                future = runOneTestingStepForRun.apply_async(args=[testingRunId, completedTestingSteps])
+                future = runOneTestingStepForRun.apply_async(args=[testingRunId, completedTestingSteps, countTestingSessionsNeeded - countTestingSessionsStarted])
                 testingStepActiveFutures.append(future)
                 countTestingSessionsStarted += kwolaConfigData['web_session_parallel_execution_sessions']
 
@@ -245,9 +252,14 @@ def runTesting(testingRunId):
             for future in toRemove:
                 testingStepActiveFutures.remove(future)
                 testingStepCompletedFutures.append(future)
-                countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
-                run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
-                completedTestingSteps += 1
+                # We only count this testing step if it actually completed successfully, because
+                # otherwise it needs to be done over again.
+                if future.successful():
+                    result = future.get()
+                    if isinstance(result, dict) and result['success']:
+                        countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
+                        run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
+                        completedTestingSteps += 1
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepFuture is None:
                 currentTrainingStepFuture = runOneTrainingStepForRun.apply_async(args=[testingRunId, completedTrainingSteps])
