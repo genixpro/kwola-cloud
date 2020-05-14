@@ -167,8 +167,9 @@ def runTesting(testingRunId):
 
     if run.startTime is None:
         run.startTime = datetime.datetime.now()
-        run.status = "running"
-        run.save()
+
+    run.status = "running"
+    run.save()
 
     try:
         configFilePath = os.path.join(configDir, "kwola.json")

@@ -27,6 +27,8 @@ spec:
           requests:
             cpu: 250m
             memory: 250Mi
+          limits:
+            cpu: 500m
         securityContext:
           privileged: true
           capabilities:
