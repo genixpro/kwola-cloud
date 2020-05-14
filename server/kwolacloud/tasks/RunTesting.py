@@ -156,6 +156,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     acks_late=True
 )
 def runTesting(testingRunId):
+    print(f"Starting testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
 
     if run is None:
@@ -288,6 +289,7 @@ def runTesting(testingRunId):
 
         run.status = "completed"
         run.save()
+        print(f"Finished testing run {testingRunId}")
     finally:
         unmountTestingRunStorageDrive(configDir)
 
