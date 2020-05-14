@@ -10,7 +10,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1beta1
     kind: Deployment
-    name: kwola-KWOLA_ENV-frontend
+    name: kwola-__KWOLA_ENV__-frontend
   targetCPUUtilizationPercentage: 80
 
 ser
