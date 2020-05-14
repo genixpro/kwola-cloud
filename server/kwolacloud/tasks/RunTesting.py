@@ -234,8 +234,9 @@ def runTesting(testingRunId):
         completedTrainingSteps = run.trainingStepsCompleted
         completedTestingSteps = int(run.testingSessionsCompleted / kwolaConfigData['web_session_parallel_execution_sessions'])
         currentTrainingStepFuture = None
+        shouldExit = False
 
-        while run.testingSessionsCompleted < runConfiguration.totalTestingSessions:
+        while run.testingSessionsCompleted < runConfiguration.totalTestingSessions and not shouldExit:
             timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
 
             countTestingSessionsNeeded = min(remainingTestingSessions, timeElapsed * testingSessionsPerSecond)
@@ -262,6 +263,12 @@ def runTesting(testingRunId):
                         run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
                         completedTestingSteps += 1
                         run.save()
+                    else:
+                        # Double check that the stripe subscription is still good. If the testing step failed because our
+                        # stripe subscription is bad, we should just exit immediately.
+                        if not verifyStripeSubscription(run):
+                            shouldExit = True
+                            break
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepFuture is None:
                 currentTrainingStepFuture = runOneTrainingStepForRun.apply_async(args=[testingRunId, completedTrainingSteps])
