@@ -105,7 +105,12 @@ RUN apt purge -y \
          vim \
          gcc \
          python3-dev && \
-    rm -rf /var/log/*
+    rm -rf /var/log/* && \
+    rm -rf /usr/share/icons/* && \
+    rm -rf /usr/share/doc/* && \
+    rm -rf /usr/share/man/* && \
+    rm -rf /var/cache/* && \
+    rm -rf /var/lib/dpkg/*
 
 # Set the working directory to /app
 WORKDIR /kwola
@@ -138,12 +143,7 @@ RUN chown -R kwola:kwola /kwola && \
     su kwola -c "certutil -d sql:/home/kwola/.pki/nssdb -N" && \
     su kwola -c "certutil -d sql:/home/kwola/.pki/nssdb -A -n 'mitm.it cert authority' -i /home/kwola/.mitmproxy/mitmproxy-ca-cert.cer -t TCP,TCP,TCP"
 
-RUN rm -rf /usr/share/icons/* && \
-    rm -rf /usr/share/doc/* && \
-    rm -rf /usr/share/man/* && \
-    rm -rf /var/cache/* && \
-    rm -rf /var/lib/dpkg/* && \
-    rm -rf /usr/include/*
+RUN rm -rf /usr/include/*
 
 RUN su kwola -c "kwola_test_installation"
 
