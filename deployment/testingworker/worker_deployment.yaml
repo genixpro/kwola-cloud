@@ -25,7 +25,7 @@ spec:
         name: kwola-cloud-sha256
         resources:
           requests:
-            cpu: 1250m
+            cpu: 750m
             memory: 2Gi
           limits:
             cpu: 1250m
