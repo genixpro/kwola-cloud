@@ -207,6 +207,6 @@ RUN du -h -d 5 -t 10M /; exit 0
 USER kwola
 
 # Setup and configure systemd
-ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "training", "-c", "1", "-E", "--max-tasks-per-child", "1", "-l", "DEBUG"]
+ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "training", "-c", "1", "-E", "--max-tasks-per-child", "1", "-l", "INFO"]
 
 EXPOSE 80

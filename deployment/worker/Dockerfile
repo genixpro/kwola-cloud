@@ -154,7 +154,7 @@ RUN du -h -d 5 -t 10M /; exit 0
 USER kwola
 
 # Setup and configure systemd
-ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "default", "-c", "12", "-E", "-l", "DEBUG"]
+ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "default", "-c", "12", "-E", "-l", "INFO"]
 
 EXPOSE 80
 
