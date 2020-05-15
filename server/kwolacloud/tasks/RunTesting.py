@@ -131,6 +131,10 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         print(f"Error! {testingRunId} not found.")
         return {"success":False}
 
+    # Verify this subscription with stripe
+    if not verifyStripeSubscription(run):
+        return {"success": False}
+
     configDir = mountTestingRunStorageDrive(testingRunId)
     if configDir is None:
         return {"success":False}
@@ -314,14 +318,14 @@ def runTesting(testingRunId):
             completedTestingSteps += 1
             run.save()
 
-        run.status = "completed"
-        run.save()
-
         if run.testingSessionsCompleted < runConfiguration.totalTestingSessions:
             print(f"Refreshing testing run {testingRunId}")
             runTesting.delay(testingRunId)
         else:
             print(f"Finished testing run {testingRunId}")
+            run.status = "completed"
+            run.save()
+
     finally:
         unmountTestingRunStorageDrive(configDir)
 
