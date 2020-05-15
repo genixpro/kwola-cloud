@@ -21,7 +21,7 @@ class KubernetesJob:
         # self.getKubernetesCredentials()
 
     def __del__(self):
-        subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"], env={"KUBECONFIG": os.getenv("KUBECONFIG")})
+        subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
 
     def getKubernetesCredentials(self):
         subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers"])
@@ -114,6 +114,9 @@ class KubernetesJob:
 
         jsonData = json.loads(process.stdout)
 
+        if "active" in jsonData['status'] and jsonData['status']['active'] == 1:
+            return "Running"
+
         status = jsonData["status"]["conditions"][0]["type"]
 
         return status
@@ -142,20 +145,11 @@ class KubernetesJob:
             time.sleep(10)
 
     def getLogs(self):
-        process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env={"KUBECONFIG": os.getenv("KUBECONFIG")})
+        process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
-        logging.info(process.stdout)
-
-        jsonData = json.loads(process.stdout)
-
-        if "active" in jsonData['status'] and jsonData['status']['active'] == 1:
-            return "Running"
-
-        status = jsonData["status"]["conditions"][0]["type"]
-
-        return status
+        return str(process.stdout, 'utf8')
 
     def extractResultFromLogs(self):
         logs = self.getLogs()
