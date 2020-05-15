@@ -31,5 +31,3 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 15
-      nodeSelector:
-        cloud.google.com/gke-preemptible: "true"
