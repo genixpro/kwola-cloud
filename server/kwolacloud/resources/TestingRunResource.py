@@ -88,7 +88,7 @@ class TestingRunsGroup(Resource):
                             referenceId=data['id'],
                             image="worker",
                             cpuRequest="50m",
-                            cpuLimit="250m",
+                            cpuLimit="4000m",
                             memoryRequest="500Mi"
                             )
         job.start()
