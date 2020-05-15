@@ -194,10 +194,9 @@ ENV REVISION_ID=${REVISION_ID}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 ENV CLOUDSDK_COMPUTE_ZONE=us-central1-c
 ENV CLOUDSDK_CONTAINER_CLUSTER=testing-workers
+ENV HOME=/home/kwola
 RUN gcloud container clusters get-credentials testing-workers
 RUN su kwola -c "gcloud container clusters get-credentials testing-workers"
-
-ENV HOME=/home/kwola
 RUN chown -R kwola:kwola /kwola && \
     chown -R kwola:kwola /home/kwola && \
     chmod +r+r+r -R /usr/lib/python3 && \
