@@ -96,7 +96,7 @@ class ViewTestingRun extends Component {
                                         <TableBody>
                                             {(this.state.bugs || []).map(bug => {
                                                 return (
-                                                    <TableRow key={bug._id} hover={true} onClick={() => this.props.history.push(`/dashboard/bugs/${bug._id}`)} >
+                                                    <TableRow key={bug._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/bugs/${bug._id}`)} >
                                                         <TableCell>{bug.error.message}</TableCell>
                                                     </TableRow>
                                                 );
@@ -121,7 +121,7 @@ class ViewTestingRun extends Component {
                                         <TableBody>
                                             {(this.state.executionSessions || []).map(executionSession => {
                                                 return (
-                                                    <TableRow key={executionSession._id} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_sessions/${executionSession._id}`)} >
+                                                    <TableRow key={executionSession._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/execution_sessions/${executionSession._id}`)} >
                                                         <TableCell>{executionSession.startTime ? moment(new Date(executionSession.startTime.$date)).format('HH:mm MMM Do') : null}</TableCell>
                                                         <TableCell>{executionSession.totalReward}</TableCell>
                                                     </TableRow>

@@ -77,7 +77,7 @@ class ViewTestingSequence extends Component {
 
                                             {(this.props.executionSessions || []).map(session => {
                                                 return (
-                                                    <TableRow key={session._id} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_sessions/${session._id}`)}>
+                                                    <TableRow key={session._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/execution_sessions/${session._id}`)}>
                                                         <TableCell>{session._id}</TableCell>
                                                         <TableCell>{session.status}</TableCell>
                                                         <TableCell>{session.startDate}</TableCell>

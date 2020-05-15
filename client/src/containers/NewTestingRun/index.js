@@ -1315,7 +1315,7 @@ class NewTestingRun extends Component {
                     const testingRunData = this.createDataForTestingRun();
                     testingRunData['payment_method'] = result.paymentMethod.id;
                     axios.post(`/testing_runs`, testingRunData).then((response) => {
-                        this.props.history.push(`/dashboard/testing_runs/${response.data.testingRunId}`);
+                        this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
                     });
                 }
             });

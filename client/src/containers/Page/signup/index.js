@@ -31,7 +31,7 @@ class SignUp extends Component {
   handleLogin = () => {
     const { login } = this.props;
     login();
-    this.props.history.push('/dashboard');
+    this.props.history.push('/app/dashboard');
   };
   render() {
     return (

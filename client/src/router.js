@@ -14,7 +14,7 @@ const RestrictedRoute = ({ component: Component, isLoggedIn, ...rest }) => (
       ) : (
         <Redirect
           to={{
-            pathname: '/signin',
+            pathname: '/app/signin',
             state: { from: props.location },
           }}
         />
@@ -32,49 +32,54 @@ const PublicRoutes = ({ history, isLoggedIn }) => (
         component={lazy(() => import('./containers/Page/signin'))}
       />
       <Route
+          exact
+          path="/app/"
+          component={lazy(() => import('./containers/Page/signin'))}
+      />
+      <Route
         exact
-        path="/signin"
+        path="/app/signin"
         component={lazy(() => import('./containers/Page/signin'))}
       />
       <Route
         exact
-        path="/login"
+        path="/app/login"
         component={lazy(() => import('./containers/Page/signin'))}
       />
       <Route
-        path="/auth0loginCallback"
+        path="/app/auth0loginCallback"
         render={props => {
           Auth0.handleAuthentication(props);
         }}
       />
       <RestrictedRoute
-        path="/dashboard"
+        path="/app/dashboard"
         component={App}
         isLoggedIn={isLoggedIn}
       />
       <Route
         exact
-        path="/404"
+        path="/app/404"
         component={lazy(() => import('./containers/Page/404'))}
       />
       <Route
         exact
-        path="/505"
+        path="/app/505"
         component={lazy(() => import('./containers/Page/505'))}
       />
       <Route
         exact
-        path="/signup"
+        path="/app/signup"
         component={lazy(() => import('./containers/Page/signup'))}
       />
       <Route
         exact
-        path="/forgot-password"
+        path="/app/forgot-password"
         component={lazy(() => import('./containers/Page/forgetpassword'))}
       />
       <Route
         exact
-        path="/reset-password"
+        path="/app/reset-password"
         component={lazy(() => import('./containers/Page/resetpassword'))}
       />
     </>

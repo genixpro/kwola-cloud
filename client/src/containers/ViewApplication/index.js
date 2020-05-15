@@ -44,7 +44,7 @@ class ViewApplication extends Component {
 
     launchTestingSequenceButtonClicked()
     {
-        this.props.history.push(`/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
+        this.props.history.push(`/app/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
     }
 
     render() {
@@ -116,7 +116,7 @@ class ViewApplication extends Component {
 
                                                 {(this.state.testingRuns || []).map(testingRun => {
                                                     return (
-                                                        <TableRow key={testingRun._id} hover={true} onClick={() => this.props.history.push(`/dashboard/testing_runs/${testingRun._id}`)}>
+                                                        <TableRow key={testingRun._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/testing_runs/${testingRun._id}`)}>
                                                             <TableCell>{moment(testingRun.startTime.$date).format('h:mm a MMM Do')}</TableCell>
                                                             <TableCell>{testingRun.status}</TableCell>
                                                             {/*<TableCell>{testingRun.endDate}</TableCell>*/}

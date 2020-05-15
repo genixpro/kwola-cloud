@@ -41,7 +41,7 @@ class SignIn extends Component {
     // const { login } = this.props;
     // const { username, password } = this.state;
     // login({ username, password });
-    this.props.history.push('/dashboard');
+    this.props.history.push('/app/dashboard');
   };
   onChangeUsername = event => this.setState({ username: event.target.value });
   onChangePassword = event => this.setState({ password: event.target.value });

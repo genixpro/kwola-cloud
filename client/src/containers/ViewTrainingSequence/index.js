@@ -113,7 +113,7 @@ class ViewTrainingSequence extends Component {
                                         <TableBody>
                                             {(this.props.testingSequences || []).map(testingSequence => {
                                                 return (
-                                                    <TableRow key={testingSequence._id} hover={true} onClick={() => this.props.history.push(`/dashboard/testing_sequences/${testingSequence._id}`)}>
+                                                    <TableRow key={testingSequence._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/testing_sequences/${testingSequence._id}`)}>
                                                         <TableCell>{testingSequence.startTime ? moment(new Date(testingSequence.startTime.$date)).format('HH:mm MMM Do') : null}</TableCell>
                                                         <TableCell>{testingSequence.status}</TableCell>
                                                         <TableCell>{testingSequence.averageReward}</TableCell>
@@ -137,7 +137,7 @@ class ViewTrainingSequence extends Component {
                                         <TableBody>
                                             {(this.props.trainingSteps || []).map(trainingStep => {
                                                 return (
-                                                    <TableRow key={trainingStep._id} hover={true} onClick={() => this.props.history.push(`/dashboard/training_steps/${trainingStep._id}`)}>
+                                                    <TableRow key={trainingStep._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/training_steps/${trainingStep._id}`)}>
                                                         <TableCell>{trainingStep.startTime ? moment(new Date(trainingStep.startTime.$date)).format('HH:mm MMM Do') : null}</TableCell>
                                                         <TableCell>{trainingStep.status}</TableCell>
                                                         <TableCell>{trainingStep.averageLoss}</TableCell>

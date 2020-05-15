@@ -79,7 +79,7 @@ class ViewTrainingStep extends Component {
                                         <TableBody>
                                             {(this.props.executionSessions || []).map(executionSession => {
                                                 return (
-                                                    <TableRow key={executionSession._id} hover={true} onClick={() => this.props.history.push(`/dashboard/execution_sessions/${executionSession._id}`)} >
+                                                    <TableRow key={executionSession._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/execution_sessions/${executionSession._id}`)} >
                                                         <TableCell>{executionSession.startTime ? moment(new Date(executionSession.startTime.$date)).format('HH:mm MMM Do') : null}</TableCell>
                                                         <TableCell>{executionSession.totalReward}</TableCell>
                                                     </TableRow>
