@@ -11,5 +11,5 @@ spec:
     apiVersion: apps/v1beta1
     kind: Deployment
     name: kwola-__KWOLA_ENV__-testingworker
-  targetCPUUtilizationPercentage: 80
+  targetCPUUtilizationPercentage: 95
 
