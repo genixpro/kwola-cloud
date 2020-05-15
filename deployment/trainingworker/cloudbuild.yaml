@@ -22,3 +22,5 @@ steps:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
   - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain'
   timeout: 30s
+
+timeout: 15000s
