@@ -62,14 +62,14 @@ class KubernetesJob:
         yamlStr = self.generateJobSpec()
         logging.info(yamlStr)
 
-        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env={"KUBECONFIG": os.getenv("KUBECONFIG")})
+        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
 
 
     def getJobStatus(self):
-        process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env={"KUBECONFIG": os.getenv("KUBECONFIG")})
+        process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
