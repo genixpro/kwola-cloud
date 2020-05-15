@@ -52,6 +52,12 @@ RUN apt-get update && apt-get install \
     -y  > "/dev/null" 2>&1 && \
     rm -rf /var/lib/apt/lists/*
 
+# Install kubectl, used for controlling Kubernetes workers
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && \
+    chmod +x ./kubectl && \
+    mv ./kubectl /usr/local/bin/kubectl && \
+    kubectl version --client
+
 # Download and install Chromedriver
 RUN wget https://chromedriver.storage.googleapis.com/81.0.4044.138/chromedriver_linux64.zip && \
     unzip chromedriver_linux64.zip && \
