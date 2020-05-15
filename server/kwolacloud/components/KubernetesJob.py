@@ -17,7 +17,7 @@ class KubernetesJob:
         # self.getKubernetesCredentials()
 
     def __del__(self):
-        subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
+        subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"], env={"KUBECONFIG": os.getenv("KUBECONFIG")})
 
     def getKubernetesCredentials(self):
         subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers"])
@@ -62,14 +62,14 @@ class KubernetesJob:
         yamlStr = self.generateJobSpec()
         logging.info(yamlStr)
 
-        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env={"KUBECONFIG": os.getenv("KUBECONFIG")})
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
 
 
     def getJobStatus(self):
-        process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env={"KUBECONFIG": os.getenv("KUBECONFIG")})
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
@@ -105,7 +105,7 @@ class KubernetesJob:
             time.sleep(10)
 
     def getLogs(self):
-        process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env={"KUBECONFIG": os.getenv("KUBECONFIG")})
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
