@@ -136,6 +136,7 @@ RUN python3 setup.py install && \
     rm -rf /root/.cache
 
 ARG KWOLA_ENV
+ARG REVISION_ID
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV REVISION_ID=${REVISION_ID}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
