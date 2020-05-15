@@ -192,6 +192,8 @@ ARG KWOLA_ENV
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV REVISION_ID=${REVISION_ID}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
+RUN gcloud container clusters get-credentials testing-workers
+RUN su kwola -c "gcloud container clusters get-credentials testing-workers"
 
 ENV HOME=/home/kwola
 RUN chown -R kwola:kwola /kwola && \
