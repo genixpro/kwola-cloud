@@ -14,7 +14,7 @@ class KubernetesJob:
         self.data = data
         self.referenceId = referenceId
         self.image = image
-        self.getKubernetesCredentials()
+        # self.getKubernetesCredentials()
 
     def __del__(self):
         subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
@@ -62,16 +62,16 @@ class KubernetesJob:
         yamlStr = self.generateJobSpec()
         logging.info(yamlStr)
 
-        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'))
+        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
-            logging.error(f"Error! Did not exit succesfully: \n{process.stdout}\n{process.stderr}")
+            raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
 
 
     def getJobStatus(self):
-        process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()])
+        process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
-            logging.error(f"Error! Did not exit succesfully: \n{process.stdout}\n{process.stderr}")
+            raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
         logging.info(process.stdout)
 
@@ -105,9 +105,9 @@ class KubernetesJob:
             time.sleep(10)
 
     def getLogs(self):
-        process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"])
+        process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
-            logging.error(f"Error! Did not exit successfully: \n{process.stdout}\n{process.stderr}")
+            raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
         logging.info(process.stdout)
 
