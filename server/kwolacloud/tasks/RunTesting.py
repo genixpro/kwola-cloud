@@ -23,6 +23,7 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.tasks import RunTestingStep
 from kwola.tasks import RunTrainingStep
 import stripe
+import logging
 
 def mountTestingRunStorageDrive(testingRunId):
     bucketName = "kwola-testing-run-data-" + testingRunId
@@ -37,9 +38,7 @@ def mountTestingRunStorageDrive(testingRunId):
 
     result = subprocess.run(["gcsfuse", bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        print("Error! gcsfuse did not return success", result.returncode)
-        print(result.stdout)
-        print(result.stderr)
+        logging.error(f"Error! gcsfuse did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
         return None
     else:
         return configDir
@@ -47,9 +46,7 @@ def mountTestingRunStorageDrive(testingRunId):
 def unmountTestingRunStorageDrive(configDir):
     result = subprocess.run(["umount", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        print("Error! umount did not return success")
-        print(result.stdout)
-        print(result.stderr)
+        logging.error(f"Error! umount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
         return False
 
     os.rmdir(configDir)
@@ -59,11 +56,11 @@ def verifyStripeSubscription(testingRun):
     # Verify this subscription with stripe
     subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
     if subscription is None:
-        print("Error! Did not find the Stripe subscription object for this testing run.")
+        logging.error(f"Error! Did not find the Stripe subscription object for this testing run.")
         return False
 
     if subscription.status != "active":
-        print("Error! Stripe subscription is not in the active state.")
+        logging.warning("Error! Stripe subscription is not in the active state.")
         return False
 
     return True
@@ -72,7 +69,7 @@ def attachUsageBilling(config, testingRun, maxSessionsToBill):
     # Verify this subscription with stripe
     subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
     if subscription is None:
-        print("Error! Did not find the Stripe subscription object for this testing run.")
+        logging.error("Error! Did not find the Stripe subscription object for this testing run.")
         return False
 
     stripe.SubscriptionItem.create_usage_record(
@@ -85,12 +82,12 @@ def attachUsageBilling(config, testingRun, maxSessionsToBill):
 
 @celeryApplication.task(queue="testing", acks_late=True)
 def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill):
-    print(f"Starting testing step for testing run {testingRunId}")
+    logging.info(f"Starting testing step for testing run {testingRunId}")
 
     run = TestingRun.objects(id=testingRunId).first()
 
     if run is None:
-        print(f"Error! {testingRunId} not found.")
+        logging.error(f"Error! {testingRunId} not found.")
         return {"success": False}
 
     # Verify this subscription with stripe
@@ -115,7 +112,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
 
         attachUsageBilling(config, run, maxSessionsToBill)
 
-        print(f"Finished testing step for testing run {testingRunId}")
+        logging.info(f"Finished testing step for testing run {testingRunId}")
 
         return result
     finally:
@@ -124,11 +121,11 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
 
 @celeryApplication.task(queue="training", acks_late=True)
 def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
-    print(f"Starting training step for testing run {testingRunId}")
+    logging.info(f"Starting training step for testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
 
     if run is None:
-        print(f"Error! {testingRunId} not found.")
+        logging.error(f"Error! {testingRunId} not found.")
         return {"success":False}
 
     # Verify this subscription with stripe
@@ -147,7 +144,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
 
         result = RunTrainingStep.runTrainingStep(configDir, str(trainingStep.id), trainingStepsCompleted, gpu=0)
 
-        print(f"Completed training step for testing run {testingRunId}")
+        logging.info(f"Completed training step for testing run {testingRunId}")
         return result
     finally:
         unmountTestingRunStorageDrive(configDir)
@@ -166,11 +163,11 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     acks_late=True
 )
 def runTesting(testingRunId):
-    print(f"Starting testing run {testingRunId}")
+    logging.info(f"Starting testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
 
     if run is None:
-        print(f"Error! {testingRunId} not found.")
+        logging.error(f"Error! {testingRunId} not found.")
         return
 
     configDir = mountTestingRunStorageDrive(testingRunId)
@@ -256,7 +253,7 @@ def runTesting(testingRunId):
             countTestingSessionsNeeded = min(remainingTestingSessions, timeElapsed * testingSessionsPerSecond)
 
             while countTestingSessionsStarted < countTestingSessionsNeeded:
-                print(f"Starting a testing step for run {testingRunId}")
+                logging.info(f"Starting a testing step for run {testingRunId}")
                 future = runOneTestingStepForRun.apply_async(args=[testingRunId, completedTestingSteps, countTestingSessionsNeeded - countTestingSessionsStarted])
                 testingStepActiveFutures.append(future)
                 countTestingSessionsStarted += kwolaConfigData['web_session_parallel_execution_sessions']
@@ -264,7 +261,7 @@ def runTesting(testingRunId):
             toRemove = []
             for future in testingStepActiveFutures:
                 if future.ready():
-                    print("Ready future has been found!")
+                    logging.info("Ready future has been found!")
                     toRemove.append(future)
             for future in toRemove:
                 testingStepActiveFutures.remove(future)
@@ -274,13 +271,13 @@ def runTesting(testingRunId):
                 if future.successful():
                     result = future.get(disable_sync_subtasks=False)
                     if isinstance(result, dict) and result['success']:
-                        print(f"Finished a testing step for run {testingRunId}")
+                        logging.info(f"Finished a testing step for run {testingRunId}")
                         countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
                         run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
                         completedTestingSteps += 1
                         run.save()
                     else:
-                        print("Testing run appears to have failed. Trying it again...")
+                        logging.error("Testing run appears to have failed. Trying it again...")
                         # Double check that the stripe subscription is still good. If the testing step failed because our
                         # stripe subscription is bad, we should just exit immediately.
                         if not verifyStripeSubscription(run):
@@ -288,11 +285,11 @@ def runTesting(testingRunId):
                             break
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepFuture is None:
-                print(f"Starting a training step for run {testingRunId}")
+                logging.info(f"Starting a training step for run {testingRunId}")
                 currentTrainingStepFuture = runOneTrainingStepForRun.apply_async(args=[testingRunId, completedTrainingSteps])
 
             if currentTrainingStepFuture is not None and currentTrainingStepFuture.ready():
-                print(f"Finished a training step for run {testingRunId}")
+                logging.info(f"Finished a training step for run {testingRunId}")
                 currentTrainingStepFuture = None
                 countTrainingIterationsCompleted += kwolaConfigData['iterations_per_training_step']
                 completedTrainingSteps += 1
@@ -319,10 +316,10 @@ def runTesting(testingRunId):
             run.save()
 
         if run.testingSessionsCompleted < runConfiguration.totalTestingSessions:
-            print(f"Refreshing testing run {testingRunId}")
+            logging.info(f"Refreshing testing run {testingRunId}")
             runTesting.delay(testingRunId)
         else:
-            print(f"Finished testing run {testingRunId}")
+            logging.info(f"Finished testing run {testingRunId}")
             run.status = "completed"
             run.save()
 

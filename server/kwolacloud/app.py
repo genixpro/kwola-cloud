@@ -9,6 +9,7 @@ import celery
 import stripe
 from .auth import authenticate
 from flask_caching import Cache
+import google.cloud.logging
 
 configData = loadConfiguration()
 
@@ -26,6 +27,11 @@ flaskApplication.config.from_mapping(cacheConfig)
 api = Api(flaskApplication)
 CORS(flaskApplication)
 cache = Cache(flaskApplication)
+
+# Setup logging with google cloud
+client = google.cloud.logging.Client()
+client.get_default_handler()
+client.setup_logging()
 
 # Technically for gunicorn to find the flask application object, it must have the variable
 # name "application". However we prefer the more explicit flaskApplication, this being the

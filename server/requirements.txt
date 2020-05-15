@@ -12,6 +12,7 @@ kwola
 dnspython
 wheel
 google-cloud-storage
+google-cloud-logging
 stripe
 jwcrypto
 flask_httpauth

@@ -12,6 +12,7 @@ from kwola.datamodels.TrainingStepModel import TrainingStep
 import json
 import math
 from ..auth import authenticate
+import logging
 
 
 class TrainingStepGroup(Resource):
@@ -34,7 +35,7 @@ class TrainingStepGroup(Resource):
             if trainingStep.averageLoss is not None and math.isnan(trainingStep.averageLoss):
                 trainingStep.averageLoss = None
                 trainingStep.save()
-                print("Got an unexpected nan!")
+                logging.error("Got an unexpected nan!")
 
         return {"trainingSteps": json.loads(trainingSteps.to_json())}
 
