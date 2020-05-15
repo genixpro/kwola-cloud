@@ -198,10 +198,11 @@ RUN gcloud container clusters get-credentials testing-workers
 
 ENV HOME=/home/kwola
 ENV KUBECONFIG=/home/kwola/kube_config
-RUN su kwola -c "gcloud container clusters get-credentials testing-workers"
 RUN chown -R kwola:kwola /kwola && \
     chown -R kwola:kwola /home/kwola && \
     chmod +r+r+r -R /usr/lib/python3 && \
+    su kwola -c "gcloud container clusters get-credentials testing-workers" && \
+    su kwola -c "kubectl cluster-info" && \
     su kwola -c "kwola_install_proxy_cert 1" && \
     su kwola -c "mkdir -p /home/kwola/.pki" && \
     su kwola -c "mkdir -p /home/kwola/.pki/nssdb" && \
