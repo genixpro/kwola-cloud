@@ -118,7 +118,7 @@ def runTesting(testingRunId):
                                             "testingStepsCompleted": completedTestingSteps,
                                             "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
                                        },
-                                    referenceId=f"{testingRunId}-testingstep-{random.sample('abcdefghijklmnopqrstuvwxyz', 5)}",
+                                    referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                     image="testingworker")
                 job.start()
                 testingStepActiveJobs.append(job)
@@ -157,7 +157,7 @@ def runTesting(testingRunId):
                                                             "testingRunId":testingRunId,
                                                             "trainingStepsCompleted": completedTrainingSteps
                                                        },
-                                                       referenceId=f"{testingRunId}-trainingstep-{random.sample('abcdefghijklmnopqrstuvwxyz', 5)}",
+                                                       referenceId=f"{testingRunId}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                                        image="testingworker")
                 currentTrainingStepJob.start()
 
