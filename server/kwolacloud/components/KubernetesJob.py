@@ -9,11 +9,15 @@ import base64
 from .KubernetesJobProcess import KubernetesJobProcess
 
 class KubernetesJob:
-    def __init__(self, module, data, referenceId, image):
+    def __init__(self, module, data, referenceId, image, cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi"):
         self.module = module
         self.data = data
         self.referenceId = referenceId
         self.image = image
+        self.cpuRequest = cpuRequest
+        self.memoryRequest = memoryRequest
+        self.cpuLimit = cpuLimit
+        self.memoryLimit = memoryLimit
         # self.getKubernetesCredentials()
 
     def __del__(self):
@@ -44,10 +48,43 @@ class KubernetesJob:
                                 "name": f"kwola-cloud-sha256",
                                 "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-testingworker",
                                 "command": ["/usr/bin/python3"],
-                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars), 'ascii')]
+                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars), 'ascii')],
+                                "securityContext": {
+                                    "privileged": True,
+                                    "capabilities":
+                                        {
+                                            "add": [
+                                                "SYS_ADMIN"
+                                            ]
+                                        }
+                                },
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/dev/shm",
+                                        "name": "dshm"
+                                    }
+                                ],
+                                "resources": {
+                                    "requests": {
+                                        "cpu": self.cpuRequest,
+                                        "memory": self.memoryRequest
+                                    },
+                                    "limits": {
+                                        "cpu": self.cpuLimit,
+                                        "memory": self.memoryLimit
+                                    }
+                                }
                             }
                         ],
-                        "restartPolicy": "Never"
+                        "restartPolicy": "Always",
+                        "volumes": [
+                            {
+                                "name": "dshm",
+                                "emptyDir": {
+                                    "medium": "Memory"
+                                }
+                            }
+                        ]
                     }
                 },
                 "backoffLimit": 4
