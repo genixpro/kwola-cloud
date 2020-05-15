@@ -37,7 +37,7 @@ spec:
         volumeMounts:
             - mountPath: /dev/shm
               name: dshm
-        startupProbe:
+        livenessProbe:
           exec:
             command:
               - echo
