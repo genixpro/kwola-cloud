@@ -128,7 +128,7 @@ class KubernetesJob:
         if status == "Running":
             raise ValueError("Can't ask if job is successful if it is still running")
 
-        return status == "Completed"
+        return status == "Success"
 
     def failed(self):
         status = self.getJobStatus()
@@ -149,6 +149,9 @@ class KubernetesJob:
         logging.info(process.stdout)
 
         jsonData = json.loads(process.stdout)
+
+        if "active" in jsonData['status'] and jsonData['status']['active'] == 1:
+            return "Running"
 
         status = jsonData["status"]["conditions"][0]["type"]
 
