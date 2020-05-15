@@ -30,7 +30,6 @@ RUN npm install && \
         rm -rf /var/cache/*
 
 ARG KWOLA_ENV
-ARG REVISION_ID
 
 # Copy the NGINX configuration
 ADD deployment/frontend/nginx_config /etc/nginx/sites-enabled/default
