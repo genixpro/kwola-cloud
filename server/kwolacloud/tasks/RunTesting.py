@@ -108,7 +108,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
         if testingStepsCompleted < (config['training_random_initialization_sequences']):
             shouldBeRandom = True
 
-        testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config), testingRunId=testingRunId)
+        testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config), testingRunId=testingRunId, owner=run.owner)
         testingStep.saveToDisk(config)
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
@@ -142,7 +142,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     try:
         config = Configuration(configDir)
 
-        trainingStep = TrainingStep(id=CustomIDField.generateNewUUID(TrainingStep, config))
+        trainingStep = TrainingStep(id=CustomIDField.generateNewUUID(TrainingStep, config), testingRunId=testingRunId, owner=run.owner)
         trainingStep.saveToDisk(config)
 
         result = RunTrainingStep.runTrainingStep(configDir, str(trainingStep.id), trainingStepsCompleted, gpu=0)
