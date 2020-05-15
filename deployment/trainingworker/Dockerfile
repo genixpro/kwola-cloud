@@ -197,6 +197,7 @@ ENV CLOUDSDK_CONTAINER_CLUSTER=testing-workers
 RUN gcloud container clusters get-credentials testing-workers
 
 ENV HOME=/home/kwola
+ENV KUBECONFIG=/home/kwola/kube_config
 RUN su kwola -c "gcloud container clusters get-credentials testing-workers"
 RUN chown -R kwola:kwola /kwola && \
     chown -R kwola:kwola /home/kwola && \
