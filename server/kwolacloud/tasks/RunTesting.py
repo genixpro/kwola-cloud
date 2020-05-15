@@ -301,14 +301,14 @@ def runTesting(testingRunId):
             time.sleep(1)
 
         if currentTrainingStepFuture is not None:
-            currentTrainingStepFuture.wait()
+            currentTrainingStepFuture.wait(disable_sync_subtasks=False)
 
             completedTrainingSteps += 1
             run.trainingStepsCompleted += 1
             run.save()
 
         for future in testingStepActiveFutures:
-            future.wait()
+            future.wait(disable_sync_subtasks=False)
 
             run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
             completedTestingSteps += 1
@@ -319,7 +319,7 @@ def runTesting(testingRunId):
 
         if run.testingSessionsCompleted < runConfiguration.totalTestingSessions:
             print(f"Refreshing testing run {testingRunId}")
-            runTesting.apply_async(testingRunId)
+            runTesting.delay(testingRunId)
         else:
             print(f"Finished testing run {testingRunId}")
     finally:
