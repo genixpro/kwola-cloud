@@ -219,3 +219,4 @@ USER kwola
 ENTRYPOINT ["/usr/local/bin/celery", "-A", "kwolacloud.app", "worker", "--queues", "training", "-c", "1", "-E", "--max-tasks-per-child", "1", "--prefetch-multiplier", "1"]
 
 EXPOSE 80
+
