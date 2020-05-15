@@ -23,7 +23,7 @@ class KubernetesJob:
         subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers"])
 
     def kubeJobName(self):
-        return f"testing_job_{self.referenceId}"
+        return f"kubernetes-job-{self.referenceId}"
 
 
     def generateJobSpec(self):
