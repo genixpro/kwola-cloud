@@ -32,7 +32,8 @@ RUN npm install && \
 ARG KWOLA_ENV
 
 # Copy the NGINX configuration
-ADD deployment/frontend/nginx_${KWOLA_ENV} /etc/nginx/sites-enabled/default
+ADD deployment/frontend/nginx_config /etc/nginx/sites-enabled/default
+RUN sed "s/__KWOLA_ENV__/${KWOLA_ENV}/g" -i /etc/nginx/sites-enabled/default
 ADD deployment/ssl/kwola.key /etc/nginx/ssl/nginx.key
 ADD deployment/ssl/certbundle.pem /etc/nginx/ssl/nginx.pem
 

@@ -53,13 +53,10 @@ server {
 	index index.html index.htm index.nginx-debian.html;
 
 	server_name _;
-
-        rewrite ^/callback(/)? / last;
-        rewrite ^/dashboard(/)? / last;
-        rewrite ^/dashboard/.*(/)? / last;
+        rewrite ^/(?!api)(?!static)(.*)(/)? / last;
 
         location /api/ {
-            proxy_pass http://kwola-staging-api.default:80/api/;
+            proxy_pass http://kwola-__KWOLA_ENV__-api.default:80/api/;
         }
 
 	location / {
