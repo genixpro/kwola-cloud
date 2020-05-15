@@ -58,7 +58,7 @@ class KubernetesJob:
         yamlStr = self.generateJobSpec()
         logging.info(yamlStr)
 
-        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=yamlStr)
+        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'))
         if process.returncode != 0:
             logging.error(f"Error! Did not exit succesfully: \n{process.stdout}\n{process.stderr}")
 
