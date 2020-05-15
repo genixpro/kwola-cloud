@@ -12,7 +12,7 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.tasks import RunTrainingStep
 import logging
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
-from kwola.tasks.TaskProcess import TaskProcess
+from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
 
 
 
@@ -52,6 +52,6 @@ def runOneTrainingStepForRunTask(testingRunId, trainingStepsCompleted):
 
 
 if __name__ == "__main__":
-    task = TaskProcess(runOneTrainingStepForRun)
+    task = KubernetesJobProcess(runOneTrainingStepForRun)
     task.run()
 

@@ -17,18 +17,9 @@ import logging
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
 from ..components.KubernetesJob import KubernetesJob
 import random
+from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
 
 
-@celeryApplication.task(
-    queue="default",
-    default_retry_delay=5,
-    autoretry_for=(Exception,),
-    retry_backoff=1,
-    retry_backoff_max=60,
-    retry_kwargs={'max_retries': 100},
-    retry_jitter=True,
-    acks_late=True
-)
 def runTesting(testingRunId):
     logging.info(f"Starting testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
@@ -121,9 +112,15 @@ def runTesting(testingRunId):
 
             while countTestingSessionsStarted < countTestingSessionsNeeded:
                 logging.info(f"Starting a testing step for run {testingRunId}")
-                job = KubernetesJob(command=["python3", "-m", "kwolacloud.tasks.SingleTestingStepTask", testingRunId, completedTestingSteps, countTestingSessionsNeeded - countTestingSessionsStarted],
+                job = KubernetesJob(module=["kwolacloud.tasks.SingleTestingStepTask"],
+                                       data={
+                                            "testingRunId": testingRunId,
+                                            "testingStepsCompleted": completedTestingSteps,
+                                            "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
+                                       },
                                     referenceId=f"{testingRunId}-testingstep-{random.sample('abcdefghijklmnopqrstuvwxyz', 5)}",
                                     image="testingworker")
+                job.start()
                 testingStepActiveJobs.append(job)
                 countTestingSessionsStarted += kwolaConfigData['web_session_parallel_execution_sessions']
 
@@ -155,9 +152,14 @@ def runTesting(testingRunId):
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None:
                 logging.info(f"Starting a training step for run {testingRunId}")
-                currentTrainingStepJob = KubernetesJob(command=["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTask", testingRunId, completedTrainingSteps],
-                                    referenceId=f"{testingRunId}-trainingstep-{random.sample('abcdefghijklmnopqrstuvwxyz', 5)}",
-                                    image="testingworker")
+                currentTrainingStepJob = KubernetesJob(module=["kwolacloud.tasks.SingleTrainingStepTask"],
+                                                       data={
+                                                            "testingRunId":testingRunId,
+                                                            "trainingStepsCompleted": completedTrainingSteps
+                                                       },
+                                                       referenceId=f"{testingRunId}-trainingstep-{random.sample('abcdefghijklmnopqrstuvwxyz', 5)}",
+                                                       image="testingworker")
+                currentTrainingStepJob.start()
 
             if currentTrainingStepJob is not None and currentTrainingStepJob.ready():
                 logging.info(f"Finished a training step for run {testingRunId}")
@@ -167,34 +169,46 @@ def runTesting(testingRunId):
                 run.trainingStepsCompleted += 1
                 run.save()
 
-            if timeElapsed > kwolaConfigData.get('testing_run_max_time_before_refresh', 3600):
-                shouldExit = True
-
             time.sleep(1)
 
         if currentTrainingStepJob is not None:
-            currentTrainingStepJob.wait(disable_sync_subtasks=False)
+            currentTrainingStepJob.wait()
 
             completedTrainingSteps += 1
             run.trainingStepsCompleted += 1
             run.save()
 
         for job in testingStepActiveJobs:
-            job.wait(disable_sync_subtasks=False)
+            job.wait()
 
             run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
             completedTestingSteps += 1
             run.save()
 
-        if run.testingSessionsCompleted < runConfiguration.totalTestingSessions:
-            logging.info(f"Refreshing testing run {testingRunId}")
-            runTesting.delay(testingRunId)
-        else:
-            logging.info(f"Finished testing run {testingRunId}")
-            run.status = "completed"
-            run.save()
-
+        logging.info(f"Finished testing run {testingRunId}")
+        run.status = "completed"
+        run.save()
     finally:
         unmountTestingRunStorageDrive(configDir)
+
+
+
+@celeryApplication.task(
+    queue="default",
+    default_retry_delay=5,
+    autoretry_for=(Exception,),
+    retry_backoff=1,
+    retry_backoff_max=60,
+    retry_kwargs={'max_retries': 100},
+    retry_jitter=True,
+    acks_late=True
+)
+def runTestingTask(testingRunId):
+    runTesting(testingRunId=testingRunId)
+
+
+if __name__ == "__main__":
+    task = KubernetesJobProcess(runTesting)
+    task.run()
 
 

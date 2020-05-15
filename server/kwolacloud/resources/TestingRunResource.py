@@ -18,6 +18,7 @@ from ..config.config import getKwolaConfiguration
 import stripe
 from ..auth import authenticate
 from ..config.config import loadConfiguration
+from ..components.KubernetesJob import KubernetesJob
 
 
 class TestingRunsGroup(Resource):
@@ -80,7 +81,13 @@ class TestingRunsGroup(Resource):
 
         newTestingRun.save()
 
-        runTesting.delay(str(newTestingRun.id))
+        job = KubernetesJob(module=["kwolacloud.tasks.RunTesting"],
+                            data={
+                                "testingRunId": data['id']
+                            },
+                            referenceId=data['id'],
+                            image="testingworker")
+        job.start()
 
         return {"testingRunId": data['id']}
 

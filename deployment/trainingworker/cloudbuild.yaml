@@ -22,16 +22,3 @@ steps:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
   - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain'
   timeout: 30s
-- name: 'gcr.io/cloud-builders/gcloud'
-  id: Update Training Server Cron Job
-  entrypoint: /bin/bash
-  args:
-  - "./deployment/trainingworker/update_worker.sh"
-  env:
-  - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain'
-  - 'KWOLA_ENV=$_KWOLA_ENV'
-  - 'REVISION_ID=$REVISION_ID'
-  timeout: 1200s
-
-timeout: 15000s

@@ -3,12 +3,15 @@ import os
 import subprocess
 import logging
 import json
+import pickle
 import time
-from kwola.tasks.TaskProcess import TaskProcess
+import base64
+from .KubernetesJobProcess import KubernetesJobProcess
 
 class KubernetesJob:
-    def __init__(self, command, referenceId, image):
-        self.command = command
+    def __init__(self, module, data, referenceId, image):
+        self.module = module
+        self.data = data
         self.referenceId = referenceId
         self.image = image
 
@@ -36,8 +39,8 @@ class KubernetesJob:
                             {
                                 "name": f"kwola-cloud-sha256",
                                 "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-testingworker",
-                                "command": [self.command[0]],
-                                "args": [str(v) for v in self.command[1:]]
+                                "command": ["python3"],
+                                "args": ["-m", self.module, base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars)]
                             }
                         ],
                         "restartPolicy": "Never"
@@ -51,7 +54,7 @@ class KubernetesJob:
         return yamlStr
 
 
-    def startJob(self):
+    def start(self):
         yamlStr = self.generateJobSpec()
         logging.info(yamlStr)
 
@@ -112,13 +115,13 @@ class KubernetesJob:
 
     def extractResultFromLogs(self):
         logs = self.getLogs()
-        if TaskProcess.resultStartString not in logs or TaskProcess.resultFinishString not in logs:
+        if KubernetesJobProcess.resultStartString not in logs or KubernetesJobProcess.resultFinishString not in logs:
             logging.error(f"[{os.getpid()}] Error! Unable to extract result from the subprocess. Its possible the subprocess may have died")
             return None
         else:
-            resultStart = logs.index(TaskProcess.resultStartString)
-            resultFinish = logs.index(TaskProcess.resultFinishString)
+            resultStart = logs.index(KubernetesJobProcess.resultStartString)
+            resultFinish = logs.index(KubernetesJobProcess.resultFinishString)
 
-            resultDataString = logs[resultStart + len(TaskProcess.resultStartString) : resultFinish]
-            result = json.loads(resultDataString)
+            resultDataString = logs[resultStart + len(KubernetesJobProcess.resultStartString) : resultFinish]
+            result = pickle.loads(base64.b64decode(resultDataString, altchars=KubernetesJobProcess.base64AltChars))
             return result
