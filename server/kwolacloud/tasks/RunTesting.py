@@ -268,7 +268,7 @@ def runTesting(testingRunId):
                 # We only count this testing step if it actually completed successfully, because
                 # otherwise it needs to be done over again.
                 if future.successful():
-                    result = future.get()
+                    result = future.get(disable_sync_subtasks=False)
                     if isinstance(result, dict) and result['success']:
                         print(f"Finished a testing step for run {testingRunId}")
                         countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
