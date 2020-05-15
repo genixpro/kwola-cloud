@@ -44,7 +44,7 @@ class KubernetesJob:
                                 "name": f"kwola-cloud-sha256",
                                 "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-testingworker",
                                 "command": ["python3"],
-                                "args": ["-m", self.module, base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars)]
+                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars))]
                             }
                         ],
                         "restartPolicy": "Never"

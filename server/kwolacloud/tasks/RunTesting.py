@@ -112,7 +112,7 @@ def runTesting(testingRunId):
 
             while countTestingSessionsStarted < countTestingSessionsNeeded:
                 logging.info(f"Starting a testing step for run {testingRunId}")
-                job = KubernetesJob(module=["kwolacloud.tasks.SingleTestingStepTask"],
+                job = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
                                        data={
                                             "testingRunId": testingRunId,
                                             "testingStepsCompleted": completedTestingSteps,
@@ -152,7 +152,7 @@ def runTesting(testingRunId):
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None:
                 logging.info(f"Starting a training step for run {testingRunId}")
-                currentTrainingStepJob = KubernetesJob(module=["kwolacloud.tasks.SingleTrainingStepTask"],
+                currentTrainingStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
                                                        data={
                                                             "testingRunId":testingRunId,
                                                             "trainingStepsCompleted": completedTrainingSteps

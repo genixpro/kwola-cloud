@@ -81,7 +81,7 @@ class TestingRunsGroup(Resource):
 
         newTestingRun.save()
 
-        job = KubernetesJob(module=["kwolacloud.tasks.RunTesting"],
+        job = KubernetesJob(module="kwolacloud.tasks.RunTesting",
                             data={
                                 "testingRunId": data['id']
                             },
