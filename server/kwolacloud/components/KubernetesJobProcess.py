@@ -47,7 +47,7 @@ class KubernetesJobProcess:
 
     def run(self):
         logging.info(f"[{os.getpid()}] KubernetesJobProcess: Waiting for input from stdin")
-        dataStr = sys.argv[2]
+        dataStr = sys.argv[1]
         data = pickle.loads(base64.b64decode(dataStr, altchars=KubernetesJobProcess.base64AltChars))
         logging.info(f"[{os.getpid()}] Running process with following data:\n{json.dumps(data, indent=4)}")
         result = self.targetFunc(**data)
