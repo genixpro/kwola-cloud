@@ -76,7 +76,7 @@ class KubernetesJob:
                                 }
                             }
                         ],
-                        "restartPolicy": "Always",
+                        "restartPolicy": "OnFailure",
                         "volumes": [
                             {
                                 "name": "dshm",
