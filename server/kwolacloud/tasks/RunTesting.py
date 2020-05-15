@@ -119,7 +119,12 @@ def runTesting(testingRunId):
                                             "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
                                        },
                                     referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
-                                    image="testingworker")
+                                    image="testingworker",
+                                    cpuRequest="500m",
+                                    cpuLimit="1500m",
+                                    memoryRequest="2.5Gi",
+                                    memoryLimit="3.5Gi"
+                                    )
                 job.start()
                 testingStepActiveJobs.append(job)
                 countTestingSessionsStarted += kwolaConfigData['web_session_parallel_execution_sessions']
@@ -158,7 +163,12 @@ def runTesting(testingRunId):
                                                             "trainingStepsCompleted": completedTrainingSteps
                                                        },
                                                        referenceId=f"{testingRunId}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
-                                                       image="testingworker")
+                                                       image="trainingworker",
+                                                       cpuRequest="2500m",
+                                                       cpuLimit="3500m",
+                                                       memoryRequest="2.5Gi",
+                                                       memoryLimit="3.5Gi"
+                                                       )
                 currentTrainingStepJob.start()
 
             if currentTrainingStepJob is not None and currentTrainingStepJob.ready():

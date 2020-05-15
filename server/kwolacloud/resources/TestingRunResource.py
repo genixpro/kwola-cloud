@@ -86,7 +86,11 @@ class TestingRunsGroup(Resource):
                                 "testingRunId": data['id']
                             },
                             referenceId=data['id'],
-                            image="testingworker")
+                            image="worker",
+                            cpuRequest="50m",
+                            cpuLimit="250m",
+                            memoryRequest="500Mi"
+                            )
         job.start()
 
         return {"testingRunId": data['id']}
