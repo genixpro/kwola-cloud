@@ -8,6 +8,8 @@ steps:
     "--snapshotMode=time",
     "--build-arg",
     "KWOLA_ENV=$_KWOLA_ENV",
+    "--build-arg",
+    "REVISION_ID=$REVISION_ID",
     "-f",
     "deployment/trainingworker/Dockerfile"
   ]

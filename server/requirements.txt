@@ -17,3 +17,4 @@ stripe
 jwcrypto
 flask_httpauth
 Flask-Caching
+pyyaml

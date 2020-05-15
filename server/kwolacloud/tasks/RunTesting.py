@@ -6,150 +6,17 @@
 
 from ..app import celeryApplication
 from ..datamodels.TestingRun import TestingRun
-from kwola.datamodels.TrainingStepModel import TrainingStep
 from kwola.components.environments.WebEnvironment import WebEnvironment
-import subprocess
-import tempfile
-from google.cloud import storage
 import os.path
 import json
 from ..config.config import getKwolaConfigurationData
 import time
 import datetime
-from kwola.tasks.RunTestingStep import runTestingStep
 from kwola.config.config import Configuration
-from kwola.datamodels.TestingStepModel import TestingStep
-from kwola.datamodels.CustomIDField import CustomIDField
-from kwola.tasks import RunTestingStep
-from kwola.tasks import RunTrainingStep
-import stripe
 import logging
-
-def mountTestingRunStorageDrive(testingRunId):
-    bucketName = "kwola-testing-run-data-" + testingRunId
-
-    configDir = tempfile.mkdtemp()
-
-    storage_client = storage.Client()
-
-    bucket = storage_client.lookup_bucket(bucketName)
-    if bucket is None:
-        storage_client.create_bucket(bucketName)
-
-    result = subprocess.run(["gcsfuse", bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! gcsfuse did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
-        return None
-    else:
-        return configDir
-
-def unmountTestingRunStorageDrive(configDir):
-    result = subprocess.run(["umount", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! umount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
-        return False
-
-    os.rmdir(configDir)
-    return True
-
-def verifyStripeSubscription(testingRun):
-    # Verify this subscription with stripe
-    subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
-    if subscription is None:
-        logging.error(f"Error! Did not find the Stripe subscription object for this testing run.")
-        return False
-
-    if subscription.status != "active":
-        logging.warning("Error! Stripe subscription is not in the active state.")
-        return False
-
-    return True
-
-def attachUsageBilling(config, testingRun, maxSessionsToBill):
-    # Verify this subscription with stripe
-    subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
-    if subscription is None:
-        logging.error("Error! Did not find the Stripe subscription object for this testing run.")
-        return False
-
-    stripe.SubscriptionItem.create_usage_record(
-        subscription.items.configData[0].id,
-        quantity=config['testing_sequence_length'] * min(maxSessionsToBill, config['web_session_parallel_execution_sessions']),
-        timestamp=datetime.datetime.now().timestamp(),
-        action='increment',
-    )
-
-
-@celeryApplication.task(queue="testing", acks_late=True)
-def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill):
-    logging.info(f"Starting testing step for testing run {testingRunId}")
-
-    run = TestingRun.objects(id=testingRunId).first()
-
-    if run is None:
-        logging.error(f"Error! {testingRunId} not found.")
-        return {"success": False}
-
-    # Verify this subscription with stripe
-    if not verifyStripeSubscription(run):
-        return {"success": False}
-
-    configDir = mountTestingRunStorageDrive(testingRunId)
-    if configDir is None:
-        return {"success": False}
-
-    try:
-        config = Configuration(configDir)
-
-        shouldBeRandom = False
-        if testingStepsCompleted < (config['training_random_initialization_sequences']):
-            shouldBeRandom = True
-
-        testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config), testingRunId=testingRunId, owner=run.owner)
-        testingStep.saveToDisk(config)
-
-        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
-
-        attachUsageBilling(config, run, maxSessionsToBill)
-
-        logging.info(f"Finished testing step for testing run {testingRunId}")
-
-        return result
-    finally:
-        unmountTestingRunStorageDrive(configDir)
-
-
-@celeryApplication.task(queue="training", acks_late=True)
-def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
-    logging.info(f"Starting training step for testing run {testingRunId}")
-    run = TestingRun.objects(id=testingRunId).first()
-
-    if run is None:
-        logging.error(f"Error! {testingRunId} not found.")
-        return {"success":False}
-
-    # Verify this subscription with stripe
-    if not verifyStripeSubscription(run):
-        return {"success": False}
-
-    configDir = mountTestingRunStorageDrive(testingRunId)
-    if configDir is None:
-        return {"success":False}
-
-    try:
-        config = Configuration(configDir)
-
-        trainingStep = TrainingStep(id=CustomIDField.generateNewUUID(TrainingStep, config), testingRunId=testingRunId, owner=run.owner)
-        trainingStep.saveToDisk(config)
-
-        result = RunTrainingStep.runTrainingStep(configDir, str(trainingStep.id), trainingStepsCompleted, gpu=0)
-
-        logging.info(f"Completed training step for testing run {testingRunId}")
-        return result
-    finally:
-        unmountTestingRunStorageDrive(configDir)
-
-
+from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
+from ..components.KubernetesJob import KubernetesJob
+import random
 
 
 @celeryApplication.task(
@@ -239,12 +106,12 @@ def runTesting(testingRunId):
 
         startTime = datetime.datetime.now()
 
-        testingStepActiveFutures = []
-        testingStepCompletedFutures = []
+        testingStepActiveJobs = []
+        testingStepCompletedJobs = []
 
         completedTrainingSteps = run.trainingStepsCompleted
         completedTestingSteps = int(run.testingSessionsCompleted / kwolaConfigData['web_session_parallel_execution_sessions'])
-        currentTrainingStepFuture = None
+        currentTrainingStepJob = None
         shouldExit = False
 
         while run.testingSessionsCompleted < runConfiguration.totalTestingSessions and not shouldExit:
@@ -254,22 +121,24 @@ def runTesting(testingRunId):
 
             while countTestingSessionsStarted < countTestingSessionsNeeded:
                 logging.info(f"Starting a testing step for run {testingRunId}")
-                future = runOneTestingStepForRun.apply_async(args=[testingRunId, completedTestingSteps, countTestingSessionsNeeded - countTestingSessionsStarted])
-                testingStepActiveFutures.append(future)
+                job = KubernetesJob(command=["python3", "-m", "kwolacloud.tasks.SingleTestingStepTask", testingRunId, completedTestingSteps, countTestingSessionsNeeded - countTestingSessionsStarted],
+                                    referenceId=f"{testingRunId}-testingstep-{random.sample('abcdefghijklmnopqrstuvwxyz', 5)}",
+                                    image="testingworker")
+                testingStepActiveJobs.append(job)
                 countTestingSessionsStarted += kwolaConfigData['web_session_parallel_execution_sessions']
 
             toRemove = []
-            for future in testingStepActiveFutures:
-                if future.ready():
-                    logging.info("Ready future has been found!")
-                    toRemove.append(future)
-            for future in toRemove:
-                testingStepActiveFutures.remove(future)
-                testingStepCompletedFutures.append(future)
+            for job in testingStepActiveJobs:
+                if job.ready():
+                    logging.info("Ready job has been found!")
+                    toRemove.append(job)
+            for job in toRemove:
+                testingStepActiveJobs.remove(job)
+                testingStepCompletedJobs.append(job)
                 # We only count this testing step if it actually completed successfully, because
                 # otherwise it needs to be done over again.
-                if future.successful():
-                    result = future.get(disable_sync_subtasks=False)
+                if job.successful():
+                    result = job.extractResultFromLogs()
                     if isinstance(result, dict) and result['success']:
                         logging.info(f"Finished a testing step for run {testingRunId}")
                         countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
@@ -284,13 +153,15 @@ def runTesting(testingRunId):
                             shouldExit = True
                             break
 
-            if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepFuture is None:
+            if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None:
                 logging.info(f"Starting a training step for run {testingRunId}")
-                currentTrainingStepFuture = runOneTrainingStepForRun.apply_async(args=[testingRunId, completedTrainingSteps])
+                currentTrainingStepJob = KubernetesJob(command=["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTask", testingRunId, completedTrainingSteps],
+                                    referenceId=f"{testingRunId}-trainingstep-{random.sample('abcdefghijklmnopqrstuvwxyz', 5)}",
+                                    image="testingworker")
 
-            if currentTrainingStepFuture is not None and currentTrainingStepFuture.ready():
+            if currentTrainingStepJob is not None and currentTrainingStepJob.ready():
                 logging.info(f"Finished a training step for run {testingRunId}")
-                currentTrainingStepFuture = None
+                currentTrainingStepJob = None
                 countTrainingIterationsCompleted += kwolaConfigData['iterations_per_training_step']
                 completedTrainingSteps += 1
                 run.trainingStepsCompleted += 1
@@ -301,15 +172,15 @@ def runTesting(testingRunId):
 
             time.sleep(1)
 
-        if currentTrainingStepFuture is not None:
-            currentTrainingStepFuture.wait(disable_sync_subtasks=False)
+        if currentTrainingStepJob is not None:
+            currentTrainingStepJob.wait(disable_sync_subtasks=False)
 
             completedTrainingSteps += 1
             run.trainingStepsCompleted += 1
             run.save()
 
-        for future in testingStepActiveFutures:
-            future.wait(disable_sync_subtasks=False)
+        for job in testingStepActiveJobs:
+            job.wait(disable_sync_subtasks=False)
 
             run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
             completedTestingSteps += 1

@@ -43,6 +43,7 @@ ADD client /kwola/client
 # Set the working directory to /kwola/client, and build the frontend package
 WORKDIR /kwola/client
 ENV KWOLA_ENV=${KWOLA_ENV}
+ENV REVISION_ID=${REVISION_ID}
 
 # Build the frontend static files and delete all the kwola code, nodejs and python to trim down the image size
 RUN npm run-script build && \
