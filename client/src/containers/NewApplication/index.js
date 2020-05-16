@@ -9,6 +9,7 @@ import { FullColumn } from '../../components/utility/rowColumn';
 import { FormsComponentWrapper, FormsMainWrapper } from './forms.style';
 import CodeViewer from '../codeViewer';
 import axios from "axios";
+import mixpanel from 'mixpanel-browser';
 
 //injectTapEventPlugin();
 
@@ -24,7 +25,9 @@ export default class extends Component {
   {
     axios.post("/application", {... values}).then((response) =>
     {
-        this.props.history.push(`/app/dashboard/applications/${response.data.applicationId}`);
+      mixpanel.track("created-application");
+
+      this.props.history.push(`/app/dashboard/applications/${response.data.applicationId}`);
     });
   };
 

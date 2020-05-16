@@ -4,6 +4,7 @@ import { Auth0Config } from '../../settings';
 import { notification } from '../../components';
 import axios from "axios";
 import jwt from "jsonwebtoken";
+import mixpanel from 'mixpanel-browser';
 
 class Auth0Helper {
   isValid = Auth0Config.clientID && Auth0Config.domain;
@@ -14,6 +15,7 @@ class Auth0Helper {
     this.handleAuthentication = this.handleAuthentication.bind(this);
     this.isAuthenticated = this.isAuthenticated.bind(this);
     this.updateAxiosToken();
+    this.updateMixpanelIdentity();
   }
   login(handleLogin) {
     this.lock = this.isValid
@@ -36,7 +38,8 @@ class Auth0Helper {
     });
     this.lock.show();
   }
-  handleAuthentication(props) {
+  handleAuthentication(props)
+  {
     // localStorage.setItem('id_token', 'secret token');
     history.replace('/dashboard');
   }
@@ -69,10 +72,12 @@ class Auth0Helper {
     let expiresAt = JSON.stringify(
       authResult.expiresIn * 1000 + new Date().getTime()
     );
+
     localStorage.setItem('access_token', authResult.accessToken);
     localStorage.setItem('id_token', authResult.idToken);
     localStorage.setItem('expires_at', expiresAt);
     this.updateAxiosToken();
+    this.updateMixpanelIdentity();
   }
 
   logout() {
@@ -83,6 +88,7 @@ class Auth0Helper {
     // navigate to the home route
     history.replace('/');
     this.updateAxiosToken();
+    this.updateMixpanelIdentity();
   }
 
   isAuthenticated() {
@@ -92,5 +98,15 @@ class Auth0Helper {
       new Date().getTime() < JSON.parse(localStorage.getItem('expires_at'))
     );
   }
+
+  updateMixpanelIdentity()
+  {
+    const userData = this.getUserInfo();
+    if (userData)
+    {
+      mixpanel.identify(userData.user_id);
+    }
+  }
+
 }
 export default new Auth0Helper();

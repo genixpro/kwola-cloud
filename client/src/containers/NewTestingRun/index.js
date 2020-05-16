@@ -28,6 +28,7 @@ import {
 } from '../../components/uielements/form';
 import {PaymentRequestButtonElement, CardElement, useStripe, useElements, ElementsConsumer} from "@stripe/react-stripe-js";
 import stripePromise from "../../stripe";
+import mixpanel from 'mixpanel-browser';
 
 function addCommas(value)
 {
@@ -1282,6 +1283,8 @@ class NewTestingRun extends Component {
 
     launchTestingRunButtonClicked()
     {
+        mixpanel.track("clicked-launch-testing-run");
+
         this.setState({"mode": "payment"});
     }
 
@@ -1309,13 +1312,19 @@ class NewTestingRun extends Component {
                 {
                     // Show error to your customer (e.g., insufficient funds)
                     console.log(result.error.message);
+                    mixpanel.track("complete-order-error", {price: this.calculatePrice()});
                 }
                 else
                 {
                     const testingRunData = this.createDataForTestingRun();
                     testingRunData['payment_method'] = result.paymentMethod.id;
                     axios.post(`/testing_runs`, testingRunData).then((response) => {
+                        mixpanel.track("complete-order-success", {testingRunId: response.data.testingRunId, price: this.calculatePrice()});
+                        mixpanel.people.track_charge(this.calculatePrice();
                         this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
+                    }, (error) =>
+                    {
+                        mixpanel.track("complete-order-error", {price: this.calculatePrice()});
                     });
                 }
             });
