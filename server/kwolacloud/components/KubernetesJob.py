@@ -157,7 +157,7 @@ class KubernetesJob:
 
     def getLogs(self):
         self.refreshCredentials()
-        
+
         process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
