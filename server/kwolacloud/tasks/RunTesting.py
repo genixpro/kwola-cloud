@@ -182,7 +182,7 @@ def runTesting(testingRunId):
                 run.save()
                 pastTrainingStepJob.cleanup()
 
-            time.sleep(1)
+            time.sleep(10)
 
         if currentTrainingStepJob is not None:
             currentTrainingStepJob.wait()
