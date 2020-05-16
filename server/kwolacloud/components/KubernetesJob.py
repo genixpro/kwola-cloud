@@ -31,6 +31,21 @@ class KubernetesJob:
 
 
     def generateJobSpec(self):
+        requests = {}
+        limits = {}
+
+        if self.cpuLimit is not None:
+            limits["cpu"] = self.cpuLimit
+
+        if self.memoryLimit is not None:
+            limits["memory"] = self.memoryLimit
+
+        if self.cpuRequest is not None:
+            requests["cpu"] = self.cpuRequest
+
+        if self.memoryRequest is not None:
+            requests["memory"] = self.memoryRequest
+
         manifest = {
             "apiVersion": "batch/v1",
             "kind": "Job",
@@ -65,14 +80,8 @@ class KubernetesJob:
                                     }
                                 ],
                                 "resources": {
-                                    "requests": {
-                                        "cpu": self.cpuRequest,
-                                        "memory": self.memoryRequest
-                                    },
-                                    "limits": {
-                                        "cpu": self.cpuLimit,
-                                        "memory": self.memoryLimit
-                                    }
+                                    "requests": requests,
+                                    "limits": limits
                                 }
                             }
                         ],
