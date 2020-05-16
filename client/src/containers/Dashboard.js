@@ -10,24 +10,25 @@ class Dashboard extends Component {
 		super();
 	}
 
-
 	componentDidMount()
 	{
-		axios.get("/application").then((response) =>
-		{
-			if (response.data.applications.length === 0)
-			{
+		axios.get("/application").then((response) => {
+			if (response.data.applications.length === 0) {
 				this.props.history.push(`/app/dashboard/new-application`);
-			}
-			else if (response.data.applications.length === 1)
-			{
+			} else if (response.data.applications.length === 1) {
 				this.props.history.push(`/app/dashboard/applications/${response.data.applications[0]._id}`)
-			}
-			else
-			{
+			} else {
 				this.props.history.push(`/app/dashboard/applications/`)
 			}
 		})
+	}
+
+	render()
+	{
+		return <LayoutWrapper>
+			<FullColumn>
+			</FullColumn>
+		</LayoutWrapper>
 	}
 }
 
