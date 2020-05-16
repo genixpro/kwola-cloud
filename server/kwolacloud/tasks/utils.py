@@ -11,6 +11,7 @@ import os.path
 import datetime
 import stripe
 import logging
+import json
 
 
 def mountTestingRunStorageDrive(testingRunId):
@@ -60,8 +61,10 @@ def attachUsageBilling(config, testingRun, maxSessionsToBill):
         logging.error("Error! Did not find the Stripe subscription object for this testing run.")
         return False
 
+    logging.info(json.dumps(list(subscription.items())))
+
     stripe.SubscriptionItem.create_usage_record(
-        list(subscription.items())[0].id,
+        list(subscription.items())[0][0],
         quantity=config['testing_sequence_length'] * min(maxSessionsToBill, config['web_session_parallel_execution_sessions']),
         timestamp=datetime.datetime.now().timestamp(),
         action='increment',
