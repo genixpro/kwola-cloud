@@ -24,6 +24,7 @@ class KubernetesJob:
         subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
 
     def getKubernetesCredentials(self):
+        subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers"])
         subprocess.run(["kubectl", "cluster-info"])
 
     def kubeJobName(self):
