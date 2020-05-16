@@ -109,8 +109,6 @@ class KubernetesJob:
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
-        logging.info(process.stdout)
-
         jsonData = json.loads(process.stdout)
 
         if "active" in jsonData['status'] and jsonData['status']['active'] == 1:
