@@ -18,13 +18,13 @@ class KubernetesJob:
         self.memoryRequest = memoryRequest
         self.cpuLimit = cpuLimit
         self.memoryLimit = memoryLimit
-        # self.getKubernetesCredentials()
+        self.getKubernetesCredentials()
 
     def cleanup(self):
         subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
 
     def getKubernetesCredentials(self):
-        subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers"])
+        subprocess.run(["kubectl", "cluster-info"])
 
     def kubeJobName(self):
         return f"kubernetes-job-{self.referenceId}"
