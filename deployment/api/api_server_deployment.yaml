@@ -45,6 +45,11 @@ spec:
         volumeMounts:
           - mountPath: /dev/shm
             name: dshm
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+              - SYS_ADMIN
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
