@@ -66,7 +66,7 @@ def attachUsageBilling(config, testingRun, maxSessionsToBill):
     stripe.SubscriptionItem.create_usage_record(
         subscription['items'].data[0].id,
         quantity=config['testing_sequence_length'] * min(maxSessionsToBill, config['web_session_parallel_execution_sessions']),
-        timestamp=datetime.datetime.now().timestamp(),
+        timestamp=int(datetime.datetime.now().timestamp()),
         action='increment',
     )
 
