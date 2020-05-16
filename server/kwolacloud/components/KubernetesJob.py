@@ -20,7 +20,7 @@ class KubernetesJob:
         self.memoryLimit = memoryLimit
         # self.getKubernetesCredentials()
 
-    def __del__(self):
+    def cleanup(self):
         subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
 
     def getKubernetesCredentials(self):

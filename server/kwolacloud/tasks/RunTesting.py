@@ -141,6 +141,7 @@ def runTesting(testingRunId):
                 # otherwise it needs to be done over again.
                 if job.successful():
                     result = job.extractResultFromLogs()
+                    job.cleanup()
                     if isinstance(result, dict) and result['success']:
                         logging.info(f"Finished a testing step for run {testingRunId}")
                         countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
@@ -173,11 +174,13 @@ def runTesting(testingRunId):
 
             if currentTrainingStepJob is not None and currentTrainingStepJob.ready():
                 logging.info(f"Finished a training step for run {testingRunId}")
+                pastTrainingStepJob = currentTrainingStepJob
                 currentTrainingStepJob = None
                 countTrainingIterationsCompleted += kwolaConfigData['iterations_per_training_step']
                 completedTrainingSteps += 1
                 run.trainingStepsCompleted += 1
                 run.save()
+                pastTrainingStepJob.cleanup()
 
             time.sleep(1)
 
@@ -187,6 +190,7 @@ def runTesting(testingRunId):
             completedTrainingSteps += 1
             run.trainingStepsCompleted += 1
             run.save()
+            currentTrainingStepJob.cleanup()
 
         for job in testingStepActiveJobs:
             job.wait()
@@ -194,6 +198,7 @@ def runTesting(testingRunId):
             run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
             completedTestingSteps += 1
             run.save()
+            job.cleanup()
 
         logging.info(f"Finished testing run {testingRunId}")
         run.status = "completed"
