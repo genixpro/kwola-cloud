@@ -22,10 +22,14 @@ class SignIn extends Component {
   };
 
   componentDidMount() {
-    // if(!Auth0.isAuthenticated())
-    // {
+    if(!Auth0.isAuthenticated())
+    {
       Auth0.login(this.handleLogin);
-    // }
+    }
+    else
+    {
+      this.props.history.push('/app/dashboard/');
+    }
   }
 
 
@@ -41,7 +45,7 @@ class SignIn extends Component {
     // const { login } = this.props;
     // const { username, password } = this.state;
     // login({ username, password });
-    this.props.history.push('/app/dashboard');
+    this.props.history.push('/app/dashboard/');
   };
   onChangeUsername = event => this.setState({ username: event.target.value });
   onChangePassword = event => this.setState({ password: event.target.value });
