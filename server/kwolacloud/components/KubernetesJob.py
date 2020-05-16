@@ -18,12 +18,13 @@ class KubernetesJob:
         self.memoryRequest = memoryRequest
         self.cpuLimit = cpuLimit
         self.memoryLimit = memoryLimit
-        self.getKubernetesCredentials()
 
     def cleanup(self):
+        self.refreshCredentials()
         subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
 
-    def getKubernetesCredentials(self):
+    def refreshCredentials(self):
+        subprocess.run(["gcloud", "auth", "activate-service-account", "kwola-288@kwola-cloud.iam.gserviceaccount.com", f"--key-file={os.getenv('GOOGLE_APPLICATION_CREDENTIALS')}"])
         subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers"])
         subprocess.run(["kubectl", "cluster-info"])
 
@@ -106,6 +107,8 @@ class KubernetesJob:
 
 
     def start(self):
+        self.refreshCredentials()
+
         yamlStr = self.generateJobSpec()
 
         process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -115,6 +118,8 @@ class KubernetesJob:
 
 
     def getJobStatus(self):
+        self.refreshCredentials()
+
         process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
@@ -151,6 +156,8 @@ class KubernetesJob:
             time.sleep(10)
 
     def getLogs(self):
+        self.refreshCredentials()
+        
         process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
