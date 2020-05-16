@@ -97,7 +97,6 @@ class KubernetesJob:
 
     def start(self):
         yamlStr = self.generateJobSpec()
-        logging.info(yamlStr)
 
         process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0:
@@ -123,7 +122,6 @@ class KubernetesJob:
 
     def ready(self):
         status = self.getJobStatus()
-        print(status)
         return status != "Running"
 
     def successful(self):
