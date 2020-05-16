@@ -13,6 +13,8 @@ import SignInStyleWrapper from './signin.style';
 import Auth0 from '../../../helpers/auth0';
 import Firebase from '../../../helpers/firebase';
 import FirebaseLogin from '../../../components/firebase';
+import mixpanel from 'mixpanel-browser';
+
 
 class SignIn extends Component {
   state = {
@@ -42,9 +44,9 @@ class SignIn extends Component {
     }
   }
   handleLogin = () => {
-    // const { login } = this.props;
-    // const { username, password } = this.state;
-    // login({ username, password });
+    var _hsq = window._hsq = window._hsq || [];
+    mixpanel.track("login");
+    _hsq.push(["trackEvent", {id: "Login"}]);
     this.props.history.push('/app/dashboard/');
   };
   onChangeUsername = event => this.setState({ username: event.target.value });

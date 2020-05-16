@@ -55,6 +55,10 @@ const routes = [
 
 class AppRouter extends Component {
   render() {
+    var _hsq = window._hsq = window._hsq || [];
+    _hsq.push(['setPath', this.props.url]);
+    _hsq.push(['trackPageView']);
+
     const { url, style } = this.props;
     return (
       <Suspense fallback={<Loader />}>

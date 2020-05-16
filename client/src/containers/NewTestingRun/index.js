@@ -1284,6 +1284,8 @@ class NewTestingRun extends Component {
     launchTestingRunButtonClicked()
     {
         mixpanel.track("clicked-launch-testing-run");
+        var _hsq = window._hsq = window._hsq || [];
+        _hsq.push(["trackEvent", {id: "Clicked Launch Testing Run"}]);
 
         this.setState({"mode": "payment"});
     }
@@ -1295,6 +1297,7 @@ class NewTestingRun extends Component {
 
     completeOrder(elements)
     {
+        var _hsq = window._hsq = window._hsq || [];
         stripePromise.then((stripe) =>
         {
             const cardElement = elements.getElement(CardElement);
@@ -1313,6 +1316,7 @@ class NewTestingRun extends Component {
                     // Show error to your customer (e.g., insufficient funds)
                     console.log(result.error.message);
                     mixpanel.track("complete-order-error", {price: this.calculatePrice()});
+                    _hsq.push(["trackEvent", {id: "Failed Order"}]);
                 }
                 else
                 {
@@ -1320,11 +1324,16 @@ class NewTestingRun extends Component {
                     testingRunData['payment_method'] = result.paymentMethod.id;
                     axios.post(`/testing_runs`, testingRunData).then((response) => {
                         mixpanel.track("complete-order-success", {testingRunId: response.data.testingRunId, price: this.calculatePrice()});
-                        mixpanel.people.track_charge(this.calculatePrice();
+                        mixpanel.people.track_charge(this.calculatePrice())
+                        _hsq.push(["trackEvent", {
+                            id: "Completed Order",
+                            value: this.calculatePrice()
+                        }]);
                         this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
                     }, (error) =>
                     {
                         mixpanel.track("complete-order-error", {price: this.calculatePrice()});
+                        _hsq.push(["trackEvent", {id: "Failed Order"}]);
                     });
                 }
             });
