@@ -204,8 +204,8 @@ def runTesting(testingRunId):
         run.status = "completed"
         run.save()
     finally:
-        unmountTestingRunStorageDrive(configDir)
-
+        # unmountTestingRunStorageDrive(configDir)
+        pass
 
 
 @celeryApplication.task(

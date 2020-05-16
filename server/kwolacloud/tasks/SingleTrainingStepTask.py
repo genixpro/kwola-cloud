@@ -43,7 +43,8 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         logging.info(f"Completed training step for testing run {testingRunId}")
         return result
     finally:
-        unmountTestingRunStorageDrive(configDir)
+        # unmountTestingRunStorageDrive(configDir)
+        pass
 
 
 @celeryApplication.task(queue="training", acks_late=True)

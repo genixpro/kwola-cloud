@@ -50,7 +50,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
 
         return result
     finally:
-        unmountTestingRunStorageDrive(configDir)
+        # unmountTestingRunStorageDrive(configDir)
+        pass
 
 
 @celeryApplication.task(queue="testing", acks_late=True)
