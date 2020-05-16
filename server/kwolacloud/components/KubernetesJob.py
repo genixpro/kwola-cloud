@@ -26,7 +26,7 @@ class KubernetesJob:
     def refreshCredentials(self):
         subprocess.run(["gcloud", "auth", "activate-service-account", "kwola-288@kwola-cloud.iam.gserviceaccount.com", f"--key-file={os.getenv('GOOGLE_APPLICATION_CREDENTIALS')}"])
         subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers"])
-        subprocess.run(["kubectl", "cluster-info"])
+        subprocess.run(["kubectl", "cluster-info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def kubeJobName(self):
         return f"kubernetes-job-{self.referenceId}"
@@ -112,7 +112,7 @@ class KubernetesJob:
         yamlStr = self.generateJobSpec()
 
         process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if process.returncode != 0:
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
 
@@ -121,7 +121,7 @@ class KubernetesJob:
         self.refreshCredentials()
 
         process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if process.returncode != 0:
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
         jsonData = json.loads(process.stdout)
@@ -159,7 +159,7 @@ class KubernetesJob:
         self.refreshCredentials()
 
         process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if process.returncode != 0:
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
 
         return str(process.stdout, 'utf8')
