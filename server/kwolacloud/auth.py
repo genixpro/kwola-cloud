@@ -7,7 +7,7 @@ import json
 import pkg_resources
 import flask
 
-def authenticate():
+def authenticate(returnAllClaims=False):
     configData = loadConfiguration()
 
     if 'WWW-Authenticate' in flask.request.headers:
@@ -34,7 +34,10 @@ def authenticate():
 
         claims = json_decode(token.claims)
 
-        return claims['sub']
+        if returnAllClaims:
+            return claims['sub'], claims
+        else:
+            return claims['sub']
     except ValueError as e:
         print(e)
         return None

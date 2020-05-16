@@ -48,18 +48,27 @@ class TestingRunsGroup(Resource):
         return {"testingRuns": json.loads(testingRuns)}
 
     def post(self):
-        user = authenticate()
+        user, claims = authenticate(returnAllClaims=True)
         if user is None:
             abort(401)
 
         data = flask.request.get_json()
 
-        customer = stripe.Customer.create(
-            payment_method=data['payment_method']
-            # email: newTestingRun.email,
-            # name: newTestingRun.billingName,
-            # address: newTestingRun.billingAddress
-        )
+        stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
+
+        customer = stripe.Customer.retrieve(stripeCustomerId)
+
+        if customer is None:
+            customer = stripe.Customer.create(
+                payment_method=data['payment_method'],
+                email=claims['email'],
+                name=claims['name']
+            )
+        else:
+            stripe.PaymentMethod.attach(
+              data['payment_method'],
+              customer=stripeCustomerId,
+            )
 
         subscription = stripe.Subscription.create(
             customer=customer.id,
