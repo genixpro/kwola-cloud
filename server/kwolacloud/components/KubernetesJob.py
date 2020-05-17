@@ -129,9 +129,11 @@ class KubernetesJob:
         if "active" in jsonData['status'] and jsonData['status']['active'] == 1:
             return "Running"
 
-        status = jsonData["status"]["conditions"][0]["type"]
+        if "failed" in jsonData['status'] and jsonData['status']['failed'] == 1:
+            return "Failed"
 
-        return status
+        if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] == 1:
+            return "Success"
 
     def ready(self):
         status = self.getJobStatus()
