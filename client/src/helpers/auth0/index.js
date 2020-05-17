@@ -17,6 +17,7 @@ class Auth0Helper {
     this.updateAxiosToken();
     this.updateMixpanelIdentity();
     this.updateHubspotIdentity();
+    this.updateGoogleAnalyticsIdentity();
   }
   login(handleLogin) {
     this.lock = this.isValid
@@ -80,6 +81,7 @@ class Auth0Helper {
     this.updateAxiosToken();
     this.updateMixpanelIdentity();
     this.updateHubspotIdentity();
+    this.updateGoogleAnalyticsIdentity();
   }
 
   logout() {
@@ -92,6 +94,7 @@ class Auth0Helper {
     this.updateAxiosToken();
     this.updateMixpanelIdentity();
     this.updateHubspotIdentity();
+    this.updateGoogleAnalyticsIdentity();
   }
 
   isAuthenticated() {
@@ -118,6 +121,15 @@ class Auth0Helper {
     {
       var _hsq = window._hsq = window._hsq || [];
       _hsq.push(['identify', {email: userData.email}]);
+    }
+  }
+
+  updateGoogleAnalyticsIdentity()
+  {
+    const userData = this.getUserInfo();
+    if (userData)
+    {
+      window.ga('set', 'userId', userData.email);
     }
   }
 
