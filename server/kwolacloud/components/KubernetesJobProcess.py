@@ -28,6 +28,7 @@ import os
 import google.cloud.logging
 from ..config.config import loadConfiguration
 from mongoengine import connect
+import stripe
 
 class KubernetesJobProcess:
     """
@@ -50,6 +51,8 @@ class KubernetesJobProcess:
         client.setup_logging()
 
         connect(configData['mongo']['db'], host=configData['mongo']['uri'])
+
+        stripe.api_key = configData['stripe']['apiKey']
 
     def run(self):
         logging.info(f"[{os.getpid()}] KubernetesJobProcess: Waiting for input from stdin")
