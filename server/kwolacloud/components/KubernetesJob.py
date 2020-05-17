@@ -21,7 +21,8 @@ class KubernetesJob:
 
     def cleanup(self):
         self.refreshCredentials()
-        subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
+        if self.successful():
+            subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
 
     def refreshCredentials(self):
         subprocess.run(["gcloud", "auth", "activate-service-account", "kwola-288@kwola-cloud.iam.gserviceaccount.com", f"--key-file={os.getenv('GOOGLE_APPLICATION_CREDENTIALS')}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
