@@ -59,6 +59,9 @@ class AppRouter extends Component {
     _hsq.push(['setPath', this.props.url]);
     _hsq.push(['trackPageView']);
 
+    window.ga('set', 'page', this.props.url);
+    window.ga('send', 'pageview');
+
     const { url, style } = this.props;
     return (
       <Suspense fallback={<Loader />}>

@@ -1286,6 +1286,7 @@ class NewTestingRun extends Component {
         mixpanel.track("clicked-launch-testing-run");
         var _hsq = window._hsq = window._hsq || [];
         _hsq.push(["trackEvent", {id: "Clicked Launch Testing Run"}]);
+        window.ga('send', 'event', "launch-testing-run", "click");
 
         this.setState({"mode": "payment"});
     }
@@ -1317,6 +1318,7 @@ class NewTestingRun extends Component {
                     console.log(result.error.message);
                     mixpanel.track("complete-order-error", {price: this.calculatePrice()});
                     _hsq.push(["trackEvent", {id: "Failed Order"}]);
+                    window.ga('send', 'event', "order-testing-run", "failed", "", this.calculatePrice());
                 }
                 else
                 {
@@ -1329,11 +1331,13 @@ class NewTestingRun extends Component {
                             id: "Completed Order",
                             value: this.calculatePrice()
                         }]);
+                        window.ga('send', 'event', "order-testing-run", "success", "", this.calculatePrice());
                         this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
                     }, (error) =>
                     {
                         mixpanel.track("complete-order-error", {price: this.calculatePrice()});
                         _hsq.push(["trackEvent", {id: "Failed Order"}]);
+                        window.ga('send', 'event', "order-testing-run", "failed", "", this.calculatePrice());
                     });
                 }
             });

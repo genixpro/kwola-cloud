@@ -28,6 +28,7 @@ export default class extends Component {
     {
       mixpanel.track("created-application");
       _hsq.push(["trackEvent", {id: "Created Application"}]);
+      window.ga('send', 'event', "application", "create");
 
       this.props.history.push(`/app/dashboard/applications/${response.data.applicationId}`);
     });
