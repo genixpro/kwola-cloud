@@ -26,7 +26,7 @@ import base64
 import sys
 import os
 import google.cloud.logging
-from .config.config import loadConfiguration
+from ..config.config import loadConfiguration
 from mongoengine import connect
 
 class KubernetesJobProcess:
