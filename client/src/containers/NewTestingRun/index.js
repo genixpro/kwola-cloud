@@ -22,6 +22,7 @@ import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, OneFourthColum
 import { createStore, combineReducers } from 'redux';
 import { reducer as reduxFormReducer } from 'redux-form';
 import {connect, Provider} from 'react-redux';
+import Auth0 from '../../helpers/auth0';
 import {
     FormGroup,
     FormControlLabel,
@@ -1279,7 +1280,23 @@ class NewTestingRun extends Component {
         };
     }
 
+    trackOrderSuccess(testingRunId, price)
+    {
+        mixpanel.track("complete-order-success", {testingRunId: testingRunId, price: price});
+        mixpanel.people.track_charge(price)
+        _hsq.push(["trackEvent", {
+            id: "Completed Order",
+            value: price
+        }]);
+        window.ga('send', 'event', "order-testing-run", "success", "", price);
+    }
 
+    trackOrderFailure(price)
+    {
+        mixpanel.track("complete-order-error", {price: price});
+        _hsq.push(["trackEvent", {id: "Failed Order"}]);
+        window.ga('send', 'event', "order-testing-run", "failed", "", price);
+    }
 
     launchTestingRunButtonClicked()
     {
@@ -1288,7 +1305,22 @@ class NewTestingRun extends Component {
         _hsq.push(["trackEvent", {id: "Clicked Launch Testing Run"}]);
         window.ga('send', 'event', "launch-testing-run", "click");
 
-        this.setState({"mode": "payment"});
+        if (Auth0.isUserAllowedFreeRuns())
+        {
+            const testingRunData = this.createDataForTestingRun();
+            const price = 0;
+            axios.post(`/testing_runs`, testingRunData).then((response) => {
+                this.trackOrderSuccess(response.data.testingRunId, price);
+                this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
+            }, (error) =>
+            {
+                this.trackOrderFailure(price);
+            });
+        }
+        else
+        {
+            this.setState({"mode": "payment"});
+        }
     }
 
     calculatePrice()
@@ -1298,6 +1330,7 @@ class NewTestingRun extends Component {
 
     completeOrder(elements)
     {
+        const price = this.calculatePrice();
         var _hsq = window._hsq = window._hsq || [];
         stripePromise.then((stripe) =>
         {
@@ -1315,29 +1348,18 @@ class NewTestingRun extends Component {
                 if (result.error)
                 {
                     // Show error to your customer (e.g., insufficient funds)
-                    console.log(result.error.message);
-                    mixpanel.track("complete-order-error", {price: this.calculatePrice()});
-                    _hsq.push(["trackEvent", {id: "Failed Order"}]);
-                    window.ga('send', 'event', "order-testing-run", "failed", "", this.calculatePrice());
+                    this.trackOrderFailure(price);
                 }
                 else
                 {
                     const testingRunData = this.createDataForTestingRun();
                     testingRunData['payment_method'] = result.paymentMethod.id;
                     axios.post(`/testing_runs`, testingRunData).then((response) => {
-                        mixpanel.track("complete-order-success", {testingRunId: response.data.testingRunId, price: this.calculatePrice()});
-                        mixpanel.people.track_charge(this.calculatePrice())
-                        _hsq.push(["trackEvent", {
-                            id: "Completed Order",
-                            value: this.calculatePrice()
-                        }]);
-                        window.ga('send', 'event', "order-testing-run", "success", "", this.calculatePrice());
+                        this.trackOrderSuccess(response.data.testingRunId, price);
                         this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
                     }, (error) =>
                     {
-                        mixpanel.track("complete-order-error", {price: this.calculatePrice()});
-                        _hsq.push(["trackEvent", {id: "Failed Order"}]);
-                        window.ga('send', 'event', "order-testing-run", "failed", "", this.calculatePrice());
+                        this.trackOrderFailure(price);
                     });
                 }
             });

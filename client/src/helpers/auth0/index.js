@@ -68,6 +68,10 @@ class Auth0Helper {
     return localStorage.getItem('id_token');
   }
 
+  isUserAllowedFreeRuns()
+  {
+    return this.getUserInfo()['https://kwola.io/freeRuns'];
+  }
 
   setSession(authResult) {
     // Set the time that the access token will expire at

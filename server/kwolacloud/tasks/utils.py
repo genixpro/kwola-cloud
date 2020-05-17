@@ -42,6 +42,9 @@ def unmountTestingRunStorageDrive(configDir):
     return True
 
 def verifyStripeSubscription(testingRun):
+    if testingRun.stripeSubscriptionId is None:
+        return True
+
     # Verify this subscription with stripe
     subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
     if subscription is None:
@@ -55,6 +58,9 @@ def verifyStripeSubscription(testingRun):
     return True
 
 def attachUsageBilling(config, testingRun, maxSessionsToBill):
+    if testingRun.stripeSubscriptionId is None:
+        return True
+
     # Verify this subscription with stripe
     subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
     if subscription is None:
@@ -67,4 +73,6 @@ def attachUsageBilling(config, testingRun, maxSessionsToBill):
         timestamp=int(datetime.datetime.now().timestamp()),
         action='increment',
     )
+
+    return True
 

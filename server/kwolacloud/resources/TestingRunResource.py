@@ -55,36 +55,41 @@ class TestingRunsGroup(Resource):
         data = flask.request.get_json()
 
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
+        allowFreeRuns = claims['https://kwola.io/freeRuns']
 
-        customer = stripe.Customer.retrieve(stripeCustomerId)
+        if not allowFreeRuns:
+            customer = stripe.Customer.retrieve(stripeCustomerId)
 
-        if customer is None:
-            customer = stripe.Customer.create(
-                payment_method=data['payment_method'],
-                email=claims['email'],
-                name=claims['name']
+            if customer is None:
+                customer = stripe.Customer.create(
+                    payment_method=data['payment_method'],
+                    email=claims['email'],
+                    name=claims['name']
+                )
+            else:
+                stripe.PaymentMethod.attach(
+                  data['payment_method'],
+                  customer=stripeCustomerId,
+                )
+
+            subscription = stripe.Subscription.create(
+                customer=customer.id,
+                items=[{'plan': self.configData['stripe']['planId']}],
+                expand=['latest_invoice.payment_intent'],
             )
+
+            if subscription.status != "active":
+                abort(400)
+
+            del data['payment_method']
+            data['stripeSubscriptionId'] = subscription.id
         else:
-            stripe.PaymentMethod.attach(
-              data['payment_method'],
-              customer=stripeCustomerId,
-            )
+            data['stripeSubscriptionId'] = None
 
-        subscription = stripe.Subscription.create(
-            customer=customer.id,
-            items=[{'plan': self.configData['stripe']['planId']}],
-            expand=['latest_invoice.payment_intent'],
-        )
-
-        if subscription.status != "active":
-            abort(400)
-
-        del data['payment_method']
         data['id'] = CustomIDField.generateNewUUID(TestingRun, config=getKwolaConfiguration())
         data['owner'] = user
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
-        data['stripeSubscriptionId'] = subscription.id
 
         newTestingRun = TestingRun(**data)
 
