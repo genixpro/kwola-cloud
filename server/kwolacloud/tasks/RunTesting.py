@@ -140,7 +140,8 @@ def runTesting(testingRunId):
                 # otherwise it needs to be done over again.
                 if job.successful():
                     result = job.extractResultFromLogs()
-                    job.cleanup()
+                    if result['success']:
+                        job.cleanup()
                     if isinstance(result, dict) and result['success']:
                         logging.info(f"Finished a testing step for run {testingRunId}")
                         countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
