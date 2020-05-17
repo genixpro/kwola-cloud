@@ -18,8 +18,15 @@ class Auth0Helper {
     this.updateMixpanelIdentity();
     this.updateHubspotIdentity();
     this.updateGoogleAnalyticsIdentity();
+    this.updateAcquisitionUrl();
   }
   login(handleLogin) {
+    if (localStorage.getItem("acquisitionUrl"))
+    {
+      const data = {"acquisitionUrl": localStorage.getItem("acquisitionUrl")};
+      Auth0Config.options.auth.params.state = JSON.stringify(data);
+    }
+
     this.lock = this.isValid
       ? new Auth0Lock(
           Auth0Config.clientID,
@@ -134,6 +141,31 @@ class Auth0Helper {
     if (userData)
     {
       window.ga('set', 'userId', userData.email);
+    }
+  }
+
+  updateAcquisitionUrl()
+  {
+    const urlParams = new URLSearchParams(window.location.search);
+    const acquisitionDataEncoded = urlParams.get('a');
+    const referrer = document.referrer;
+    const referrerDomain = referrer.toString().replace('http://', '').replace('https://', '').split(/[/?#]/)[0];
+
+
+    if(!localStorage.getItem("acquisitionUrl"))
+    {
+      if (acquisitionDataEncoded) {
+        const acquisitionUrl = atob(acquisitionDataEncoded);
+        localStorage.setItem("acquisitionUrl", acquisitionUrl);
+      } else if (referrer && referrerDomain && !referrerDomain.endsWith("kwola.io")) {
+        localStorage.setItem("acquisitionUrl", referrer);
+      }
+    }
+
+    if (acquisitionDataEncoded)
+    {
+      // Hide the acquisition data quickly.
+      window.history.replaceState({}, document.title, window.location.href.split("?")[0]);
     }
   }
 
