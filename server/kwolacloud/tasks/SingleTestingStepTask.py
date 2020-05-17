@@ -4,7 +4,6 @@
 #
 
 
-from ..app import celeryApplication
 from ..datamodels.TestingRun import TestingRun
 from kwola.config.config import Configuration
 from kwola.datamodels.TestingStepModel import TestingStep
@@ -52,11 +51,6 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
     finally:
         # unmountTestingRunStorageDrive(configDir)
         pass
-
-
-@celeryApplication.task(queue="testing", acks_late=True)
-def runOneTestingStepForRunTask(testingRunId, testingStepsCompleted, maxSessionsToBill):
-    runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill)
 
 
 if __name__ == "__main__":

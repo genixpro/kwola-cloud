@@ -5,7 +5,6 @@ from flask_jwt_extended import JWTManager
 from flask_restful import Api
 from kombu import Queue
 from mongoengine import connect
-import celery
 import stripe
 from .auth import authenticate
 from flask_caching import Cache
@@ -37,18 +36,6 @@ client.setup_logging()
 # name "application". However we prefer the more explicit flaskApplication, this being the
 # exception
 application = flaskApplication
-
-celeryApplication = celery.Celery()
-celeryApplication.conf.broker_url = f"redis://{configData['redis']['host']}:{configData['redis']['port']}/{configData['redis']['taskDB']}"
-celeryApplication.conf.broker_transport_options = {'visibility_timeout': configData['redis']['visibility_timeout']}  # 1 hour.
-celeryApplication.conf.result_backend = f"redis://{configData['redis']['host']}:{configData['redis']['port']}/{configData['redis']['resultDB']}"
-
-celeryApplication.conf.task_default_queue = 'default'
-celeryApplication.conf.task_queues = (
-    Queue('default',    routing_key='defaulttask.#'),
-    Queue('testing',    routing_key='testingtask.#'),
-    Queue('training',    routing_key='trainingtask.#')
-)
 
 # import models
 from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage

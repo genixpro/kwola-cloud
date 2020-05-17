@@ -4,7 +4,6 @@
 #
 
 
-from ..app import celeryApplication
 from ..datamodels.TestingRun import TestingRun
 from kwola.components.environments.WebEnvironment import WebEnvironment
 import os.path
@@ -206,20 +205,6 @@ def runTesting(testingRunId):
     finally:
         # unmountTestingRunStorageDrive(configDir)
         pass
-
-
-@celeryApplication.task(
-    queue="default",
-    default_retry_delay=5,
-    autoretry_for=(Exception,),
-    retry_backoff=1,
-    retry_backoff_max=60,
-    retry_kwargs={'max_retries': 100},
-    retry_jitter=True,
-    acks_late=True
-)
-def runTestingTask(testingRunId):
-    runTesting(testingRunId=testingRunId)
 
 
 if __name__ == "__main__":

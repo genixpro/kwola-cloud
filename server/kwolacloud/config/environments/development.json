@@ -5,13 +5,6 @@
     "username": "",
     "password": ""
   },
-  "redis": {
-    "host": "127.0.0.1",
-    "port": 6379,
-    "taskDB": 0,
-    "resultDB": 1,
-    "visibility_timeout": 21600
-  },
   "stripe": {
     "apiKey": "sk_test_WHeVtPF7ILpuTA4JhGhKleHA00EghhZOTM",
     "planId": "plan_HGd3ZO1iW4FqHp"
