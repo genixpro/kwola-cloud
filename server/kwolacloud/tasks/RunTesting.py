@@ -179,7 +179,10 @@ def runTesting(testingRunId):
                 completedTrainingSteps += 1
                 run.trainingStepsCompleted += 1
                 run.save()
-                pastTrainingStepJob.cleanup()
+                if pastTrainingStepJob.successful():
+                    result = pastTrainingStepJob.extractResultFromLogs()
+                    if result['success']:
+                        pastTrainingStepJob.cleanup()
 
             time.sleep(10)
 
