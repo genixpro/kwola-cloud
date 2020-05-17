@@ -90,6 +90,7 @@ class TestingRunsGroup(Resource):
         data['owner'] = user
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
+        data['testingSessionsRemaining'] = data['configuration']['totalTestingSessions']
 
         newTestingRun = TestingRun(**data)
 
