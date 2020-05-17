@@ -10,6 +10,7 @@ from kwola.config.config import Configuration
 from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.tasks import RunTrainingStep
 import logging
+import torch
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
 
@@ -34,10 +35,14 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     try:
         config = Configuration(configDir)
 
+        gpu = None
+        if torch.cuda.device_count() > 0:
+            gpu = 0
+
         trainingStep = TrainingStep(id=CustomIDField.generateNewUUID(TrainingStep, config), testingRunId=testingRunId, owner=run.owner)
         trainingStep.saveToDisk(config)
 
-        result = RunTrainingStep.runTrainingStep(configDir, str(trainingStep.id), trainingStepsCompleted, gpu=0)
+        result = RunTrainingStep.runTrainingStep(configDir, str(trainingStep.id), trainingStepsCompleted, gpu=gpu)
 
         logging.info(f"Completed training step for testing run {testingRunId}")
         return result
