@@ -26,6 +26,8 @@ import base64
 import sys
 import os
 import google.cloud.logging
+from .config.config import loadConfiguration
+from mongoengine import connect
 
 class KubernetesJobProcess:
     """
@@ -40,10 +42,14 @@ class KubernetesJobProcess:
     def __init__(self, targetFunc):
         self.targetFunc = targetFunc
 
+        configData = loadConfiguration()
+
         # Setup logging with google cloud
         client = google.cloud.logging.Client()
         client.get_default_handler()
         client.setup_logging()
+
+        connect(configData['mongo']['db'], host=configData['mongo']['uri'])
 
     def run(self):
         logging.info(f"[{os.getpid()}] KubernetesJobProcess: Waiting for input from stdin")
