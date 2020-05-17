@@ -55,6 +55,7 @@ class KubernetesJob:
                 "name": self.kubeJobName()
             },
             "spec": {
+                "ttlSecondsAfterFinished": 7200,
                 "template": {
                     "metadata": {
                         "name": self.kubeJobName()
