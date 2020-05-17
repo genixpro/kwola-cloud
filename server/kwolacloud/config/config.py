@@ -39,6 +39,10 @@ def getKwolaConfigurationData():
 
     data = json.loads(pkg_resources.resource_string("kwolacloud", configFilePath))
 
+    mainConfig = loadConfiguration()
+
+    data['mongo_uri'] = mainConfig['mongo']['uri']
+
     return data
 
 
