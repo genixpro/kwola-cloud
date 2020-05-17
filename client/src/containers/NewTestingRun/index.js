@@ -1247,6 +1247,17 @@ class NewTestingRun extends Component {
         address: "",
     };
 
+    constructor()
+    {
+        super();
+
+        window.ga('event', 'optimize.callback', {
+            name: 'qvH9plMMQYqYS5d_13VXcA',
+            callback: (value) => alert(value)
+        });
+    }
+
+
     componentDidMount()
     {
         axios.get(`/application/${this.props.match.params.id}`).then((response) =>
