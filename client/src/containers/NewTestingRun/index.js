@@ -1282,6 +1282,7 @@ class NewTestingRun extends Component {
 
     trackOrderSuccess(testingRunId, price)
     {
+        var _hsq = window._hsq = window._hsq || [];
         mixpanel.track("complete-order-success", {testingRunId: testingRunId, price: price});
         mixpanel.people.track_charge(price)
         _hsq.push(["trackEvent", {
@@ -1293,6 +1294,7 @@ class NewTestingRun extends Component {
 
     trackOrderFailure(price)
     {
+        var _hsq = window._hsq = window._hsq || [];
         mixpanel.track("complete-order-error", {price: price});
         _hsq.push(["trackEvent", {id: "Failed Order"}]);
         window.ga('send', 'event', "order-testing-run", "failed", "", price);
@@ -1331,7 +1333,6 @@ class NewTestingRun extends Component {
     completeOrder(elements)
     {
         const price = this.calculatePrice();
-        var _hsq = window._hsq = window._hsq || [];
         stripePromise.then((stripe) =>
         {
             const cardElement = elements.getElement(CardElement);

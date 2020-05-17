@@ -30,7 +30,10 @@ class SignIn extends Component {
     }
     else
     {
-      this.props.history.push('/app/dashboard/');
+      setTimeout(() =>
+      {
+        this.props.history.push('/app/dashboard/');
+      }, 250);
     }
   }
 

@@ -47,6 +47,7 @@ from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSing
 from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle
 from .resources.BugsResource import BugsGroup, BugsSingle, BugVideo
 from .resources.Webhooks import StripeWebhook
+from .resources.Billing import BillingURLResource
 from .resources.HomeResource import Home
 
 api.add_resource(ApplicationGroup, '/api/application')
@@ -82,6 +83,8 @@ api.add_resource(TrainingStepSingle, '/api/training_steps/<string:training_step_
 api.add_resource(BugsGroup, '/api/bugs')
 api.add_resource(BugsSingle, '/api/bugs/<string:bug_id>')
 api.add_resource(BugVideo, '/api/bugs/<string:bug_id>/video')
+
+api.add_resource(BillingURLResource, '/api/billing')
 
 api.add_resource(StripeWebhook, '/api/stripe_webhook')
 

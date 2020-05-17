@@ -14,6 +14,10 @@ import {
   Icon,
 } from './topbarDropdown.style';
 import Image from '../../images/user.jpg';
+import stripePromise from "../../stripe";
+import MonetizationOnIcon from '@material-ui/icons/MonetizationOn';
+import axios from "axios";
+import mixpanel from "mixpanel-browser";
 
 class TopbarUser extends Component {
   state = {
@@ -29,6 +33,34 @@ class TopbarUser extends Component {
       anchorEl: findDOMNode(this.button),
     });
   };
+
+    openBilling()
+    {
+        var _hsq = window._hsq = window._hsq || [];
+        mixpanel.track("open-billing");
+        _hsq.push(["trackEvent", {id: "Open Billing"}]);
+        window.ga('send', 'event', "billing", "view");
+
+        axios.get(`/billing`).then((response) => {
+            window.location.href = response.data.url;
+        }, (error) =>
+        {
+           alert("Error opening billing URL: " + error.toString())
+        });
+    }
+
+    openHelp()
+    {
+        window.HubSpotConversations.widget.open();
+        this.setState({ visible: false });
+    }
+
+    openFeedback()
+    {
+        window.HubSpotConversations.widget.open();
+        this.setState({ visible: false });
+    }
+
   render() {
     const userData = Auth.getUserInfo();
 
@@ -46,18 +78,18 @@ class TopbarUser extends Component {
         </UserInformation>
 
         <SettingsList>
-          <a href="#!" className="dropdownLink">
-            <Icon>settings</Icon>
-            <IntlMessages id="themeSwitcher.settings" />
-          </a>
-          <a href="#!" className="dropdownLink">
+          <Link href="#" onClick={() => this.openBilling()} className="dropdownLink">
+            <Icon>money-sharp</Icon>
+            <IntlMessages id="topbar.billing" />
+          </Link>
+          <Link href="#" onClick={() => this.openHelp()} className="dropdownLink">
             <Icon>help</Icon>
             <IntlMessages id="sidebar.feedback" />
-          </a>
-          <a href="#!" className="dropdownLink">
+          </Link>
+          <Link href="#" onClick={() => this.openFeedback()} className="dropdownLink">
             <Icon>feedback</Icon>
             <IntlMessages id="topbar.help" />
-          </a>
+          </Link>
           <Link to="/logout" onClick={this.props.logout} className="dropdownLink">
             <Icon>input</Icon>
             <IntlMessages id="topbar.logout" />
