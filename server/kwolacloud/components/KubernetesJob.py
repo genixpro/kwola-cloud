@@ -24,8 +24,8 @@ class KubernetesJob:
         subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
 
     def refreshCredentials(self):
-        subprocess.run(["gcloud", "auth", "activate-service-account", "kwola-288@kwola-cloud.iam.gserviceaccount.com", f"--key-file={os.getenv('GOOGLE_APPLICATION_CREDENTIALS')}"])
-        subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers"])
+        subprocess.run(["gcloud", "auth", "activate-service-account", "kwola-288@kwola-cloud.iam.gserviceaccount.com", f"--key-file={os.getenv('GOOGLE_APPLICATION_CREDENTIALS')}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["kubectl", "cluster-info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def kubeJobName(self):
@@ -65,7 +65,7 @@ class KubernetesJob:
                                 "name": f"kwola-cloud-sha256",
                                 "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-testingworker",
                                 "command": ["/usr/bin/python3"],
-                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars), 'ascii')],
+                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
                                 "securityContext": {
                                     "privileged": True,
                                     "capabilities":
