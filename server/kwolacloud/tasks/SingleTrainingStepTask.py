@@ -33,16 +33,11 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         return {"success":False}
 
     try:
-        config = Configuration(configDir)
-
         gpu = None
         if torch.cuda.device_count() > 0:
             gpu = 0
 
-        trainingStep = TrainingStep(id=CustomIDField.generateNewUUID(TrainingStep, config), testingRunId=testingRunId, owner=run.owner)
-        trainingStep.saveToDisk(config)
-
-        result = RunTrainingStep.runTrainingStep(configDir, str(trainingStep.id), trainingStepsCompleted, gpu=gpu)
+        result = RunTrainingStep.runTrainingStep(configDir, testingRunId, trainingStepsCompleted, gpu=gpu, testingRunId=testingRunId, applicationId=run.applicationId)
 
         logging.info(f"Completed training step for testing run {testingRunId}")
         return result

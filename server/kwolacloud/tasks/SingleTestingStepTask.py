@@ -38,7 +38,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
         if testingStepsCompleted < (config['training_random_initialization_sequences']):
             shouldBeRandom = True
 
-        testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config), testingRunId=testingRunId, owner=run.owner)
+        testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config), testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId)
         testingStep.saveToDisk(config)
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
