@@ -43,7 +43,7 @@ class ListApplications extends Component
     })
 
     window.gtag('event', 'optimize.callback', {
-      name: 'qvH9plMMQYqYS5d_13VXcA',
+      name: 'tMhCXriASRqmGIZcjtNVwQ',
       callback: (value) => alert(value)
     });
   }
