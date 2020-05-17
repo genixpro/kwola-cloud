@@ -6,6 +6,7 @@
 from flask_restful import Resource, reqparse
 import subprocess
 import json
+import os
 
 class Home(Resource):
     def __init__(self):
@@ -17,10 +18,6 @@ class Home(Resource):
         self.postParser.add_argument('status', help='This field cannot be blank', required=False)
 
     def get(self):
-        # result = subprocess.run(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
-        #
-        # version = str(result.stdout)
+        version = os.getenv("REVISION_ID")
 
-        version = ""
-
-        return {"version": version}
+        return {"version": str(version)}
