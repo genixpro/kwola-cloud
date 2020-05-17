@@ -35,7 +35,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
         config = Configuration(configDir)
 
         # Deduct the sessions we are about to perform from the available list
-        modifiedObjects = TestingRun.objects(id=testingRunId, testingSessionsRemaining__gt=config['web_session_parallel_execution_sessions']).update_one(dec__testingSessionsRemaining=config['web_session_parallel_execution_sessions'])
+        modifiedObjects = TestingRun.objects(id=testingRunId, testingSessionsRemaining__gte=1).update_one(dec__testingSessionsRemaining=config['web_session_parallel_execution_sessions'])
 
         if modifiedObjects == 0:
             logging.warning(f"Warning! Not enough testing sessions remaining on testing run to perform this testing step, which requires {config['web_session_parallel_execution_sessions']} sessions. Probably due to prior sessions failing.")
