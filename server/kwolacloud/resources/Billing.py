@@ -25,3 +25,4 @@ class BillingURLResource(Resource):
         session = stripe.billing_portal.Session.create(customer=stripeCustomerId)
 
         return {"url": str(session.url)}
+
