@@ -1253,7 +1253,7 @@ class NewTestingRun extends Component {
 
         window.ga('event', 'optimize.callback', {
             name: 'qvH9plMMQYqYS5d_13VXcA',
-            callback: (value) => alert(value)
+            callback: (value) => this.setState({variant: value})
         });
     }
 

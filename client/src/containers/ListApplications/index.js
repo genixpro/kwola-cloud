@@ -41,11 +41,6 @@ class ListApplications extends Component
     {
         this.setState({applications: response.data.applications})
     })
-
-    window.gtag('event', 'optimize.callback', {
-      name: 'tMhCXriASRqmGIZcjtNVwQ',
-      callback: (value) => alert(value)
-    });
   }
 
 
