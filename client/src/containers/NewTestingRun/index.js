@@ -451,7 +451,7 @@ class SizeOfRun extends Component {
         lengthTab: 1,
         length: 250,
         sessionsTab: 1,
-        sessions: 20000,
+        sessions: 1000,
         hoursTab: 1,
         hours: 6
     }
@@ -499,15 +499,15 @@ class SizeOfRun extends Component {
     {
         if (newTab === 0)
         {
-            this.setState({sessionsTab: 0, sessions: 5000}, () => this.updateParent());
+            this.setState({sessionsTab: 0, sessions: 250}, () => this.updateParent());
         }
         else if (newTab === 1)
         {
-            this.setState({sessionsTab: 1, sessions: 20000}, () => this.updateParent());
+            this.setState({sessionsTab: 1, sessions: 1000}, () => this.updateParent());
         }
         else if (newTab === 2)
         {
-            this.setState({sessionsTab: 2, sessions: 100000}, () => this.updateParent());
+            this.setState({sessionsTab: 2, sessions: 5000}, () => this.updateParent());
         }
         else if (newTab === 3)
         {
@@ -586,13 +586,13 @@ class SizeOfRun extends Component {
                 <Column xs={9}>
                     <p>Number of sessions</p>
                     <Button variant="extended" color={this.state.sessionsTab === 0 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(0)}>
-                        Small (5,000)
+                        Small (250)
                     </Button>
                     <Button variant="extended" color={this.state.sessionsTab === 1 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(1)}>
-                        Medium (20,000)
+                        Medium (1,000)
                     </Button>
                     <Button variant="extended" color={this.state.sessionsTab === 2 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(2)}>
-                        Large (100,000)
+                        Large (5,000)
                     </Button>
                     <Button variant="extended" color={this.state.sessionsTab === 3 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(3)}>
                         Custom
