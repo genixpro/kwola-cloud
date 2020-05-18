@@ -102,8 +102,7 @@ class Auth0Helper {
     localStorage.removeItem('id_token');
     localStorage.removeItem('expires_at');
 
-    history.replace('/');
-    window.location.reload();
+    this.webAuth.logout({returnTo:process.env.REACT_APP_AUTH0_REDIRECT_URL});
   }
 
   isAuthenticated() {
