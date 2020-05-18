@@ -32,7 +32,7 @@ class SignIn extends Component {
     {
       setTimeout(() =>
       {
-        this.props.history.push('/app/dashboard/');
+        window.location.reload();
       }, 250);
     }
   }
