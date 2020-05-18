@@ -24,7 +24,7 @@ class Auth0Helper {
     if (localStorage.getItem("acquisitionUrl"))
     {
       const data = {"acquisitionUrl": localStorage.getItem("acquisitionUrl")};
-      Auth0Config.options.auth.params.state = JSON.stringify(data);
+      // Auth0Config.options.auth.params.state = JSON.stringify(data);
     }
 
     this.lock = this.isValid
