@@ -12,6 +12,7 @@
     "@material-ui/styles": "^4.5.0",
     "@stripe/react-stripe-js": "^1.1.2",
     "@stripe/stripe-js": "^1.5.0",
+    "auth0-js": "^9.13.2",
     "auth0-lock": "^11.17.3",
     "autoprefixer": "^9.6.2",
     "autosuggest-highlight": "^3.1.1",

@@ -25,37 +25,19 @@ const Auth0Config = {
   domain: 'kwola.auth0.com',
   clientID: process.env.REACT_APP_AUTH0_CLIENT_ID,
   audience: process.env.REACT_APP_AUTH0_AUDIENCE,
+  redirectUri: process.env.REACT_APP_AUTH0_REDIRECT_URL,
+  scope: "openid profile email",
+  responseType: 'token id_token',
+
   options: {
-    audience: process.env.REACT_APP_AUTH0_AUDIENCE,
-    redirectUrl: process.env.REACT_APP_AUTH0_REDIRECT_URL,
     auth: {
       autoParseHash: true,
       redirect: false,
-      responseType: 'token id_token',
       params: {
         scope: "openid profile email"
       }
-    },
-    languageDictionary: {
-      title: 'Kwola',
-      emailInputPlaceholder: 'email',
-      passwordInputPlaceholder: 'password',
-    },
-    icon: '',
-    theme: {
-      labeledSubmitButton: true,
-      logo: '',
-      primaryColor: '#E14615',
-      authButtons: {
-        connectionName: {
-          displayName: 'Log In',
-          primaryColor: '#b7b7b7',
-          foregroundColor: '#000000',
-          icon: undefined,
-        },
-      },
-    },
-  },
+    }
+  }
 };
 const firebaseConfig = {
   apiKey: '',

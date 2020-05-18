@@ -1,4 +1,4 @@
-import Auth0Lock from 'auth0-lock';
+import auth0 from 'auth0-js';
 import history from './history';
 import { Auth0Config } from '../../settings';
 import { notification } from '../../components';
@@ -19,33 +19,34 @@ class Auth0Helper {
     this.updateHubspotIdentity();
     this.updateGoogleAnalyticsIdentity();
     this.updateAcquisitionUrl();
-  }
-  login(handleLogin) {
-    if (localStorage.getItem("acquisitionUrl"))
-    {
-      const data = {"acquisitionUrl": localStorage.getItem("acquisitionUrl")};
-      Auth0Config.options.auth.params.state = JSON.stringify(data);
-    }
 
-    this.lock = this.isValid
-      ? new Auth0Lock(
-          Auth0Config.clientID,
-          Auth0Config.domain,
-          Auth0Config.options
-        )
-      : null;
-    if (!this.lock) {
-      notification('error', 'Lock Error');
-    }
-    this.lock.on('authenticated', authResult => {
-      if (authResult && authResult.accessToken) {
+    this.webAuth = new auth0.WebAuth(Auth0Config);
+  }
+  login(handleLogin)
+  {
+    if (window.location.hash)
+    {
+      this.webAuth.parseHash({ hash: window.location.hash }, (err, authResult) => {
+        if (err) {
+          return console.log(err);
+        }
+
         this.setSession(authResult);
+
         handleLogin();
-      } else {
-        notification('error', 'Wrong mail or password');
+      });
+    }
+    else
+    {
+      let state = "";
+      if (localStorage.getItem("acquisitionUrl"))
+      {
+        const data = {"acquisitionUrl": localStorage.getItem("acquisitionUrl")};
+        state = JSON.stringify(data);
       }
-    });
-    this.lock.show();
+
+      this.webAuth.authorize({state: state});
+    }
   }
   handleAuthentication(props)
   {
@@ -162,7 +163,7 @@ class Auth0Helper {
     if (acquisitionDataEncoded)
     {
       // Hide the acquisition data quickly.
-      window.history.replaceState({}, document.title, window.location.href.split("?")[0]);
+      // window.history.replaceState({}, document.title, window.location.href.split("?")[0]);
     }
   }
 
