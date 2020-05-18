@@ -31,7 +31,7 @@ class Auth0Helper {
           return console.log(err);
         }
 
-        this.setSession(authResult);
+        this.setSession(authResult)
 
         handleLogin();
       });
@@ -163,7 +163,7 @@ class Auth0Helper {
     if (acquisitionDataEncoded)
     {
       // Hide the acquisition data quickly.
-      // window.history.replaceState({}, document.title, window.location.href.split("?")[0]);
+      window.history.replaceState({}, document.title, window.location.href.split("?")[0]);
     }
   }
 
