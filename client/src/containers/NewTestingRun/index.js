@@ -1239,7 +1239,7 @@ class NewTestingRun extends Component {
         result: '',
         tab: 0,
         length: 250,
-        sessions: 20000,
+        sessions: 1000,
         hours: 6,
         paymentRequest: null,
         mode: "details",
@@ -1338,7 +1338,7 @@ class NewTestingRun extends Component {
 
     calculatePrice()
     {
-        return Number((this.state.length * this.state.sessions * 0.00003).toFixed(2));
+        return Number((this.state.length * this.state.sessions * 0.001).toFixed(2));
     }
 
     completeOrder(elements)
@@ -1547,7 +1547,7 @@ class NewTestingRun extends Component {
                                                                         <span>Cost per 1,000 actions</span>
                                                                     </p>
                                                                     <span
-                                                                        className="totalPrice">* ${0.03.toFixed(2)}</span>
+                                                                        className="totalPrice">* ${1.00.toFixed(2)}</span>
                                                                 </div>
                                                             </div>
                                                             <div className="orderTableFooter">
