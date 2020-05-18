@@ -19,7 +19,7 @@ class FourZeroFour extends Component {
             <IntlMessages id="page404.description" />
           </p>
 
-          <Link to="/dashboard">
+          <Link to="/app/dashboard">
             <button type="button">
               <IntlMessages id="page404.backButton" />
             </button>

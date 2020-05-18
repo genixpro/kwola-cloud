@@ -51,7 +51,7 @@ class Auth0Helper {
   handleAuthentication(props)
   {
     // localStorage.setItem('id_token', 'secret token');
-    history.replace('/dashboard');
+    history.replace('/app/dashboard');
   }
 
   updateAxiosToken()

@@ -38,7 +38,7 @@ class ForgotPassword extends Component {
 
           <p className="homeRedirection">
             Or go back to{' '}
-            <Link to="/dashboard">
+            <Link to="/app/dashboard">
               <Button color="primary">Homepage</Button>
             </Link>
           </p>

@@ -18,7 +18,7 @@ class FiveHundredFive extends React.Component {
           <p>
             <IntlMessages id="page500.description" />
           </p>
-          <Link to="/dashboard">
+          <Link to="/app/dashboard">
             <button type="button">
               <IntlMessages id="page500.backButton" />
             </button>

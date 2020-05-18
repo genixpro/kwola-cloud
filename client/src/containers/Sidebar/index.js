@@ -63,7 +63,7 @@ const ListElement = ({
 
 const LogoElem = ({ onLogo }) => {
   return (
-    <Link to="/dashboard" onClick={onLogo}>
+    <Link to="/app/dashboard" onClick={onLogo}>
        <img src={Logo} alt="Kwola" style={{"height": "50px"}} />
     </Link>
   );
