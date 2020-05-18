@@ -100,12 +100,9 @@ class Auth0Helper {
     localStorage.removeItem('access_token');
     localStorage.removeItem('id_token');
     localStorage.removeItem('expires_at');
-    // navigate to the home route
+
     history.replace('/');
-    this.updateAxiosToken();
-    this.updateMixpanelIdentity();
-    this.updateHubspotIdentity();
-    this.updateGoogleAnalyticsIdentity();
+    window.location.reload();
   }
 
   isAuthenticated() {

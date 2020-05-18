@@ -90,7 +90,7 @@ class TopbarUser extends Component {
             <Icon>feedback</Icon>
             <IntlMessages id="topbar.help" />
           </Link>
-          <Link to="/logout" onClick={this.props.logout} className="dropdownLink">
+          <Link href="#" onClick={() => Auth.logout()} className="dropdownLink">
             <Icon>input</Icon>
             <IntlMessages id="topbar.logout" />
           </Link>
