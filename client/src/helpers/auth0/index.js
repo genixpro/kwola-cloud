@@ -47,14 +47,14 @@ class Auth0Helper {
           "awarenessCity": localStorage.getItem("awarenessCity"),
           "awarenessCountry": localStorage.getItem("awarenessCountry"),
           "awarenessIp": localStorage.getItem("awarenessIp"),
-          "awarenessDomain": localStorage.getItem("awarenessDomain"),
+          "awarenessIpDomain": localStorage.getItem("awarenessIpDomain"),
           "awarenessTime": localStorage.getItem("awarenessTime"),
           "acquisitionUrl": localStorage.getItem("acquisitionUrl"),
           "acquisitionUserAgent": localStorage.getItem("acquisitionUserAgent"),
           "acquisitionCity": localStorage.getItem("acquisitionCity"),
           "acquisitionCountry": localStorage.getItem("acquisitionCountry"),
           "acquisitionIp": localStorage.getItem("acquisitionIp"),
-          "acquisitionDomain": localStorage.getItem("acquisitionDomain"),
+          "acquisitionIpDomain": localStorage.getItem("acquisitionIpDomain"),
           "acquisitionTime": localStorage.getItem("acquisitionTime"),
         };
         state = encodeURIComponent(btoa(JSON.stringify(data)));
@@ -166,11 +166,11 @@ class Auth0Helper {
     const awarenessCityEncoded = urlParams.get('e');
     const awarenessCountryEncoded = urlParams.get('f');
     const awarenessIpEncoded = urlParams.get('g');
-    const awarenessDomainEncoded = urlParams.get('h');
+    const awarenessIpDomainEncoded = urlParams.get('h');
     const acquisitionCityEncoded = urlParams.get('i');
     const acquisitionCountryEncoded = urlParams.get('j');
     const acquisitionIpEncoded = urlParams.get('k');
-    const acquisitionDomainEncoded = urlParams.get('l');
+    const acquisitionIpDomainEncoded = urlParams.get('l');
     const awarenessTimeEncoded = urlParams.get('m');
     const acquisitionTimeEncoded = urlParams.get('n');
 
@@ -185,14 +185,14 @@ class Auth0Helper {
         const awarenessCity = decodeURIComponent(atob(awarenessCityEncoded));
         const awarenessCountry = decodeURIComponent(atob(awarenessCountryEncoded));
         const awarenessIp = decodeURIComponent(atob(awarenessIpEncoded));
-        const awarenessDomain = decodeURIComponent(atob(awarenessDomainEncoded));
+        const awarenessIpDomain = decodeURIComponent(atob(awarenessIpDomainEncoded));
         const awarenessTime = decodeURIComponent(atob(awarenessTimeEncoded));
         localStorage.setItem("awarenessUrl", awarenessUrl);
         localStorage.setItem("awarenessUserAgent", awarenessUserAgent);
         localStorage.setItem("awarenessCity", awarenessCity);
         localStorage.setItem("awarenessCountry", awarenessCountry);
         localStorage.setItem("awarenessIp", awarenessIp);
-        localStorage.setItem("awarenessDomain", awarenessDomain);
+        localStorage.setItem("awarenessIpDomain", awarenessIpDomain);
         localStorage.setItem("awarenessTime", awarenessTime);
 
       } else if (referrer && referrerDomain && !referrerDomain.endsWith("kwola.io")) {
@@ -210,7 +210,7 @@ class Auth0Helper {
             localStorage.setItem("awarenessCity", ipData.city);
             localStorage.setItem("awarenessCountry", ipData.country_name);
             localStorage.setItem("awarenessIp", ipData.ip);
-            localStorage.setItem("awarenessDomain", ipData.asn.domain);
+            localStorage.setItem("awarenessIpDomain", ipData.asn.domain);
           }
         }
         request1.send();
@@ -223,14 +223,14 @@ class Auth0Helper {
       const acquisitionCity = decodeURIComponent(atob(acquisitionCityEncoded));
       const acquisitionCountry = decodeURIComponent(atob(acquisitionCountryEncoded));
       const acquisitionIp = decodeURIComponent(atob(acquisitionIpEncoded));
-      const acquisitionDomain = decodeURIComponent(atob(acquisitionDomainEncoded));
+      const acquisitionIpDomain = decodeURIComponent(atob(acquisitionIpDomainEncoded));
       const acquisitionTime = decodeURIComponent(atob(acquisitionTimeEncoded));
       localStorage.setItem("acquisitionUrl", acquisitionUrl);
       localStorage.setItem("acquisitionUserAgent", acquisitionUserAgent);
       localStorage.setItem("acquisitionCity", acquisitionCity);
       localStorage.setItem("acquisitionCountry", acquisitionCountry);
       localStorage.setItem("acquisitionIp", acquisitionIp);
-      localStorage.setItem("acquisitionDomain", acquisitionDomain);
+      localStorage.setItem("acquisitionIpDomain", acquisitionIpDomain);
       localStorage.setItem("acquisitionTime", acquisitionTime);
 
     } else if (referrer && referrerDomain && !referrerDomain.endsWith("kwola.io")) {
@@ -249,7 +249,7 @@ class Auth0Helper {
           localStorage.setItem("acquisitionCity", ipData.city);
           localStorage.setItem("acquisitionCountry", ipData.country_name);
           localStorage.setItem("acquisitionIp", ipData.ip);
-          localStorage.setItem("acquisitionDomain", ipData.asn.domain);
+          localStorage.setItem("acquisitionIpDomain", ipData.asn.domain);
         }
       }
       request2.send();
