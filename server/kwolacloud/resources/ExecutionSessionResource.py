@@ -33,7 +33,7 @@ class ExecutionSessionGroup(Resource):
         if user is None:
             abort(401)
 
-        queryParams = {}
+        queryParams = {'totalReward__exists': True}
 
         if not isAdmin():
             queryParams['owner'] = user
