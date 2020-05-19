@@ -220,7 +220,7 @@ class Auth0Helper {
       localStorage.setItem("acquisitionIp", acquisitionIp);
       localStorage.setItem("acquisitionTime", acquisitionTime);
 
-    } else if (referrer && referrerDomain && !referrerDomain.endsWith("kwola.io")) {
+    } else if (referrer && referrerDomain && referrerDomain.toString().indexOf("kwola.io") === -1) {
 
       localStorage.setItem("acquisitionUrl", referrer);
       localStorage.setItem("acquisitionUserAgent", navigator.userAgent);
