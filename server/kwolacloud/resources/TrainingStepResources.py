@@ -27,7 +27,7 @@ class TrainingStepGroup(Resource):
     def get(self):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {}
         if not isAdmin():
@@ -59,13 +59,16 @@ class TrainingStepSingle(Resource):
     def get(self, training_step_id):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {"id": training_step_id}
         if not isAdmin():
             queryParams['owner'] = user
 
-        trainingStep = TrainingStep.objects(**queryParams).limit(1)[0]
+        trainingStep = TrainingStep.objects(**queryParams).first()
+
+        if trainingStep is None:
+            return abort(404)
 
         return {"trainingStep": json.loads(trainingStep.to_json())}
 

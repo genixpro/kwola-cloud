@@ -32,7 +32,7 @@ class ExecutionTraceGroup(Resource):
     def get(self):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         args = request.args
         executionSessionId = args['executionSessionId']
@@ -60,15 +60,18 @@ class ExecutionTraceSingle(Resource):
     def get(self, execution_trace_id):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {"id": execution_trace_id}
         if not isAdmin():
             queryParams['owner'] = user
 
-        executionTrace = ExecutionTrace.objects(**queryParams).limit(1)[0].to_json()
+        executionTrace = ExecutionTrace.objects(**queryParams).limit(1).first()
 
-        return {"executionTrace": json.loads(executionTrace)}
+        if executionTrace is None:
+            return abort(404)
+
+        return {"executionTrace": json.loads(executionTrace.to_json())}
 
 #
 #

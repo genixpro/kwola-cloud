@@ -26,7 +26,7 @@ class TestingStepsGroup(Resource):
     def get(self):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {}
 
@@ -40,7 +40,7 @@ class TestingStepsGroup(Resource):
     def post(self):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         data = self.postParser.parse_args()
 
@@ -75,13 +75,16 @@ class TestingStepsSingle(Resource):
     def get(self, testing_sequence_id):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {"id": testing_sequence_id}
         if not isAdmin():
             queryParams['owner'] = user
 
-        testingStep = TestingStep.objects(**testing_sequence_id).limit(1)[0].to_json()
+        testingStep = TestingStep.objects(**testing_sequence_id).first()
 
-        return {"TestingStep": json.loads(testingStep)}
+        if testingStep is None:
+            return abort(404)
+
+        return {"TestingStep": json.loads(testingStep.to_json())}
 

@@ -61,13 +61,16 @@ class ExecutionSessionSingle(Resource):
     def get(self, execution_session_id):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {"id": execution_session_id}
         if not isAdmin():
             queryParams['owner'] = user
 
         executionSession = ExecutionSession.objects(**queryParams).limit(1)[0].to_json()
+
+        if executionSession is None:
+            return abort(404)
 
         return {"executionSession": json.loads(executionSession)}
 
@@ -86,7 +89,7 @@ class ExecutionSessionVideo(Resource):
     def get(self, execution_session_id):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {"id": execution_session_id}
         if not isAdmin():

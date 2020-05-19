@@ -33,7 +33,7 @@ class BugsGroup(Resource):
     def get(self):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {}
 
@@ -58,13 +58,16 @@ class BugsSingle(Resource):
     def get(self, bug_id):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {"id": bug_id}
         if not isAdmin():
             queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
+
+        if bug is None:
+            return abort(404)
 
         return {"bug": json.loads(bug.to_json())}
 
@@ -83,7 +86,7 @@ class BugVideo(Resource):
     def get(self, bug_id):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {"id": bug_id}
         if not isAdmin():

@@ -36,7 +36,7 @@ class TestingRunsGroup(Resource):
     def get(self):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {}
 
@@ -55,7 +55,7 @@ class TestingRunsGroup(Resource):
     def post(self):
         user, claims = authenticate(returnAllClaims=True)
         if user is None:
-            abort(401)
+            return abort(401)
 
         data = flask.request.get_json()
 
@@ -84,7 +84,7 @@ class TestingRunsGroup(Resource):
             )
 
             if subscription.status != "active":
-                abort(400)
+                return abort(400)
 
             del data['payment_method']
             data['stripeSubscriptionId'] = subscription.id
@@ -129,12 +129,15 @@ class TestingRunsSingle(Resource):
     def get(self, testing_run_id):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {"id": testing_run_id}
         if not isAdmin():
             queryParams['owner'] = user
 
-        testingRun = TestingRun.objects(**queryParams).limit(1)[0].to_json()
+        testingRun = TestingRun.objects(**queryParams).first()
 
-        return {"testingRun": json.loads(testingRun)}
+        if testingRun is None:
+            return abort(404)
+
+        return {"testingRun": json.loads(testingRun.to_json())}

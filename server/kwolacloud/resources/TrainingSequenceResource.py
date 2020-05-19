@@ -25,7 +25,7 @@ class TrainingSequencesGroup(Resource):
     def get(self):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {}
         if not isAdmin():
@@ -51,13 +51,16 @@ class TrainingSequencesSingle(Resource):
     def get(self, training_sequence_id):
         user = authenticate()
         if user is None:
-            abort(401)
+            return abort(401)
 
         queryParams = {"id": training_sequence_id}
         if not isAdmin():
             queryParams['owner'] = user
 
-        trainingSequence = TrainingSequence.objects(**queryParams).limit(1)[0].to_json()
+        trainingSequence = TrainingSequence.objects(**queryParams)
 
-        return {"trainingSequence": json.loads(trainingSequence)}
+        if trainingSequence is None:
+            return abort(404)
+
+        return {"trainingSequence": json.loads(trainingSequence.to_json())}
 
