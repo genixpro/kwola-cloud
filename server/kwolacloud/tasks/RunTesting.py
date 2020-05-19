@@ -167,8 +167,8 @@ def runTesting(testingRunId):
                                                        image="trainingworker",
                                                        cpuRequest="2500m",
                                                        cpuLimit="3500m",
-                                                       memoryRequest="2.5Gi",
-                                                       memoryLimit="3.5Gi"
+                                                       memoryRequest="7.5Gi",
+                                                       memoryLimit="10.5Gi"
                                                        )
                 currentTrainingStepJob.start()
 
