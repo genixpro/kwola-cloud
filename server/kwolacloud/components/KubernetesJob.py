@@ -30,7 +30,7 @@ class KubernetesJob:
         subprocess.run(["kubectl", "cluster-info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def kubeJobName(self):
-        return f"kubernetes-job-{self.referenceId}"
+        return f"kubernetes-job-{self.referenceId.replace('_', '-')}"
 
 
     def generateJobSpec(self):
