@@ -54,13 +54,22 @@ const routes = [
 ];
 
 class AppRouter extends Component {
-  render() {
-    var _hsq = window._hsq = window._hsq || [];
-    _hsq.push(['setPath', this.props.url]);
-    _hsq.push(['trackPageView']);
+  componentDidMount() {
+    this.lastUrl = null;
+  }
 
-    window.ga('set', 'page', this.props.url);
-    window.ga('send', 'pageview');
+  render() {
+    if (this.props.url !== this.lastUrl)
+    {
+      var _hsq = window._hsq = window._hsq || [];
+      _hsq.push(['setPath', this.props.url]);
+      _hsq.push(['trackPageView']);
+
+      window.ga('set', 'page', this.props.url);
+      window.ga('send', 'pageview');
+
+      this.lastUrl = this.props.url;
+    }
 
     const { url, style } = this.props;
     return (
