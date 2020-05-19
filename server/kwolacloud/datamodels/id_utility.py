@@ -23,7 +23,7 @@ def generateKwolaId(modelClass, owner, kwolaConfig, groupIndex=None):
              generateDayCode() + \
              generateRandomLowercaseLetter() + \
              generateRandomLowercaseLetter() + "_" + \
-             generateObjectCounterValueCode(modelClass, owner, groupIndex=groupIndex, minLength=4)
+             generateObjectCounterValueCode(modelClass, owner, length=4, groupIndex=groupIndex)
 
     currentLength = 0
     randomPartIncrementLength = 4
@@ -85,7 +85,7 @@ def getOneDigitCode(value):
 
 
 
-def generateObjectCounterValueCode(modelClass, owner, groupIndex=None, minLength=None):
+def generateObjectCounterValueCode(modelClass, owner, length, groupIndex=None):
     queryParameters = {}
     queryParameters['className'] = modelClass.__name__
     queryParameters['owner'] = owner
@@ -97,11 +97,10 @@ def generateObjectCounterValueCode(modelClass, owner, groupIndex=None, minLength
 
     counterStr = str(counterObject.counter)
 
-    if minLength is not None:
-        while len(counterStr) < minLength:
-            counterStr = "0" + counterStr
+    while len(counterStr) < length:
+        counterStr = "0" + counterStr
 
-    return counterStr
+    return counterStr[-length:]
 
 
 
