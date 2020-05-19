@@ -18,7 +18,7 @@ import flask
 from kwola.config.config import Configuration
 import os.path
 from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
-from ..auth import authenticate
+from ..auth import authenticate, isAdmin
 
 class BugsGroup(Resource):
     def __init__(self):
@@ -35,7 +35,10 @@ class BugsGroup(Resource):
         if user is None:
             abort(401)
 
-        queryParams = {"owner": user}
+        queryParams = {}
+
+        if not isAdmin():
+            queryParams['owner'] = user
 
         testingRunId = flask.request.args.get('testingRunId')
         if testingRunId is not None:
@@ -57,7 +60,11 @@ class BugsSingle(Resource):
         if user is None:
             abort(401)
 
-        bug = BugModel.objects(id=bug_id, owner=user).first()
+        queryParams = {"id": bug_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        bug = BugModel.objects(**queryParams).first()
 
         return {"bug": json.loads(bug.to_json())}
 
@@ -78,7 +85,11 @@ class BugVideo(Resource):
         if user is None:
             abort(401)
 
-        bug = BugModel.objects(id=bug_id, owner=user).first()
+        queryParams = {"id": bug_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)

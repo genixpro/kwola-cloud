@@ -12,7 +12,7 @@ from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.tasks.RunTestingStep import runTestingStep
 import json
 import bson
-from ..auth import authenticate
+from ..auth import authenticate, isAdmin
 
 class TestingStepsGroup(Resource):
     def __init__(self):
@@ -28,7 +28,12 @@ class TestingStepsGroup(Resource):
         if user is None:
             abort(401)
 
-        TestingSteps = TestingStep.objects(owner=user).order_by("-startTime").limit(20).to_json()
+        queryParams = {}
+
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        TestingSteps = TestingStep.objects(**queryParams).order_by("-startTime").limit(20).to_json()
 
         return {"TestingSteps": json.loads(TestingSteps)}
 
@@ -72,7 +77,11 @@ class TestingStepsSingle(Resource):
         if user is None:
             abort(401)
 
-        TestingStep = TestingStep.objects(id=bson.ObjectId(testing_sequence_id), owner=user).limit(1)[0].to_json()
+        queryParams = {"id": testing_sequence_id}
+        if not isAdmin():
+            queryParams['owner'] = user
 
-        return {"TestingStep": json.loads(TestingStep)}
+        testingStep = TestingStep.objects(**testing_sequence_id).limit(1)[0].to_json()
+
+        return {"TestingStep": json.loads(testingStep)}
 

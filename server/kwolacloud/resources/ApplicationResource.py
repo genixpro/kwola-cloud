@@ -16,7 +16,7 @@ from selenium.webdriver.chrome.options import Options
 import flask
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration
-from ..auth import authenticate
+from ..auth import authenticate, isAdmin
 import selenium
 import selenium.common.exceptions
 
@@ -77,7 +77,11 @@ class ApplicationSingle(Resource):
         if user is None:
             abort(401)
 
-        application = ApplicationModel.objects(id=application_id, owner=user).limit(1).first()
+        query = {"id": application_id}
+        if not isAdmin():
+            query['owner'] = user
+
+        application = ApplicationModel.objects(**query).limit(1).first()
 
         if application is not None:
             return json.loads(application.to_json())
@@ -92,7 +96,11 @@ class ApplicationImage(Resource):
         if user is None:
             abort(401)
 
-        application = ApplicationModel.objects(id=application_id, owner=user).limit(1).first()
+        query = {"id": application_id}
+        if not isAdmin():
+            query['owner'] = user
+
+        application = ApplicationModel.objects(**query).limit(1).first()
 
         chrome_options = Options()
         chrome_options.headless = True

@@ -8,7 +8,7 @@ import subprocess
 import json
 import os
 import stripe
-from ..auth import authenticate
+from ..auth import authenticate, isAdmin
 from ..config.config import loadConfiguration
 
 class BillingURLResource(Resource):

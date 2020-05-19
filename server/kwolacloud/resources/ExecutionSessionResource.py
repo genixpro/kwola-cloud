@@ -16,7 +16,7 @@ import flask
 from kwola.config.config import Configuration
 import os.path
 from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
-from ..auth import authenticate
+from ..auth import authenticate, isAdmin
 
 class ExecutionSessionGroup(Resource):
     def __init__(self):
@@ -33,7 +33,10 @@ class ExecutionSessionGroup(Resource):
         if user is None:
             abort(401)
 
-        queryParams = {"owner": user}
+        queryParams = {}
+
+        if not isAdmin():
+            queryParams['owner'] = user
 
         testingRunId = flask.request.args.get('testingRunId')
         if testingRunId is not None:
@@ -60,7 +63,11 @@ class ExecutionSessionSingle(Resource):
         if user is None:
             abort(401)
 
-        executionSession = ExecutionSession.objects(id=execution_session_id, owner=user).limit(1)[0].to_json()
+        queryParams = {"id": execution_session_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        executionSession = ExecutionSession.objects(**queryParams).limit(1)[0].to_json()
 
         return {"executionSession": json.loads(executionSession)}
 
@@ -81,7 +88,11 @@ class ExecutionSessionVideo(Resource):
         if user is None:
             abort(401)
 
-        executionSession = ExecutionSession.objects(id=execution_session_id, owner=user).first()
+        queryParams = {"id": execution_session_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        executionSession = ExecutionSession.objects(**queryParams).first()
 
         if executionSession is None:
             return abort(404)

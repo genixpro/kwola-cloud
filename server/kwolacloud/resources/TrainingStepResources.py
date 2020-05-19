@@ -11,7 +11,7 @@ from ..app import cache
 from kwola.datamodels.TrainingStepModel import TrainingStep
 import json
 import math
-from ..auth import authenticate
+from ..auth import authenticate, isAdmin
 import logging
 
 
@@ -29,7 +29,11 @@ class TrainingStepGroup(Resource):
         if user is None:
             abort(401)
 
-        trainingSteps = TrainingStep.objects(owner=user).order_by("-startTime").only("startTime", "id", "status", "averageLoss")
+        queryParams = {}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        trainingSteps = TrainingStep.objects(**queryParams).order_by("-startTime").only("startTime", "id", "status", "averageLoss")
 
         for trainingStep in trainingSteps:
             if trainingStep.averageLoss is not None and math.isnan(trainingStep.averageLoss):
@@ -57,7 +61,11 @@ class TrainingStepSingle(Resource):
         if user is None:
             abort(401)
 
-        trainingStep = TrainingStep.objects(id=training_step_id, owner=user).limit(1)[0]
+        queryParams = {"id": training_step_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        trainingStep = TrainingStep.objects(**queryParams).limit(1)[0]
 
         return {"trainingStep": json.loads(trainingStep.to_json())}
 

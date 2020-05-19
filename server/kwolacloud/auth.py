@@ -51,4 +51,7 @@ def authenticate(returnAllClaims=False):
         print(e)
         return None
 
+def isAdmin():
+    user, claims = authenticate(returnAllClaims=True)
+    return claims['https://kwola.io/admin']
 

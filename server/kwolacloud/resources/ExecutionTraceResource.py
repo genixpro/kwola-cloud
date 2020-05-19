@@ -16,7 +16,7 @@ import os
 import flask
 from kwola.config import config
 import os.path
-from ..auth import authenticate
+from ..auth import authenticate, isAdmin
 
 class ExecutionTraceGroup(Resource):
     def __init__(self):
@@ -37,7 +37,11 @@ class ExecutionTraceGroup(Resource):
         args = request.args
         executionSessionId = args['executionSessionId']
 
-        executionTraces = ExecutionTrace.objects(executionSessionId=executionSessionId, owner=user).order_by("-startTime").to_json()
+        queryParams = {"executionSessionId": executionSessionId}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        executionTraces = ExecutionTrace.objects(**queryParams).order_by("-startTime").to_json()
 
         return {"executionTraces": json.loads(executionTraces)}
 
@@ -58,7 +62,11 @@ class ExecutionTraceSingle(Resource):
         if user is None:
             abort(401)
 
-        executionTrace = ExecutionTrace.objects(id=execution_trace_id, owner=user).limit(1)[0].to_json()
+        queryParams = {"id": execution_trace_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        executionTrace = ExecutionTrace.objects(**queryParams).limit(1)[0].to_json()
 
         return {"executionTrace": json.loads(executionTrace)}
 

@@ -16,7 +16,7 @@ import bson
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration
 import stripe
-from ..auth import authenticate
+from ..auth import authenticate, isAdmin
 from ..config.config import loadConfiguration
 from ..components.KubernetesJob import KubernetesJob
 
@@ -37,7 +37,11 @@ class TestingRunsGroup(Resource):
         if user is None:
             abort(401)
 
-        queryParams = {"owner": user}
+        queryParams = {}
+
+        if not isAdmin():
+            queryParams['owner'] = user
+
 
         applicationId = flask.request.args.get('applicationId')
         if applicationId is not None:
@@ -126,6 +130,10 @@ class TestingRunsSingle(Resource):
         if user is None:
             abort(401)
 
-        testingRun = TestingRun.objects(id=testing_run_id, owner=user).limit(1)[0].to_json()
+        queryParams = {"id": testing_run_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        testingRun = TestingRun.objects(**queryParams).limit(1)[0].to_json()
 
         return {"testingRun": json.loads(testingRun)}

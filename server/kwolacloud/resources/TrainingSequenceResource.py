@@ -10,7 +10,7 @@ from ..app import cache
 
 from kwola.datamodels.TrainingSequenceModel import TrainingSequence
 import json
-from ..auth import authenticate
+from ..auth import authenticate, isAdmin
 
 
 class TrainingSequencesGroup(Resource):
@@ -27,7 +27,11 @@ class TrainingSequencesGroup(Resource):
         if user is None:
             abort(401)
 
-        trainingSequences = TrainingSequence.objects(owner=user).order_by("-startTime").limit(20).to_json()
+        queryParams = {}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        trainingSequences = TrainingSequence.objects(**queryParams).order_by("-startTime").limit(20).to_json()
 
         return {"trainingSequences": json.loads(trainingSequences)}
 
@@ -49,7 +53,11 @@ class TrainingSequencesSingle(Resource):
         if user is None:
             abort(401)
 
-        trainingSequence = TrainingSequence.objects(id=training_sequence_id, owner=user).limit(1)[0].to_json()
+        queryParams = {"id": training_sequence_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        trainingSequence = TrainingSequence.objects(**queryParams).limit(1)[0].to_json()
 
         return {"trainingSequence": json.loads(trainingSequence)}
 
