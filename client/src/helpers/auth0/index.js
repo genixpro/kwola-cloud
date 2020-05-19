@@ -42,7 +42,7 @@ class Auth0Helper {
       if (localStorage.getItem("acquisitionUrl"))
       {
         const data = {"acquisitionUrl": localStorage.getItem("acquisitionUrl")};
-        state = JSON.stringify(data);
+        state = encodeURIComponent(btoa(JSON.stringify(data)));
       }
 
       this.webAuth.authorize({state: state});
