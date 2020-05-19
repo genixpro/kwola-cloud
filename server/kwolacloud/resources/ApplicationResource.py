@@ -31,7 +31,11 @@ class ApplicationGroup(Resource):
         if user is None:
             abort(401)
 
-        applications = ApplicationModel.objects(owner=user).no_dereference().to_json()
+        query = {}
+        if not isAdmin():
+            query['owner'] = user
+
+        applications = ApplicationModel.objects(**query).no_dereference().to_json()
 
         return {"applications": json.loads(applications)}
 
