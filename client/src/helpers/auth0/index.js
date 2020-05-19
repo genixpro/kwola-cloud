@@ -224,7 +224,7 @@ class Auth0Helper {
       const acquisitionCountry = atob(acquisitionCountryEncoded);
       const acquisitionIp = atob(acquisitionIpEncoded);
       const acquisitionIpDomain = atob(acquisitionIpDomainEncoded);
-      const acquisitionTime = atob(decodeURICcquisitionTimeEncoded);
+      const acquisitionTime = atob(acquisitionTimeEncoded);
       localStorage.setItem("acquisitionUrl", acquisitionUrl);
       localStorage.setItem("acquisitionUserAgent", acquisitionUserAgent);
       localStorage.setItem("acquisitionCity", acquisitionCity);
