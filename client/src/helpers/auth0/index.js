@@ -41,7 +41,22 @@ class Auth0Helper {
       let state = "";
       if (localStorage.getItem("acquisitionUrl"))
       {
-        const data = {"acquisitionUrl": localStorage.getItem("acquisitionUrl")};
+        const data = {
+          "awarenessUrl": localStorage.getItem("awarenessUrl"),
+          "awarenessUserAgent": localStorage.getItem("awarenessUserAgent"),
+          "awarenessCity": localStorage.getItem("awarenessCity"),
+          "awarenessCountry": localStorage.getItem("awarenessCountry"),
+          "awarenessIp": localStorage.getItem("awarenessIp"),
+          "awarenessDomain": localStorage.getItem("awarenessDomain"),
+          "awarenessTime": localStorage.getItem("awarenessTime"),
+          "acquisitionUrl": localStorage.getItem("acquisitionUrl"),
+          "acquisitionUserAgent": localStorage.getItem("acquisitionUserAgent"),
+          "acquisitionCity": localStorage.getItem("acquisitionCity"),
+          "acquisitionCountry": localStorage.getItem("acquisitionCountry"),
+          "acquisitionIp": localStorage.getItem("acquisitionIp"),
+          "acquisitionDomain": localStorage.getItem("acquisitionDomain"),
+          "acquisitionTime": localStorage.getItem("acquisitionTime"),
+        };
         state = encodeURIComponent(btoa(JSON.stringify(data)));
       }
 
@@ -144,27 +159,107 @@ class Auth0Helper {
   updateAcquisitionUrl()
   {
     const urlParams = new URLSearchParams(window.location.search);
-    const acquisitionDataEncoded = urlParams.get('a');
+    const acquisitionUrlEncoded = urlParams.get('a');
+    const awarenessUrlEncoded = urlParams.get('b');
+    const awarenessUserAgentEncoded = urlParams.get('c');
+    const acquisitionUserAgentEncoded = urlParams.get('d');
+    const awarenessCityEncoded = urlParams.get('e');
+    const awarenessCountryEncoded = urlParams.get('f');
+    const awarenessIpEncoded = urlParams.get('g');
+    const awarenessDomainEncoded = urlParams.get('h');
+    const acquisitionCityEncoded = urlParams.get('i');
+    const acquisitionCountryEncoded = urlParams.get('j');
+    const acquisitionIpEncoded = urlParams.get('k');
+    const acquisitionDomainEncoded = urlParams.get('l');
+    const awarenessTimeEncoded = urlParams.get('m');
+    const acquisitionTimeEncoded = urlParams.get('n');
+
     const referrer = document.referrer;
     const referrerDomain = referrer.toString().replace('http://', '').replace('https://', '').split(/[/?#]/)[0];
 
-
-    if(!localStorage.getItem("acquisitionUrl"))
+    if(!localStorage.getItem("awarenessUrl"))
     {
-      if (acquisitionDataEncoded) {
-        const acquisitionUrl = atob(acquisitionDataEncoded);
-        localStorage.setItem("acquisitionUrl", acquisitionUrl);
+      if (awarenessUrlEncoded) {
+        const awarenessUrl = decodeURIComponent(atob(awarenessUrlEncoded));
+        const awarenessUserAgent = decodeURIComponent(atob(awarenessUserAgentEncoded));
+        const awarenessCity = decodeURIComponent(atob(awarenessCityEncoded));
+        const awarenessCountry = decodeURIComponent(atob(awarenessCountryEncoded));
+        const awarenessIp = decodeURIComponent(atob(awarenessIpEncoded));
+        const awarenessDomain = decodeURIComponent(atob(awarenessDomainEncoded));
+        const awarenessTime = decodeURIComponent(atob(awarenessTimeEncoded));
+        localStorage.setItem("awarenessUrl", awarenessUrl);
+        localStorage.setItem("awarenessUserAgent", awarenessUserAgent);
+        localStorage.setItem("awarenessCity", awarenessCity);
+        localStorage.setItem("awarenessCountry", awarenessCountry);
+        localStorage.setItem("awarenessIp", awarenessIp);
+        localStorage.setItem("awarenessDomain", awarenessDomain);
+        localStorage.setItem("awarenessTime", awarenessTime);
+
       } else if (referrer && referrerDomain && !referrerDomain.endsWith("kwola.io")) {
-        localStorage.setItem("acquisitionUrl", referrer);
+        localStorage.setItem("awarenessUrl", referrer);
+        localStorage.setItem("awarenessUserAgent", navigator.userAgent);
+        localStorage.setItem("awarenessTime", new Date().toString());
+
+        const request1 = new XMLHttpRequest();
+        request1.open('GET', 'https://api.ipdata.co/?api-key=585f0bbe1a7caf5e73d7391c120f7d025b1deb0f504df719c6893e40');
+        request1.setRequestHeader('Accept', 'application/json');
+
+        request1.onreadystatechange = function () {
+          if (this.readyState === 4) {
+            const ipData = JSON.parse(this.responseText);
+            localStorage.setItem("awarenessCity", ipData.city);
+            localStorage.setItem("awarenessCountry", ipData.country_name);
+            localStorage.setItem("awarenessIp", ipData.ip);
+            localStorage.setItem("awarenessDomain", ipData.asn.domain);
+          }
+        }
+        request1.send();
       }
     }
 
-    if (acquisitionDataEncoded)
+    if (acquisitionUrlEncoded) {
+      const acquisitionUrl = decodeURIComponent(atob(acquisitionUrlEncoded));
+      const acquisitionUserAgent = decodeURIComponent(atob(acquisitionUserAgentEncoded));
+      const acquisitionCity = decodeURIComponent(atob(acquisitionCityEncoded));
+      const acquisitionCountry = decodeURIComponent(atob(acquisitionCountryEncoded));
+      const acquisitionIp = decodeURIComponent(atob(acquisitionIpEncoded));
+      const acquisitionDomain = decodeURIComponent(atob(acquisitionDomainEncoded));
+      const acquisitionTime = decodeURIComponent(atob(acquisitionTimeEncoded));
+      localStorage.setItem("acquisitionUrl", acquisitionUrl);
+      localStorage.setItem("acquisitionUserAgent", acquisitionUserAgent);
+      localStorage.setItem("acquisitionCity", acquisitionCity);
+      localStorage.setItem("acquisitionCountry", acquisitionCountry);
+      localStorage.setItem("acquisitionIp", acquisitionIp);
+      localStorage.setItem("acquisitionDomain", acquisitionDomain);
+      localStorage.setItem("acquisitionTime", acquisitionTime);
+
+    } else if (referrer && referrerDomain && !referrerDomain.endsWith("kwola.io")) {
+
+      localStorage.setItem("acquisitionUrl", referrer);
+      localStorage.setItem("acquisitionUserAgent", navigator.userAgent);
+      localStorage.setItem("acquisitionTime", new Date().toString());
+
+      const request2 = new XMLHttpRequest();
+      request2.open('GET', 'https://api.ipdata.co/?api-key=585f0bbe1a7caf5e73d7391c120f7d025b1deb0f504df719c6893e40');
+      request2.setRequestHeader('Accept', 'application/json');
+
+      request2.onreadystatechange = function () {
+        if (this.readyState === 4) {
+          const ipData = JSON.parse(this.responseText);
+          localStorage.setItem("acquisitionCity", ipData.city);
+          localStorage.setItem("acquisitionCountry", ipData.country_name);
+          localStorage.setItem("acquisitionIp", ipData.ip);
+          localStorage.setItem("acquisitionDomain", ipData.asn.domain);
+        }
+      }
+      request2.send();
+    }
+
+    if (acquisitionUrlEncoded || awarenessUrlEncoded)
     {
       // Hide the acquisition data quickly.
       window.history.replaceState({}, document.title, window.location.href.split("?")[0]);
     }
   }
-
 }
 export default new Auth0Helper();
