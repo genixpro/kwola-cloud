@@ -8,6 +8,7 @@ from ..datamodels.TestingRun import TestingRun
 from kwola.config.config import Configuration
 from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.datamodels.CustomIDField import CustomIDField
+from ..datamodels.id_utility import generateKwolaId
 from kwola.tasks import RunTestingStep
 import logging
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription, attachUsageBilling
@@ -45,7 +46,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
         if testingStepsCompleted < (config['training_random_initialization_sequences']):
             shouldBeRandom = True
 
-        testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config), testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId)
+        newID = generateKwolaId(modelClass=TestingStep, kwolaConfig=config, owner=run.owner)
+        testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId)
         testingStep.saveToDisk(config)
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)

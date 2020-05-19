@@ -14,7 +14,7 @@ from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.chrome.options import Options
 import flask
-from kwola.datamodels.CustomIDField import CustomIDField
+from ..datamodels.id_utility import generateKwolaId
 from ..config.config import getKwolaConfiguration
 from ..auth import authenticate, isAdmin
 import selenium
@@ -47,7 +47,7 @@ class ApplicationGroup(Resource):
             name=data['name'],
             url=data['url'],
             owner=user,
-            id=CustomIDField.generateNewUUID(ApplicationModel, config=getKwolaConfiguration())
+            id=generateKwolaId(modelClass=ApplicationModel, kwolaConfig=getKwolaConfiguration(), owner=user)
         )
 
         newApplication.save()

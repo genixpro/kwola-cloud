@@ -1,4 +1,6 @@
 {
+  "environmentCode": "d",
+  "userCodeSalt": "ShriOcNedNilNuIdNashyashiTwajbafEvlemKoHozCyHalgOk",
   "mongo": {
     "uri": "mongodb://localhost:27017/kwolacloud",
     "db": "kwolacloud",

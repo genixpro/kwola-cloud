@@ -14,6 +14,7 @@ import json
 import datetime
 import bson
 from kwola.datamodels.CustomIDField import CustomIDField
+from ..datamodels.id_utility import generateKwolaId
 from ..config.config import getKwolaConfiguration
 import stripe
 from ..auth import authenticate, isAdmin
@@ -90,7 +91,7 @@ class TestingRunsGroup(Resource):
         else:
             data['stripeSubscriptionId'] = None
 
-        data['id'] = CustomIDField.generateNewUUID(TestingRun, config=getKwolaConfiguration())
+        data['id'] = generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=user)
         data['owner'] = user
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
