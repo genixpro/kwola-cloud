@@ -165,8 +165,8 @@ class Auth0Helper {
     const acquisitionUserAgentEncoded = urlParams.get('d');
     const awarenessIpEncoded = urlParams.get('e');
     const acquisitionIpEncoded = urlParams.get('f');
-    const awarenessTimeEncoded = urlParams.get('j');
-    const acquisitionTimeEncoded = urlParams.get('k');
+    const awarenessTimeEncoded = urlParams.get('g');
+    const acquisitionTimeEncoded = urlParams.get('h');
 
     const referrer = document.referrer;
     const referrerDomain = referrer.toString().replace('http://', '').replace('https://', '').split(/[/?#]/)[0];
@@ -174,10 +174,14 @@ class Auth0Helper {
     if(!localStorage.getItem("awarenessUrl"))
     {
       if (awarenessUrlEncoded) {
-        const awarenessUrl = atob(awarenessUrlEncoded);
-        const awarenessUserAgent = atob(awarenessUserAgentEncoded);
-        const awarenessIp = atob(awarenessIpEncoded);
-        const awarenessTime = atob(awarenessTimeEncoded);
+        let awarenessUrl = "";
+        let awarenessUserAgent = "";
+        let awarenessIp = "";
+        let awarenessTime = "";
+        try {awarenessUrl = atob(awarenessUrlEncoded);} catch (e) {}
+        try {awarenessUserAgent = atob(awarenessUserAgentEncoded);} catch (e) {}
+        try {awarenessIp = atob(awarenessIpEncoded);} catch (e) {}
+        try {awarenessTime = atob(awarenessTimeEncoded);} catch (e) {}
         localStorage.setItem("awarenessUrl", awarenessUrl);
         localStorage.setItem("awarenessUserAgent", awarenessUserAgent);
         localStorage.setItem("awarenessIp", awarenessIp);
@@ -203,10 +207,14 @@ class Auth0Helper {
     }
 
     if (acquisitionUrlEncoded) {
-      const acquisitionUrl = atob(acquisitionUrlEncoded);
-      const acquisitionUserAgent = atob(acquisitionUserAgentEncoded);
-      const acquisitionIp = atob(acquisitionIpEncoded);
-      const acquisitionTime = atob(acquisitionTimeEncoded);
+      let acquisitionUrl = "";
+      let acquisitionUserAgent = "";
+      let acquisitionIp = "";
+      let acquisitionTime = "";
+      try {acquisitionUrl = atob(acquisitionUrlEncoded);} catch (e) {}
+      try {acquisitionUserAgent = atob(acquisitionUserAgentEncoded);} catch (e) {}
+      try {acquisitionIp = atob(acquisitionIpEncoded);} catch (e) {}
+      try {acquisitionTime = atob(acquisitionTimeEncoded);} catch (e) {}
       localStorage.setItem("acquisitionUrl", acquisitionUrl);
       localStorage.setItem("acquisitionUserAgent", acquisitionUserAgent);
       localStorage.setItem("acquisitionIp", acquisitionIp);
