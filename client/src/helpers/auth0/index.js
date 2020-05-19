@@ -180,13 +180,13 @@ class Auth0Helper {
     if(!localStorage.getItem("awarenessUrl"))
     {
       if (awarenessUrlEncoded) {
-        const awarenessUrl = atob(decodeURIComponent(awarenessUrlEncoded));
-        const awarenessUserAgent = atob(decodeURIComponent(awarenessUserAgentEncoded));
-        const awarenessCity = atob(decodeURIComponent(awarenessCityEncoded));
-        const awarenessCountry = atob(decodeURIComponent(awarenessCountryEncoded));
-        const awarenessIp = atob(decodeURIComponent(awarenessIpEncoded));
-        const awarenessIpDomain = atob(decodeURIComponent(awarenessIpDomainEncoded));
-        const awarenessTime = atob(decodeURIComponent(awarenessTimeEncoded));
+        const awarenessUrl = atob(awarenessUrlEncoded);
+        const awarenessUserAgent = atob(awarenessUserAgentEncoded);
+        const awarenessCity = atob(awarenessCityEncoded);
+        const awarenessCountry = atob(awarenessCountryEncoded);
+        const awarenessIp = atob(awarenessIpEncoded);
+        const awarenessIpDomain = atob(awarenessIpDomainEncoded);
+        const awarenessTime = atob(awarenessTimeEncoded);
         localStorage.setItem("awarenessUrl", awarenessUrl);
         localStorage.setItem("awarenessUserAgent", awarenessUserAgent);
         localStorage.setItem("awarenessCity", awarenessCity);
@@ -218,13 +218,13 @@ class Auth0Helper {
     }
 
     if (acquisitionUrlEncoded) {
-      const acquisitionUrl = atob(decodeURIComponent(acquisitionUrlEncoded));
-      const acquisitionUserAgent = atob(decodeURIComponent(acquisitionUserAgentEncoded));
-      const acquisitionCity = atob(decodeURIComponent(acquisitionCityEncoded));
-      const acquisitionCountry = atob(decodeURIComponent(acquisitionCountryEncoded));
-      const acquisitionIp = atob(decodeURIComponent(acquisitionIpEncoded));
-      const acquisitionIpDomain = atob(decodeURIComponent(acquisitionIpDomainEncoded));
-      const acquisitionTime = atob(decodeURIComponent(acquisitionTimeEncoded));
+      const acquisitionUrl = atob(acquisitionUrlEncoded);
+      const acquisitionUserAgent = atob(acquisitionUserAgentEncoded);
+      const acquisitionCity = atob(acquisitionCityEncoded);
+      const acquisitionCountry = atob(acquisitionCountryEncoded);
+      const acquisitionIp = atob(acquisitionIpEncoded);
+      const acquisitionIpDomain = atob(acquisitionIpDomainEncoded);
+      const acquisitionTime = atob(decodeURICcquisitionTimeEncoded);
       localStorage.setItem("acquisitionUrl", acquisitionUrl);
       localStorage.setItem("acquisitionUserAgent", acquisitionUserAgent);
       localStorage.setItem("acquisitionCity", acquisitionCity);
