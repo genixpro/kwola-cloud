@@ -163,16 +163,10 @@ class Auth0Helper {
     const awarenessUrlEncoded = urlParams.get('b');
     const awarenessUserAgentEncoded = urlParams.get('c');
     const acquisitionUserAgentEncoded = urlParams.get('d');
-    const awarenessCityEncoded = urlParams.get('e');
-    const awarenessCountryEncoded = urlParams.get('f');
-    const awarenessIpEncoded = urlParams.get('g');
-    const awarenessIpDomainEncoded = urlParams.get('h');
-    const acquisitionCityEncoded = urlParams.get('i');
-    const acquisitionCountryEncoded = urlParams.get('j');
-    const acquisitionIpEncoded = urlParams.get('k');
-    const acquisitionIpDomainEncoded = urlParams.get('l');
-    const awarenessTimeEncoded = urlParams.get('m');
-    const acquisitionTimeEncoded = urlParams.get('n');
+    const awarenessIpEncoded = urlParams.get('e');
+    const acquisitionIpEncoded = urlParams.get('f');
+    const awarenessTimeEncoded = urlParams.get('j');
+    const acquisitionTimeEncoded = urlParams.get('k');
 
     const referrer = document.referrer;
     const referrerDomain = referrer.toString().replace('http://', '').replace('https://', '').split(/[/?#]/)[0];
@@ -182,17 +176,11 @@ class Auth0Helper {
       if (awarenessUrlEncoded) {
         const awarenessUrl = atob(awarenessUrlEncoded);
         const awarenessUserAgent = atob(awarenessUserAgentEncoded);
-        const awarenessCity = atob(awarenessCityEncoded);
-        const awarenessCountry = atob(awarenessCountryEncoded);
         const awarenessIp = atob(awarenessIpEncoded);
-        const awarenessIpDomain = atob(awarenessIpDomainEncoded);
         const awarenessTime = atob(awarenessTimeEncoded);
         localStorage.setItem("awarenessUrl", awarenessUrl);
         localStorage.setItem("awarenessUserAgent", awarenessUserAgent);
-        localStorage.setItem("awarenessCity", awarenessCity);
-        localStorage.setItem("awarenessCountry", awarenessCountry);
         localStorage.setItem("awarenessIp", awarenessIp);
-        localStorage.setItem("awarenessIpDomain", awarenessIpDomain);
         localStorage.setItem("awarenessTime", awarenessTime);
 
       } else if (referrer && referrerDomain && !referrerDomain.endsWith("kwola.io")) {
@@ -207,10 +195,7 @@ class Auth0Helper {
         request1.onreadystatechange = function () {
           if (this.readyState === 4) {
             const ipData = JSON.parse(this.responseText);
-            localStorage.setItem("awarenessCity", ipData.city);
-            localStorage.setItem("awarenessCountry", ipData.country_name);
             localStorage.setItem("awarenessIp", ipData.ip);
-            localStorage.setItem("awarenessIpDomain", ipData.asn.domain);
           }
         }
         request1.send();
@@ -220,17 +205,11 @@ class Auth0Helper {
     if (acquisitionUrlEncoded) {
       const acquisitionUrl = atob(acquisitionUrlEncoded);
       const acquisitionUserAgent = atob(acquisitionUserAgentEncoded);
-      const acquisitionCity = atob(acquisitionCityEncoded);
-      const acquisitionCountry = atob(acquisitionCountryEncoded);
       const acquisitionIp = atob(acquisitionIpEncoded);
-      const acquisitionIpDomain = atob(acquisitionIpDomainEncoded);
       const acquisitionTime = atob(acquisitionTimeEncoded);
       localStorage.setItem("acquisitionUrl", acquisitionUrl);
       localStorage.setItem("acquisitionUserAgent", acquisitionUserAgent);
-      localStorage.setItem("acquisitionCity", acquisitionCity);
-      localStorage.setItem("acquisitionCountry", acquisitionCountry);
       localStorage.setItem("acquisitionIp", acquisitionIp);
-      localStorage.setItem("acquisitionIpDomain", acquisitionIpDomain);
       localStorage.setItem("acquisitionTime", acquisitionTime);
 
     } else if (referrer && referrerDomain && !referrerDomain.endsWith("kwola.io")) {
@@ -246,10 +225,7 @@ class Auth0Helper {
       request2.onreadystatechange = function () {
         if (this.readyState === 4) {
           const ipData = JSON.parse(this.responseText);
-          localStorage.setItem("acquisitionCity", ipData.city);
-          localStorage.setItem("acquisitionCountry", ipData.country_name);
           localStorage.setItem("acquisitionIp", ipData.ip);
-          localStorage.setItem("acquisitionIpDomain", ipData.asn.domain);
         }
       }
       request2.send();
