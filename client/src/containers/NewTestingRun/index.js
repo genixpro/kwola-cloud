@@ -448,12 +448,12 @@ class RecurringOptions extends Component {
 
 class SizeOfRun extends Component {
     state = {
-        lengthTab: 1,
-        length: 250,
-        sessionsTab: 1,
-        sessions: 1000,
-        hoursTab: 1,
-        hours: 6
+        lengthTab: 0,
+        length: 50,
+        sessionsTab: 0,
+        sessions: 25,
+        hoursTab: 0,
+        hours: 1
     }
 
     componentDidMount() {
@@ -474,15 +474,15 @@ class SizeOfRun extends Component {
     {
         if (newTab === 0)
         {
-            this.setState({lengthTab: 0, length: 100}, () => this.updateParent());
+            this.setState({lengthTab: 0, length: 50}, () => this.updateParent());
         }
         else if (newTab === 1)
         {
-            this.setState({lengthTab: 1, length: 250}, () => this.updateParent());
+            this.setState({lengthTab: 1, length: 125}, () => this.updateParent());
         }
         else if (newTab === 2)
         {
-            this.setState({lengthTab: 2, length: 1000}, () => this.updateParent());
+            this.setState({lengthTab: 2, length: 500}, () => this.updateParent());
         }
         else if (newTab === 3)
         {
@@ -499,15 +499,15 @@ class SizeOfRun extends Component {
     {
         if (newTab === 0)
         {
-            this.setState({sessionsTab: 0, sessions: 250}, () => this.updateParent());
+            this.setState({sessionsTab: 0, sessions: 25}, () => this.updateParent());
         }
         else if (newTab === 1)
         {
-            this.setState({sessionsTab: 1, sessions: 1000}, () => this.updateParent());
+            this.setState({sessionsTab: 1, sessions: 100}, () => this.updateParent());
         }
         else if (newTab === 2)
         {
-            this.setState({sessionsTab: 2, sessions: 5000}, () => this.updateParent());
+            this.setState({sessionsTab: 2, sessions: 500}, () => this.updateParent());
         }
         else if (newTab === 3)
         {
@@ -1238,8 +1238,8 @@ class NewTestingRun extends Component {
     state = {
         result: '',
         tab: 0,
-        length: 250,
-        sessions: 1000,
+        length: 50,
+        sessions: 25,
         hours: 6,
         paymentRequest: null,
         mode: "details",
