@@ -551,13 +551,13 @@ class SizeOfRun extends Component {
                 <Column xs={9}>
                     <p>Number of actions per session</p>
                     <Button variant="extended" color={this.state.lengthTab === 0 ? "primary" : "default"} onClick={() => this.lengthTabChanged(0)}>
-                        Short (100)
+                        Short (50)
                     </Button>
                     <Button variant="extended" color={this.state.lengthTab === 1 ? "primary" : "default"} onClick={() => this.lengthTabChanged(1)}>
-                        Medium (250)
+                        Medium (125)
                     </Button>
                     <Button variant="extended" color={this.state.lengthTab === 2 ? "primary" : "default"} onClick={() => this.lengthTabChanged(2)}>
-                        Long (1000)
+                        Long (500)
                     </Button>
                     <Button variant="extended" color={this.state.lengthTab === 3 ? "primary" : "default"} onClick={() => this.lengthTabChanged(3)}>
                         Custom
@@ -586,13 +586,13 @@ class SizeOfRun extends Component {
                 <Column xs={9}>
                     <p>Number of sessions</p>
                     <Button variant="extended" color={this.state.sessionsTab === 0 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(0)}>
-                        Small (250)
+                        Small (25)
                     </Button>
                     <Button variant="extended" color={this.state.sessionsTab === 1 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(1)}>
-                        Medium (1,000)
+                        Medium (100)
                     </Button>
                     <Button variant="extended" color={this.state.sessionsTab === 2 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(2)}>
-                        Large (5,000)
+                        Large (500)
                     </Button>
                     <Button variant="extended" color={this.state.sessionsTab === 3 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(3)}>
                         Custom
