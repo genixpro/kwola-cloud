@@ -11,18 +11,16 @@ def generateKwolaId(modelClass, owner, kwolaConfig, groupIndex=None):
     serverConfig = loadConfiguration()
 
     prefix = generateModelNameShorthand(modelClass) + "_" + \
-             generateRandomDigit() + \
              generateRandomLowercaseLetter() + \
-             generateHourCode() + \
-             generateUserCode(owner, serverConfig) + \
-             generateEnvironmentShorthand(serverConfig) + \
-             generateYearCode() + \
-             generateRandomDigit() + \
              generateRandomLowercaseLetter() + \
-             generateMonthCode() + \
-             generateDayCode() + \
              generateRandomLowercaseLetter() + \
              generateRandomLowercaseLetter() + "_" + \
+             generateHourCode() + \
+             generateDayCode() + \
+             generateMonthCode() + \
+             generateYearCode() + "_" + \
+             generateEnvironmentShorthand(serverConfig) + \
+             generateUserCode(owner, serverConfig) + "_" + \
              generateObjectCounterValueCode(modelClass, owner, length=4, groupIndex=groupIndex)
 
     currentLength = 0
