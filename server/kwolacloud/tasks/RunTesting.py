@@ -121,7 +121,7 @@ def runTesting(testingRunId):
                                     image="testingworker",
                                     cpuRequest="1600m",
                                     cpuLimit="2500m",
-                                    memoryRequest="4.0Gi",
+                                    memoryRequest="3.5Gi",
                                     memoryLimit="5.0Gi"
                                     )
                 job.start()
