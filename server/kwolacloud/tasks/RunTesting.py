@@ -119,10 +119,10 @@ def runTesting(testingRunId):
                                        },
                                     referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                     image="testingworker",
-                                    cpuRequest="3000m",
-                                    cpuLimit="3500m",
-                                    memoryRequest="7.5Gi",
-                                    memoryLimit="10.5Gi"
+                                    cpuRequest="2000m",
+                                    cpuLimit="2500m",
+                                    memoryRequest="4.0Gi",
+                                    memoryLimit="6.0Gi"
                                     )
                 job.start()
                 testingStepActiveJobs.append(job)
