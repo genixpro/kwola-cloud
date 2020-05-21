@@ -170,7 +170,7 @@ def runTesting(testingRunId):
                                                        memoryRequest="7.5Gi",
                                                        memoryLimit="10.5Gi"
                                                        )
-                currentTrainingStepJob.start()
+#                 currentTrainingStepJob.start()
 
             if currentTrainingStepJob is not None and currentTrainingStepJob.ready():
                 logging.info(f"Finished a training step for run {testingRunId}")
@@ -187,13 +187,13 @@ def runTesting(testingRunId):
 
             time.sleep(10)
 
-        if currentTrainingStepJob is not None:
-            currentTrainingStepJob.wait()
+#         if currentTrainingStepJob is not None:
+#             currentTrainingStepJob.wait()
 
-            completedTrainingSteps += 1
-            run.trainingStepsCompleted += 1
-            run.save()
-            currentTrainingStepJob.cleanup()
+#             completedTrainingSteps += 1
+#             run.trainingStepsCompleted += 1
+#             run.save()
+#             currentTrainingStepJob.cleanup()
 
         for job in testingStepActiveJobs:
             job.wait()
