@@ -2,8 +2,8 @@
   "environmentCode": "p",
   "userCodeSalt": "IshVegNowlEijhuwuIfwesecmiptibwywobsIgJivguworegH",
   "mongo": {
-    "uri": "mongodb+srv://application:FzwsIyK5knft5IuE@kwolacloud-pri.ktl2x.gcp.mongodb.net/kwolacloud?retryWrites=true&w=majority",
-    "db": "kwolacloud",
+    "uri": "mongodb+srv://application:FzwsIyK5knft5IuE@kwolacloud-pri.ktl2x.gcp.mongodb.net/kwolacloud_production?retryWrites=true&w=majority",
+    "db": "kwolacloud_production",
     "username": "application",
     "password": "FzwsIyK5knft5IuE"
   },
