@@ -12,7 +12,7 @@
     "planId": "plan_HIXgoqMagqDLUx"
   },
   "auth0": {
-    "apiUrl": "https://staging.kwola.io/",
+    "apiUrl": "https://staging.kwola.io/api/",
     "domain": "https://kwola.auth0.com/",
     "keyFile": "config/keys/staging_key.json"
   },

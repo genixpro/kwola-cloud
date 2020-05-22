@@ -8,11 +8,11 @@
     "password": "FzwsIyK5knft5IuE"
   },
   "stripe": {
-    "apiKey": "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71",
-    "planId": "plan_HIXgoqMagqDLUx"
+    "apiKey": "sk_test_WHeVtPF7ILpuTA4JhGhKleHA00EghhZOTM",
+    "planId": "plan_HGd3ZO1iW4FqHp"
   },
   "auth0": {
-    "apiUrl": "https://testing.kwola.io/",
+    "apiUrl": "https://testing.kwola.io/api/",
     "domain": "https://kwola.auth0.com/",
     "keyFile": "config/keys/testing_key.json"
   },
