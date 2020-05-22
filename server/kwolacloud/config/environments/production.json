@@ -16,7 +16,8 @@
     "domain": "https://kwola.auth0.com/",
     "keyFile": "config/keys/production_key.json"
   },
-  "logging": {
-    "enableGoogleCloudLogging": true
+  "features": {
+    "enableGoogleCloudLogging": true,
+    "enableRuns": true
   }
 }

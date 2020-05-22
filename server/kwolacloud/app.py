@@ -27,7 +27,7 @@ api = Api(flaskApplication)
 CORS(flaskApplication)
 cache = Cache(flaskApplication)
 
-if configData['logging']['enableGoogleCloudLogging']:
+if configData['features']['enableGoogleCloudLogging']:
     # Setup logging with google cloud
     loggingClient = google.cloud.logging.Client()
     loggingClient.get_default_handler()

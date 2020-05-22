@@ -1,0 +1,23 @@
+{
+  "environmentCode": "t",
+  "userCodeSalt": "RiOj8SwevhuevWabOwamigtejwodbatMylajChitOvGaicwogg",
+  "mongo": {
+    "uri": "mongodb+srv://application:FzwsIyK5knft5IuE@kwolacloud-pri.ktl2x.gcp.mongodb.net/kwolacloud_testing?retryWrites=true&w=majority",
+    "db": "kwolacloud_testing",
+    "username": "application",
+    "password": "FzwsIyK5knft5IuE"
+  },
+  "stripe": {
+    "apiKey": "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71",
+    "planId": "plan_HIXgoqMagqDLUx"
+  },
+  "auth0": {
+    "apiUrl": "https://testing.kwola.io/",
+    "domain": "https://kwola.auth0.com/",
+    "keyFile": "config/keys/testing_key.json"
+  },
+  "features": {
+    "enableGoogleCloudLogging": false,
+    "enableRuns": false
+  }
+}

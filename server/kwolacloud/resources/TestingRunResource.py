@@ -112,7 +112,8 @@ class TestingRunsGroup(Resource):
                             memoryRequest="350Mi",
                             memoryLimit="512Mi"
                             )
-        job.start()
+        if self.configData['features']['enableRuns']:
+            job.start()
 
         return {"testingRunId": data['id']}
 
