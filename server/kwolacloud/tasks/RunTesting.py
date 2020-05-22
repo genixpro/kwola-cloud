@@ -119,10 +119,10 @@ def runTesting(testingRunId):
                                        },
                                     referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                     image="testingworker",
-                                    cpuRequest="1500m",
-                                    cpuLimit="2000m",
+                                    cpuRequest="1600m",
+                                    cpuLimit="2500m",
                                     memoryRequest="3.5Gi",
-                                    memoryLimit="4.5Gi"
+                                    memoryLimit="5.0Gi"
                                     )
                 job.start()
                 testingStepActiveJobs.append(job)
@@ -170,7 +170,7 @@ def runTesting(testingRunId):
                                                        memoryRequest="7.5Gi",
                                                        memoryLimit="10.5Gi"
                                                        )
-                currentTrainingStepJob.start()
+#                 currentTrainingStepJob.start()
 
             if currentTrainingStepJob is not None and currentTrainingStepJob.ready():
                 logging.info(f"Finished a training step for run {testingRunId}")
@@ -187,13 +187,13 @@ def runTesting(testingRunId):
 
             time.sleep(10)
 
-        if currentTrainingStepJob is not None:
-            currentTrainingStepJob.wait()
+#         if currentTrainingStepJob is not None:
+#             currentTrainingStepJob.wait()
 
-            completedTrainingSteps += 1
-            run.trainingStepsCompleted += 1
-            run.save()
-            currentTrainingStepJob.cleanup()
+#             completedTrainingSteps += 1
+#             run.trainingStepsCompleted += 1
+#             run.save()
+#             currentTrainingStepJob.cleanup()
 
         for job in testingStepActiveJobs:
             job.wait()
