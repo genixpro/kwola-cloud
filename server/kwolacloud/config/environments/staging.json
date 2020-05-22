@@ -15,5 +15,8 @@
     "apiUrl": "https://staging.kwola.io/",
     "domain": "https://kwola.auth0.com/",
     "keyFile": "config/keys/staging_key.json"
+  },
+  "logging": {
+    "enableGoogleCloudLogging": true
   }
 }

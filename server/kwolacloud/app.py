@@ -27,10 +27,11 @@ api = Api(flaskApplication)
 CORS(flaskApplication)
 cache = Cache(flaskApplication)
 
-# Setup logging with google cloud
-client = google.cloud.logging.Client()
-client.get_default_handler()
-client.setup_logging()
+if configData['logging']['enableGoogleCloudLogging']:
+    # Setup logging with google cloud
+    loggingClient = google.cloud.logging.Client()
+    loggingClient.get_default_handler()
+    loggingClient.setup_logging()
 
 # Technically for gunicorn to find the flask application object, it must have the variable
 # name "application". However we prefer the more explicit flaskApplication, this being the

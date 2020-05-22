@@ -15,5 +15,8 @@
     "apiUrl": "http://localhost:8000/api/",
     "domain": "https://kwola.auth0.com/",
     "keyFile": "config/keys/development_key.json"
+  },
+  "logging": {
+    "enableGoogleCloudLogging": false
   }
 }
