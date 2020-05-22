@@ -1,6 +1,6 @@
 {
-  "environmentCode": "s",
-  "userCodeSalt": "tuOvTitJeyDrokOwthOcsEgNukjitHiOrmAbdiawdOcjomUdew",
+  "environmentCode": "p",
+  "userCodeSalt": "IshVegNowlEijhuwuIfwesecmiptibwywobsIgJivguworegH",
   "mongo": {
     "uri": "mongodb+srv://application:FzwsIyK5knft5IuE@kwolacloud-pri.ktl2x.gcp.mongodb.net/kwolacloud?retryWrites=true&w=majority",
     "db": "kwolacloud",
@@ -12,8 +12,8 @@
     "planId": "plan_HIXgoqMagqDLUx"
   },
   "auth0": {
-    "apiUrl": "https://staging.kwola.io/",
+    "apiUrl": "https://app.kwola.io/",
     "domain": "https://kwola.auth0.com/",
-    "keyFile": "config/keys/staging_key.json"
+    "keyFile": "config/keys/production_key.json"
   }
 }
