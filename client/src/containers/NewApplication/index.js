@@ -26,9 +26,12 @@ export default class extends Component {
     var _hsq = window._hsq = window._hsq || [];
     axios.post("/application", {... values}).then((response) =>
     {
-      mixpanel.track("created-application");
-      _hsq.push(["trackEvent", {id: "Created Application"}]);
-      window.ga('send', 'event', "application", "create");
+      if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+      {
+        mixpanel.track("created-application");
+        _hsq.push(["trackEvent", {id: "Created Application"}]);
+        window.ga('send', 'event', "application", "create");
+      }
 
       this.props.history.push(`/app/dashboard/applications/${response.data.applicationId}`);
     });

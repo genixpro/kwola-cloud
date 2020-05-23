@@ -59,16 +59,19 @@ class AppRouter extends Component {
   }
 
   render() {
-    if (this.props.url !== this.lastUrl)
+    if (window.location.href !== this.lastUrl)
     {
-      var _hsq = window._hsq = window._hsq || [];
-      _hsq.push(['setPath', this.props.url]);
-      _hsq.push(['trackPageView']);
+      if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+      {
+        var _hsq = window._hsq = window._hsq || [];
+        _hsq.push(['setPath', window.location.href]);
+        _hsq.push(['trackPageView']);
 
-      window.ga('set', 'page', this.props.url);
-      window.ga('send', 'pageview');
+        window.ga('set', 'page', window.location.href);
+        window.ga('send', 'pageview');
+      }
 
-      this.lastUrl = this.props.url;
+      this.lastUrl = window.location.href;
     }
 
     const { url, style } = this.props;

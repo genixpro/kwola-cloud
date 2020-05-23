@@ -1293,30 +1293,39 @@ class NewTestingRun extends Component {
 
     trackOrderSuccess(testingRunId, price)
     {
-        var _hsq = window._hsq = window._hsq || [];
-        mixpanel.track("complete-order-success", {testingRunId: testingRunId, price: price});
-        mixpanel.people.track_charge(price)
-        _hsq.push(["trackEvent", {
-            id: "Completed Order",
-            value: price
-        }]);
-        window.ga('send', 'event', "order-testing-run", "success", "", price);
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            var _hsq = window._hsq = window._hsq || [];
+            mixpanel.track("complete-order-success", {testingRunId: testingRunId, price: price});
+            mixpanel.people.track_charge(price)
+            _hsq.push(["trackEvent", {
+                id: "Completed Order",
+                value: price
+            }]);
+            window.ga('send', 'event', "order-testing-run", "success", "", price);
+        }
     }
 
     trackOrderFailure(price)
     {
-        var _hsq = window._hsq = window._hsq || [];
-        mixpanel.track("complete-order-error", {price: price});
-        _hsq.push(["trackEvent", {id: "Failed Order"}]);
-        window.ga('send', 'event', "order-testing-run", "failed", "", price);
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            var _hsq = window._hsq = window._hsq || [];
+            mixpanel.track("complete-order-error", {price: price});
+            _hsq.push(["trackEvent", {id: "Failed Order"}]);
+            window.ga('send', 'event', "order-testing-run", "failed", "", price);
+        }
     }
 
     launchTestingRunButtonClicked()
     {
-        mixpanel.track("clicked-launch-testing-run");
-        var _hsq = window._hsq = window._hsq || [];
-        _hsq.push(["trackEvent", {id: "Clicked Launch Testing Run"}]);
-        window.ga('send', 'event', "launch-testing-run", "click");
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            mixpanel.track("clicked-launch-testing-run");
+            var _hsq = window._hsq = window._hsq || [];
+            _hsq.push(["trackEvent", {id: "Clicked Launch Testing Run"}]);
+            window.ga('send', 'event', "launch-testing-run", "click");
+        }
 
         if (Auth0.isUserAllowedFreeRuns())
         {

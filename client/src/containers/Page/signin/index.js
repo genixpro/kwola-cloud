@@ -48,9 +48,14 @@ class SignIn extends Component {
     }
   }
   handleLogin = () => {
-    var _hsq = window._hsq = window._hsq || [];
-    mixpanel.track("login");
-    _hsq.push(["trackEvent", {id: "Login"}]);
+    if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+    {
+      var _hsq = window._hsq = window._hsq || [];
+      mixpanel.track("login");
+      _hsq.push(["trackEvent", {id: "Login"}]);
+      window.ga('send', 'event', "auth", "login");
+    }
+
     this.props.history.push('/app/dashboard/');
   };
   onChangeUsername = event => this.setState({ username: event.target.value });

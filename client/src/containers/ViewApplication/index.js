@@ -45,10 +45,13 @@ class ViewApplication extends Component {
 
     launchTestingSequenceButtonClicked()
     {
-        var _hsq = window._hsq = window._hsq || [];
-        mixpanel.track("clicked-new-testing-run");
-        _hsq.push(["trackEvent", {id: "Clicked New Testing Run"}]);
-        window.ga('send', 'event', "new-testing-run", "click");
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            var _hsq = window._hsq = window._hsq || [];
+            mixpanel.track("clicked-new-testing-run");
+            _hsq.push(["trackEvent", {id: "Clicked New Testing Run"}]);
+            window.ga('send', 'event', "new-testing-run", "click");
+        }
 
         this.props.history.push(`/app/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
     }
