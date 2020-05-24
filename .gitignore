@@ -8,3 +8,4 @@ client/node_modules
 .DS_Store
 ./venv
 venv/*
+client/build
