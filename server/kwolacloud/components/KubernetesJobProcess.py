@@ -64,6 +64,7 @@ class KubernetesJobProcess:
         data = pickle.loads(base64.b64decode(dataStr, altchars=KubernetesJobProcess.base64AltChars))
         logging.info(f"[{os.getpid()}] Running process with following data:\n{json.dumps(data, indent=4)}")
         result = self.targetFunc(**data)
+        logging.info(f"Process finished with result:\n{json.dumps(result, indent=4)}")
         print(KubernetesJobProcess.resultStartString, flush=True)
         print(str(base64.b64encode(pickle.dumps(result), altchars=KubernetesJobProcess.base64AltChars), "utf8"), flush=True)
         print(KubernetesJobProcess.resultFinishString, flush=True)
