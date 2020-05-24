@@ -90,6 +90,7 @@ RUN apt-get update && apt-get install \
     mime-support \
     libxrender-dev \
     mime-support \
+    nethogs \
     nodejs \
     python3 \
     python3-dev \
