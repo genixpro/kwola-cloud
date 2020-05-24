@@ -29,6 +29,7 @@ import google.cloud.logging
 from ..config.config import loadConfiguration
 from mongoengine import connect
 import stripe
+from kwola.config.logger import getLogger
 
 class KubernetesJobProcess:
     """
@@ -49,6 +50,9 @@ class KubernetesJobProcess:
         client = google.cloud.logging.Client()
         client.get_default_handler()
         client.setup_logging()
+
+        logger = getLogger()
+        logger.handlers = logger.handlers[0:1]
 
         connect(configData['mongo']['db'], host=configData['mongo']['uri'])
 

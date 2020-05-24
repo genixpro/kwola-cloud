@@ -9,6 +9,7 @@ import stripe
 from .auth import authenticate
 from flask_caching import Cache
 import google.cloud.logging
+from kwola.config.logger import getLogger, setupLocalLogging
 
 configData = loadConfiguration()
 
@@ -32,6 +33,9 @@ if configData['features']['enableGoogleCloudLogging']:
     loggingClient = google.cloud.logging.Client()
     loggingClient.get_default_handler()
     loggingClient.setup_logging()
+
+    logger = getLogger()
+    logger.handlers = logger.handlers[0:1]
 
 # Technically for gunicorn to find the flask application object, it must have the variable
 # name "application". However we prefer the more explicit flaskApplication, this being the
