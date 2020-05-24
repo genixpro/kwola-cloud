@@ -72,26 +72,14 @@ class ViewApplication extends Component {
                                         title={`${this.state.application.name}`}
                                         subtitle={`Last Tested ${moment(this.props.timestamp).format('MMM Do, YYYY')}`}
                                     >
-                                        {/*<Row>*/}
-                                        {/*<HalfColumn>*/}
-                                        {/*    <div>*/}
-                                        {/*        Learning:*/}
-                                        {/*        <Chip*/}
-                                        {/*            avatar={<Icon style={{ fontSize: 22 }}>info-outline</Icon>}*/}
-                                        {/*            label="In Progress"*/}
-                                        {/*        />*/}
-                                        {/*    </div>*/}
-                                        {/*</HalfColumn>*/}
-                                        {/*<HalfColumn>*/}
-                                        {/*    <div>*/}
-                                        {/*        Testing:*/}
-                                        {/*        <Chip*/}
-                                        {/*            avatar={<Icon style={{ fontSize: 22 }}>info-outline</Icon>}*/}
-                                        {/*            label="In Progress"*/}
-                                        {/*        />*/}
-                                        {/*    </div>*/}
-                                        {/*</HalfColumn>*/}
-                                        {/*</Row>*/}
+                                        <Row>
+                                        <HalfColumn>
+                                            <div>
+                                                URL:
+                                                <a href={this.state.application.url}>{this.state.application.url}</a>
+                                            </div>
+                                        </HalfColumn>
+                                        </Row>
                                         <Row>
                                         <FullColumn>
                                                 <DemoWrapper>
