@@ -164,8 +164,7 @@ RUN su kwola -c "kwola_test_installation"
 
 # Lastly, we run the local test suite, which just checks to see that everything is working end
 # to end on this build.
-WORKDIR /kwola/server
-RUN kwola_rapid_local_test_suite
+RUN su kwola -c "kwola_rapid_local_test_suite"
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
