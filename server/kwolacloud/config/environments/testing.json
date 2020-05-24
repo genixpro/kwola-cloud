@@ -1,6 +1,6 @@
 {
   "environmentCode": "t",
-  "userCodeSalt": "RiOj8SwevhuevWabOwamigtejwodbatMylajChitOvGaicwogg",
+  "userCodeSalt": "IshVegNowlEijhuwuIfwesecmiptibwywobsIgJivguworegH",
   "mongo": {
     "uri": "mongodb+srv://application:FzwsIyK5knft5IuE@kwolacloud-pri.ktl2x.gcp.mongodb.net/kwolacloud_testing?retryWrites=true&w=majority",
     "db": "kwolacloud_testing",
