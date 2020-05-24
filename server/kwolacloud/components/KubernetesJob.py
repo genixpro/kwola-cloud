@@ -9,7 +9,7 @@ import base64
 from .KubernetesJobProcess import KubernetesJobProcess
 
 class KubernetesJob:
-    def __init__(self, module, data, referenceId, image, cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi"):
+    def __init__(self, module, data, referenceId, image, cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi", gpu=False):
         self.module = module
         self.data = data
         self.referenceId = referenceId
@@ -18,6 +18,7 @@ class KubernetesJob:
         self.memoryRequest = memoryRequest
         self.cpuLimit = cpuLimit
         self.memoryLimit = memoryLimit
+        self.gpu = gpu
 
     def cleanup(self):
         self.refreshCredentials()
@@ -48,6 +49,10 @@ class KubernetesJob:
 
         if self.memoryRequest is not None:
             requests["memory"] = self.memoryRequest
+
+        if self.gpu:
+            requests["nvidia.com/gpu"] = 1
+            limits["nvidia.com/gpu"] = 1
 
         manifest = {
             "apiVersion": "batch/v1",

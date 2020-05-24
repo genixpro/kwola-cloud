@@ -168,9 +168,10 @@ def runTesting(testingRunId):
                                                        cpuRequest="2500m",
                                                        cpuLimit="3500m",
                                                        memoryRequest="7.5Gi",
-                                                       memoryLimit="10.5Gi"
+                                                       memoryLimit="10.5Gi",
+                                                       gpu=True
                                                        )
-#                 currentTrainingStepJob.start()
+                currentTrainingStepJob.start()
 
             if currentTrainingStepJob is not None and currentTrainingStepJob.ready():
                 logging.info(f"Finished a training step for run {testingRunId}")
