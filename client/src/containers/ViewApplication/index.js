@@ -75,8 +75,8 @@ class ViewApplication extends Component {
                                         <Row>
                                         <HalfColumn>
                                             <div>
-                                                URL:
-                                                <a href={this.state.application.url}>{this.state.application.url}</a>
+                                                URL:&nbsp;&nbsp;<a href={this.state.application.url}>{this.state.application.url}</a>
+                                                <br/>
                                             </div>
                                         </HalfColumn>
                                         </Row>

@@ -92,6 +92,22 @@ class ApplicationSingle(Resource):
         else:
             abort(404)
 
+    def delete(self, application_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
+        query = {"id": application_id}
+        if not isAdmin():
+            query['owner'] = user
+
+        application = ApplicationModel.objects(**query).limit(1).first()
+
+        if application is not None:
+            ApplicationModel.objects(**query).delete()
+        else:
+            abort(404)
+
 
 class ApplicationImage(Resource):
     @cache.cached(timeout=36000)
