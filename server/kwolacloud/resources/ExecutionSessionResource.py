@@ -100,7 +100,7 @@ class ExecutionSessionVideo(Resource):
         if executionSession is None:
             return abort(404)
 
-        configDir = mountTestingRunStorageDrive(executionSession.testingRunId)
+        configDir = mountTestingRunStorageDrive(executionSession.applicationId)
 
         config = Configuration(configDir)
 

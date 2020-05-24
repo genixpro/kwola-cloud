@@ -28,7 +28,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
     if not verifyStripeSubscription(run):
         return {"success": False}
 
-    configDir = mountTestingRunStorageDrive(testingRunId)
+    configDir = mountTestingRunStorageDrive(run.applicationId)
     if configDir is None:
         return {"success": False}
 

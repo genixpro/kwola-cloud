@@ -14,8 +14,8 @@ import logging
 import json
 
 
-def mountTestingRunStorageDrive(testingRunId):
-    bucketName = "kwola-testing-run-data-" + testingRunId
+def mountTestingRunStorageDrive(applicationId):
+    bucketName = "kwola-testing-run-data-" + applicationId
 
     configDir = tempfile.mkdtemp()
 

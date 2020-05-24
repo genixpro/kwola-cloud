@@ -27,7 +27,7 @@ def runTesting(testingRunId):
         logging.error(f"Error! {testingRunId} not found.")
         return
 
-    configDir = mountTestingRunStorageDrive(testingRunId)
+    configDir = mountTestingRunStorageDrive(run.applicationId)
     if configDir is None:
         return {"success":False}
 
