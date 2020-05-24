@@ -69,7 +69,7 @@ class KubernetesJob:
                         "containers": [
                             {
                                 "name": f"kwola-cloud-sha256",
-                                "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-testingworker",
+                                "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-{self.image}",
                                 "command": ["/usr/bin/python3"],
                                 "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
                                 "securityContext": {
