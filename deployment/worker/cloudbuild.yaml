@@ -13,7 +13,7 @@ steps:
     "-f",
     "deployment/worker/Dockerfile"
   ]
-  timeout: 7200s
+  timeout: 1200s
 - name: 'gcr.io/cloud-builders/kubectl'
   id: Fetch Kubernetes Auth
   args:
@@ -23,5 +23,6 @@ steps:
   - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain'
   timeout: 30s
 
-
 timeout: 15000s
+options:
+  machineType: 'N1_HIGHCPU_8'

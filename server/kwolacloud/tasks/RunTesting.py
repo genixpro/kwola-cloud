@@ -118,7 +118,7 @@ def runTesting(testingRunId):
                                             "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
                                        },
                                     referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
-                                    image="testingworker",
+                                    image="worker",
                                     cpuRequest="1600m",
                                     cpuLimit="2500m",
                                     memoryRequest="3.5Gi",
@@ -164,7 +164,7 @@ def runTesting(testingRunId):
                                                             "trainingStepsCompleted": completedTrainingSteps
                                                        },
                                                        referenceId=f"{testingRunId}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
-                                                       image="trainingworker",
+                                                       image="worker",
                                                        cpuRequest="3000m",
                                                        cpuLimit=None,
                                                        memoryRequest="7.5Gi",
