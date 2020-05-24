@@ -51,7 +51,6 @@ class KubernetesJob:
             requests["memory"] = self.memoryRequest
 
         if self.gpu:
-            requests["nvidia.com/gpu"] = 1
             limits["nvidia.com/gpu"] = 1
 
         manifest = {

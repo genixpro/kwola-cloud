@@ -165,10 +165,10 @@ def runTesting(testingRunId):
                                                        },
                                                        referenceId=f"{testingRunId}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                                        image="trainingworker",
-                                                       cpuRequest="2500m",
-                                                       cpuLimit="3500m",
+                                                       cpuRequest="3000m",
+                                                       cpuLimit=None,
                                                        memoryRequest="7.5Gi",
-                                                       memoryLimit="10.5Gi",
+                                                       memoryLimit=None,
                                                        gpu=True
                                                        )
                 currentTrainingStepJob.start()
