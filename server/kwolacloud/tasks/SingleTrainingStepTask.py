@@ -37,7 +37,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         if torch.cuda.device_count() > 0:
             gpu = 0
 
-        result = RunTrainingStep.runTrainingStep(configDir, testingRunId, trainingStepsCompleted, gpu=gpu, testingRunId=testingRunId, applicationId=run.applicationId)
+        result = RunTrainingStep.runTrainingStep(configDir, testingRunId, trainingStepsCompleted, gpu=gpu, testingRunId=testingRunId, applicationId=run.applicationId, gpuWorldSize=1)
 
         logging.info(f"Completed training step for testing run {testingRunId}")
         return result
