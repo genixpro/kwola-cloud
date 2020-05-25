@@ -182,6 +182,12 @@ class KubernetesJob:
             resultStart = logs.index(KubernetesJobProcess.resultStartString)
             resultFinish = logs.index(KubernetesJobProcess.resultFinishString)
 
-            resultDataString = logs[resultStart + len(KubernetesJobProcess.resultStartString) : resultFinish]
-            result = pickle.loads(base64.b64decode(resultDataString, altchars=KubernetesJobProcess.base64AltChars))
-            return result
+            resultDataString = logs[resultStart + len(KubernetesJobProcess.resultStartString) : resultFinish].strip()
+            try:
+                result = pickle.loads(base64.b64decode(resultDataString, altchars=KubernetesJobProcess.base64AltChars))
+                return result
+            except pickle.UnpicklingError:
+                raise RuntimeError(f"Error! Unable to decode pickled string {resultDataString}")
+
+
+
