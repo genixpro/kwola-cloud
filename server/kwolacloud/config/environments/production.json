@@ -1,9 +1,9 @@
 {
-  "environmentCode": "s",
+  "environmentCode": "p",
   "userCodeSalt": "IshVegNowlEijhuwuIfwesecmiptibwywobsIgJivguworegH",
   "mongo": {
-    "uri": "mongodb+srv://application:FzwsIyK5knft5IuE@kwolacloud-pri.ktl2x.gcp.mongodb.net/kwolacloud?retryWrites=true&w=majority",
-    "db": "kwolacloud",
+    "uri": "mongodb+srv://application:FzwsIyK5knft5IuE@kwolacloud-pri.ktl2x.gcp.mongodb.net/kwolacloud_production?retryWrites=true&w=majority",
+    "db": "kwolacloud_production",
     "username": "application",
     "password": "FzwsIyK5knft5IuE"
   },
@@ -12,9 +12,9 @@
     "planId": "plan_HIXgoqMagqDLUx"
   },
   "auth0": {
-    "apiUrl": "https://staging.kwola.io/api/",
+    "apiUrl": "https://app.kwola.io/",
     "domain": "https://kwola.auth0.com/",
-    "keyFile": "config/keys/staging_key.json"
+    "keyFile": "config/keys/production_key.json"
   },
   "features": {
     "enableGoogleCloudLogging": true,

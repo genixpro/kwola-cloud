@@ -27,7 +27,7 @@ def runTesting(testingRunId):
         logging.error(f"Error! {testingRunId} not found.")
         return
 
-    configDir = mountTestingRunStorageDrive(testingRunId)
+    configDir = mountTestingRunStorageDrive(run.applicationId)
     if configDir is None:
         return {"success":False}
 
@@ -118,7 +118,7 @@ def runTesting(testingRunId):
                                             "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
                                        },
                                     referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
-                                    image="testingworker",
+                                    image="worker",
                                     cpuRequest="1600m",
                                     cpuLimit="2500m",
                                     memoryRequest="3.5Gi",
@@ -164,13 +164,14 @@ def runTesting(testingRunId):
                                                             "trainingStepsCompleted": completedTrainingSteps
                                                        },
                                                        referenceId=f"{testingRunId}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
-                                                       image="trainingworker",
-                                                       cpuRequest="2500m",
-                                                       cpuLimit="3500m",
-                                                       memoryRequest="7.5Gi",
-                                                       memoryLimit="10.5Gi"
+                                                       image="worker",
+                                                       cpuRequest="6000m",
+                                                       cpuLimit=None,
+                                                       memoryRequest="12.0Gi",
+                                                       memoryLimit=None,
+                                                       gpu=True
                                                        )
-#                 currentTrainingStepJob.start()
+                currentTrainingStepJob.start()
 
             if currentTrainingStepJob is not None and currentTrainingStepJob.ready():
                 logging.info(f"Finished a training step for run {testingRunId}")

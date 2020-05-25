@@ -6,11 +6,63 @@ MAINTAINER Kwola <info@kwola.io>
 ENV DEBIAN_FRONTEND noninteractive
 ENV GCSFUSE_REPO=gcsfuse-bionic
 
-RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y && \
+RUN apt-get update && apt-get install -y --no-install-recommends gnupg1 gnupg2 gnupg curl ca-certificates && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \
+    echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
+    echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list && \
     echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
     curl -sL https://deb.nodesource.com/setup_12.x | bash && \
     echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | tee /etc/apt/sources.list.d/gcsfuse.list
+
+ENV CUDA_VERSION 10.0.130
+ENV NCCL_VERSION 2.4.2
+ENV CUDNN_VERSION 7.5.1.10
+ENV NCCL_VERSION 2.4.2
+
+
+ENV CUDA_PKG_VERSION 10-0=$CUDA_VERSION-1
+
+# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cuda-cudart-$CUDA_PKG_VERSION \
+        cuda-compat-10-0 > "/dev/null" 2>&1 && \
+    ln -s cuda-10.0 /usr/local/cuda
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+            libcudnn7=$CUDNN_VERSION-1+cuda10.0 \
+            libcudnn7-dev=$CUDNN_VERSION-1+cuda10.0 > "/dev/null" 2>&1 && \
+    apt-mark hold libcudnn7
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cuda-libraries-$CUDA_PKG_VERSION \
+        cuda-nvtx-$CUDA_PKG_VERSION \
+        libnccl2=$NCCL_VERSION-1+cuda10.0 > "/dev/null" 2>&1 && \
+        apt-mark hold libnccl2
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cuda-libraries-dev-$CUDA_PKG_VERSION \
+        cuda-nvml-dev-$CUDA_PKG_VERSION \
+        cuda-minimal-build-$CUDA_PKG_VERSION \
+        cuda-command-line-tools-$CUDA_PKG_VERSION \
+        libnccl-dev=$NCCL_VERSION-1+cuda10.0  > "/dev/null" 2>&1
+
+
+
+ENV LIBRARY_PATH /usr/local/cuda/lib64/stubs
+
+# Required for nvidia-docker v1
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+
+# nvidia-container-runtime
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+ENV NVIDIA_REQUIRE_CUDA "cuda>=10.0 brand=tesla,driver>=384,driver<385 brand=tesla,driver>=410,driver<411"
+
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
@@ -38,6 +90,7 @@ RUN apt-get update && apt-get install \
     mime-support \
     libxrender-dev \
     mime-support \
+    nethogs \
     nodejs \
     python3 \
     python3-dev \
@@ -49,7 +102,8 @@ RUN apt-get update && apt-get install \
     unzip \
     vim \
     wget \
-    -y  > "/dev/null" 2>&1 && \
+    -y \
+    && \
     rm -rf /var/lib/apt/lists/*
 
 # Install kubectl, used for controlling Kubernetes workers
@@ -102,7 +156,7 @@ RUN pip3 install --upgrade pip && \
     pip3 install scipy && \
     pip3 install selenium && \
     pip3 install stripe && \
-    pip3 install torch && \
+    pip3 install torch==1.5.0+cu101 torchvision==0.6.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html && \
     chmod +r+r+r -R /usr/lib/python3/ && \
     rm -rf /root/.cache
 
@@ -159,7 +213,12 @@ RUN chown -R kwola:kwola /kwola && \
 
 RUN rm -rf /usr/include/*
 
+# Do the installation test
 RUN su kwola -c "kwola_test_installation"
+
+# Lastly, we run the local test suite, which just checks to see that everything is working end
+# to end on this build.
+#RUN su kwola -c "kwola_rapid_local_test_suite"
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container

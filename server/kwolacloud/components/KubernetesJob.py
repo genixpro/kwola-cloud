@@ -9,7 +9,7 @@ import base64
 from .KubernetesJobProcess import KubernetesJobProcess
 
 class KubernetesJob:
-    def __init__(self, module, data, referenceId, image, cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi"):
+    def __init__(self, module, data, referenceId, image="worker", cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi", gpu=False):
         self.module = module
         self.data = data
         self.referenceId = referenceId
@@ -18,6 +18,7 @@ class KubernetesJob:
         self.memoryRequest = memoryRequest
         self.cpuLimit = cpuLimit
         self.memoryLimit = memoryLimit
+        self.gpu = gpu
 
     def cleanup(self):
         self.refreshCredentials()
@@ -49,6 +50,10 @@ class KubernetesJob:
         if self.memoryRequest is not None:
             requests["memory"] = self.memoryRequest
 
+        if self.gpu:
+            requests["nvidia.com/gpu"] = 1
+            limits["nvidia.com/gpu"] = 1
+
         manifest = {
             "apiVersion": "batch/v1",
             "kind": "Job",
@@ -65,7 +70,7 @@ class KubernetesJob:
                         "containers": [
                             {
                                 "name": f"kwola-cloud-sha256",
-                                "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-testingworker",
+                                "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-{self.image}",
                                 "command": ["/usr/bin/python3"],
                                 "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
                                 "securityContext": {

@@ -97,7 +97,7 @@ class BugVideo(Resource):
         if bug is None:
             return abort(404)
 
-        configDir = mountTestingRunStorageDrive(bug.testingRunId)
+        configDir = mountTestingRunStorageDrive(bug.applicationId)
 
         config = Configuration(configDir)
 

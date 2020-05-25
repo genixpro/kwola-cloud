@@ -450,15 +450,15 @@ class RecurringOptions extends Component {
 class SizeOfRun extends Component {
     state = {
         lengthTab: 0,
-        length: 50,
+        length: 100,
         sessionsTab: 0,
-        sessions: 25,
+        sessions: 250,
         hoursTab: 0,
-        hours: 1
+        hours: 12
     }
 
     componentDidMount() {
-
+        this.updateParent();
     }
 
     updateParent()
@@ -475,15 +475,15 @@ class SizeOfRun extends Component {
     {
         if (newTab === 0)
         {
-            this.setState({lengthTab: 0, length: 50}, () => this.updateParent());
+            this.setState({lengthTab: 0, length: 100}, () => this.updateParent());
         }
         else if (newTab === 1)
         {
-            this.setState({lengthTab: 1, length: 125}, () => this.updateParent());
+            this.setState({lengthTab: 1, length: 250}, () => this.updateParent());
         }
         else if (newTab === 2)
         {
-            this.setState({lengthTab: 2, length: 500}, () => this.updateParent());
+            this.setState({lengthTab: 2, length: 1000}, () => this.updateParent());
         }
         else if (newTab === 3)
         {
@@ -500,15 +500,15 @@ class SizeOfRun extends Component {
     {
         if (newTab === 0)
         {
-            this.setState({sessionsTab: 0, sessions: 25}, () => this.updateParent());
+            this.setState({sessionsTab: 0, sessions: 250}, () => this.updateParent());
         }
         else if (newTab === 1)
         {
-            this.setState({sessionsTab: 1, sessions: 100}, () => this.updateParent());
+            this.setState({sessionsTab: 1, sessions: 1000}, () => this.updateParent());
         }
         else if (newTab === 2)
         {
-            this.setState({sessionsTab: 2, sessions: 500}, () => this.updateParent());
+            this.setState({sessionsTab: 2, sessions: 5000}, () => this.updateParent());
         }
         else if (newTab === 3)
         {
@@ -552,13 +552,13 @@ class SizeOfRun extends Component {
                 <Column xs={12} md={12} lg={9}>
                     <p>Number of actions per session</p>
                     <Button variant="extended" color={this.state.lengthTab === 0 ? "primary" : "default"} onClick={() => this.lengthTabChanged(0)}>
-                        Short (50)
+                        Short (100)
                     </Button>
                     <Button variant="extended" color={this.state.lengthTab === 1 ? "primary" : "default"} onClick={() => this.lengthTabChanged(1)}>
-                        Medium (125)
+                        Medium (250)
                     </Button>
                     <Button variant="extended" color={this.state.lengthTab === 2 ? "primary" : "default"} onClick={() => this.lengthTabChanged(2)}>
-                        Long (500)
+                        Long (1,000)
                     </Button>
                     <Button variant="extended" color={this.state.lengthTab === 3 ? "primary" : "default"} onClick={() => this.lengthTabChanged(3)}>
                         Custom
@@ -587,13 +587,13 @@ class SizeOfRun extends Component {
                 <Column xs={12} md={12} lg={9}>
                     <p>Number of sessions</p>
                     <Button variant="extended" color={this.state.sessionsTab === 0 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(0)}>
-                        Small (25)
+                        Small (250)
                     </Button>
                     <Button variant="extended" color={this.state.sessionsTab === 1 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(1)}>
-                        Medium (100)
+                        Medium (1,000)
                     </Button>
                     <Button variant="extended" color={this.state.sessionsTab === 2 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(2)}>
-                        Large (500)
+                        Large (5,000)
                     </Button>
                     <Button variant="extended" color={this.state.sessionsTab === 3 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(3)}>
                         Custom
@@ -619,42 +619,44 @@ class SizeOfRun extends Component {
                     <p>How many total browser sessions do you want run on your application? This impacts how thorough Kwola will be in triggering all edge-case behaviours of your application.</p>
                 </Column>
             </Row>
-            <Row>
-                <Column xs={12}  md={12} lg={9}>
-                    <p>Pace of Run</p>
-                    <Button variant="extended" color={this.state.hoursTab === 0 ? "primary" : "default"} onClick={() => this.hoursTabChanged(0)}>
-                        Fast (1 hour)
-                    </Button>
-                    <Button variant="extended" color={this.state.hoursTab === 1 ? "primary" : "default"} onClick={() => this.hoursTabChanged(1)}>
-                        Medium (6 hours)
-                    </Button>
-                    <Button variant="extended" color={this.state.hoursTab === 2 ? "primary" : "default"} onClick={() => this.hoursTabChanged(2)}>
-                        Slow (1 day)
-                    </Button>
-                    <Button variant="extended" color={this.state.hoursTab === 3 ? "primary" : "default"} onClick={() => this.hoursTabChanged(3)}>
-                        Custom
-                    </Button>
-                    <br/>
-                    {
-                        this.state.hoursTab === 3 ?
-                            <div style={{"paddingLeft":"20px"}}>
-                                <TextField
-                                    id="hours"
-                                    label="# of hours to extend the session over"
-                                    type={"number"}
-                                    min={1}
-                                    max={1000}
-                                    value={this.state.hours}
-                                    onChange={(event) => this.hoursChanged(event.target.value)}
-                                    margin="normal"
-                                />
-                            </div> : null
-                    }
-                </Column>
-                <Column xs={12}  md={12} lg={3}>
-                    <p>How quickly do you want this run to go? This impacts load on your web application. Extending it also allows Kwola AI to do more learning.</p>
-                </Column>
-            </Row>
+
+            {/*<Row>*/}
+            {/*    <Column xs={9}>*/}
+            {/*        <p>Pace of Run</p>*/}
+            {/*        <Button variant="extended" color={this.state.hoursTab === 0 ? "primary" : "default"} onClick={() => this.hoursTabChanged(0)}>*/}
+            {/*            Fast (1 hour)*/}
+            {/*        </Button>*/}
+            {/*        <Button variant="extended" color={this.state.hoursTab === 1 ? "primary" : "default"} onClick={() => this.hoursTabChanged(1)}>*/}
+            {/*            Medium (6 hours)*/}
+            {/*        </Button>*/}
+            {/*        <Button variant="extended" color={this.state.hoursTab === 2 ? "primary" : "default"} onClick={() => this.hoursTabChanged(2)}>*/}
+            {/*            Slow (1 day)*/}
+            {/*        </Button>*/}
+            {/*        <Button variant="extended" color={this.state.hoursTab === 3 ? "primary" : "default"} onClick={() => this.hoursTabChanged(3)}>*/}
+            {/*            Custom*/}
+            {/*        </Button>*/}
+            {/*        <br/>*/}
+            {/*        {*/}
+            {/*            this.state.hoursTab === 3 ?*/}
+            {/*                <div style={{"paddingLeft":"20px"}}>*/}
+            {/*                    <TextField*/}
+            {/*                        id="hours"*/}
+            {/*                        label="# of hours to extend the session over"*/}
+            {/*                        type={"number"}*/}
+            {/*                        min={1}*/}
+            {/*                        max={1000}*/}
+            {/*                        value={this.state.hours}*/}
+            {/*                        onChange={(event) => this.hoursChanged(event.target.value)}*/}
+            {/*                        margin="normal"*/}
+            {/*                    />*/}
+            {/*                </div> : null*/}
+            {/*        }*/}
+            {/*    </Column>*/}
+            {/*    <Column xs={3}>*/}
+            {/*        <p>How quickly do you want this run to go? This impacts load on your web application. Extending it also allows Kwola AI to do more learning.</p>*/}
+            {/*    </Column>*/}
+            {/*</Row>*/}
+
         </div>;
     }
 }
@@ -1239,9 +1241,6 @@ class NewTestingRun extends Component {
     state = {
         result: '',
         tab: 0,
-        length: 50,
-        sessions: 25,
-        hours: 6,
         paymentRequest: null,
         mode: "details",
         name: "",
@@ -1296,32 +1295,45 @@ class NewTestingRun extends Component {
 
     trackOrderSuccess(testingRunId, price)
     {
-        var _hsq = window._hsq = window._hsq || [];
-        mixpanel.track("complete-order-success", {testingRunId: testingRunId, price: price});
-        mixpanel.people.track_charge(price)
-        _hsq.push(["trackEvent", {
-            id: "Completed Order",
-            value: price
-        }]);
-        this.setState({snackbar:true,snackbarText:'Order was completed successfully.'})
-        window.ga('send', 'event', "order-testing-run", "success", "", price);
+
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            var _hsq = window._hsq = window._hsq || [];
+            mixpanel.track("complete-order-success", {testingRunId: testingRunId, price: price});
+            mixpanel.people.track_charge(price)
+            _hsq.push(["trackEvent", {
+                id: "Completed Order",
+                value: price
+            }]);
+            this.setState({snackbar:true,snackbarText:'Order was completed successfully.'})
+            window.ga('send', 'event', "order-testing-run", "success", "", price);
+        }
+
     }
 
     trackOrderFailure(price)
     {
-        var _hsq = window._hsq = window._hsq || [];
-        mixpanel.track("complete-order-error", {price: price});
-        _hsq.push(["trackEvent", {id: "Failed Order"}]);
-        this.setState({snackbar:true,snackbarText:'Order failed.'})
-        window.ga('send', 'event', "order-testing-run", "failed", "", price);
+
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            var _hsq = window._hsq = window._hsq || [];
+            mixpanel.track("complete-order-error", {price: price});
+            _hsq.push(["trackEvent", {id: "Failed Order"}]);
+            this.setState({snackbar:true,snackbarText:'Order failed.'})
+            window.ga('send', 'event', "order-testing-run", "failed", "", price);
+        }
+
     }
 
     launchTestingRunButtonClicked()
     {
-        mixpanel.track("clicked-launch-testing-run");
-        var _hsq = window._hsq = window._hsq || [];
-        _hsq.push(["trackEvent", {id: "Clicked Launch Testing Run"}]);
-        window.ga('send', 'event', "launch-testing-run", "click");
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            mixpanel.track("clicked-launch-testing-run");
+            var _hsq = window._hsq = window._hsq || [];
+            _hsq.push(["trackEvent", {id: "Clicked Launch Testing Run"}]);
+            window.ga('send', 'event', "launch-testing-run", "click");
+        }
 
         if (Auth0.isUserAllowedFreeRuns())
         {
@@ -1344,7 +1356,7 @@ class NewTestingRun extends Component {
 
     calculatePrice()
     {
-        return Number((this.state.length * this.state.sessions * 0.001).toFixed(2));
+        return Math.max(1.00, Number((this.state.length * this.state.sessions * 0.001).toFixed(2)));
     }
 
     completeOrder(elements)

@@ -14,6 +14,8 @@ import {Root, Table} from "./materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielements/table";
 import Scrollbars from "../../components/utility/customScrollBar";
 import axios from "axios";
+import {Button} from "../UiElements/Button/button.style";
+import Icon from "../../components/uielements/icon";
 
 const styles = theme => ({
   root: {
@@ -37,9 +39,22 @@ class ListApplications extends Component
 
   componentDidMount()
   {
+    this.loadApplications();
+  }
+
+  loadApplications()
+  {
     axios.get("/application").then((response) =>
     {
-        this.setState({applications: response.data.applications})
+      this.setState({applications: response.data.applications})
+    })
+  }
+
+  deleteApplication(application)
+  {
+    axios.delete(`/application/${application._id}`).then((response) =>
+    {
+      this.loadApplications();
     })
   }
 
@@ -55,15 +70,21 @@ class ListApplications extends Component
                       <TableRow>
                         <TableCell>Name</TableCell>
                         <TableCell>URL</TableCell>
+                        <TableCell>Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
 
                       {(this.state.applications || []).map(application => {
                         return (
-                            <TableRow key={application._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>
-                              <TableCell>{application.name}</TableCell>
-                              <TableCell>{application.url}</TableCell>
+                            <TableRow key={application._id} hover={true}>
+                              <TableCell onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>{application.name}</TableCell>
+                              <TableCell onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>{application.url}</TableCell>
+                              <TableCell>
+                                <Button variant="extended" color="secondary" onClick={() => this.deleteApplication(application)}>
+                                  <Icon>delete</Icon>
+                                </Button>
+                              </TableCell>
                             </TableRow>
                         );
                       })}

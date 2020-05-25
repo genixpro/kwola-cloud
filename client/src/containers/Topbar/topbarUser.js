@@ -36,10 +36,13 @@ class TopbarUser extends Component {
 
     openBilling()
     {
-        var _hsq = window._hsq = window._hsq || [];
-        mixpanel.track("open-billing");
-        _hsq.push(["trackEvent", {id: "Open Billing"}]);
-        window.ga('send', 'event', "billing", "view");
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            var _hsq = window._hsq = window._hsq || [];
+            mixpanel.track("open-billing");
+            _hsq.push(["trackEvent", {id: "Open Billing"}]);
+            window.ga('send', 'event', "billing", "view");
+        }
 
         axios.get(`/billing`).then((response) => {
             window.location.href = response.data.url;

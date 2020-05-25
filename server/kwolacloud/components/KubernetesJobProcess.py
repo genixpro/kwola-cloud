@@ -29,6 +29,7 @@ import google.cloud.logging
 from ..config.config import loadConfiguration
 from mongoengine import connect
 import stripe
+from kwola.config.logger import getLogger
 
 class KubernetesJobProcess:
     """
@@ -50,6 +51,9 @@ class KubernetesJobProcess:
         client.get_default_handler()
         client.setup_logging()
 
+        logger = getLogger()
+        logger.handlers = logger.handlers[0:1]
+
         connect(configData['mongo']['db'], host=configData['mongo']['uri'])
 
         stripe.api_key = configData['stripe']['apiKey']
@@ -60,6 +64,7 @@ class KubernetesJobProcess:
         data = pickle.loads(base64.b64decode(dataStr, altchars=KubernetesJobProcess.base64AltChars))
         logging.info(f"[{os.getpid()}] Running process with following data:\n{json.dumps(data, indent=4)}")
         result = self.targetFunc(**data)
+        logging.info(f"Process finished with result:\n{json.dumps(result, indent=4)}")
         print(KubernetesJobProcess.resultStartString, flush=True)
         print(str(base64.b64encode(pickle.dumps(result), altchars=KubernetesJobProcess.base64AltChars), "utf8"), flush=True)
         print(KubernetesJobProcess.resultFinishString, flush=True)

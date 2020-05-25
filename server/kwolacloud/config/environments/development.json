@@ -1,6 +1,6 @@
 {
   "environmentCode": "d",
-  "userCodeSalt": "ShriOcNedNilNuIdNashyashiTwajbafEvlemKoHozCyHalgOk",
+  "userCodeSalt": "IshVegNowlEijhuwuIfwesecmiptibwywobsIgJivguworegH",
   "mongo": {
     "uri": "mongodb://localhost:27017/kwolacloud",
     "db": "kwolacloud",
@@ -15,5 +15,9 @@
     "apiUrl": "http://localhost:8000/api/",
     "domain": "https://kwola.auth0.com/",
     "keyFile": "config/keys/development_key.json"
+  },
+  "features": {
+    "enableGoogleCloudLogging": false,
+    "enableRuns": true
   }
 }

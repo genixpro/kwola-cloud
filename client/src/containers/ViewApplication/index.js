@@ -45,10 +45,13 @@ class ViewApplication extends Component {
 
     launchTestingSequenceButtonClicked()
     {
-        var _hsq = window._hsq = window._hsq || [];
-        mixpanel.track("clicked-new-testing-run");
-        _hsq.push(["trackEvent", {id: "Clicked New Testing Run"}]);
-        window.ga('send', 'event', "new-testing-run", "click");
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            var _hsq = window._hsq = window._hsq || [];
+            mixpanel.track("clicked-new-testing-run");
+            _hsq.push(["trackEvent", {id: "Clicked New Testing Run"}]);
+            window.ga('send', 'event', "new-testing-run", "click");
+        }
 
         this.props.history.push(`/app/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
     }
@@ -69,26 +72,14 @@ class ViewApplication extends Component {
                                         title={`${this.state.application.name}`}
                                         subtitle={`Last Tested ${moment(this.props.timestamp).format('MMM Do, YYYY')}`}
                                     >
-                                        {/*<Row>*/}
-                                        {/*<HalfColumn>*/}
-                                        {/*    <div>*/}
-                                        {/*        Learning:*/}
-                                        {/*        <Chip*/}
-                                        {/*            avatar={<Icon style={{ fontSize: 22 }}>info-outline</Icon>}*/}
-                                        {/*            label="In Progress"*/}
-                                        {/*        />*/}
-                                        {/*    </div>*/}
-                                        {/*</HalfColumn>*/}
-                                        {/*<HalfColumn>*/}
-                                        {/*    <div>*/}
-                                        {/*        Testing:*/}
-                                        {/*        <Chip*/}
-                                        {/*            avatar={<Icon style={{ fontSize: 22 }}>info-outline</Icon>}*/}
-                                        {/*            label="In Progress"*/}
-                                        {/*        />*/}
-                                        {/*    </div>*/}
-                                        {/*</HalfColumn>*/}
-                                        {/*</Row>*/}
+                                        <Row>
+                                        <HalfColumn>
+                                            <div>
+                                                URL:&nbsp;&nbsp;<a href={this.state.application.url}>{this.state.application.url}</a>
+                                                <br/>
+                                            </div>
+                                        </HalfColumn>
+                                        </Row>
                                         <Row>
                                         <FullColumn>
                                                 <DemoWrapper>

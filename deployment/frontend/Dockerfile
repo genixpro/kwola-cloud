@@ -45,6 +45,10 @@ WORKDIR /kwola/client
 ENV KWOLA_ENV=${KWOLA_ENV}
 ENV REVISION_ID=${REVISION_ID}
 
+RUN cp .env.${KWOLA_ENV} .env.chosen
+RUN rm .env.production
+RUN mv .env.chosen .env.production
+
 # Build the frontend static files and delete all the kwola code, nodejs and python to trim down the image size
 RUN npm run-script build && \
         mkdir /build && \

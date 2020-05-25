@@ -12,7 +12,7 @@ steps:
     - "REVISION_ID=$REVISION_ID"
     - "-f"
     - "deployment/frontend/Dockerfile"
-  timeout: 1800s
+  timeout: 600s
 - name: 'gcr.io/cloud-builders/kubectl'
   args:
   - 'cluster-info'
