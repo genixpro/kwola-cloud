@@ -15,6 +15,7 @@ import ScheduleIcon from '@material-ui/icons/Schedule';
 import SkipNextIcon from '@material-ui/icons/SkipNext';
 import Tabs, { Tab } from '../../components/uielements/tabs';
 import TextField from '../../components/uielements/textfield';
+import Snackbar from '../../components/uielements/snackbar';
 import TextFieldMargins from "../UiElements/TextFields/layout";
 import axios from "axios";
 import { Button } from "../UiElements/Button/button.style";
@@ -548,7 +549,7 @@ class SizeOfRun extends Component {
     render() {
         return <div>
             <Row>
-                <Column xs={9}>
+                <Column xs={12} md={12} lg={9}>
                     <p>Number of actions per session</p>
                     <Button variant="extended" color={this.state.lengthTab === 0 ? "primary" : "default"} onClick={() => this.lengthTabChanged(0)}>
                         Short (50)
@@ -578,12 +579,12 @@ class SizeOfRun extends Component {
                             </div> : null
                     }
                 </Column>
-                <Column xs={3}>
+                <Column xs={12} md={12} lg={3}>
                     <p>Select how many actions you want each browser session to perform on your web application. This impacts how deep in your application Kwola will go when looking for bugs.</p>
                 </Column>
             </Row>
             <Row>
-                <Column xs={9}>
+                <Column xs={12} md={12} lg={9}>
                     <p>Number of sessions</p>
                     <Button variant="extended" color={this.state.sessionsTab === 0 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(0)}>
                         Small (25)
@@ -614,12 +615,12 @@ class SizeOfRun extends Component {
                             </div> : null
                     }
                 </Column>
-                <Column xs={3}>
+                <Column xs={12}  md={12} lg={3}>
                     <p>How many total browser sessions do you want run on your application? This impacts how thorough Kwola will be in triggering all edge-case behaviours of your application.</p>
                 </Column>
             </Row>
             <Row>
-                <Column xs={9}>
+                <Column xs={12}  md={12} lg={9}>
                     <p>Pace of Run</p>
                     <Button variant="extended" color={this.state.hoursTab === 0 ? "primary" : "default"} onClick={() => this.hoursTabChanged(0)}>
                         Fast (1 hour)
@@ -650,7 +651,7 @@ class SizeOfRun extends Component {
                             </div> : null
                     }
                 </Column>
-                <Column xs={3}>
+                <Column xs={12}  md={12} lg={3}>
                     <p>How quickly do you want this run to go? This impacts load on your web application. Extending it also allows Kwola AI to do more learning.</p>
                 </Column>
             </Row>
@@ -699,7 +700,7 @@ class AutologinCredentials extends Component {
     render() {
         return <div>
             <Row>
-                <Column xs={9}>
+                <Column xs={12}  md={12} lg={9}>
                     <FormGroup row>
                         <FormControlLabel
                             control={
@@ -737,7 +738,7 @@ class AutologinCredentials extends Component {
                             /> : null
                     }
                 </Column>
-                <Column xs={3}>
+                <Column xs={12}  md={12} lg={3}>
                     <p>Select whether you want Kwola to attempt an automatic login as soon as it lands on your application URL.</p>
                 </Column>
             </Row>
@@ -1245,6 +1246,8 @@ class NewTestingRun extends Component {
         mode: "details",
         name: "",
         address: "",
+        snackbar:false,
+
     };
 
     constructor()
@@ -1300,6 +1303,7 @@ class NewTestingRun extends Component {
             id: "Completed Order",
             value: price
         }]);
+        this.setState({snackbar:true,snackbarText:'Order was completed successfully.'})
         window.ga('send', 'event', "order-testing-run", "success", "", price);
     }
 
@@ -1308,6 +1312,7 @@ class NewTestingRun extends Component {
         var _hsq = window._hsq = window._hsq || [];
         mixpanel.track("complete-order-error", {price: price});
         _hsq.push(["trackEvent", {id: "Failed Order"}]);
+        this.setState({snackbar:true,snackbarText:'Order failed.'})
         window.ga('send', 'event', "order-testing-run", "failed", "", price);
     }
 
@@ -1327,8 +1332,9 @@ class NewTestingRun extends Component {
                 this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
             }, (error) =>
             {
+
                 this.trackOrderFailure(price);
-            });
+            },this.setState({snackbar:true,snackbarText:'Failed to launch testing run.'}));
         }
         else
         {
@@ -1378,9 +1384,11 @@ class NewTestingRun extends Component {
         })
     }
 
+    closeSnackbar(){
+        this.setState({snackbar:false});
+    }
     render() {
         const { result } = this.state;
-
         return (
                 <LayoutWrapper>
                     <ElementsConsumer>
@@ -1581,6 +1589,17 @@ class NewTestingRun extends Component {
                     </FullColumn>
                             )}
                     </ElementsConsumer>
+                    <Snackbar 
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'right',
+                        }}
+                        onClick={() => this.closeSnackbar()}
+                        open={this.state.snackbar} 
+                        autoHideDuration={6000}
+                        timeout={6000}
+                        message={this.state.snackbarText ?? ""}
+                    />
                 </LayoutWrapper>
 
         );

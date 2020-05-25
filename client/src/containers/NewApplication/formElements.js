@@ -7,6 +7,7 @@ import {
 } from '../../components/uielements/form';
 import Button from '../../components/uielements/button';
 import TextField from '../../components/uielements/textfield';
+import CircularProgress from '../../components/uielements/circularProgress';
 import Radio, { RadioGroup } from '../../components/uielements/radio';
 import Checkbox from '../../components/uielements/checkbox';
 import asyncValidate from './asyncValidate';
@@ -83,6 +84,7 @@ const MaterialUiForm = ({
   reset,
   submitting,
   submitFailed,
+  loading,
 }) => {
   return (
     <form onSubmit={handleSubmit} className="mainFormsWrapper">
@@ -117,8 +119,10 @@ const MaterialUiForm = ({
             className={pristine || submitting ? '' : 'mateFormsSubmitBtn'}
             disabled={pristine || submitting}
           >
-            Submit
+            Submit 
+            {loading ? <CircularProgress size={18} color="secondary"/> : <div></div>}  
           </Button>
+          
           <Button
             color="secondary"
             className="mateFormsClearBtn"
