@@ -20,7 +20,7 @@ import './global.css';
 import Auth0 from "../../helpers/auth0";
 import {Elements} from '@stripe/react-stripe-js';
 import stripePromise from '../../stripe';
-
+import '../../styles/customStyles.css';
 const { toggleAll } = appActions;
 const { switchActivation } = themeActions;
 

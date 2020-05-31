@@ -23,7 +23,7 @@
     "connected-react-router": "^6.5.2",
     "date-fns": "^2.4.1",
     "file-loader": "4.2.0",
-    "firebase": "^7.1.0",
+    "firebase": "^7.14.4",
     "formik": "^1.5.8",
     "frappe-charts": "1.2.4",
     "fuse.js": "^3.4.5",
@@ -43,7 +43,7 @@
     "mixpanel-browser": "^2.36.0",
     "moment": "^2.24.0",
     "moment-jalaali": "0.8.3",
-    "node-sass": "^4.12.0",
+    "node-sass": "^4.14.1",
     "nprogress": "0.2.0",
     "rc-notification": "^3.3.1",
     "rc-pagination": "^1.20.8",
@@ -110,7 +110,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "scss": "node-sass --watch public/scss -o src/styles"
   },
   "browserslist": [
     ">0.2%",
