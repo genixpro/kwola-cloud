@@ -7,7 +7,8 @@ export default props => {
       style={props.style}
       className={`${props[`data-single`] ? 'single' : ''} ${props.className}`}
     >
-      {props.title ? <h3>{props.title}</h3> : ''}
+      {props.title ? <h3>{props.title} {(props.tooltip ? props.tooltip : '')}</h3> : ''}
+
       {props.subtitle ? <PageSubTitle> {props.subtitle} </PageSubTitle> : ''}
     </PageTitle>
   );

@@ -57,7 +57,7 @@ export default props => (
       }
     }}
   >
-    {props.title ? <Title title={props.title} subtitle={props.subtitle} /> : ""}
+    {props.title ? <Title title={props.title} subtitle={props.subtitle} tooltip={props.tooltip} /> : ""}
     <Content {...props}>{props.children}</Content>
   </Papersheet>
 );
