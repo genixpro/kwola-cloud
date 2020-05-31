@@ -23,6 +23,7 @@ import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielem
 import axios from "axios";
 import Auth from "../../helpers/auth0/index"
 import mixpanel from 'mixpanel-browser';
+import Tooltip from "../../components/uielements/tooltip";
 
 class ViewApplication extends Component {
     state = {
@@ -58,21 +59,23 @@ class ViewApplication extends Component {
 
     render() {
         const { result } = this.state;
+        const recentRunTooltip = <Tooltip placement="right-end" title="Your Kwola Applications. Click an application to view more.">
+                 <Icon color="primary" className="fontSizeSmall">help</Icon>
+                </Tooltip> 
         return (
                 this.state.application ?
                     <LayoutWrapper>
                         <FullColumn>
                             <Row>
-                                <HalfColumn>
-                                    <SingleCard src={`${process.env.REACT_APP_BACKEND_API_URL}application/${this.props.match.params.id}/image?token=${Auth.getQueryParameterToken()}`} grid/>
-                                </HalfColumn>
-
-                                <HalfColumn>
+                                <FullColumn>
                                     <Papersheet
                                         title={`${this.state.application.name}`}
                                         subtitle={`Last Tested ${moment(this.props.timestamp).format('MMM Do, YYYY')}`}
                                     >
                                         <Row>
+                                        <HalfColumn>
+                                            <SingleCard src={`${process.env.REACT_APP_BACKEND_API_URL}application/${this.props.match.params.id}/image?token=${Auth.getQueryParameterToken()}`} grid/>
+                                        </HalfColumn>
                                         <HalfColumn>
                                             <div>
                                                 URL:&nbsp;&nbsp;<a href={this.state.application.url}>{this.state.application.url}</a>
@@ -91,15 +94,13 @@ class ViewApplication extends Component {
                                         </FullColumn>
                                         </Row>
                                     </Papersheet>
-                                </HalfColumn>
+                                </FullColumn>
                             </Row>
 
 
                             <Row>
                                 <FullColumn>
-                                    <Papersheet title={"Recent Testing Runs"}>
-
-
+                                    <Papersheet title={"Recent Testing Runs"} tooltip={recentRunTooltip}>
                                         <Table>
                                             <TableHead>
                                                 <TableRow>

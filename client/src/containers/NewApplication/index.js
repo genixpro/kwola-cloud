@@ -11,7 +11,9 @@ import CodeViewer from '../codeViewer';
 import axios from "axios";
 import mixpanel from 'mixpanel-browser';
 import Snackbar from '../../components/uielements/snackbar';
-
+import Tooltip from '../../components/uielements/tooltip';
+import Icon from "../../components/uielements/icon";
+import { Button } from "../UiElements/Button/button.style";
 //injectTapEventPlugin();
 
 const reducer = combineReducers({ form: reduxFormReducer });
@@ -48,41 +50,41 @@ export default class extends React.Component {
     });
   };
 
-  closeSnackbar(){
-      this.setState({snackbar:false});
-  }
 
   render()
   {
     const { result } = this.state;
     let loading = this.state.submitting
-    const snackbar = <Snackbar
+    const snackbar = <Snackbar 
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            onClick={() => this.setState({snackbar:false})}
+            open={this.state.snackbar} 
+            autoHideDuration={6000}
+            timeout={6000}
+            message={this.state.snackbarText ?? ""}
+        />
 
-    />
+    const tooltip = <Tooltip placement="right-end" title="This is the first step in running Kwola’s testing.  Please supply a valid url and application name to begin.">
+                   <Icon color="primary" className="fontSizeSmall">help</Icon>
+                  </Tooltip> 
     return (
       <Provider store={store}>
         <LayoutWrapper>
           <FormsMainWrapper>
             <FormsComponentWrapper className=" mateFormsComponent ">
               <FullColumn>
-                <Papersheet>
+                <Papersheet title="New Application" tooltip={tooltip}>
+
                   <Form onSubmit={this.onSubmit.bind(this)} loading={loading}/>
                 </Papersheet>
               </FullColumn>
             </FormsComponentWrapper>
           </FormsMainWrapper>
         </LayoutWrapper>
-        <Snackbar 
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            onClick={() => this.closeSnackbar()}
-            open={this.state.snackbar} 
-            autoHideDuration={6000}
-            timeout={6000}
-            message={this.state.snackbarText ?? ""}
-        />
+        {snackbar}
       </Provider>
     );
   }

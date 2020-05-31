@@ -24,6 +24,8 @@ import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielem
 import { Line } from "react-chartjs-2";
 import axios from "axios";
 import Auth from "../../helpers/auth0/index"
+import Tooltip from "../../components/uielements/tooltip";
+import Typography from "../../components/uielements/typography";
 
 class ViewTestingRun extends Component {
     state = {
@@ -51,7 +53,17 @@ class ViewTestingRun extends Component {
 
     render() {
         const { result } = this.state;
+        const testingTooltip = <Tooltip placement="right-end" title="Info related to this testing run.  View bugs and execution sessions below.">
+                 <Icon color="primary" className="fontSizeSmall">help</Icon>
+                </Tooltip> 
 
+        const bugsTooltip = <Tooltip placement="right-end" title="Listed here are the bugs found in this testing run.  Click on a bug to view the error data and a debug video.">
+                 <Icon color="primary" className="fontSizeSmall">help</Icon>
+                </Tooltip> 
+
+        const sessionsTooltip = <Tooltip placement="right-end" title="Listed here are the execution sessions found in this testing run.  Click on an execution to view more.">
+                 <Icon color="primary" className="fontSizeSmall">help</Icon>
+                </Tooltip>
         return (
             this.state.testingRun ?
                 <LayoutWrapper>
@@ -65,6 +77,7 @@ class ViewTestingRun extends Component {
                                 <Papersheet
                                     title={`Testing Run`}
                                     subtitle={this.state.testingRun.status}
+                                    tooltip={testingTooltip}
                                 >
 
                                     <span>Testing Sessions Completed: {this.state.testingRun.testingSessionsCompleted}<br/></span>
@@ -86,7 +99,9 @@ class ViewTestingRun extends Component {
 
                         <Row>
                             <FullColumn>
-                                <Papersheet title={"Bugs Found"}>
+                                <Papersheet title={"Bugs Found"} tooltip={bugsTooltip}>
+                                    <span>Total bugs Found: {this.state.bugs ? this.state.bugs.length: "0"}</span>
+                                    <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word"}}>
                                     <Table>
                                         <TableHead>
                                             <TableRow>
@@ -94,15 +109,19 @@ class ViewTestingRun extends Component {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
+                                        
                                             {(this.state.bugs || []).map(bug => {
                                                 return (
+                                                    
                                                     <TableRow key={bug._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/bugs/${bug._id}`)} >
                                                         <TableCell>{bug.error.message}</TableCell>
                                                     </TableRow>
+                                                    
                                                 );
                                             })}
                                         </TableBody>
                                     </Table>
+                                    </div>
                                 </Papersheet>
                             </FullColumn>
                         </Row>
@@ -110,7 +129,7 @@ class ViewTestingRun extends Component {
 
                         <Row>
                             <FullColumn>
-                                <Papersheet title={"Execution Sessions"}>
+                                <Papersheet title={"Execution Sessions"} tooltip={sessionsTooltip}>
                                     <Table>
                                         <TableHead>
                                             <TableRow>

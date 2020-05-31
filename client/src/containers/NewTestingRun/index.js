@@ -551,16 +551,16 @@ class SizeOfRun extends Component {
             <Row>
                 <Column xs={12} md={12} lg={9}>
                     <p>Number of actions per session</p>
-                    <Button variant="extended" color={this.state.lengthTab === 0 ? "primary" : "default"} onClick={() => this.lengthTabChanged(0)}>
+                    <Button size="medium" variant="extended" color={this.state.lengthTab === 0 ? "primary" : "default"} onClick={() => this.lengthTabChanged(0)}>
                         Short (100)
                     </Button>
-                    <Button variant="extended" color={this.state.lengthTab === 1 ? "primary" : "default"} onClick={() => this.lengthTabChanged(1)}>
+                    <Button size="medium" variant="extended" color={this.state.lengthTab === 1 ? "primary" : "default"} onClick={() => this.lengthTabChanged(1)}>
                         Medium (250)
                     </Button>
-                    <Button variant="extended" color={this.state.lengthTab === 2 ? "primary" : "default"} onClick={() => this.lengthTabChanged(2)}>
+                    <Button size="medium" variant="extended" color={this.state.lengthTab === 2 ? "primary" : "default"} onClick={() => this.lengthTabChanged(2)}>
                         Long (1,000)
                     </Button>
-                    <Button variant="extended" color={this.state.lengthTab === 3 ? "primary" : "default"} onClick={() => this.lengthTabChanged(3)}>
+                    <Button size="medium" variant="extended" color={this.state.lengthTab === 3 ? "primary" : "default"} onClick={() => this.lengthTabChanged(3)}>
                         Custom
                     </Button>
                     <br/>
@@ -586,16 +586,16 @@ class SizeOfRun extends Component {
             <Row>
                 <Column xs={12} md={12} lg={9}>
                     <p>Number of sessions</p>
-                    <Button variant="extended" color={this.state.sessionsTab === 0 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(0)}>
+                    <Button size="medium" variant="extended" color={this.state.sessionsTab === 0 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(0)}>
                         Small (250)
                     </Button>
-                    <Button variant="extended" color={this.state.sessionsTab === 1 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(1)}>
+                    <Button size="medium" variant="extended" color={this.state.sessionsTab === 1 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(1)}>
                         Medium (1,000)
                     </Button>
-                    <Button variant="extended" color={this.state.sessionsTab === 2 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(2)}>
+                    <Button size="medium" variant="extended" color={this.state.sessionsTab === 2 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(2)}>
                         Large (5,000)
                     </Button>
-                    <Button variant="extended" color={this.state.sessionsTab === 3 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(3)}>
+                    <Button size="medium" variant="extended" color={this.state.sessionsTab === 3 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(3)}>
                         Custom
                     </Button>
                     <br/>
