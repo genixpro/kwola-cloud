@@ -8,6 +8,9 @@ import Papersheet, { DemoWrapper } from '../../components/utility/papersheet';
 import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, Row, Column} from '../../components/utility/rowColumn';
 import axios from "axios";
 import Auth from "../../helpers/auth0/index"
+import Button, {IconButton} from "../../components/uielements/button"; 
+import Icon from "../../components/uielements/icon"; 
+import CircularProgress from '../../components/uielements/circularProgress';
 
 class ViewBug extends Component {
     state = {
@@ -22,17 +25,37 @@ class ViewBug extends Component {
         });
     }
 
+    downloadVideo(){
+        this.setState({loader:true}, ()=>{
+            axios({
+              url:`${process.env.REACT_APP_BACKEND_API_URL}bugs/${this.state.bug._id}/video?token=${Auth.getQueryParameterToken()}`,
+              method: 'GET',
+              responseType: 'blob', // important
+            }).then((response) => {
+
+              const url = window.URL.createObjectURL(new Blob([response.data]));
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', this.state.bug._id+'_debug.mp4');
+              document.body.appendChild(link);
+              link.click();
+              this.setState({loader:false});
+            });
+        });
+        return false;
+    }
 
     render() {
         const { result } = this.state;
-
+        const downloadVideo = <IconButton onClick={() =>this.downloadVideo()} aria-label="get_app" color="secondary">{this.state.loader ? <CircularProgress disabled size={18} color="secondary"/> : <Icon className="fontSizeSmall">get_app</Icon>}</IconButton>       
         return (
             this.state.bug ?
                 <LayoutWrapper>
                     <FullColumn>
                         <Row>
                             <HalfColumn>
-                                <Papersheet>
+                                <Papersheet title="Debug Video" tooltip={downloadVideo}>
+
                                     <video controls style={{"width": "100%"}}>
                                         <source src={`${process.env.REACT_APP_BACKEND_API_URL}bugs/${this.state.bug._id}/video?token=${Auth.getQueryParameterToken()}`} type="video/mp4" />
                                         <span>Your browser does not support the video tag.</span>
