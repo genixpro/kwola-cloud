@@ -64,7 +64,7 @@ class AppRouter extends Component {
       if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
       {
         var _hsq = window._hsq = window._hsq || [];
-        _hsq.push(['setPath', window.location.href]);
+        _hsq.push(['setPath', window.location.pathname]);
         _hsq.push(['trackPageView']);
 
         window.ga('set', 'page', window.location.href);
