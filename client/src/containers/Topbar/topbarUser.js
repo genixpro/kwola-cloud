@@ -44,6 +44,7 @@ class TopbarUser extends Component {
             window.ga('send', 'event', "billing", "view");
         }
 
+        this.setState({ visible: false });
         axios.get(`/billing`).then((response) => {
             window.location.href = response.data.url;
         }, (error) =>
@@ -86,12 +87,12 @@ class TopbarUser extends Component {
             <Icon>money-sharp</Icon>
             <IntlMessages id="topbar.billing" />
           </Link>
-          <Link href="#" onClick={() => this.openHelp()} className="dropdownLink">
-            <Icon>help</Icon>
-            <IntlMessages id="sidebar.feedback" />
-          </Link>
           <Link href="#" onClick={() => this.openFeedback()} className="dropdownLink">
             <Icon>feedback</Icon>
+            <IntlMessages id="sidebar.feedback" />
+          </Link>
+          <Link href="#" onClick={() => this.openHelp()} className="dropdownLink">
+            <Icon>help</Icon>
             <IntlMessages id="topbar.help" />
           </Link>
           <Link href="#" onClick={() => Auth.logout()} className="dropdownLink">
