@@ -18,6 +18,7 @@ from ..datamodels.id_utility import generateKwolaId
 from ..config.config import getKwolaConfiguration
 from ..auth import authenticate, isAdmin
 import selenium
+import time
 import selenium.common.exceptions
 
 class ApplicationGroup(Resource):
@@ -129,6 +130,7 @@ class ApplicationImage(Resource):
         driver.set_page_load_timeout(20)
         try:
             driver.get(application.url)
+            time.sleep(0.50)
         except selenium.common.exceptions.TimeoutException:
             pass
         screenshotData = driver.get_screenshot_as_png()
