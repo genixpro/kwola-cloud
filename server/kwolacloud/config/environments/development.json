@@ -18,6 +18,7 @@
   },
   "features": {
     "enableGoogleCloudLogging": false,
-    "enableRuns": true
+    "enableRuns": true,
+    "localRuns": true
   }
 }

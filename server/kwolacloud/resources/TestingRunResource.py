@@ -20,6 +20,7 @@ import stripe
 from ..auth import authenticate, isAdmin
 from ..config.config import loadConfiguration
 from ..components.KubernetesJob import KubernetesJob
+from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 
 
 class TestingRunsGroup(Resource):
@@ -101,17 +102,22 @@ class TestingRunsGroup(Resource):
 
         newTestingRun.save()
 
-        job = KubernetesJob(module="kwolacloud.tasks.RunTesting",
-                            data={
-                                "testingRunId": data['id']
-                            },
-                            referenceId=data['id'],
-                            image="worker",
-                            cpuRequest="100m",
-                            cpuLimit=None,
-                            memoryRequest="350Mi",
-                            memoryLimit="512Mi"
-                            )
+        if self.configData['features']['localRuns']:
+            job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.RunTestingLocal"], {
+                "testingRunId": data['id']
+            }, timeout=1800, config=getKwolaConfiguration(), logId=None)
+        else:
+            job = KubernetesJob(module="kwolacloud.tasks.RunTesting",
+                                data={
+                                    "testingRunId": data['id']
+                                },
+                                referenceId=data['id'],
+                                image="worker",
+                                cpuRequest="100m",
+                                cpuLimit=None,
+                                memoryRequest="350Mi",
+                                memoryLimit="512Mi"
+                                )
         if self.configData['features']['enableRuns']:
             job.start()
 

@@ -82,6 +82,8 @@ class ViewTestingRun extends Component {
 
                                     <span>Testing Sessions Completed: {this.state.testingRun.testingSessionsCompleted}<br/></span>
 
+                                    <span>Testing Sequence Length: {this.state.testingRun.configuration.testingSequenceLength}<br/></span>
+
                                     {
                                         this.state.testingRun.startTime ?
                                             <span>Start Time: {moment(this.state.testingRun.startTime).format('MMM Do, YYYY')}<br/></span>

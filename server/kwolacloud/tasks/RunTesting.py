@@ -16,20 +16,29 @@ import logging
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
 from ..components.KubernetesJob import KubernetesJob
 import random
+from ..config.config import loadConfiguration, getKwolaConfiguration
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
+from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
+import tempfile
+from pprint import pformat
 
 
 def runTesting(testingRunId):
     logging.info(f"Starting testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
 
+    configData = loadConfiguration()
+
     if run is None:
         logging.error(f"Error! {testingRunId} not found.")
         return
 
-    configDir = mountTestingRunStorageDrive(run.applicationId)
-    if configDir is None:
-        return {"success":False}
+    if not configData['features']['localRuns']:
+        configDir = mountTestingRunStorageDrive(run.applicationId)
+        if configDir is None:
+            return {"success":False}
+    else:
+        configDir = tempfile.mkdtemp()
 
     if run.startTime is None:
         run.startTime = datetime.datetime.now()
@@ -65,6 +74,8 @@ def runTesting(testingRunId):
         else:
             with open(configFilePath, 'rt') as configFile:
                 kwolaConfigData = json.load(configFile)
+
+        logging.info(f"Testing Run starting with configuration: \n{pformat(kwolaConfigData)}")
 
         # We load up a single web session just to ensure we can access the target url
         config = Configuration(configDir)
@@ -111,19 +122,28 @@ def runTesting(testingRunId):
 
             while countTestingSessionsStarted < countTestingSessionsNeeded:
                 logging.info(f"Starting a testing step for run {testingRunId}")
-                job = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
-                                       data={
-                                            "testingRunId": testingRunId,
-                                            "testingStepsCompleted": completedTestingSteps,
-                                            "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
-                                       },
-                                    referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
-                                    image="worker",
-                                    cpuRequest="1600m",
-                                    cpuLimit="2500m",
-                                    memoryRequest="3.5Gi",
-                                    memoryLimit="5.0Gi"
-                                    )
+                if configData['features']['localRuns']:
+                    job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTestingStepTaskLocal"], {
+                        "testingRunId": testingRunId,
+                        "testingStepsCompleted": completedTestingSteps,
+                        "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted,
+                        "configDir": configDir
+                    }, timeout=7200, config=getKwolaConfiguration(), logId=None)
+                else:
+                    job = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
+                                           data={
+                                                "testingRunId": testingRunId,
+                                                "testingStepsCompleted": completedTestingSteps,
+                                                "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted,
+                                                "configDir": None
+                                           },
+                                        referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
+                                        image="worker",
+                                        cpuRequest="1600m",
+                                        cpuLimit="2500m",
+                                        memoryRequest="3.5Gi",
+                                        memoryLimit="5.0Gi"
+                                        )
                 job.start()
                 testingStepActiveJobs.append(job)
                 countTestingSessionsStarted += kwolaConfigData['web_session_parallel_execution_sessions']
@@ -158,19 +178,27 @@ def runTesting(testingRunId):
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None:
                 logging.info(f"Starting a training step for run {testingRunId}")
-                currentTrainingStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
-                                                       data={
-                                                            "testingRunId":testingRunId,
-                                                            "trainingStepsCompleted": completedTrainingSteps
-                                                       },
-                                                       referenceId=f"{testingRunId}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
-                                                       image="worker",
-                                                       cpuRequest="6000m",
-                                                       cpuLimit=None,
-                                                       memoryRequest="12.0Gi",
-                                                       memoryLimit=None,
-                                                       gpu=True
-                                                       )
+                if self.configData['features']['localRuns']:
+                    currentTrainingStepJob = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTaskLocal"], {
+                        "testingRunId":testingRunId,
+                        "trainingStepsCompleted": completedTrainingSteps,
+                        "configDir": configDir
+                    }, timeout=7200, config=getKwolaConfiguration(), logId=None)
+                else:
+                    currentTrainingStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
+                                                           data={
+                                                                "testingRunId":testingRunId,
+                                                                "trainingStepsCompleted": completedTrainingSteps,
+                                                                "configDir": None
+                                                           },
+                                                           referenceId=f"{testingRunId}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
+                                                           image="worker",
+                                                           cpuRequest="6000m",
+                                                           cpuLimit=None,
+                                                           memoryRequest="12.0Gi",
+                                                           memoryLimit=None,
+                                                           gpu=True
+                                                           )
                 currentTrainingStepJob.start()
 
             if currentTrainingStepJob is not None and currentTrainingStepJob.ready():

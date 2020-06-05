@@ -13,12 +13,15 @@ import logging
 import torch
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
+from ..config.config import loadConfiguration, getKwolaConfiguration
 
 
 
-def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
+def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted, configDir=None):
     logging.info(f"Starting training step for testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
+
+    configData = loadConfiguration()
 
     if run is None:
         logging.error(f"Error! {testingRunId} not found.")
@@ -28,9 +31,10 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     if not verifyStripeSubscription(run):
         return {"success": False}
 
-    configDir = mountTestingRunStorageDrive(run.applicationId)
-    if configDir is None:
-        return {"success": False}
+    if not configData['features']['localRuns']:
+        configDir = mountTestingRunStorageDrive(run.applicationId)
+        if configDir is None:
+            return {"success": False}
 
     try:
         gpu = 0

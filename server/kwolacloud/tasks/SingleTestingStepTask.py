@@ -10,15 +10,18 @@ from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..datamodels.id_utility import generateKwolaId
 from kwola.tasks import RunTestingStep
+from ..config.config import loadConfiguration, getKwolaConfiguration
 import logging
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription, attachUsageBilling
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
 
 
-def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill):
+def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill, configDir=None):
     logging.info(f"Starting testing step for testing run {testingRunId}")
 
     run = TestingRun.objects(id=testingRunId).first()
+
+    configData = loadConfiguration()
 
     if run is None:
         logging.error(f"Error! {testingRunId} not found.")
@@ -28,9 +31,10 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
     if not verifyStripeSubscription(run):
         return {"success": False}
 
-    configDir = mountTestingRunStorageDrive(run.applicationId)
-    if configDir is None:
-        return {"success": False}
+    if not configData['features']['localRuns']:
+        configDir = mountTestingRunStorageDrive(run.applicationId)
+        if configDir is None:
+            return {"success": False}
 
     try:
         config = Configuration(configDir)
