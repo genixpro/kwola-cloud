@@ -58,7 +58,7 @@ def verifyStripeSubscription(testingRun):
 
     return True
 
-def attachUsageBilling(config, testingRun, maxSessionsToBill):
+def attachUsageBilling(config, testingRun, sessionsToBill):
     if testingRun.stripeSubscriptionId is None:
         return True
 
@@ -70,7 +70,7 @@ def attachUsageBilling(config, testingRun, maxSessionsToBill):
 
     stripe.SubscriptionItem.create_usage_record(
         subscription['items'].data[0].id,
-        quantity=int(config['testing_sequence_length'] * min(maxSessionsToBill, config['web_session_parallel_execution_sessions'])),
+        quantity=int(config['testing_sequence_length'] * sessionsToBill),
         timestamp=int(datetime.datetime.now().timestamp()),
         action='increment',
     )

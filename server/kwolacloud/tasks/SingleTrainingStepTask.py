@@ -17,7 +17,7 @@ from ..config.config import loadConfiguration, getKwolaConfiguration
 
 
 
-def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted, configDir=None):
+def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     logging.info(f"Starting training step for testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
 
@@ -35,6 +35,8 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted, configDir=Non
         configDir = mountTestingRunStorageDrive(run.applicationId)
         if configDir is None:
             return {"success": False}
+    else:
+        configDir = os.path.join("data", run.applicationId)
 
     try:
         gpu = 0

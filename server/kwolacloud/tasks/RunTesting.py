@@ -38,7 +38,13 @@ def runTesting(testingRunId):
         if configDir is None:
             return {"success":False}
     else:
-        configDir = tempfile.mkdtemp()
+        if not os.path.exists("data"):
+            os.mkdir("data")
+
+        configDir = os.path.join("data", run.applicationId)
+
+        if not os.path.exists(configDir):
+            os.mkdir(configDir)
 
     if run.startTime is None:
         run.startTime = datetime.datetime.now()
@@ -126,16 +132,14 @@ def runTesting(testingRunId):
                     job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTestingStepTaskLocal"], {
                         "testingRunId": testingRunId,
                         "testingStepsCompleted": completedTestingSteps,
-                        "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted,
-                        "configDir": configDir
+                        "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
                     }, timeout=7200, config=getKwolaConfiguration(), logId=None)
                 else:
                     job = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
                                            data={
                                                 "testingRunId": testingRunId,
                                                 "testingStepsCompleted": completedTestingSteps,
-                                                "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted,
-                                                "configDir": None
+                                                "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
                                            },
                                         referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                         image="worker",
@@ -181,15 +185,13 @@ def runTesting(testingRunId):
                 if self.configData['features']['localRuns']:
                     currentTrainingStepJob = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTaskLocal"], {
                         "testingRunId":testingRunId,
-                        "trainingStepsCompleted": completedTrainingSteps,
-                        "configDir": configDir
+                        "trainingStepsCompleted": completedTrainingSteps
                     }, timeout=7200, config=getKwolaConfiguration(), logId=None)
                 else:
                     currentTrainingStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
                                                            data={
                                                                 "testingRunId":testingRunId,
-                                                                "trainingStepsCompleted": completedTrainingSteps,
-                                                                "configDir": None
+                                                                "trainingStepsCompleted": completedTrainingSteps
                                                            },
                                                            referenceId=f"{testingRunId}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                                            image="worker",

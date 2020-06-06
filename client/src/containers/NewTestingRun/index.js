@@ -550,7 +550,7 @@ class SizeOfRun extends Component {
         return <div>
             <Row>
                 <Column xs={12} md={12} lg={9}>
-                    <p>Number of actions per session</p>
+                    <p>Number of actions per browser</p>
                     <Button size="medium" variant="extended" color={this.state.lengthTab === 0 ? "primary" : "default"} onClick={() => this.lengthTabChanged(0)}>
                         Short (100)
                     </Button>
@@ -580,12 +580,12 @@ class SizeOfRun extends Component {
                     }
                 </Column>
                 <Column xs={12} md={12} lg={3}>
-                    <p>Select how many actions you want each browser session to perform on your web application. This impacts how deep in your application Kwola will go when looking for bugs.</p>
+                    <p>Select how many actions you want each web browser to perform on your web application. This impacts how deep in your application Kwola will go when looking for bugs.</p>
                 </Column>
             </Row>
             <Row>
                 <Column xs={12} md={12} lg={9}>
-                    <p>Number of sessions</p>
+                    <p>Number of browsers</p>
                     <Button size="medium" variant="extended" color={this.state.sessionsTab === 0 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(0)}>
                         Small (250)
                     </Button>
@@ -604,7 +604,7 @@ class SizeOfRun extends Component {
                             <div style={{"paddingLeft":"20px"}}>
                                 <TextField
                                     id="sessions"
-                                    label="# of sessions"
+                                    label="# of web browsers"
                                     type={"number"}
                                     min={1}
                                     max={10000000}
@@ -616,7 +616,7 @@ class SizeOfRun extends Component {
                     }
                 </Column>
                 <Column xs={12}  md={12} lg={3}>
-                    <p>How many total browser sessions do you want run on your application? This impacts how thorough Kwola will be in triggering all edge-case behaviours of your application.</p>
+                    <p>How many total web browsers do you want run on your application? This impacts how thorough Kwola will be in triggering all edge-case behaviours of your application.</p>
                 </Column>
             </Row>
 

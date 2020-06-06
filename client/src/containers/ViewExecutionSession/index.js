@@ -54,7 +54,7 @@ class ViewExecutionSession extends Component {
 
                             <HalfColumn>
                                 <Papersheet
-                                    title={`Execution Session ${this.props.executionSession._id}`}
+                                    title={`Web Browser ${this.props.executionSession._id}`}
                                     // subtitle={}
                                 >
 

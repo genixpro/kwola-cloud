@@ -13,7 +13,7 @@ from ..tasks.RunTesting import runTesting
 import json
 import bson
 from kwola.datamodels.CustomIDField import CustomIDField
-from ..config.config import getKwolaConfiguration
+from ..config.config import getKwolaConfiguration, loadConfiguration
 import flask
 from kwola.config.config import Configuration
 import os.path
@@ -97,7 +97,11 @@ class BugVideo(Resource):
         if bug is None:
             return abort(404)
 
-        configDir = mountTestingRunStorageDrive(bug.applicationId)
+        configData = loadConfiguration()
+        if not configData['features']['localRuns']:
+            configDir = mountTestingRunStorageDrive(bug.applicationId)
+        else:
+            configDir = os.path.join("data", bug.applicationId)
 
         config = Configuration(configDir)
 

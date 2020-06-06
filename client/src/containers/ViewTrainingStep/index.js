@@ -68,7 +68,7 @@ class ViewTrainingStep extends Component {
 
                         <Row>
                             <FullColumn>
-                                <Papersheet title={"Execution Sessions"}>
+                                <Papersheet title={"Web Browsers"}>
                                     <Table>
                                         <TableHead>
                                             <TableRow>

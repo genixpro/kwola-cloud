@@ -93,6 +93,22 @@ class ApplicationSingle(Resource):
         else:
             abort(404)
 
+    def put(self):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
+        data = self.postParser.parse_args()
+
+        application = ApplicationModel.objects(**query).limit(1).first()
+
+        if application is not None:
+            application.modify(**data)
+            application.save()
+            return ""
+        else:
+            abort(404)
+
     def delete(self, application_id):
         user = authenticate()
         if user is None:

@@ -100,7 +100,11 @@ class ExecutionSessionVideo(Resource):
         if executionSession is None:
             return abort(404)
 
-        configDir = mountTestingRunStorageDrive(executionSession.applicationId)
+        configData = loadConfiguration()
+        if not configData['features']['localRuns']:
+            configDir = mountTestingRunStorageDrive(executionSession.applicationId)
+        else:
+            configDir = os.path.join("data", executionSession.applicationId)
 
         config = Configuration(configDir)
 

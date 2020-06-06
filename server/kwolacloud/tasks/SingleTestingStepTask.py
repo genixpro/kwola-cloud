@@ -12,11 +12,12 @@ from ..datamodels.id_utility import generateKwolaId
 from kwola.tasks import RunTestingStep
 from ..config.config import loadConfiguration, getKwolaConfiguration
 import logging
+import os
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription, attachUsageBilling
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
 
 
-def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill, configDir=None):
+def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill):
     logging.info(f"Starting testing step for testing run {testingRunId}")
 
     run = TestingRun.objects(id=testingRunId).first()
@@ -35,6 +36,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
         configDir = mountTestingRunStorageDrive(run.applicationId)
         if configDir is None:
             return {"success": False}
+    else:
+        configDir = os.path.join("data", run.applicationId)
 
     try:
         config = Configuration(configDir)
@@ -56,7 +59,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
 
-        attachUsageBilling(config, run, maxSessionsToBill)
+        attachUsageBilling(config, run, sessionsToBill=min(maxSessionsToBill, result['successfulExecutionSessions']))
 
         logging.info(f"Finished testing step for testing run {testingRunId}")
 

@@ -53,7 +53,7 @@ class ViewTestingRun extends Component {
 
     render() {
         const { result } = this.state;
-        const testingTooltip = <Tooltip placement="right-end" title="Info related to this testing run.  View bugs and execution sessions below.">
+        const testingTooltip = <Tooltip placement="right-end" title="Info related to this testing run.  View bugs and web browser sessions below.">
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
                 </Tooltip> 
 
@@ -61,7 +61,7 @@ class ViewTestingRun extends Component {
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
                 </Tooltip> 
 
-        const sessionsTooltip = <Tooltip placement="right-end" title="Listed here are the execution sessions found in this testing run.  Click on an execution to view more.">
+        const sessionsTooltip = <Tooltip placement="right-end" title="Listed here are the web browsers opened during this testing run.  Click on an execution to view more.">
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
                 </Tooltip>
         return (
@@ -80,9 +80,9 @@ class ViewTestingRun extends Component {
                                     tooltip={testingTooltip}
                                 >
 
-                                    <span>Testing Sessions Completed: {this.state.testingRun.testingSessionsCompleted}<br/></span>
+                                    <span>Testing Browsers Completed: {this.state.testingRun.testingSessionsCompleted}<br/></span>
 
-                                    <span>Testing Sequence Length: {this.state.testingRun.configuration.testingSequenceLength}<br/></span>
+                                    <span># of Actions per Browser: {this.state.testingRun.configuration.testingSequenceLength}<br/></span>
 
                                     {
                                         this.state.testingRun.startTime ?
@@ -131,11 +131,11 @@ class ViewTestingRun extends Component {
 
                         <Row>
                             <FullColumn>
-                                <Papersheet title={"Execution Sessions"} tooltip={sessionsTooltip}>
+                                <Papersheet title={"Web Browsers"} tooltip={sessionsTooltip}>
                                     <Table>
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell>Session Start Time</TableCell>
+                                                <TableCell>Browser Start Time</TableCell>
                                                 <TableCell>Total Reward</TableCell>
                                             </TableRow>
                                         </TableHead>
