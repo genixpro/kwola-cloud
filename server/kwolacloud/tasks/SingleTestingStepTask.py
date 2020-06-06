@@ -17,7 +17,7 @@ from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, v
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
 
 
-def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBill):
+def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
     logging.info(f"Starting testing step for testing run {testingRunId}")
 
     run = TestingRun.objects(id=testingRunId).first()
@@ -59,7 +59,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted, maxSessionsToBi
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
 
-        attachUsageBilling(config, run, sessionsToBill=min(maxSessionsToBill, result['successfulExecutionSessions']))
+        attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])
 
         logging.info(f"Finished testing step for testing run {testingRunId}")
 

@@ -131,15 +131,13 @@ def runTesting(testingRunId):
                 if configData['features']['localRuns']:
                     job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTestingStepTaskLocal"], {
                         "testingRunId": testingRunId,
-                        "testingStepsCompleted": completedTestingSteps,
-                        "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
+                        "testingStepsCompleted": completedTestingSteps
                     }, timeout=7200, config=getKwolaConfiguration(), logId=None)
                 else:
                     job = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
                                            data={
                                                 "testingRunId": testingRunId,
-                                                "testingStepsCompleted": completedTestingSteps,
-                                                "maxSessionsToBill": countTestingSessionsNeeded - countTestingSessionsStarted
+                                                "testingStepsCompleted": completedTestingSteps
                                            },
                                         referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                         image="worker",
