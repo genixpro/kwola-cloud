@@ -14,6 +14,7 @@ import json
 import os
 import flask
 from kwola.config.config import Configuration
+from kwolacloud.config.config import loadConfiguration
 import os.path
 from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from ..auth import authenticate, isAdmin
