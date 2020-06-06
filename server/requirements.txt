@@ -5,7 +5,7 @@ flask_jwt_extended
 gunicorn
 mongoengine
 flask-cors
-kwola==0.1.36
+kwola==0.1.37
 dnspython
 wheel
 google-cloud-storage
