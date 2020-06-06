@@ -180,7 +180,7 @@ def runTesting(testingRunId):
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None:
                 logging.info(f"Starting a training step for run {testingRunId}")
-                if self.configData['features']['localRuns']:
+                if configData['features']['localRuns']:
                     currentTrainingStepJob = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTaskLocal"], {
                         "testingRunId":testingRunId,
                         "trainingStepsCompleted": completedTrainingSteps
