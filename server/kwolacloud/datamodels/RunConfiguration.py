@@ -36,6 +36,8 @@ class RunConfiguration(EmbeddedDocument):
 
     preventOffsiteLinks = BooleanField()
 
+    urlWhitelistRegexes = ListField(StringField())
+
     testingSequenceLength = IntField()
 
     totalTestingSessions = IntField()
