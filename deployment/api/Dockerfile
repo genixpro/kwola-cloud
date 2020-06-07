@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y && \
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
-    chromium-browser \
+    chromium-browser=83* \
     ffmpeg \
     freetype* \
     fuse \
@@ -59,7 +59,7 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s 
     kubectl version --client
 
 # Download and install Chromedriver
-RUN wget https://chromedriver.storage.googleapis.com/81.0.4044.138/chromedriver_linux64.zip && \
+RUN wget https://chromedriver.storage.googleapis.com/83.0.4103.39/chromedriver_linux64.zip && \
     unzip chromedriver_linux64.zip && \
     cp chromedriver /usr/bin/ && \
     chmod 644 /usr/bin/chromedriver && \

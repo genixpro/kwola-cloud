@@ -264,19 +264,19 @@ class RecurringOptions extends Component {
                                                     },
                                                 }}
                                             >
-                                            <option value={"hours"}>
-                                                hours
-                                            </option>
-                                            <option value={"days"}>
-                                                days
-                                            </option>
-                                            <option value={"weeks"}>
-                                                weeks
-                                            </option>
-                                            <option value={"months"}>
-                                                months
-                                            </option>
-                                        </TextField>
+                                                <option value={"hours"}>
+                                                    hours
+                                                </option>
+                                                <option value={"days"}>
+                                                    days
+                                                </option>
+                                                <option value={"weeks"}>
+                                                    weeks
+                                                </option>
+                                                <option value={"months"}>
+                                                    months
+                                                </option>
+                                            </TextField>
                                         </div>
                                     </div>
                                     <br/>
