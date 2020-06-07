@@ -156,7 +156,7 @@ RUN pip3 install --upgrade pip && \
     pip3 install scipy && \
     pip3 install selenium && \
     pip3 install stripe && \
-    pip3 install torch==1.5.0+cu101 torchvision==0.6.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html && \
+    pip3 install torch==1.5.0+cu100 torchvision==0.6.0+cu100 -f https://download.pytorch.org/whl/torch_stable.html && \
     chmod +r+r+r -R /usr/lib/python3/ && \
     rm -rf /root/.cache
 
