@@ -59,7 +59,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
 
-        attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])
+        if result['success'] and 'successfulExecutionSessions' in result:
+            attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])
 
         logging.info(f"Finished testing step for testing run {testingRunId}")
 
