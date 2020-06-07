@@ -6,7 +6,7 @@ MAINTAINER Kwola <info@kwola.io>
 ENV DEBIAN_FRONTEND noninteractive
 ENV GCSFUSE_REPO=gcsfuse-bionic
 
-RUN apt-get update && apt-get install -y --no-install-recommends gnupg1 gnupg2 gnupg curl ca-certificates && \
+RUN apt-get update && apt-get install -y --no-install-recommends gnupg1 gnupg2 gnupg curl ca-certificates apt-utils && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \
     echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
     echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list && \
@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gnupg1 gnupg2 g
     echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | tee /etc/apt/sources.list.d/gcsfuse.list
 
 ENV CUDA_VERSION 10.1.105
-ENV NCCL_VERSION 2.7.3
+ENV NCCL_VERSION 2.6.4
 ENV CUDNN_VERSION 7.6.5.32
 
 
@@ -25,18 +25,18 @@ ENV CUDA_PKG_VERSION 10-1=$CUDA_VERSION-1
 # For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a
 RUN apt-get update && apt-get install -y --no-install-recommends \
         cuda-cudart-$CUDA_PKG_VERSION \
-        cuda-compat-10-1 > "/dev/null" 2>&1 && \
+        cuda-compat-10-1 && \
     ln -s cuda-10.1 /usr/local/cuda
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
             libcudnn7=$CUDNN_VERSION-1+cuda10.1 \
-            libcudnn7-dev=$CUDNN_VERSION-1+cuda10.1 > "/dev/null" 2>&1 && \
+            libcudnn7-dev=$CUDNN_VERSION-1+cuda10.1 && \
     apt-mark hold libcudnn7
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         cuda-libraries-$CUDA_PKG_VERSION \
         cuda-nvtx-$CUDA_PKG_VERSION \
-        libnccl2=$NCCL_VERSION-1+cuda10.1 > "/dev/null" 2>&1 && \
+        libnccl2=$NCCL_VERSION-1+cuda10.1 && \
         apt-mark hold libnccl2
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -44,7 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cuda-nvml-dev-$CUDA_PKG_VERSION \
         cuda-minimal-build-$CUDA_PKG_VERSION \
         cuda-command-line-tools-$CUDA_PKG_VERSION \
-        libnccl-dev=$NCCL_VERSION-1+cuda10.1  > "/dev/null" 2>&1
+        libnccl-dev=$NCCL_VERSION-1+cuda10.1
 
 
 
