@@ -74,6 +74,7 @@ def runTesting(testingRunId):
             kwolaConfigData['autologin'] = runConfiguration.autologin
             kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
             kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
+            kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
 
             with open(configFilePath, 'wt') as configFile:
                 json.dump(kwolaConfigData, configFile)
