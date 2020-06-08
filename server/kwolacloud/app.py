@@ -6,6 +6,9 @@ from flask_restful import Api
 from kombu import Queue
 from mongoengine import connect
 import stripe
+import time
+from .db import connectToMongoWithRetries
+from .datamodels.ApplicationModel import ApplicationModel
 from .auth import authenticate
 from flask_caching import Cache
 import google.cloud.logging
@@ -15,7 +18,7 @@ configData = loadConfiguration()
 
 stripe.api_key = configData['stripe']['apiKey']
 
-connect(configData['mongo']['db'], host=configData['mongo']['uri'])
+connectToMongoWithRetries()
 
 cacheConfig = {
     "CACHE_TYPE": "simple",

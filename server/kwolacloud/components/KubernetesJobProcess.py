@@ -27,9 +27,9 @@ import sys
 import os
 import google.cloud.logging
 from ..config.config import loadConfiguration
-from mongoengine import connect
 import stripe
 from kwola.config.logger import getLogger
+from ..db import connectToMongoWithRetries
 
 class KubernetesJobProcess:
     """
@@ -54,7 +54,7 @@ class KubernetesJobProcess:
         logger = getLogger()
         logger.handlers = logger.handlers[0:1]
 
-        connect(configData['mongo']['db'], host=configData['mongo']['uri'])
+        connectToMongoWithRetries()
 
         stripe.api_key = configData['stripe']['apiKey']
 

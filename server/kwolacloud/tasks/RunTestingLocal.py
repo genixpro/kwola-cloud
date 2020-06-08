@@ -11,13 +11,14 @@ from ..config.config import loadConfiguration
 from mongoengine import connect
 import stripe
 from kwola.config.logger import getLogger, setupLocalLogging
+from ..db import connectToMongoWithRetries
 
 if __name__ == "__main__":
     configData = loadConfiguration()
 
     setupLocalLogging()
 
-    connect(configData['mongo']['db'], host=configData['mongo']['uri'])
+    connectToMongoWithRetries()
 
     stripe.api_key = configData['stripe']['apiKey']
 

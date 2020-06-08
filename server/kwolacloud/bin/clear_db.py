@@ -11,10 +11,11 @@ from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.datamodels.TrainingStepModel import TrainingStep
 from mongoengine import connect
-
-connect('kwola')
+from ..db import connectToMongoWithRetries
 
 def main():
+    connectToMongoWithRetries()
+
     ApplicationModel.objects().delete()
     TrainingSequence.objects().delete()
     TestingStepModel.objects().delete()
