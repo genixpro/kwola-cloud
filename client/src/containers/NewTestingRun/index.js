@@ -1017,7 +1017,17 @@ class PathWhitelistConfiguration extends Component {
         {
             this.props.onChange({
                 enablePathWhitelist: this.state.enablePathWhitelist,
-                pathRegexes: this.state.pathRegexes
+                pathRegexes: this.state.pathRegexes.map((pattern, index) =>
+                {
+                    if (!this.isRegexValid(index))
+                    {
+                        return ".*"
+                    }
+                    else
+                    {
+                        return pattern;
+                    }
+                })
             })
         }
         else
@@ -1111,6 +1121,11 @@ class PathWhitelistConfiguration extends Component {
             });
         }
 
+        if (!this.isRegexValid(index))
+        {
+            return testURLIsCharMatch;
+        }
+
         const pattern = new RegExp(this.state.pathRegexes[index], "g");
         const matches = [...this.state.testURL.matchAll(pattern)];
         if (matches.length > 0) {
@@ -1125,12 +1140,31 @@ class PathWhitelistConfiguration extends Component {
         return testURLIsCharMatch;
     }
 
-    testRegexp(index)
+    isRegexValid(index)
     {
         if (!this.state.pathRegexes[index])
         {
             return false;
         }
+        try
+        {
+            new RegExp(this.state.pathRegexes[index]);
+            return true;
+        }
+        catch (e)
+        {
+            return false;
+        }
+    }
+
+
+    testRegexp(index)
+    {
+        if (!this.isRegexValid(index))
+        {
+            return false;
+        }
+
         const pattern = new RegExp(this.state.pathRegexes[index]);
         return pattern.test(this.state.testURL);
     }
@@ -1222,6 +1256,10 @@ class PathWhitelistConfiguration extends Component {
                                                                     return <span style={style} key={charIndex}>{char.char}</span>
                                                                 })
                                                             }
+                                                        </div>
+                                                        <div>
+                                                            <span>Regex Valid?&nbsp;&nbsp;</span>
+                                                            <span>{this.isRegexValid(pathRegexIndex).toString()}</span>
                                                         </div>
                                                         <div>
                                                             <span>URL Allowed?&nbsp;&nbsp;</span>
