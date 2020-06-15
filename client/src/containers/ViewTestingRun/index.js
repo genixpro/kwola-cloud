@@ -20,16 +20,24 @@ import _ from "underscore";
 import {Chip, Wrapper} from "../UiElements/Chips/chips.style";
 import Avatar from "../../components/uielements/avatars";
 import {Table} from "../ListApplications/materialUiTables.style";
-import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielements/table";
+import {TableBody, TableCell, TableHead, TableRow, TablePagination} from "../../components/uielements/table";
 import { Line } from "react-chartjs-2";
 import axios from "axios";
 import Auth from "../../helpers/auth0/index"
 import Tooltip from "../../components/uielements/tooltip";
 import Typography from "../../components/uielements/typography";
+import { CSVLink, CSVDownload } from "react-csv";
+
+import SessionTable from './sessionTable'
+import BugsTable from './bugsTable'
 
 class ViewTestingRun extends Component {
     state = {
         result: '',
+        csvHeaders:[],
+        csvData:[],
+        newPage:0,
+        setPage:0
     };
 
     componentDidMount() {
@@ -41,6 +49,7 @@ class ViewTestingRun extends Component {
             params: {"testingRunId": this.props.match.params.id}
         }).then((response) => {
             this.setState({bugs: response.data.bugs});
+            this.formatcsvData()
         });
 
         axios.get(`/execution_sessions`, {
@@ -50,6 +59,28 @@ class ViewTestingRun extends Component {
         });
     }
 
+    formatcsvData(){
+        let headers = []
+        let data = []
+        let bugsClone = [...this.state.bugs];
+        bugsClone.map(Bug =>{
+            let bug = Object.assign({}, Bug);
+            if(headers.length == 0 ){
+                Object.keys(bug).map(key =>{
+                    headers.push({label:key,key:key})
+                    
+                }) 
+            }
+            for(let arg in bug){
+                if(Array.isArray(bug[arg]) || typeof bug[arg] === "object"){
+                    bug[arg] = JSON.stringify(bug[arg])
+                }
+                
+            }
+            data.push(bug)
+        });
+        this.setState({csvData:data,csvHeaders:headers})
+    }
 
     render() {
         const { result } = this.state;
@@ -57,13 +88,16 @@ class ViewTestingRun extends Component {
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
                 </Tooltip> 
 
-        const bugsTooltip = <Tooltip placement="right-end" title="Listed here are the bugs found in this testing run.  Click on a bug to view the error data and a debug video.">
+        const bugsTooltip = <Tooltip placement="right-end" title="Listed here are the bugs found in this testing run.  Click on a bug to view the error data and a debug video or download all bugs found to a csv file.">
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
                 </Tooltip> 
 
         const sessionsTooltip = <Tooltip placement="right-end" title="Listed here are the web browsers opened during this testing run.  Click on an execution to view more.">
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
                 </Tooltip>
+
+        const downloadCSVButton = <CSVLink filename="BugsCSV.csv" headers={this.state.csvheaders} data={this.state.csvData}><Icon color="primary" className="fontSizeSmall">get_app</Icon></CSVLink>;
+
         return (
             this.state.testingRun ?
                 <LayoutWrapper>
@@ -102,28 +136,9 @@ class ViewTestingRun extends Component {
                         <Row>
                             <FullColumn>
                                 <Papersheet title={"Bugs Found"} tooltip={bugsTooltip}>
-                                    <span>Total bugs Found: {this.state.bugs ? this.state.bugs.length: "0"}</span>
-                                    <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word"}}>
-                                    <Table>
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>Message</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                        
-                                            {(this.state.bugs || []).map(bug => {
-                                                return (
-                                                    
-                                                    <TableRow key={bug._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/bugs/${bug._id}`)} >
-                                                        <TableCell>{bug.error.message}</TableCell>
-                                                    </TableRow>
-                                                    
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                    </div>
+                                    <span>Total bugs Found: {this.state.bugs ? this.state.bugs.length: "0"}</span><br/>
+                                    <span>Download CSV: {downloadCSVButton}</span><br/>
+                                    <BugsTable {...this.props} data={this.state.bugs} />
                                 </Papersheet>
                             </FullColumn>
                         </Row>
@@ -132,24 +147,7 @@ class ViewTestingRun extends Component {
                         <Row>
                             <FullColumn>
                                 <Papersheet title={"Web Browsers"} tooltip={sessionsTooltip}>
-                                    <Table>
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>Browser Start Time</TableCell>
-                                                <TableCell>Total Reward</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {(this.state.executionSessions || []).map(executionSession => {
-                                                return (
-                                                    <TableRow key={executionSession._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/execution_sessions/${executionSession._id}`)} >
-                                                        <TableCell>{executionSession.startTime ? moment(new Date(executionSession.startTime.$date)).format('HH:mm MMM Do') : null}</TableCell>
-                                                        <TableCell>{executionSession.totalReward}</TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
+                                   <SessionTable {...this.props} data={this.state.executionSessions} />
                                 </Papersheet>
                             </FullColumn>
                         </Row>

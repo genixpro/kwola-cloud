@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import {connect, Provider} from 'react-redux';
 import { createStore, combineReducers } from 'redux';
 import { reducer as reduxFormReducer } from 'redux-form';
@@ -11,10 +12,13 @@ import Auth from "../../helpers/auth0/index"
 import Button, {IconButton} from "../../components/uielements/button"; 
 import Icon from "../../components/uielements/icon"; 
 import CircularProgress from '../../components/uielements/circularProgress';
-
+import Plyr from 'plyr'
+import 'plyr/dist/plyr.css'
 class ViewBug extends Component {
     state = {
         result: '',
+        loadingVideo:true,
+        loader:false,
     };
 
     componentDidMount()
@@ -22,10 +26,40 @@ class ViewBug extends Component {
         axios.get(`/bugs/${this.props.match.params.id}`).then((response) =>
         {
             this.setState({bug: response.data.bug})
+            
+            const player = new Plyr('#player',{
+            tooltips: {
+                controls: false,
+            },
+            storage:{ enabled: true, key: 'plyr' },
+            //seekTime:this.state.bug.stepNumber,
         });
+        this.loadVideo(player) 
+        });
+        
+    }
+     makePlayer(url,player){
+        player.source = {
+            type: 'video',
+            sources: [
+                  {
+                    src: url,
+                    type: 'video/mp4',
+                    //size: 576,
+                  },
+            ],
+
+        }
+       
+        this.setState({player:player})
+     }
+     
+    downloadVideo(){
+        document.getElementById('downloadLink').click();
     }
 
-    downloadVideo(){
+    loadVideo(player){
+
         this.setState({loader:true}, ()=>{
             axios({
               url:`${process.env.REACT_APP_BACKEND_API_URL}bugs/${this.state.bug._id}/video?token=${Auth.getQueryParameterToken()}`,
@@ -34,20 +68,30 @@ class ViewBug extends Component {
             }).then((response) => {
 
               const url = window.URL.createObjectURL(new Blob([response.data]));
+              this.makePlayer(url,player)
               const link = document.createElement('a');
+              link.id = "downloadLink"
               link.href = url;
               link.setAttribute('download', this.state.bug._id+'_debug.mp4');
               document.body.appendChild(link);
-              link.click();
+              //link.click();
+            
               this.setState({loader:false});
             });
         });
         return false;
     }
 
+    seekVideo(){
+        if(!this.state.player) return false;
+        this.state.player.restart()
+        this.state.player.forward(this.state.bug.stepNumber+1)
+    }
     render() {
         const { result } = this.state;
-        const downloadVideo = <IconButton onClick={() =>this.downloadVideo()} aria-label="get_app" color="secondary">{this.state.loader ? <CircularProgress disabled size={18} color="secondary"/> : <Icon className="fontSizeSmall">get_app</Icon>}</IconButton>       
+        const downloadVideo = <IconButton disabled={this.state.loader} onClick={() =>this.downloadVideo()} aria-label="get_app" color="secondary">{this.state.loader ? <CircularProgress disabled size={18} color="secondary"/> : <Icon className="fontSizeSmall">get_app</Icon>}</IconButton>       
+    
+
         return (
             this.state.bug ?
                 <LayoutWrapper>
@@ -56,8 +100,8 @@ class ViewBug extends Component {
                             <HalfColumn>
                                 <Papersheet title="Debug Video" tooltip={downloadVideo}>
 
-                                    <video controls style={{"width": "100%"}}>
-                                        <source src={`${process.env.REACT_APP_BACKEND_API_URL}bugs/${this.state.bug._id}/video?token=${Auth.getQueryParameterToken()}`} type="video/mp4" />
+                                    <video id="player" controls style={{"width": "100%"}}>
+                                        <source  type="video/mp4" />
                                         <span>Your browser does not support the video tag.</span>
                                     </video>
                                 </Papersheet>
@@ -68,7 +112,12 @@ class ViewBug extends Component {
                                     title={`Bug ${this.state.bug._id}`}
                                     // subtitle={}
                                 >
+                                    <span><Link href="#" onClick={()=>this.seekVideo()}>click to see bug in video</Link></span><br/><br/>
+                                    <span>Bug Type: {this.state.bug.error._cls || "Unknown"}</span><br/><br/>
+                                    <span>Log Level: {this.state.bug.error.logLevel || "Unknown"}</span><br/><br/>
+                                    <span>Message:</span><br/>
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message}</pre>
+
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.stacktrace}</pre>
                                 </Papersheet>
                             </HalfColumn>
