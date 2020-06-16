@@ -129,7 +129,7 @@ const MaterialUiForm = ({
             disabled={pristine || submitting}
             onClick={() => {
               reset();
-              onSubmit();
+              //onSubmit();
             }}
           >
             Clear Values
