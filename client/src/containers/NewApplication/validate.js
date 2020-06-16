@@ -9,9 +9,16 @@ const validate = values => {
     if (!values[field]) {
       errors[field] = 'Required';
     }
+
+    //validate the url supplied
+    if(field == 'url'){
+      let url = values[field]
+      let valid = /^(ftp|http|https):\/\/[^ "]+$/.test(url);
+      if(!valid){
+          errors.url = "Please provide a valid URL"
+      }
+    }
   });
-
-
 
   // if (
   //   values.email &&
