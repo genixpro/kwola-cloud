@@ -26,3 +26,18 @@ class BillingURLResource(Resource):
 
         return {"url": str(session.url)}
 
+
+class Products(Resource):
+    def __init__(self):
+        pass
+
+    def get(self):
+        user, claims = authenticate(returnAllClaims=True)
+        if user is None:
+            abort(401)
+
+        stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
+        configData = loadConfiguration()
+        products = stripe.Price.list(product=configData['stripe']['productId']) #stripe.Product.retrieve("prod_HWLIaQaPlFi5PU")
+
+        return {"products": products}

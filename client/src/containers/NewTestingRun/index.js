@@ -128,6 +128,7 @@ class RecurringOptions extends Component {
     }
 
     componentDidMount() {
+       
         const dayOfWeek = new Date().getDay();
         if (dayOfWeek === 0)
         {
@@ -451,16 +452,33 @@ class RecurringOptions extends Component {
 
 class SizeOfRun extends Component {
     state = {
-        lengthTab: 0,
-        length: 100,
+        lengthTab: null,
+        length: 0,
         sessionsTab: 0,
-        sessions: 250,
+        sessions: null,
         hoursTab: 0,
-        hours: 12
+        hours: 12,
+        products:null,
+        productId:null,
+        priceId:null,
+        productAmount:0,
     }
 
     componentDidMount() {
         this.updateParent();
+        this.getsomeProduct();
+    }
+
+    getsomeProduct(){
+
+        axios.get(`/products`, []).then((response) => {
+            console.log('products',response.data.products);
+            this.setState({products:response.data.products})
+
+        }, (error) =>
+        {
+            console.log('error getting products');
+        });
     }
 
     updateParent()
@@ -468,29 +486,19 @@ class SizeOfRun extends Component {
         this.props.onChange({
                 length: this.state.length,
                 sessions: this.state.sessions,
-                hours: this.state.hours
+                hours: this.state.hours,
+                productId:this.state.productId,
+                priceId:this.state.priceId,
+                productAmount:this.state.productAmount
             }
         )
     }
 
-    lengthTabChanged(newTab)
+    lengthTabChanged(newTab,sessions,actions,productId,priceId,amount)
     {
-        if (newTab === 0)
-        {
-            this.setState({lengthTab: 0, length: 100}, () => this.updateParent());
-        }
-        else if (newTab === 1)
-        {
-            this.setState({lengthTab: 1, length: 250}, () => this.updateParent());
-        }
-        else if (newTab === 2)
-        {
-            this.setState({lengthTab: 2, length: 1000}, () => this.updateParent());
-        }
-        else if (newTab === 3)
-        {
-            this.setState({lengthTab: 3}, () => this.updateParent());
-        }
+
+        this.setState({lengthTab:newTab, length:actions , sessions: sessions, productId:productId, priceId:priceId, productAmount:amount}, () => this.updateParent());
+    
     }
 
     lengthChanged(newValue)
@@ -498,50 +506,50 @@ class SizeOfRun extends Component {
         this.setState({length: newValue}, () => this.updateParent());
     }
 
-    sessionsTabChanged(newTab)
-    {
-        if (newTab === 0)
-        {
-            this.setState({sessionsTab: 0, sessions: 250}, () => this.updateParent());
-        }
-        else if (newTab === 1)
-        {
-            this.setState({sessionsTab: 1, sessions: 1000}, () => this.updateParent());
-        }
-        else if (newTab === 2)
-        {
-            this.setState({sessionsTab: 2, sessions: 5000}, () => this.updateParent());
-        }
-        else if (newTab === 3)
-        {
-            this.setState({sessionsTab: 3}, () => this.updateParent());
-        }
-    }
+    // sessionsTabChanged(newTab)
+    // {
+    //     if (newTab === 0)
+    //     {
+    //         this.setState({sessionsTab: 0, sessions: 250}, () => this.updateParent());
+    //     }
+    //     else if (newTab === 1)
+    //     {
+    //         this.setState({sessionsTab: 1, sessions: 1000}, () => this.updateParent());
+    //     }
+    //     else if (newTab === 2)
+    //     {
+    //         this.setState({sessionsTab: 2, sessions: 5000}, () => this.updateParent());
+    //     }
+    //     else if (newTab === 3)
+    //     {
+    //         this.setState({sessionsTab: 3}, () => this.updateParent());
+    //     }
+    // }
 
-    sessionsChanged(newValue)
-    {
-        this.setState({sessions: newValue}, () => this.updateParent());
-    }
+    // sessionsChanged(newValue)
+    // {
+    //     this.setState({sessions: newValue}, () => this.updateParent());
+    // }
 
-    hoursTabChanged(newTab)
-    {
-        if (newTab === 0)
-        {
-            this.setState({hoursTab: 0, hours: 1}, () => this.updateParent());
-        }
-        else if (newTab === 1)
-        {
-            this.setState({hoursTab: 1, hours: 6}, () => this.updateParent());
-        }
-        else if (newTab === 2)
-        {
-            this.setState({hoursTab: 2, hours: 24}, () => this.updateParent());
-        }
-        else if (newTab === 3)
-        {
-            this.setState({hoursTab: 3}, () => this.updateParent());
-        }
-    }
+    // hoursTabChanged(newTab)
+    // {
+    //     if (newTab === 0)
+    //     {
+    //         this.setState({hoursTab: 0, hours: 1}, () => this.updateParent());
+    //     }
+    //     else if (newTab === 1)
+    //     {
+    //         this.setState({hoursTab: 1, hours: 6}, () => this.updateParent());
+    //     }
+    //     else if (newTab === 2)
+    //     {
+    //         this.setState({hoursTab: 2, hours: 24}, () => this.updateParent());
+    //     }
+    //     else if (newTab === 3)
+    //     {
+    //         this.setState({hoursTab: 3}, () => this.updateParent());
+    //     }
+    // }
 
     hoursChanged(newValue)
     {
@@ -553,6 +561,26 @@ class SizeOfRun extends Component {
             <Row>
                 <Column xs={12} md={12} lg={9}>
                     <p>Number of actions per browser</p>
+                    {
+                        this.state.products ?
+                            this.state.products.data.map((product,index)=>{
+                                console.log(index,product)
+                                let sessions = parseInt(product.metadata.sessions)
+                                let actions = parseInt(product.metadata.actions)
+                                let productId = product.product
+                                let priceId = product.id
+                                let amount = product.unit_amount
+                                return <Button size="medium" variant="extended" color={this.state.lengthTab === index ? "primary" : "default"} onClick={() => this.lengthTabChanged(index,sessions,actions,productId,priceId,amount)}>
+                                {product.nickname}
+                            </Button>
+                            })
+                            
+
+                        :<div></div>
+                    }
+                    <p>Select what size run you want to perform. how many actions you want each web browser to perform on your web application is broken down on the right. This impacts how deep in your application Kwola will go when looking for bugs.</p>
+
+                    {/*
                     <Button size="medium" variant="extended" color={this.state.lengthTab === 0 ? "primary" : "default"} onClick={() => this.lengthTabChanged(0)}>
                         Short (100)
                     </Button>
@@ -565,6 +593,7 @@ class SizeOfRun extends Component {
                     <Button size="medium" variant="extended" color={this.state.lengthTab === 3 ? "primary" : "default"} onClick={() => this.lengthTabChanged(3)}>
                         Custom
                     </Button>
+                
                     <br/>
                     {
                         this.state.lengthTab === 3 ?
@@ -580,13 +609,13 @@ class SizeOfRun extends Component {
                                 />
                             </div> : null
                     }
-                </Column>
-                <Column xs={12} md={12} lg={3}>
-                    <p>Select how many actions you want each web browser to perform on your web application. This impacts how deep in your application Kwola will go when looking for bugs.</p>
+                    */}
                 </Column>
             </Row>
             <Row>
-                <Column xs={12} md={12} lg={9}>
+            <Column xs={12} md={12} lg={9}>
+            {/*
+                
                     <p>Number of browsers</p>
                     <Button size="medium" variant="extended" color={this.state.sessionsTab === 0 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(0)}>
                         Small (250)
@@ -616,10 +645,13 @@ class SizeOfRun extends Component {
                                 />
                             </div> : null
                     }
+                
                 </Column>
                 <Column xs={12}  md={12} lg={3}>
                     <p>How many total web browsers do you want run on your application? This impacts how thorough Kwola will be in triggering all edge-case behaviours of your application.</p>
+                */}
                 </Column>
+
             </Row>
 
             {/*<Row>*/}
@@ -1555,7 +1587,11 @@ class NewTestingRun extends Component {
         {
             this.setState({application: response.data})
         });
+
+
     }
+
+    
 
     createDataForTestingRun()
     {
@@ -1646,7 +1682,9 @@ class NewTestingRun extends Component {
 
     calculatePrice()
     {
-        return Math.max(1.00, Number((this.state.length * this.state.sessions * 0.001).toFixed(2)));
+        //return Math.max(1.00, Number((this.state.length * this.state.sessions * 0.001).toFixed(2)));
+        //let am = this.state.productAmount ?? 0
+        return this.state.productAmount ? 0.01 * this.state.productAmount : 0.00;
     }
 
     completeOrder(elements)
@@ -1674,6 +1712,7 @@ class NewTestingRun extends Component {
                 {
                     const testingRunData = this.createDataForTestingRun();
                     testingRunData['payment_method'] = result.paymentMethod.id;
+                    testingRunData['stripe'] = {productId:this.state.productId, priceId:this.state.priceId}
                     axios.post(`/testing_runs`, testingRunData).then((response) => {
                         this.trackOrderSuccess(response.data.testingRunId, price);
                         this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
@@ -1870,21 +1909,24 @@ class NewTestingRun extends Component {
                                                                     <span
                                                                         className="totalPrice">= {addCommas(this.state.length * this.state.sessions)}</span>
                                                                 </div>
-                                                                <div className="singleOrderInfo">
+                                                            {/*<div className="singleOrderInfo">
                                                                     <p>
                                                                         <span>Cost per 1,000 actions</span>
                                                                     </p>
                                                                     <span
                                                                         className="totalPrice">* ${1.00.toFixed(2)}</span>
                                                                 </div>
+                                                            */}
                                                             </div>
                                                             <div className="orderTableFooter">
                                                                 <span>Total</span>
-                                                                <span>= ${this.calculatePrice().toFixed(2)} USD / run</span>
+                                                                <span>= ${this.calculatePrice().toFixed(2)} CAN / run</span>
                                                             </div>
                                                             {
                                                                 this.state.mode === "details" ?
-                                                                    <Button variant="extended" color="primary"
+                                                                    <Button variant="extended" 
+                                                                            color="primary"
+                                                                            disabled={this.state.productId ? false : true}
                                                                             className="orderBtn" onClick={() => this.launchTestingRunButtonClicked()}>
                                                                         Launch Testing Run
                                                                     </Button> : null
