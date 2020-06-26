@@ -29,8 +29,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         return {"success": False}
 
     # Verify this subscription with stripe
-    if not verifyStripeSubscription(run):
-        return {"success": False}
+    #if not verifyStripeSubscription(run):
+    #    return {"success": False}
 
     if not configData['features']['localRuns']:
         configDir = mountTestingRunStorageDrive(run.applicationId)
@@ -59,8 +59,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
 
-        if result['success'] and 'successfulExecutionSessions' in result:
-            attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])
+        #if result['success'] and 'successfulExecutionSessions' in result:
+            #attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])
 
         logging.info(f"Finished testing step for testing run {testingRunId}")
 

@@ -22,7 +22,7 @@ from ..config.config import loadConfiguration
 from ..components.KubernetesJob import KubernetesJob
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 
-
+import logging
 class TestingRunsGroup(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
@@ -54,14 +54,20 @@ class TestingRunsGroup(Resource):
         return {"testingRuns": json.loads(testingRuns)}
 
     def post(self):
+        #logging.info(f"Attempt Stripe verification")
         user, claims = authenticate(returnAllClaims=True)
         if user is None:
             return abort(401)
 
         data = flask.request.get_json()
 
+        #return data;
+        #change this for production. using dev user for billing
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
+        #stripeCustomerId = 'cus_HWGxAP6pB9znK4'
+
         allowFreeRuns = claims['https://kwola.io/freeRuns']
+        
 
         if not allowFreeRuns:
             customer = stripe.Customer.retrieve(stripeCustomerId)
@@ -78,17 +84,30 @@ class TestingRunsGroup(Resource):
                   customer=stripeCustomerId,
                 )
 
-            subscription = stripe.Subscription.create(
-                customer=customer.id,
-                items=[{'plan': self.configData['stripe']['planId']}],
-                expand=['latest_invoice.payment_intent'],
-            )
+            #update this to the new product with price attached
+            #subscription = stripe.Subscription.create(
+            #    customer=customer.id,
+            #    items=[{'price': data['stripe']['priceId']}],
+            #    expand=['latest_invoice.payment_intent'],
+            #)
 
-            if subscription.status != "active":
+            subscription = stripe.InvoiceItem.create(
+              customer=customer.id,
+              price=data['stripe']['priceId']
+            )
+            invoiceId = subscription.id
+            data['payment_method']
+            invoice = stripe.Invoice.create(
+                customer=customer.id,
+            )
+            payment = stripe.Invoice.pay(sid=invoice.id,payment_method=data['payment_method'])
+            #return payment;
+            
+            if payment.paid != True:
                 return abort(400)
 
             del data['payment_method']
-            data['stripeSubscriptionId'] = subscription.id
+            data['stripeSubscriptionId'] = None#subscription.id
         else:
             data['stripeSubscriptionId'] = None
 

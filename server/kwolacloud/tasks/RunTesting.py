@@ -175,9 +175,9 @@ def runTesting(testingRunId):
                         logging.error("Testing run appears to have failed. Trying it again...")
                         # Double check that the stripe subscription is still good. If the testing step failed because our
                         # stripe subscription is bad, we should just exit immediately.
-                        if not verifyStripeSubscription(run):
-                            shouldExit = True
-                            break
+                        #if not verifyStripeSubscription(run):
+                        #    shouldExit = True
+                        #    break
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None:
                 logging.info(f"Starting a training step for run {testingRunId}")
