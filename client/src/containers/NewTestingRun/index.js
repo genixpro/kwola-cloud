@@ -477,7 +477,7 @@ class SizeOfRun extends Component {
 
         }, (error) =>
         {
-            console.log('error getting products',error);
+            console.log('error getting products:',error);
         });
     }
 
