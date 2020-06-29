@@ -90,6 +90,7 @@ RUN pip3 install --upgrade pip && \
     pip3 install gunicorn && \
     pip3 install jwcrypto && \
     pip3 install matplotlib && \
+    pip3 install protobuf==3.11.3 && \
     pip3 install mitmproxy && \
     pip3 install mongoengine && \
     pip3 install numpy && \
