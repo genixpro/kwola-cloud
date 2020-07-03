@@ -116,7 +116,7 @@ dialogComp = (application) => {
         return (
             <TableRow key={application._id} hover={true}>
               <TableCell onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>{application.name}</TableCell>
-              <TableCell onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>{application.url}</TableCell>
+              <TableCell style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word"}} onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>{application.url}</TableCell>
               <TableCell>
                 <Button variant="extended" size="small" color="secondary" onClick={() => this.dialogComp(application)}>
                   <Icon>delete</Icon>
