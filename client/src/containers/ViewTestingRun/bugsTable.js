@@ -7,21 +7,24 @@ import {connect, Provider} from 'react-redux';
 class BugsTable extends Component{
 	state = {
         newPage:0,
-        setPage:0
+        setPage:0,
+        rowsPerPage:10
     };
 	handleChangePage = (event, newPage) => {
-            console.log(event,newPage)
             this.setState({newPage:newPage})
             //setPage = newPage
             //setPage(newPage);
-        };
+    };
+
+    handleChangeRowsPerPage  = (event, rowsPerPage) => {
+        this.setState({rowsPerPage:rowsPerPage.props.value})
+    }
 
 	render(){
-		 const rowsPerPage = 10;
         const setRowsPerPage = 10;
         const page = this.state.newPage
         let setPage = this.state.setPage
-
+        const rowsPerPage = this.state.rowsPerPage
 	 	return(
 	 		<div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word"}}>
                 <Table>
@@ -50,7 +53,7 @@ class BugsTable extends Component{
                   rowsPerPage={rowsPerPage}
                   page={page}
                   onChangePage={this.handleChangePage}
-                  //onChangeRowsPerPage={handleChangeRowsPerPage}
+                  onChangeRowsPerPage={this.handleChangeRowsPerPage}
                 />
                                     </div>
 	    )

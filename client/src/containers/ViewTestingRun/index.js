@@ -37,7 +37,8 @@ class ViewTestingRun extends Component {
         csvHeaders:[],
         csvData:[],
         newPage:0,
-        setPage:0
+        setPage:0,
+        bugs:[]
     };
 
     componentDidMount() {

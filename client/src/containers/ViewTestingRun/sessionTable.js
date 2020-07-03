@@ -6,16 +6,19 @@ import moment from 'moment';
 class SessionTable extends Component{
 	state = {
         newPage:0,
-        setPage:0
+        setPage:0,
+        rowsPerPage:10
     };
 
 	handleChangePage = (event, newPage) => {
-        console.log(event,newPage)
         this.setState({newPage:newPage})
     };
 
+    handleChangeRowsPerPage  = (event, rowsPerPage) => {
+        this.setState({rowsPerPage:rowsPerPage.props.value})
+    }
 	render(){
-		 const rowsPerPage = 10;
+		const rowsPerPage = this.state.rowsPerPage;
         const setRowsPerPage = 10;
         const page = this.state.newPage
         let setPage = this.state.setPage
@@ -47,7 +50,7 @@ class SessionTable extends Component{
 	              rowsPerPage={rowsPerPage}
 	              page={page}
 	              onChangePage={this.handleChangePage}
-	              //onChangeRowsPerPage={handleChangeRowsPerPage}
+	              onChangeRowsPerPage={this.handleChangeRowsPerPage}
 	            />
 	        </div>
 	    )
