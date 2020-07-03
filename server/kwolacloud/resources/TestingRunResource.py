@@ -116,7 +116,7 @@ class TestingRunsGroup(Resource):
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
         data['testingSessionsRemaining'] = data['configuration']['totalTestingSessions']
-
+        del data['stripe']
         newTestingRun = TestingRun(**data)
 
         newTestingRun.save()
