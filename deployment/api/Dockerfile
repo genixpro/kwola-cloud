@@ -84,13 +84,13 @@ RUN useradd -s /bin/bash --home-dir /home/kwola kwola && \
 RUN pip3 install --upgrade pip && \
     pip3 install --upgrade setuptools && \
     pip3 install --upgrade cryptography && \
+    pip3 install protobuf==3.11.3 && \
     pip3 install celery && \
     pip3 install flask && \
     pip3 install google-cloud-storage && \
     pip3 install gunicorn && \
     pip3 install jwcrypto && \
     pip3 install matplotlib && \
-    pip3 install protobuf==3.11.3 && \
     pip3 install mitmproxy && \
     pip3 install mongoengine && \
     pip3 install numpy && \
