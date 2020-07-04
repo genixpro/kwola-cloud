@@ -10,7 +10,7 @@
   "stripe": {
     "apiKey": "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71",
     "planId": "plan_HIXgoqMagqDLUx",
-    "productId": "prod_HXAkOrNEz3flk2"
+    "productId": "prod_HaMORiE1sMu6bP"
   },
   "auth0": {
     "apiUrl": "https://app.kwola.io/",
