@@ -39,6 +39,7 @@
     "leaflet-routing-machine": "3.2.12",
     "leaflet.markercluster": "1.4.1",
     "loadash": "^1.0.0",
+    "material-table": "^1.64.0",
     "material-ui-pickers-jalali-utils": "0.4.3",
     "mixpanel-browser": "^2.36.0",
     "moment": "^2.24.0",

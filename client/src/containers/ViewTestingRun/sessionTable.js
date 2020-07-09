@@ -3,6 +3,8 @@ import {connect, Provider} from 'react-redux';
 import {Table} from "../ListApplications/materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow, TablePagination} from "../../components/uielements/table";
 import moment from 'moment';
+import MaterialTable from 'material-table'
+
 class SessionTable extends Component{
 	state = {
         newPage:0,
@@ -10,22 +12,40 @@ class SessionTable extends Component{
         rowsPerPage:10
     };
 
-	handleChangePage = (event, newPage) => {
-        this.setState({newPage:newPage})
-    };
+	// handleChangePage = (event, newPage) => {
+ //        this.setState({newPage:newPage})
+ //    };
 
-    handleChangeRowsPerPage  = (event, rowsPerPage) => {
-        this.setState({rowsPerPage:rowsPerPage.props.value})
+ //    handleChangeRowsPerPage  = (event, rowsPerPage) => {
+ //        this.setState({rowsPerPage:rowsPerPage.props.value})
+ //    }
+
+    handleRowClick = (event, rowData)=>{
+    	console.log(event,rowData)
+    	this.props.history.push(`/app/dashboard/execution_sessions/${rowData._id}`)
     }
+
+    processData = (data) => {
+    	console.log('table data prcoess',data)
+    	let rdata = []
+    	if(data){
+    		data.map(session=>{
+	    		let sTime = session.startTime ? moment(new Date(session.startTime.$date)).format('HH:mm MMM Do') : null
+	    		rdata.push({_id:session._id,startTime:sTime, totalReward:session.totalReward})
+	    	})
+    	}
+    	return rdata;
+    }
+
 	render(){
 		const rowsPerPage = this.state.rowsPerPage;
         const setRowsPerPage = 10;
         const page = this.state.newPage
         let setPage = this.state.setPage
-
+        let tableData = this.processData(this.props.data)
 	 	return(
 	 		<div>
-		 		<Table>
+		 		{/*<Table>
 			         <TableHead>
 			             <TableRow>
 			                 <TableCell>Browser Start Time</TableCell>
@@ -51,7 +71,17 @@ class SessionTable extends Component{
 	              page={page}
 	              onChangePage={this.handleChangePage}
 	              onChangeRowsPerPage={this.handleChangeRowsPerPage}
-	            />
+	            />*/}
+		     	<MaterialTable
+		          columns={[
+		            { title: 'Browser Start', field: 'startTime' },
+		            { title: 'Total Reward', field: 'totalReward' },
+		            { title: 'id', field: '_id', hidden:true },
+		          ]}
+		          data={tableData}
+		          title=""
+		          onRowClick={this.handleRowClick}
+		        />
 	        </div>
 	    )
 	}
