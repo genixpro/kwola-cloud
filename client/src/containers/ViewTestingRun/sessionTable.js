@@ -81,6 +81,14 @@ class SessionTable extends Component{
 		          data={tableData}
 		          title=""
 		          onRowClick={this.handleRowClick}
+		          options={{
+                    pageSize:10,
+                    pageSizeOptions:[10,20,50],
+                    rowStyle: {
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word",
+                      fontSize:"14px"
+                    }
+                  }}
 		        />
 	        </div>
 	    )
