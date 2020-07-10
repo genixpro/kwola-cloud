@@ -472,7 +472,7 @@ class SizeOfRun extends Component {
     getsomeProduct(){
 
         axios.get(`/products`, []).then((response) => {
-            console.log('products',response.data.products);
+            //console.log('products',response.data.products);
             this.setState({products:response.data.products})
 
         }, (error) =>
@@ -564,7 +564,7 @@ class SizeOfRun extends Component {
                     {
                         this.state.products ?
                             this.state.products.data.map((product,index)=>{
-                                console.log(index,product)
+                                //console.log(index,product)
                                 let sessions = parseInt(product.metadata.sessions)
                                 let actions = parseInt(product.metadata.actions)
                                 let productId = product.product
@@ -1670,9 +1670,8 @@ class NewTestingRun extends Component {
                 this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
             }, (error) =>
             {
-
                 this.trackOrderFailure(price);
-            },this.setState({snackbar:true,snackbarText:'Failed to launch testing run.'}));
+            });
         }
         else
         {
@@ -1717,7 +1716,7 @@ class NewTestingRun extends Component {
                         this.trackOrderSuccess(response.data.testingRunId, price);
                         this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
                     }, (error) =>
-                    {
+                    {   
                         this.trackOrderFailure(price);
                     });
                 }
