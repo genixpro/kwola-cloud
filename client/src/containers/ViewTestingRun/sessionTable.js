@@ -13,12 +13,10 @@ class SessionTable extends Component{
     };
 
     handleRowClick = (event, rowData)=>{
-    	console.log(event,rowData)
     	this.props.history.push(`/app/dashboard/execution_sessions/${rowData._id}`)
     }
 
     processData = (data) => {
-    	console.log('table data prcoess',data)
     	let rdata = []
     	if(data){
     		data.map(session=>{
