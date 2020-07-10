@@ -21,12 +21,10 @@ class BugsTable extends Component{
  //    }
 
     handleRowClick = (event, rowData)=>{
-        console.log(event,rowData)
         this.props.history.push(`/app/dashboard/bugs/${rowData._id}`)
     }
 
     processData = (data) => {
-        console.log('table data prcoess',data)
         let rdata = []
         if(data){
             data.map(bug=>{
@@ -78,15 +76,28 @@ class BugsTable extends Component{
                 <MaterialTable
                   columns={[ 
                     { title: 'id', field: '_id', hidden:true },
-                    { title: 'CLS', field: '_cls' },
-                    { title: 'Message', field: 'message' },
+                    { title: 'CLS', field: '_cls',
+                        width:'30%',
+                        cellStyle: {
+                          //width:'20%'
+                        },
+                     },
+                    { title: 'Message', field: 'message',
+                        width:'70%',
+                        cellStyle: {
+                          maxWidth:100,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        },
+                     },
                   ]}
                   data={tableData}
                   title=""
                   onRowClick={this.handleRowClick}
                   options={{
                     pageSize:10,
-                    pageSizeOptions:[10,20,50],
+                    pageSizeOptions:[5,10,20,50],
                     rowStyle: {
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word",
                       fontSize:"14px"

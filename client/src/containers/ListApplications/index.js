@@ -20,6 +20,8 @@ import Dialog,{DialogActions, DialogContent, DialogTitle, DialogContentText   } 
 import Icon from "../../components/uielements/icon";
 import Snackbar from "../../components/uielements/snackbar";
 import Tooltip from "../../components/uielements/tooltip";
+import MaterialTable from 'material-table'
+import Auth from "../../helpers/auth0/index"
 
 const styles = theme => ({
   root: {
@@ -65,7 +67,33 @@ class ListApplications extends Component
     })
   }
 
-  
+  handleRowClick = (event, rowData)=>{
+    this.props.history.push(`/app/dashboard/applications/${rowData._id}`)
+  }
+
+ ListApps = (applications) => { 
+      let appsTableRows = []
+      applications.map(application => {
+        //return (
+           {/*} <TableRow key={application._id} hover={true}>
+              <TableCell onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>{application.name}</TableCell>
+              <TableCell style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word"}} onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>{application.url}</TableCell>
+              <TableCell>
+                <Button variant="extended" size="small" color="secondary" onClick={() => this.dialogComp(application)}>
+                  <Icon>delete</Icon>
+                </Button>
+              </TableCell>
+            </TableRow>
+          */}
+       // );
+       let button = <Button variant="extended" size="small" color="secondary" onClick={() => this.dialogComp(application)}>
+                  <Icon>delete</Icon>
+                </Button>
+      
+       appsTableRows.push({_id:application._id,name:application.name,url:application.url,delete:button})
+      })
+      return appsTableRows;
+    } 
 
   
 dialogComp = (application) => {
@@ -111,22 +139,9 @@ dialogComp = (application) => {
         message={this.state.snackbarText ?? ""}
     />
 
-    let apps = <TableBody>
-      {(this.state.applications || []).map(application => {
-        return (
-            <TableRow key={application._id} hover={true}>
-              <TableCell onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>{application.name}</TableCell>
-              <TableCell style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word"}} onClick={() => this.props.history.push(`/app/dashboard/applications/${application._id}`)}>{application.url}</TableCell>
-              <TableCell>
-                <Button variant="extended" size="small" color="secondary" onClick={() => this.dialogComp(application)}>
-                  <Icon>delete</Icon>
-                </Button>
-              </TableCell>
-            </TableRow>
-        );
-      })}
-    </TableBody>
-
+    let apps = this.ListApps(this.state.applications)
+    const userData = Auth.getUserInfo();
+    const showFilter = userData["https://kwola.io/admin"]
     let tooltip = <Tooltip placement="right-end" title="Your Kwola Applications. Click an application to view more.">
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
                 </Tooltip> 
@@ -135,7 +150,7 @@ dialogComp = (application) => {
         <Row>
           <FullColumn>
             <Papersheet title="Applications" tooltip={tooltip} >
-              <Table>
+              {/*<Table>
                 <TableHead>
                   <TableRow>
                     <TableCell>Name</TableCell>
@@ -144,7 +159,54 @@ dialogComp = (application) => {
                   </TableRow>
                 </TableHead>
                 {apps}
-              </Table>
+              </Table>*/}
+
+              <MaterialTable
+                columns={[
+                  { title: 'id', field: '_id', hidden:true },
+                  { title: 'Application Name', field: 'name' ,
+                    width:'30%',
+                    cellStyle: {
+                      width:'20%'
+                    },
+                  },
+                  { title: 'Url', field: 'url' ,
+                    width:'60%',
+                    cellStyle: {
+                      maxWidth:100,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    },
+                  },
+                  { title: 'Options', field: 'delete',
+                    disableClick:true,
+                    sorting:false,
+                    width:'10%',
+                    cellStyle: {
+                      
+                    },
+                  },
+                  
+                ]}
+                data={apps}
+                title=""
+                onRowClick={this.handleRowClick}
+                options={{
+                      pageSize:10,
+                      pageSizeOptions:[10,20,50],
+                      rowStyle: {
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word",
+                        fontSize:"14px"
+                      },
+                      search:showFilter
+                      // fixedColumns: {
+                      //   left: 0, 
+                      //   right: 1
+                      // },
+                    }}
+              />
+
             </Papersheet>
           </FullColumn>
         </Row>
