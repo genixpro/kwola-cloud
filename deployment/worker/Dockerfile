@@ -101,6 +101,8 @@ RUN apt-get update && apt-get install \
     unzip \
     vim \
     wget \
+    build-essential \
+
     -y \
     && \
     rm -rf /var/lib/apt/lists/*
@@ -140,6 +142,7 @@ RUN pip3 install --upgrade pip && \
     pip3 install celery && \
     pip3 install flask && \
     pip3 install google-cloud-storage && \
+    pip3 install google-cloud-profiler && \
     pip3 install gunicorn && \
     pip3 install jwcrypto && \
     pip3 install matplotlib && \
