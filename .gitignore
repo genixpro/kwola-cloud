@@ -9,3 +9,4 @@ client/node_modules
 ./venv
 venv/*
 client/build
+.vscode

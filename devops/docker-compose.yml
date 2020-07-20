@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  database:
+    image: "mongo"
+    container_name: "kwola_db"
+    environment:
+      - MONGO_INITDB_DATABASE=kwolacloud
+    ports:
+      - "27017:27017"
