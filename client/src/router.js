@@ -82,6 +82,11 @@ const PublicRoutes = ({ history, isLoggedIn }) => (
         path="/app/reset-password"
         component={lazy(() => import('./containers/Page/resetpassword'))}
       />
+      <Route
+        exact
+        path="/app/confirm-email"
+        component={lazy(() => import('./containers/Page/confirmemail'))}
+      />
     </>
   </BrowserRouter>
 );

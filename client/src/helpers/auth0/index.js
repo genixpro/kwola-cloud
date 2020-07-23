@@ -19,7 +19,7 @@ class Auth0Helper {
     this.updateHubspotIdentity();
     this.updateGoogleAnalyticsIdentity();
     this.updateAcquisitionUrl();
-
+    this.emailVerified();
     this.webAuth = new auth0.WebAuth(Auth0Config);
   }
   login(handleLogin)
@@ -28,6 +28,9 @@ class Auth0Helper {
     {
       this.webAuth.parseHash({ hash: window.location.hash }, (err, authResult) => {
         if (err) {
+          if(err.error == 'unauthorized'){
+            history.replace('/app/confirm-email');
+          }
           return console.log(err);
         }
 
@@ -127,6 +130,14 @@ class Auth0Helper {
       new Date().getTime() < JSON.parse(localStorage.getItem('expires_at'))
     );
   }
+
+  emailVerified(user, context, callback) {
+    // if (!user.email_verified) {
+    //   return callback(new UnauthorizedError('Please verify your email before logging in.'));
+    // } else {
+      return null//callback(null, user, context);
+    // }
+  } 
 
   updateMixpanelIdentity()
   {
