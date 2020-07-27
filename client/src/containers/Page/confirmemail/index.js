@@ -27,7 +27,7 @@ class ConfirmEmail extends Component {
               is correct.  check your email for our verification link.
             </p>
             Go to{' '}
-            <Link to="#" onClick={() => Auth0.logout()} >
+            <Link to="/app/dashboard" >
               <Button color="primary">Dashboard</Button>
             </Link>
           </div>
