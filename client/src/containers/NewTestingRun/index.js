@@ -2,7 +2,7 @@ import AddIcon from '@material-ui/icons/Add';
 import AlarmIcon from '@material-ui/icons/Alarm';
 import AppBar from '../../components/uielements/appbar';
 import Checkbox from '../../components/uielements/checkbox';
-import CheckoutPageWrapper from "./checkout.style.js";
+import CheckoutPageWrapper, {RunTypes} from "./checkout.style.js";
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import CodeIcon from '@material-ui/icons/Code';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -561,6 +561,7 @@ class SizeOfRun extends Component {
             <Row>
                 <Column xs={12} md={12} lg={9}>
                     <p>Number of actions per browser</p>
+                    <RunTypes>
                     {
                         this.state.products ?
                             this.state.products.data.map((product,index)=>{
@@ -570,7 +571,11 @@ class SizeOfRun extends Component {
                                 let productId = product.product
                                 let priceId = product.id
                                 let amount = product.unit_amount
-                                return <Button size="medium" variant="extended" color={this.state.lengthTab === index ? "primary" : "default"} onClick={() => this.lengthTabChanged(index,sessions,actions,productId,priceId,amount)}>
+                                return <Button size="medium" 
+                                            variant="extended" 
+                                            className={index == 0 ? (this.state.lengthTab === index ? "" : "orange") :"" }
+                                            color={this.state.lengthTab === index ? "primary" : "default"} 
+                                            onClick={() => this.lengthTabChanged(index,sessions,actions,productId,priceId,amount)}>
                                 {product.nickname}
                             </Button>
                             })
@@ -578,7 +583,10 @@ class SizeOfRun extends Component {
 
                         :<div></div>
                     }
-                    <p>Select what size run you want to perform. how many actions you want each web browser to perform on your web application is broken down on the right. This impacts how deep in your application Kwola will go when looking for bugs.</p>
+                    <p>
+                        Select the size of the run to be performed.  The size is dependent upon the number of browsers and number of actions per browser.  
+                        <br/>*A test run of Kwola is recommended to ensure proper configuration.
+                    </p>
 
                     {/*
                     <Button size="medium" variant="extended" color={this.state.lengthTab === 0 ? "primary" : "default"} onClick={() => this.lengthTabChanged(0)}>
@@ -610,6 +618,7 @@ class SizeOfRun extends Component {
                             </div> : null
                     }
                     */}
+                    </RunTypes>
                 </Column>
             </Row>
             <Row>
@@ -1889,14 +1898,14 @@ class NewTestingRun extends Component {
                                                             <div className="orderTableBody">
                                                                 <div className="singleOrderInfo">
                                                                     <p>
-                                                                        <span>Actions per session</span>
+                                                                        <span>Actions (ie. clicks) per browser session</span>
                                                                     </p>
                                                                     <span
                                                                         className="totalPrice">{addCommas(this.state.length)}</span>
                                                                 </div>
                                                                 <div className="singleOrderInfo">
                                                                     <p>
-                                                                        <span>Testing sessions</span>
+                                                                        <span>Browser Sessions</span>
                                                                     </p>
                                                                     <span
                                                                         className="totalPrice">* {addCommas(this.state.sessions)}</span>
@@ -1933,7 +1942,7 @@ class NewTestingRun extends Component {
 
                                                             {
                                                                 this.state.mode === "payment" ?
-                                                                    <Button variant="extended" color="primary"
+                                                                    <Button variant="extended" color="orange"
                                                                             className="orderBtn" onClick={() => this.completeOrder(elements)}>
                                                                         Complete Order
                                                                     </Button> : null

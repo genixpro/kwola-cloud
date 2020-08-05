@@ -2,6 +2,16 @@ import styled from 'styled-components';
 import { palette } from 'styled-theme';
 import WithDirection from '../../settings/withDirection';
 
+import { createMuiTheme } from '@material-ui/core/styles';
+
+const RunTypes = styled.div`
+  .orange{
+    background:#fb8c00;
+    color:#fff;
+  }
+`;
+
+export {RunTypes};
 const CheckoutPageWrapper = styled.div`
   h3.sectionTitle {
     font-size: 16px;
