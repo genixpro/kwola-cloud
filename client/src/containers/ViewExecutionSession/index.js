@@ -72,7 +72,7 @@ class ViewExecutionSession extends Component {
                         <Row>
                             <FullColumn>
                                 <Papersheet title={"Execution Traces"}>
-                                    <Table>
+                                    <Table style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word"}}>
                                         <TableHead>
                                             <TableRow>
                                                 <TableCell>Frame</TableCell>
