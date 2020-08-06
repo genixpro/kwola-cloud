@@ -33,6 +33,7 @@ import {
 import {PaymentRequestButtonElement, CardElement, useStripe, useElements, ElementsConsumer} from "@stripe/react-stripe-js";
 import stripePromise from "../../stripe";
 import mixpanel from 'mixpanel-browser';
+import SnackAlert from '@material-ui/lab/Alert';
 
 function addCommas(value)
 {
@@ -1576,7 +1577,7 @@ class NewTestingRun extends Component {
         name: "",
         address: "",
         snackbar:false,
-
+        snackbarSeverity:"info"
     };
 
     constructor()
@@ -1640,7 +1641,7 @@ class NewTestingRun extends Component {
                 id: "Completed Order",
                 value: price
             }]);
-            this.setState({snackbar:true,snackbarText:'Order was completed successfully.'})
+            
             window.ga('send', 'event', "order-testing-run", "success", "", price);
         }
 
@@ -1670,15 +1671,19 @@ class NewTestingRun extends Component {
             window.ga('send', 'event', "launch-testing-run", "click");
         }
 
+
         if (Auth0.isUserAllowedFreeRuns())
         {
             const testingRunData = this.createDataForTestingRun();
             const price = 0;
+                
             axios.post(`/testing_runs`, testingRunData).then((response) => {
+                this.setState({snackbarSeverity:"success",snackbar:true,snackbarText:'Free Run completed successfully. Testing run will begin soon.'})
                 this.trackOrderSuccess(response.data.testingRunId, price);
                 this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
             }, (error) =>
-            {
+            {   
+                this.setState({snackbarSeverity:"warning",snackbar:true,snackbarText:'Order failed. Testing run could not start.'})
                 this.trackOrderFailure(price);
             });
         }
@@ -1714,6 +1719,7 @@ class NewTestingRun extends Component {
                 if (result.error)
                 {
                     // Show error to your customer (e.g., insufficient funds)
+                    this.setState({snackbarSeverity:"warning",snackbar:true,snackbarText:'Processing Error. Please check your payment information and try again.'})
                     this.trackOrderFailure(price);
                 }
                 else
@@ -1722,10 +1728,12 @@ class NewTestingRun extends Component {
                     testingRunData['payment_method'] = result.paymentMethod.id;
                     testingRunData['stripe'] = {productId:this.state.productId, priceId:this.state.priceId}
                     axios.post(`/testing_runs`, testingRunData).then((response) => {
+                        this.setState({snackbarSeverity:"success",snackbar:true,snackbarText:'Order completed successfully. Your Testing run will begin soon.'})
                         this.trackOrderSuccess(response.data.testingRunId, price);
                         this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
                     }, (error) =>
                     {   
+                        this.setState({snackbarSeverity:"warning",snackbar:true,snackbarText:'Order failed. Testing run could not start. Please ensure your payment method is valid or contact support.'})
                         this.trackOrderFailure(price);
                     });
                 }
@@ -1962,14 +1970,18 @@ class NewTestingRun extends Component {
                     <Snackbar 
                         anchorOrigin={{
                           vertical: 'bottom',
-                          horizontal: 'right',
+                          horizontal: 'center',
                         }}
                         onClick={() => this.closeSnackbar()}
                         open={this.state.snackbar} 
                         autoHideDuration={6000}
                         timeout={6000}
-                        message={this.state.snackbarText ?? ""}
-                    />
+                        //message={this.state.snackbarText ?? ""}
+                    >
+                        <SnackAlert severity={this.state.snackbarSeverity}>
+                        {this.state.snackbarText ?? ""}
+                        </SnackAlert>
+                    </Snackbar>
                 </LayoutWrapper>
 
         );
