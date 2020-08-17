@@ -121,7 +121,7 @@ class ViewTestingRun extends Component {
 
                                     {
                                         this.state.testingRun.startTime ?
-                                            <span>Start Time: {moment(this.state.testingRun.startTime).format('MMM Do, YYYY')}<br/></span>
+                                            <span>Start Time: {moment(this.state.testingRun.startTime.$date).format('MMM Do, YYYY')}<br/></span>
                                             : <span>Start Time: N/A<br/></span>
                                     }
 
