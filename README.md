@@ -6,6 +6,7 @@ Kwola Cloud is an application to work with kwola's core AI testing software. Our
 - Python 3
 - MongoDB
 
+
 ## Development Setup
 
 There are 3 main faucets to the Kwola Cloud development infrastructure: `client`, `database`, and `server`. To interact with and use the application locally, all 3 must be running.
