@@ -61,8 +61,6 @@ class TestingRunsGroup(Resource):
 
         data = flask.request.get_json()
 
-        data.stuff()
-
         #return data;
         #change this for production. using dev user for billing
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
