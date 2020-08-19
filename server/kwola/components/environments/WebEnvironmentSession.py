@@ -548,7 +548,7 @@ class WebEnvironmentSession:
                     }
                     
                     if (data.canType || data.canClick || data.canRightClick)
-                        if (data.width > 0 && data.height > 0)
+                        if (data.width >= 1 && data.height >= 1)
                             actionMaps.push(data);
                 }
                 
