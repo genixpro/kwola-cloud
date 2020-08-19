@@ -304,7 +304,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
             executionSessions = [future.result() for future in executionSessionFutures]
 
         getLogger().info(f"[{os.getpid()}] Found {len(executionSessionIds)} total execution sessions that can be learned.")
-        
+
         getLogger().info(f"[{os.getpid()}] Starting loading of execution trace weight datas.")
 
         executionTraceWeightDatas = []
@@ -533,6 +533,8 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
 
     success = True
 
+    exception = None
+
     if gpu is not None:
         for subprocessIndex in range(10):
             try:
@@ -554,9 +556,10 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
         getLogger().info(f"[{os.getpid()}] Starting Training Step")
         testingSteps = [step for step in loadAllTestingSteps(config, applicationId) if step.status == "completed"]
         if len(testingSteps) == 0:
-            getLogger().warning(f"[{os.getpid()}] Error, no test sequences to train on for training step.")
+            errorMessage = f"Error, no test sequences to train on for training step."
+            getLogger().warning(f"[{os.getpid()}] {errorMessage}")
             getLogger().info(f"[{os.getpid()}] ==== Training Step Completed ====")
-            return {"success": False}
+            return {"success": False, "exception": errorMessage}
 
         trainingStep = TrainingStep(id=str(trainingSequenceId) + "_training_step_" + str(trainingStepIndex))
         trainingStep.startTime = datetime.now()
@@ -601,8 +604,9 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
             subProcesses.append(subProcess)
 
     except Exception as e:
-        getLogger().error(f"[{os.getpid()}] Error occurred during initiation of training! {traceback.format_exc()}")
-        return {"success": False}
+        errorMessage = f"Error occurred during initiation of training! {traceback.format_exc()}"
+        getLogger().warning(f"[{os.getpid()}] {errorMessage}")
+        return {"success": False, "exception": errorMessage}
 
     try:
         totalBatchesNeeded = config['iterations_per_training_step'] * config['batches_per_iteration'] + int(config['training_surplus_batches'])
@@ -727,6 +731,7 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
     except Exception:
         getLogger().error(f"[{os.getpid()}] Error occurred while learning sequence!\n{traceback.format_exc()}")
         success = False
+        exception = traceback.format_exc()
     finally:
         files = os.listdir(batchDirectory)
         for file in files:
@@ -737,7 +742,10 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
 
     # This print statement will trigger the parent manager process to kill this process.
     getLogger().info(f"[{os.getpid()}] ==== Training Step Completed ====")
-    return {"trainingStepId": str(trainingStep.id), "success": success}
+    returnData = {"trainingStepId": str(trainingStep.id), "success": success}
+    if exception is not None:
+        returnData['exception'] = exception
+    return returnData
 
 
 if __name__ == "__main__":
