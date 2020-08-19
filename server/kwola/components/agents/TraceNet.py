@@ -310,8 +310,8 @@ class TraceNet(torch.nn.Module):
             shrunkTrainingWidth = int(self.config['training_crop_width'] / 8)
             shrunkTrainingHeight = int(self.config['training_crop_width'] / 8)
 
-            centerCropLeft = torch.floor_divide((torch.div(width, 8) - shrunkTrainingWidth), 2)
-            centerCropTop = torch.floor_divide((torch.div(height, 8) - shrunkTrainingHeight), 2)
+            centerCropLeft = torch.floor_divide((torch.floor_divide(width, 8) - shrunkTrainingWidth), 2)
+            centerCropTop = torch.floor_divide((torch.floor_divide(height, 8) - shrunkTrainingHeight), 2)
 
             centerCropRight = torch.add(centerCropLeft, shrunkTrainingWidth)
             centerCropBottom = torch.add(centerCropTop, shrunkTrainingHeight)

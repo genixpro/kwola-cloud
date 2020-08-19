@@ -315,7 +315,7 @@ class WebEnvironmentSession:
 
 
             if len(emailInputs) == 0 or len(passwordInputs) == 0 or len(loginButtons) == 0:
-                getLogger().warning(f"[{os.getpid()}] Error! Did not detect the all of the necessary HTML elements to perform an autologin. Kwola will be proceeding without automatically logging in.")
+                getLogger().warning(f"[{os.getpid()}] Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.")
                 return
 
             startURL = self.driver.current_url
@@ -456,7 +456,7 @@ class WebEnvironmentSession:
                         width: bounds.width - paddingLeft - paddingRight - 6,
                         height: bounds.height - paddingTop - paddingBottom - 6,
                         elementType: element.tagName.toLowerCase(),
-                        keywords: (element.textContent + " " + element.getAttribute("class") + " " + element.getAttribute("name") + " " + element.getAttribute("id")).toLowerCase() 
+                        keywords: (element.textContent + " " + element.getAttribute("class") + " " + element.getAttribute("name") + " " + element.getAttribute("id") + " " + element.getAttribute("type")).toLowerCase() 
                     };
                     
                     // Skip this element if it covers basically the whole screen.
