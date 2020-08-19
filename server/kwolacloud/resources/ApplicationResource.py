@@ -28,6 +28,7 @@ from ..auth import authenticate, isAdmin
 import selenium
 import time
 import selenium.common.exceptions
+from ..helpers.slack import postToKwolaSlack
 
 class ApplicationGroup(Resource):
     def __init__(self):
@@ -64,6 +65,8 @@ class ApplicationGroup(Resource):
         )
 
         newApplication.save()
+
+        postToKwolaSlack(f"New application was created on url {data['url']}")
 
         return {"applicationId": str(newApplication.id)}
 

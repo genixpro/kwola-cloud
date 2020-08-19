@@ -10,7 +10,8 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
     nginx \
-    nodejs -y > "/dev/null" 2>&1 && \
+    supervisor \
+    nodejs -y  && \
     rm -rf /var/lib/apt/lists/* && \
         rm -rf /usr/share/doc/* && \
         rm -rf /usr/share/icons/* && \
@@ -59,8 +60,13 @@ RUN npm run-script build && \
         rm -rf /var/lib/dpkg/* && \
         rm -rf /usr/include/*
 
+RUN mkdir -p /var/log/supervisord
+COPY deployment/frontend/supervisord.conf /etc/supervisor/supervisord.conf
+COPY deployment/frontend/stream_to_slack.sh /usr/bin/stream_to_slack
+RUN chmod +x /usr/bin/stream_to_slack
+
 # Setup and configure systemd
-ENTRYPOINT ["/usr/sbin/nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
 EXPOSE 80
 EXPOSE 443
 

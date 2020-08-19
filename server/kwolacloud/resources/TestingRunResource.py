@@ -21,6 +21,7 @@ from ..auth import authenticate, isAdmin
 from ..config.config import loadConfiguration
 from ..components.KubernetesJob import KubernetesJob
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
+from ..helpers.slack import postToKwolaSlack
 
 import logging
 class TestingRunsGroup(Resource):
@@ -121,6 +122,8 @@ class TestingRunsGroup(Resource):
         newTestingRun = TestingRun(**data)
 
         newTestingRun.save()
+
+        postToKwolaSlack(f"New testing run was started with id {data['id']} for application {data['applicationId']}")
 
         if self.configData['features']['localRuns']:
             job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.RunTestingLocal"], {

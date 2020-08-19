@@ -21,6 +21,7 @@ from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 import tempfile
 from pprint import pformat
+from ..helpers.slack import postToKwolaSlack
 
 
 def runTesting(testingRunId):
@@ -173,6 +174,9 @@ def runTesting(testingRunId):
                         run.save()
                     else:
                         logging.error("Testing run appears to have failed. Trying it again...")
+
+                        postToKwolaSlack(f"A testing step appears to have failed on testing run {testingRunId} with job id {job.referenceId}")
+
                         # Double check that the stripe subscription is still good. If the testing step failed because our
                         # stripe subscription is bad, we should just exit immediately.
                         #if not verifyStripeSubscription(run):
@@ -214,6 +218,11 @@ def runTesting(testingRunId):
                     result = pastTrainingStepJob.extractResultFromLogs()
                     if result['success']:
                         pastTrainingStepJob.cleanup()
+                    else:
+                        postToKwolaSlack(f"A training step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}")
+                else:
+                    postToKwolaSlack(f"A training step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}")
+
 
             time.sleep(10)
 
@@ -232,6 +241,10 @@ def runTesting(testingRunId):
             completedTestingSteps += 1
             run.save()
             job.cleanup()
+
+            result = job.extractResultFromLogs()
+            if not result['success']:
+                postToKwolaSlack(f"A testing step appears to have failed on testing run {testingRunId} with job id {job.referenceId}")
 
         logging.info(f"Finished testing run {testingRunId}")
         run.status = "completed"
