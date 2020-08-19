@@ -32,7 +32,8 @@ class ExecutionTrace(Document):
         'indexes': [
             ('owner',),
             ('owner', 'executionSessionId'),
-            ('owner', 'testingStepId')
+            ('owner', 'testingStepId'),
+            ('executionSessionId',)
         ]
     }
 
