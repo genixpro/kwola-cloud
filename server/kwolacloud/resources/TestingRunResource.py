@@ -9,6 +9,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 from ..app import cache
 from ..datamodels.TestingRun import TestingRun
+from ..datamodels.ApplicationModel import ApplicationModel
 from ..tasks.RunTesting import runTesting
 import json
 import datetime
@@ -62,6 +63,12 @@ class TestingRunsGroup(Resource):
 
         data = flask.request.get_json()
 
+        query = {"id": data['applicationId']}
+        if not isAdmin():
+            query['owner'] = user
+
+        application = ApplicationModel.objects(**query).limit(1).first()
+
         #return data;
         #change this for production. using dev user for billing
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
@@ -113,7 +120,7 @@ class TestingRunsGroup(Resource):
             data['stripeSubscriptionId'] = None
 
         data['id'] = generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=user)
-        data['owner'] = user
+        data['owner'] = application.owner
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
         data['testingSessionsRemaining'] = data['configuration']['totalTestingSessions']
