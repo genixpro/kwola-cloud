@@ -45,7 +45,13 @@ class WebEnvironment:
         self.config = config
 
         def createSession(number):
-            return WebEnvironmentSession(config, number)
+            maxAttempts = 10
+            for attempt in range(maxAttempts):
+                try:
+                    return WebEnvironmentSession(config, number)
+                except Exception as e:
+                    if attempt == (maxAttempts - 1):
+                        raise
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['web_session_max_startup_workers']) as executor:
             sessionCount = config['web_session_parallel_execution_sessions']
