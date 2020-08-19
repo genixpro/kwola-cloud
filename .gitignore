@@ -10,3 +10,7 @@ client/node_modules
 venv/*
 client/build
 .vscode
+server/dist
+kwola_run_0**
+server/kwola_run_0**
+package-lock.json
