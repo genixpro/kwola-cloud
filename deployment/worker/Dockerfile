@@ -189,7 +189,8 @@ RUN rm -rf /kwola/client
 # Install dependencies for server
 WORKDIR /kwola/server
 RUN python3 setup.py install && \
-    rm -rf /root/.cache
+    rm -rf /root/.cache && \
+    chmod +r+r+r -R /usr/lib/python3/
 
 ARG KWOLA_ENV
 ARG REVISION_ID
