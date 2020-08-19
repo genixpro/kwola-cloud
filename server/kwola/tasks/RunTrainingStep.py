@@ -68,20 +68,23 @@ def writeSingleExecutionTrace(traceBatch, sampleCacheDir):
             continue
 
 def addExecutionSessionToSampleCache(executionSessionId, config):
-    agent = DeepLearningAgent(config, whichGpu=None)
+    try:
+        agent = DeepLearningAgent(config, whichGpu=None)
 
-    sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples")
+        sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples")
 
-    executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
+        executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
-    batches = agent.prepareBatchesForExecutionSession(executionSession)
+        batches = agent.prepareBatchesForExecutionSession(executionSession)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        futures = []
-        for traceIndex, traceBatch in zip(range(len(executionSession.executionTraces) - 1), batches):
-            futures.append(executor.submit(writeSingleExecutionTrace, traceBatch, sampleCacheDir))
-        for future in futures:
-            future.result()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            futures = []
+            for traceIndex, traceBatch in zip(range(len(executionSession.executionTraces) - 1), batches):
+                futures.append(executor.submit(writeSingleExecutionTrace, traceBatch, sampleCacheDir))
+            for future in futures:
+                future.result()
+    except Exception as e:
+        getLogger().error(f"[{os.getpid()}] Warning! Failed to prepare samples for execution session {executionSessionId}. Error was: {traceback.print_exc()}")
 
 
 def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory):
