@@ -357,8 +357,8 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
                 bug.saveToDisk(config)
 
                 bugTextFile = os.path.join(config.getKwolaUserDataDirectory("bugs"), bug.id + ".txt")
-                with open(bugTextFile, "wt") as file:
-                    file.write(bug.generateBugText())
+                with open(bugTextFile, "wb") as file:
+                    file.write(bytes(bug.generateBugText(), "utf8"))
 
                 bugVideoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), bug.id + ".mp4")
                 with open(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), "rb") as origFile:
