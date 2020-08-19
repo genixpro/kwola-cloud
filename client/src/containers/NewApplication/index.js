@@ -28,7 +28,7 @@ export default class extends React.Component {
 
   onSubmit(values)
   {
-    this.bug();
+    this.sendBugNow();
 
     this.setState({'submitting':true})
     var _hsq = window._hsq = window._hsq || [];
