@@ -89,6 +89,11 @@ class Auth0Helper {
     return jwt.decode(localStorage.getItem('id_token'));
   }
 
+  isAdmin()
+  {
+    return this.getUserInfo()["https://kwola.io/admin"];
+  }
+
   getQueryParameterToken()
   {
     return localStorage.getItem('id_token');

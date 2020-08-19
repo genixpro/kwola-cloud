@@ -19,3 +19,4 @@ Flask-Caching
 pyyaml
 kombu
 slack-webhook
+cryptography==2.9

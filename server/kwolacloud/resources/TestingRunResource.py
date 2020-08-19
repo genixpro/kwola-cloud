@@ -125,37 +125,12 @@ class TestingRunsGroup(Resource):
 
         postToKwolaSlack(f"New testing run was started with id {data['id']} for application {data['applicationId']}")
 
-        if self.configData['features']['localRuns']:
-            job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.RunTestingLocal"], {
-                "testingRunId": data['id']
-            }, timeout=1800, config=getKwolaConfiguration(), logId=None)
-        else:
-            job = KubernetesJob(module="kwolacloud.tasks.RunTesting",
-                                data={
-                                    "testingRunId": data['id']
-                                },
-                                referenceId=data['id'],
-                                image="worker",
-                                cpuRequest="100m",
-                                cpuLimit=None,
-                                memoryRequest="350Mi",
-                                memoryLimit="512Mi"
-                                )
-        if self.configData['features']['enableRuns']:
-            job.start()
+        newTestingRun.runJob()
 
         return {"testingRunId": data['id']}
 
 
 class TestingRunsSingle(Resource):
-    def __init__(self):
-        self.postParser = reqparse.RequestParser()
-        self.postParser.add_argument('version', help='This field cannot be blank', required=True)
-        self.postParser.add_argument('startTime', help='This field cannot be blank', required=True)
-        self.postParser.add_argument('endTime', help='This field cannot be blank', required=True)
-        self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=True)
-        self.postParser.add_argument('status', help='This field cannot be blank', required=True)
-
     def get(self, testing_run_id):
         user = authenticate()
         if user is None:
@@ -171,3 +146,23 @@ class TestingRunsSingle(Resource):
             return abort(404)
 
         return {"testingRun": json.loads(testingRun.to_json())}
+
+
+class TestingRunsRestart(Resource):
+    def post(self, testing_run_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": testing_run_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        testingRun = TestingRun.objects(**queryParams).first()
+
+        if testingRun is None:
+            return abort(404)
+
+        testingRun.runJob()
+
+        return {}

@@ -8,6 +8,10 @@
 from kwola.datamodels.CustomIDField import CustomIDField
 from .RunConfiguration import RunConfiguration
 from mongoengine import *
+from ..components.KubernetesJob import KubernetesJob
+from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
+from ..config.config import getKwolaConfiguration
+from ..config.config import loadConfiguration
 
 
 
@@ -57,4 +61,26 @@ class TestingRun(Document):
     def loadFromDisk(id, config, printErrorOnFailure=True):
         return TestingRun.objects(id=id).first()
 
+
+    def runJob(self):
+        configData = loadConfiguration()
+
+        if configData['features']['localRuns']:
+            job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.RunTestingLocal"], {
+                "testingRunId": self.id
+            }, timeout=1800, config=getKwolaConfiguration(), logId=None)
+        else:
+            job = KubernetesJob(module="kwolacloud.tasks.RunTesting",
+                                data={
+                                    "testingRunId": self.id
+                                },
+                                referenceId=self.id,
+                                image="worker",
+                                cpuRequest="100m",
+                                cpuLimit=None,
+                                memoryRequest="350Mi",
+                                memoryLimit="512Mi"
+                                )
+        if configData['features']['enableRuns']:
+            job.start()
 

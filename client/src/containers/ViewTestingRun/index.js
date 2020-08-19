@@ -38,7 +38,8 @@ class ViewTestingRun extends Component {
         csvData:[],
         newPage:0,
         setPage:0,
-        bugs:[]
+        bugs:[],
+        isAdmin: Auth.isAdmin()
     };
 
     componentDidMount() {
@@ -50,7 +51,7 @@ class ViewTestingRun extends Component {
             params: {"testingRunId": this.props.match.params.id}
         }).then((response) => {
             this.setState({bugs: response.data.bugs});
-            this.formatcsvData()
+            this.formatCSVData()
         });
 
         axios.get(`/execution_sessions`, {
@@ -60,7 +61,7 @@ class ViewTestingRun extends Component {
         });
     }
 
-    formatcsvData(){
+    formatCSVData(){
         let headers = []
         let data = []
         let bugsClone = [...this.state.bugs];
@@ -81,6 +82,16 @@ class ViewTestingRun extends Component {
             data.push(bug)
         });
         this.setState({csvData:data,csvHeaders:headers})
+    }
+
+    restartTestingRunKubeJob()
+    {
+        if (window.confirm("Are you sure you want to restart the kube job? This will cause problems if there is already a kube job running for this testing run."))
+        {
+            axios.post(`/testing_runs/${this.props.match.params.id}/restart`).then((response) => {
+                window.alert("Successfully restarted Kube job");
+            });
+        }
     }
 
     render() {
@@ -131,6 +142,19 @@ class ViewTestingRun extends Component {
                                             : <span>End Time: N/A<br/></span>
                                     }
                                 </Papersheet>
+                                <br/>
+
+                                {
+                                    this.state.isAdmin ?
+                                        <Papersheet title={`Admin`}>
+                                            <Button variant="extended" color="primary"
+                                                    onClick={() => this.restartTestingRunKubeJob()}>
+                                                Restart Testing Run Kube Job
+                                                <Icon className="rightIcon">send</Icon>
+                                            </Button>
+                                        </Papersheet>
+                                        : null
+                                }
                             </HalfColumn>
                         </Row>
 
