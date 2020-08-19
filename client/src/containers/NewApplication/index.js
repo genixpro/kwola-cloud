@@ -28,8 +28,6 @@ export default class extends React.Component {
 
   onSubmit(values)
   {
-    this.sendBugNow();
-
     this.setState({'submitting':true})
     var _hsq = window._hsq = window._hsq || [];
     axios.post("/application", {... values}).then((response) =>
