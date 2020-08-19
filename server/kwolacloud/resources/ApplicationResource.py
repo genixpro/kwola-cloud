@@ -29,6 +29,7 @@ import selenium
 import time
 import selenium.common.exceptions
 from ..helpers.slack import postToKwolaSlack
+import logging
 
 class ApplicationGroup(Resource):
     def __init__(self):

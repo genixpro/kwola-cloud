@@ -20,6 +20,7 @@ from ..config.config import loadConfiguration, getKwolaConfiguration
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 import tempfile
+import traceback
 from pprint import pformat
 from ..helpers.slack import postToKwolaSlack
 
@@ -31,13 +32,16 @@ def runTesting(testingRunId):
     configData = loadConfiguration()
 
     if run is None:
-        logging.error(f"Error! {testingRunId} not found.")
-        return
+        errorMessage = f"Error! {testingRunId} not found."
+        logging.error(f"[{os.getpid()}] {errorMessage}")
+        return {"success": False, "exception": errorMessage}
 
     if not configData['features']['localRuns']:
         configDir = mountTestingRunStorageDrive(run.applicationId)
         if configDir is None:
-            return {"success":False}
+            errorMessage = f"{traceback.format_exc()}"
+            logging.error(f"[{os.getpid()}] {errorMessage}")
+            return {"success": False, "exception": errorMessage}
     else:
         if not os.path.exists("data"):
             os.mkdir("data")
@@ -219,10 +223,14 @@ def runTesting(testingRunId):
                     if result['success']:
                         pastTrainingStepJob.cleanup()
                     else:
-                        postToKwolaSlack(f"A training step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}")
-                else:
-                    postToKwolaSlack(f"A training step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}")
+                        errorMessage = f"A testing step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}."
+                        if 'exception' in result:
+                            errorMessage += "\n\n" + result['exception']
 
+                        logging.error(errorMessage)
+                else:
+                    errorMessage = f"A training step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}. The job did not produce a result object."
+                    logging.error(errorMessage)
 
             time.sleep(10)
 
@@ -244,11 +252,19 @@ def runTesting(testingRunId):
 
             result = job.extractResultFromLogs()
             if not result['success']:
-                postToKwolaSlack(f"A testing step appears to have failed on testing run {testingRunId} with job id {job.referenceId}")
+                errorMessage = f"A testing step appears to have failed on testing run {testingRunId} with job id {job.referenceId}."
+                if 'exception' in result:
+                    errorMessage += "\n\n" + result['exception']
+
+                logging.error(errorMessage)
 
         logging.info(f"Finished testing run {testingRunId}")
         run.status = "completed"
         run.save()
+    except Exception as e:
+        errorMessage = f"Error in the primary RunTesting job for the testing run with id {testingRunId}:\n\n{traceback.format_exc()}"
+        logging.error(f"[{os.getpid()}] {errorMessage}")
+        return {"success": False, "exception": errorMessage}
     finally:
         # unmountTestingRunStorageDrive(configDir)
         pass

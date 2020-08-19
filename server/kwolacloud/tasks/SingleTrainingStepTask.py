@@ -10,6 +10,8 @@ from kwola.config.config import Configuration
 from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.tasks import RunTrainingStep
 import logging
+import traceback
+import os
 import torch
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
@@ -24,8 +26,9 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     configData = loadConfiguration()
 
     if run is None:
-        logging.error(f"Error! {testingRunId} not found.")
-        return {"success": False}
+        errorMessage = f"Error! {testingRunId} not found."
+        logging.error(f"[{os.getpid()}] {errorMessage}")
+        return {"success": False, "exception": errorMessage}
 
     # Verify this subscription with stripe
     #if not verifyStripeSubscription(run):
@@ -34,7 +37,9 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     if not configData['features']['localRuns']:
         configDir = mountTestingRunStorageDrive(run.applicationId)
         if configDir is None:
-            return {"success": False}
+            errorMessage = f"{traceback.format_exc()}"
+            logging.error(f"[{os.getpid()}] {errorMessage}")
+            return {"success": False, "exception": errorMessage}
     else:
         configDir = os.path.join("data", run.applicationId)
 
@@ -45,6 +50,10 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
 
         logging.info(f"Completed training step for testing run {testingRunId}")
         return result
+    except Exception as e:
+        errorMessage = f"{traceback.format_exc()}"
+        logging.error(f"[{os.getpid()}] {errorMessage}")
+        return {"success": False, "exception": errorMessage}
     finally:
         # unmountTestingRunStorageDrive(configDir)
         pass

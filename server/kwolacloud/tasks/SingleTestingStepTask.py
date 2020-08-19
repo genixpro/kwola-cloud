@@ -15,7 +15,7 @@ import logging
 import os
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription, attachUsageBilling
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
-
+import traceback
 
 def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
     logging.info(f"Starting testing step for testing run {testingRunId}")
@@ -25,8 +25,9 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
     configData = loadConfiguration()
 
     if run is None:
-        logging.error(f"Error! {testingRunId} not found.")
-        return {"success": False}
+        errorMessage = f"Error! {testingRunId} not found."
+        logging.error(f"[{os.getpid()}] {errorMessage}")
+        return {"success": False, "exception": errorMessage}
 
     # Verify this subscription with stripe
     #if not verifyStripeSubscription(run):
@@ -35,7 +36,9 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
     if not configData['features']['localRuns']:
         configDir = mountTestingRunStorageDrive(run.applicationId)
         if configDir is None:
-            return {"success": False}
+            errorMessage = f"{traceback.format_exc()}"
+            logging.error(f"[{os.getpid()}] {errorMessage}")
+            return {"success": False, "exception": errorMessage}
     else:
         configDir = os.path.join("data", run.applicationId)
 
@@ -65,6 +68,10 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         logging.info(f"Finished testing step for testing run {testingRunId}")
 
         return result
+    except Exception as e:
+        errorMessage = f"{traceback.format_exc()}"
+        logging.error(f"[{os.getpid()}] {errorMessage}")
+        return {"success": False, "exception": errorMessage}
     finally:
         # unmountTestingRunStorageDrive(configDir)
         pass

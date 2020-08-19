@@ -12,6 +12,7 @@ from .datamodels.ApplicationModel import ApplicationModel
 from .auth import authenticate
 from flask_caching import Cache
 import google.cloud.logging
+from .helpers.slack import SlackLogHandler
 from kwola.config.logger import getLogger, setupLocalLogging
 
 configData = loadConfiguration()
@@ -39,6 +40,10 @@ if configData['features']['enableGoogleCloudLogging']:
 
     logger = getLogger()
     logger.handlers = logger.handlers[0:1]
+
+if configData['features']['enableSlackLogging']:
+    logger = getLogger()
+    logger.addHandler(SlackLogHandler())
 
 # Technically for gunicorn to find the flask application object, it must have the variable
 # name "application". However we prefer the more explicit flaskApplication, this being the

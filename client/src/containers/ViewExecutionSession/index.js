@@ -58,11 +58,11 @@ class ViewExecutionSession extends Component {
                                     // subtitle={}
                                 >
 
-                                    <span>Start Time: {moment(this.props.executionSession.startTime).format('MMM Do, YYYY')}<br/></span>
+                                    <span>Start Time: {moment(this.props.executionSession.startTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
 
                                     {
                                         this.props.executionSession.endTime ?
-                                            <span>End Time: {moment(this.props.executionSession.endTime).format('MMM Do, YYYY')}<br/></span>
+                                            <span>End Time: {moment(this.props.executionSession.endTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
                                             : <span>End Time: N/A<br/></span>
                                     }
                                 </Papersheet>

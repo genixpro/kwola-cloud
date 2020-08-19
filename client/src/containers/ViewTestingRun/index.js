@@ -132,13 +132,13 @@ class ViewTestingRun extends Component {
 
                                     {
                                         this.state.testingRun.startTime ?
-                                            <span>Start Time: {moment(this.state.testingRun.startTime.$date).format('MMM Do, YYYY')}<br/></span>
+                                            <span>Start Time: {moment(this.state.testingRun.startTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
                                             : <span>Start Time: N/A<br/></span>
                                     }
 
                                     {
                                         this.state.testingRun.endTime ?
-                                            <span>End Time: {moment(this.state.testingRun.endTime).format('MMM Do, YYYY')}<br/></span>
+                                            <span>End Time: {moment(this.state.testingRun.endTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
                                             : <span>End Time: N/A<br/></span>
                                     }
                                 </Papersheet>

@@ -1,4 +1,5 @@
 {
+  "name": "testing",
   "environmentCode": "t",
   "userCodeSalt": "IshVegNowlEijhuwuIfwesecmiptibwywobsIgJivguworegH",
   "mongo": {
@@ -19,6 +20,7 @@
   },
   "features": {
     "enableGoogleCloudLogging": false,
+    "enableSlackLogging": true,
     "enableRuns": false,
     "localRuns": false
   }
