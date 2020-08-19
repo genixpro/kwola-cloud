@@ -34,7 +34,7 @@ def mountTestingRunStorageDrive(applicationId):
         return configDir
 
 def unmountTestingRunStorageDrive(configDir):
-    result = subprocess.run(["umount", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(["fusermount", "-u", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
         logging.error(f"Error! umount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
         return False
