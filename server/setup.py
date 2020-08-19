@@ -34,6 +34,9 @@ setup(
         'testing': tests_require,
     },
     package_data={
+        'kwola': [
+            'config/prebuilt_configs/*.json'
+        ],
         'kwolacloud': [
             "config/environments/*.json"
         ]
@@ -44,7 +47,20 @@ setup(
             'main = kwolacloud:main',
         ],
         'console_scripts': [
-
+            'kwola = kwola.bin.main:main',
+            'kwola_init = kwola.bin.initialize:main',
+            'kwola_train_agent = kwola.bin.train_agent:main',
+            'kwola_run_train_step = kwola.bin.run_train_step:main',
+            'kwola_run_test_step = kwola.bin.run_test_step:main',
+            'kwola_rapid_local_test_suite = kwola.bin.rapid_local_test_suite:main',
+            'kwola_full_internal_test_suite = kwola.bin.full_internal_test_suite:main',
+            'kwola_test_chromedriver = kwola.bin.test_chromedriver:main',
+            'kwola_test_javascript_rewriting = kwola.bin.test_javascript_rewriting:main',
+            'kwola_test_ffmpeg = kwola.bin.test_ffmpeg:main',
+            'kwola_test_neural_network = kwola.bin.test_neural_network:main',
+            'kwola_test_installation = kwola.bin.test_installation:main',
+            'kwola_install_proxy_cert = kwola.bin.install_proxy_cert:main',
+            'kwola_website_check = kwola.bin.website_check:main'
         ]
     },
 )
