@@ -5,6 +5,7 @@ import logging
 import json
 import pickle
 import time
+import logging
 import base64
 from .KubernetesJobProcess import KubernetesJobProcess
 
@@ -151,6 +152,8 @@ class KubernetesJob:
             if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
                 time.sleep(1.5 ** attempt)
                 continue
+
+            logging.info(process.stdout)
 
             jsonData = json.loads(process.stdout)
 
