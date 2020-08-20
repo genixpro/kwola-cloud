@@ -12,6 +12,7 @@ import datetime
 import stripe
 import logging
 import json
+import google.api_core.exceptions
 
 
 
@@ -24,7 +25,15 @@ def mountTestingRunStorageDrive(applicationId):
 
     bucket = storage_client.lookup_bucket(bucketName)
     if bucket is None:
-        storage_client.create_bucket(bucketName)
+        try:
+            storage_client.create_bucket(bucketName)
+        except google.api_core.exceptions.Conflict:
+            # Ignore this. Its a very rare error that occurs when two testing runs start
+            # almost perfect simultaneously, and they are both the first testing runs for
+            # this application. We can ignore this because it means the bucket was already
+            # created.
+            pass
+
 
     result = subprocess.run(["gcsfuse", bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
