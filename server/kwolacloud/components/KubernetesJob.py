@@ -139,7 +139,7 @@ class KubernetesJob:
 
             return
 
-        raise RuntimeError(f"Error! kubectl did not xit successfully: \n{process.stdout}\n{process.stderr}")
+        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
 
 
@@ -168,7 +168,7 @@ class KubernetesJob:
             if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] == 1:
                 return "Success"
 
-        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
+        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
     def ready(self):
         status = self.getJobStatus()
@@ -204,7 +204,7 @@ class KubernetesJob:
 
             return str(process.stdout, 'utf8')
 
-        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout}\n{process.stderr}")
+        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
     def extractResultFromLogs(self):
         logs = self.getLogs()
