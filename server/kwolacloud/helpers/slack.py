@@ -6,7 +6,8 @@ slack = Slack(url='https://hooks.slack.com/services/T0196EUDR0C/B019GHUAR17/NF4L
 config = loadConfiguration()
 
 def postToKwolaSlack(message):
-    slack.post(text=message)
+    if config['features']['enableSlackLogging']:
+        slack.post(text=message)
 
 
 class SlackLogHandler(logging.Handler):
