@@ -31,6 +31,8 @@ class TestingRun(Document):
 
     stripeSubscriptionId = StringField()
 
+    promoCode = StringField()
+
     configuration = EmbeddedDocumentField(RunConfiguration)
 
     status = StringField()

@@ -61,6 +61,7 @@ from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle, T
 from .resources.BugsResource import BugsGroup, BugsSingle, BugVideo
 from .resources.Webhooks import StripeWebhook
 from .resources.Billing import BillingURLResource, Products
+from .resources.PromoCodes import PromoCodes
 from .resources.HomeResource import Home
 
 api.add_resource(ApplicationGroup, '/api/application')
@@ -100,6 +101,7 @@ api.add_resource(BugVideo, '/api/bugs/<string:bug_id>/video')
 
 api.add_resource(BillingURLResource, '/api/billing')
 api.add_resource(Products, '/api/products')
+api.add_resource(PromoCodes, '/api/promocodes')
 
 api.add_resource(StripeWebhook, '/api/stripe_webhook')
 

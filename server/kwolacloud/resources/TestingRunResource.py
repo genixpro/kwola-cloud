@@ -67,6 +67,15 @@ class TestingRunsGroup(Resource):
         if not isAdmin():
             query['owner'] = user
 
+        promoCode = None
+        coupon = None
+        if 'promoCode' in data:
+            promoCode = data['promoCode']
+        if promoCode:
+            codes = stripe.PromotionCode.list(active=True, code=promoCode, limit=1).data
+            if len(codes) > 0:
+                coupon = codes[0].coupon
+
         application = ApplicationModel.objects(**query).limit(1).first()
 
         #return data;
@@ -77,7 +86,7 @@ class TestingRunsGroup(Resource):
         allowFreeRuns = claims['https://kwola.io/freeRuns']
         
 
-        if not allowFreeRuns:
+        if not allowFreeRuns and coupon is None:
             customer = stripe.Customer.retrieve(stripeCustomerId)
 
             if customer is None:

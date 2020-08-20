@@ -20,6 +20,7 @@ import Typography from '../../components/uielements/typography';
 import Modal from '../../components/uielements/modals';
 import TextFieldMargins from "../UiElements/TextFields/layout";
 import axios from "axios";
+import _ from "underscore";
 import { Button } from "../UiElements/Button/button.style";
 import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, OneFourthColumn, Row, Column} from '../../components/utility/rowColumn';
 import { createStore, combineReducers } from 'redux';
@@ -1577,7 +1578,9 @@ class NewTestingRun extends Component {
         name: "",
         address: "",
         snackbar:false,
-        snackbarSeverity:"info"
+        snackbarSeverity:"info",
+        promoCode: "",
+        discountApplied: 0
     };
 
     constructor()
@@ -1607,6 +1610,7 @@ class NewTestingRun extends Component {
     {
         return {
             applicationId: this.props.match.params.id,
+            promoCode: this.state.promoCode,
             configuration: {
                 url: this.state.application.url,
                 email: this.state.email,
@@ -1672,7 +1676,7 @@ class NewTestingRun extends Component {
         }
 
 
-        if (Auth0.isUserAllowedFreeRuns())
+        if (Auth0.isUserAllowedFreeRuns() || this.calculateFinalTotal() === 0)
         {
             const testingRunData = this.createDataForTestingRun();
             const price = 0;
@@ -1699,6 +1703,19 @@ class NewTestingRun extends Component {
         //let am = this.state.productAmount ?? 0
         return this.state.productAmount ? 0.01 * this.state.productAmount : 0.00;
     }
+
+
+    calculateDiscount()
+    {
+        return this.calculatePrice() * this.state.discountApplied;
+    }
+
+
+    calculateFinalTotal()
+    {
+        return this.calculatePrice() * (1.0 - this.state.discountApplied);
+    }
+
 
     completeOrder(elements)
     {
@@ -1744,6 +1761,31 @@ class NewTestingRun extends Component {
     closeSnackbar(){
         this.setState({snackbar:false});
     }
+
+    changePromoCode(newValue)
+    {
+        this.setState({promoCode: newValue});
+        this.fetchPromoCodeInfo();
+    }
+
+    fetchPromoCodeInfo = _.debounce(() =>
+    {
+        axios.get(`/promocodes`, {params: {code: this.state.promoCode}}).then((response) =>
+        {
+            if (response.data['promoCodes'].length > 0)
+            {
+                this.setState({discountApplied: response.data['promoCodes'][0].coupon.percent_off / 100.0})
+            }
+            else
+            {
+                this.setState({discountApplied: 0})
+            }
+        }, (error) =>
+        {
+            this.setState({discountApplied: 0})
+        });
+    }, 500)
+
     render() {
         const { result } = this.state;
         return (
@@ -1934,10 +1976,45 @@ class NewTestingRun extends Component {
                                                                 </div>
                                                             */}
                                                             </div>
+                                                            {
+                                                                this.state.discountApplied === 0 ?
+                                                                    <div className="orderTableFooter">
+                                                                        <span>Total</span>
+                                                                        <span>= ${this.calculateFinalTotal().toFixed(2)} CAN / run</span>
+                                                                    </div> : null
+                                                            }
+                                                            {
+                                                                this.state.discountApplied > 0 ? [
+                                                                    <div className="orderTableFooter" key={0}>
+                                                                        <span>Sub total</span>
+                                                                        <span>= ${this.calculatePrice().toFixed(2)} CAN / run</span>
+                                                                    </div>,
+                                                                    <div className="orderTableFooter" key={0}>
+                                                                        <span>Discount Applied</span>
+                                                                        <span>= (${(this.calculateDiscount()).toFixed(2)})</span>
+                                                                    </div>,
+                                                                    <div className="orderTableFooter" key={0}>
+                                                                        <span>Total</span>
+                                                                        <span>= ${(this.calculateFinalTotal() * (1.0 - this.state.discountApplied)).toFixed(2)} CAN / run</span>
+                                                                    </div>
+                                                                ] : null
+                                                            }
+
                                                             <div className="orderTableFooter">
-                                                                <span>Total</span>
-                                                                <span>= ${this.calculatePrice().toFixed(2)} CAN / run</span>
+                                                                <span>Apply Promo Code</span>
+                                                                <span>
+                                                                <TextField
+                                                                    id={`promo-code-field`}
+                                                                    label={`Promo Code`}
+                                                                    title={"Promo Code"}
+                                                                    type={"text"}
+                                                                    value={this.state.promoCode}
+                                                                    onChange={(event) => this.changePromoCode(event.target.value)}
+                                                                    margin="normal"
+                                                                />
+                                                                </span>
                                                             </div>
+
                                                             {
                                                                 this.state.mode === "details" ?
                                                                     <Button variant="extended" 
