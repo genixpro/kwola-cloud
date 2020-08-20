@@ -153,9 +153,11 @@ class KubernetesJob:
                 time.sleep(1.5 ** attempt)
                 continue
 
-            logging.info(process.stdout)
-
-            jsonData = json.loads(process.stdout)
+            try:
+                jsonData = json.loads(process.stdout)
+            except json.JSONDecodeError:
+                logging.error(f"Error decoding json {process.stdout}")
+                raise
 
             if "active" in jsonData['status'] and jsonData['status']['active'] == 1:
                 return "Running"
