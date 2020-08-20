@@ -107,8 +107,11 @@ class BugVideo(Resource):
 
         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), f'{str(bug_id)}_bug_{str(bug.executionSessionId)}.mp4')
 
-        with open(videoFilePath, 'rb') as videoFile:
-            videoData = videoFile.read()
+        if os.path.exists(videoFilePath):
+            with open(videoFilePath, 'rb') as videoFile:
+                videoData = videoFile.read()
+        else:
+            return abort(404)
 
         response = flask.make_response(videoData)
         response.headers['content-type'] = 'video/mp4'
