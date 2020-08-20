@@ -85,7 +85,7 @@ class ViewBug extends Component {
     seekVideo(){
         if(!this.state.player) return false;
         this.state.player.restart()
-        this.state.player.forward(this.state.bug.stepNumber+1)
+        this.state.player.forward(this.state.bug.stepNumber)
     }
     render() {
         const { result } = this.state;
