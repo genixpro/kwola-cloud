@@ -50,6 +50,9 @@ class JSRewriteProxy:
         for char in badChars:
             fileName = fileName.replace(char, "-")
 
+        # Replace all unicode characters with -CODE-, with CODE being replaced by the unicode character code
+        fileName = str(fileName.encode('ascii', 'xmlcharrefreplace'), 'ascii').replace("&#", "-").replace(";", "-")
+
         cacheFileName = os.path.join(self.config.getKwolaUserDataDirectory("javascript"), fileHash + "_" + fileName[:100])
 
         return cacheFileName
