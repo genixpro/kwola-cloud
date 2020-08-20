@@ -191,16 +191,32 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
         listOfTimesForMiscellaneous = []
         listOfTotalLoopTimes = []
 
+        def removeBadSessions():
+            sessionToRemove = environment.removeBadSessionIfNeeded()
+            while sessionToRemove is not None:
+                getLogger().warning(f"[{os.getpid()}] Removing web browser session at index {sessionToRemove} because the browser has crashed!")
+
+                sessionId = executionSessions[sessionToRemove].id
+
+                del executionSessions[sessionToRemove]
+                del executionSessionTraces[sessionToRemove]
+
+                n = 0
+                while n < len(newErrorsThisTestingStep):
+                    if newErrorOriginalExecutionSessionIds[n] == sessionId:
+                        del newErrorsThisTestingStep[n]
+                        del newErrorOriginalStepNumbers[n]
+                        del newErrorOriginalExecutionSessionIds[n]
+                    else:
+                        n += 1
+
+                sessionToRemove = environment.removeBadSessionIfNeeded()
+
         loopTime = datetime.now()
         while stepsRemaining > 0:
             stepsRemaining -= 1
 
-            sessionToRemove = environment.removeBadSessionIfNeeded()
-            while sessionToRemove is not None:
-                getLogger().warning(f"[{os.getpid()}] Removing web browser session at index {sessionToRemove} because the browser has crashed!")
-                del executionSessions[sessionToRemove]
-                del executionSessionTraces[sessionToRemove]
-                sessionToRemove = environment.removeBadSessionIfNeeded()
+            removeBadSessions()
 
             taskStartTime = datetime.now()
             images = environment.getImages()
@@ -304,16 +320,17 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
             subProcessCommandQueue.put("quit")
             subProcess.join()
 
+        removeBadSessions()
+
         getLogger().info(f"[{os.getpid()}] Creating movies for the execution sessions of this testing sequence.")
         videoPaths = environment.createMovies()
 
         kwolaVideoDirectory = config.getKwolaUserDataDirectory("videos")
 
         for sessionN, videoPath, executionSession in zip(range(len(videoPaths)), videoPaths, executionSessions):
-            if videoPath is not None:
-                with open(videoPath, 'rb') as origFile:
-                    with open(os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4'), "wb") as cloneFile:
-                        cloneFile.write(origFile.read())
+            with open(videoPath, 'rb') as origFile:
+                with open(os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4'), "wb") as cloneFile:
+                    cloneFile.write(origFile.read())
 
         totalRewards = []
         for session in executionSessions:
