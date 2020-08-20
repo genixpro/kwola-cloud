@@ -291,6 +291,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
 
         if len(testingSteps) == 0:
             getLogger().warning(f"[{os.getpid()}] Error, no test sequences to train on for training step.")
+            subProcessBatchResultQueue.put("error")
             return
         else:
             getLogger().info(f"[{os.getpid()}] Found {len(testingSteps)} total testing steps for this application.")
@@ -331,6 +332,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
         getLogger().info(f"[{os.getpid()}] Finished initialization for batch preparation sub process.")
 
         if len(executionTraceWeightDatas) == 0:
+            subProcessBatchResultQueue.put("error")
             raise RuntimeError("There are no execution trace weight datas to process in the algorithm.")
 
         processPool = multiprocessingpool.Pool(processes=config['training_initial_batch_prep_workers'])
@@ -346,6 +348,8 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
 
         needToResetPool = False
         starved = False
+
+        subProcessBatchResultQueue.put("ready")
 
         cacheRateFutures = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['training_max_batch_prep_thread_workers']) as threadExecutor:
@@ -606,6 +610,12 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
             subProcessCommandQueues.append(subProcessCommandQueue)
             subProcessBatchResultQueues.append(subProcessBatchResultQueue)
             subProcesses.append(subProcess)
+
+        for queue in subProcessBatchResultQueues:
+            readyState = queue.get()
+
+            if readyState == "error":
+                raise Exception("Error occurred during batch prep sub process initiation.")
 
     except Exception as e:
         errorMessage = f"Error occurred during initiation of training! {traceback.format_exc()}"
