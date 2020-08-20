@@ -329,7 +329,7 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
 
         for session in executionSessions:
             debugVideoSubprocess = multiprocessing.Process(target=createDebugVideoSubProcess, args=(configDir, str(session.id), "", False, False, None, "annotated_videos"))
-            atexit.register(lambda: debugVideoSubprocess.terminate())
+            atexit.register(lambda: debugVideoSubprocess.terminate() if debugVideoSubprocess is not None else None)
             debugVideoSubprocesses.append(debugVideoSubprocess)
 
         existingBugs = loadAllBugs(config)
