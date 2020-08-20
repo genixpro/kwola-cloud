@@ -310,9 +310,10 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
         kwolaVideoDirectory = config.getKwolaUserDataDirectory("videos")
 
         for sessionN, videoPath, executionSession in zip(range(len(videoPaths)), videoPaths, executionSessions):
-            with open(videoPath, 'rb') as origFile:
-                with open(os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4'), "wb") as cloneFile:
-                    cloneFile.write(origFile.read())
+            if videoPath is not None:
+                with open(videoPath, 'rb') as origFile:
+                    with open(os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4'), "wb") as cloneFile:
+                        cloneFile.write(origFile.read())
 
         totalRewards = []
         for session in executionSessions:
