@@ -977,10 +977,18 @@ class DeepLearningAgent:
         # Here we choose a random x,y coordinate from within the bounds of the action map.
         # We also have to compensate for the image downscaling here, since we need to lookup
         # the possible actions on the downscaled pixel action map
-        actionX = random.randint(max(0, int(min(width - 1, chosenActionMap.left * self.config['model_image_downscale_ratio']))),
-                                 max(0, int(min(chosenActionMap.right * self.config['model_image_downscale_ratio'] - 1, width - 1))))
-        actionY = random.randint(max(0, int(min(height - 1, chosenActionMap.top * self.config['model_image_downscale_ratio']))),
-                                 max(0, int(min(chosenActionMap.bottom * self.config['model_image_downscale_ratio'] - 1, height - 1))))
+        actionLeftLimit = max(0, int(min(width - 1, chosenActionMap.left * self.config['model_image_downscale_ratio'])))
+        actionRightLimit = max(0, int(min(width - 1, chosenActionMap.right * self.config['model_image_downscale_ratio'] - 1)))
+        if actionRightLimit < actionLeftLimit:
+            actionRightLimit = actionLeftLimit
+
+        actionTopLimit = max(0, int(min(height - 1, chosenActionMap.top * self.config['model_image_downscale_ratio'])))
+        actionBottomLimit = max(0, int(min(height - 1, chosenActionMap.bottom * self.config['model_image_downscale_ratio'] - 1)))
+        if actionBottomLimit < actionTopLimit:
+            actionBottomLimit = actionTopLimit
+
+        actionX = random.randint(actionLeftLimit, actionRightLimit)
+        actionY = random.randint(actionTopLimit, actionBottomLimit)
 
         # Get the list of actions that are allowed at the chosen coordinates
         possibleActionsAtPixel = pixelActionMap[:, actionY, actionX]
