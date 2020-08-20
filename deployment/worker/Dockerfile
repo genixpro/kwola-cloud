@@ -217,6 +217,7 @@ RUN chown -R kwola:kwola /kwola && \
 RUN rm -rf /usr/include/*
 
 # Do the installation test
+RUN chmod +r+r+r -R /usr/lib/python3
 RUN su kwola -c "kwola_test_installation"
 
 # Lastly, we run the local test suite, which just checks to see that everything is working end
