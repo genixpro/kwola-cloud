@@ -81,7 +81,7 @@ class TestingRun(Document):
                                 cpuRequest="100m",
                                 cpuLimit=None,
                                 memoryRequest="350Mi",
-                                memoryLimit="512Mi"
+                                memoryLimit="2048Mi"
                                 )
         if configData['features']['enableRuns']:
             job.start()
