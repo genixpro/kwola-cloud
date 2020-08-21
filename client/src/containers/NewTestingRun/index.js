@@ -498,10 +498,10 @@ class SizeOfRun extends Component {
         )
     }
 
-    lengthTabChanged(newTab,sessions,actions,productId,priceId,amount)
+    lengthTabChanged(newTab,sessions,actions,productId,priceId,amount,hours)
     {
 
-        this.setState({lengthTab:newTab, length:actions , sessions: sessions, productId:productId, priceId:priceId, productAmount:amount}, () => this.updateParent());
+        this.setState({lengthTab:newTab, length:actions , sessions: sessions, productId:productId, priceId:priceId, productAmount:amount, hours:hours||12}, () => this.updateParent());
     
     }
 
@@ -572,6 +572,7 @@ class SizeOfRun extends Component {
                                 //console.log(index,product)
                                 let sessions = parseInt(product.metadata.sessions)
                                 let actions = parseInt(product.metadata.actions)
+                                let hours = parseInt(product.metadata.hours)
                                 let productId = product.product
                                 let priceId = product.id
                                 let amount = product.unit_amount
@@ -579,7 +580,7 @@ class SizeOfRun extends Component {
                                             variant="extended" 
                                             className={index == 0 ? (this.state.lengthTab === index ? "" : "orange") :"" }
                                             color={this.state.lengthTab === index ? "primary" : "default"} 
-                                            onClick={() => this.lengthTabChanged(index,sessions,actions,productId,priceId,amount)}>
+                                            onClick={() => this.lengthTabChanged(index,sessions,actions,productId,priceId,amount,hours)}>
                                 {product.nickname}
                             </Button>
                             })
