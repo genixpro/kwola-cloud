@@ -47,8 +47,13 @@ class JSRewriteProxy:
 
     def getCacheFileName(self, fileHash, fileName):
         fileNameSplit = fileName.split("_")
-        extension = fileNameSplit[-1]
-        fileNameRoot = "_".join(fileNameSplit[:-1])
+
+        if len(fileNameSplit) > 1:
+            extension = "." + fileNameSplit[-1]
+            fileNameRoot = "_".join(fileNameSplit[:-1])
+        else:
+            extension = ""
+            fileNameRoot = fileName
 
         badChars = "%=~`!@#$^&*(){}[]\\|'\":;,<>/?+"
         for char in badChars:
@@ -57,7 +62,7 @@ class JSRewriteProxy:
         # Replace all unicode characters with -CODE-, with CODE being replaced by the unicode character code
         fileNameRoot = str(fileNameRoot.encode('ascii', 'xmlcharrefreplace'), 'ascii').replace("&#", "-").replace(";", "-")
 
-        cacheFileName = os.path.join(self.config.getKwolaUserDataDirectory("javascript"), fileNameRoot[:100] + "_" + fileHash + "." + extension)
+        cacheFileName = os.path.join(self.config.getKwolaUserDataDirectory("javascript"), fileNameRoot[:100] + "_" + fileHash + extension)
 
         return cacheFileName
 
