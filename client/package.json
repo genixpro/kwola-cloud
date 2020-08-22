@@ -20,6 +20,7 @@
     "autoprefixer": "^9.6.2",
     "autosuggest-highlight": "^3.1.1",
     "axios": "^0.19.2",
+    "bluebird": "^3.7.2",
     "card-react": "1.2.7",
     "chart.js": "2.8.0",
     "clone": "2.1.2",

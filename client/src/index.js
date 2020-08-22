@@ -11,7 +11,10 @@ axios.defaults.baseURL = process.env.REACT_APP_BACKEND_API_URL;
 // axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
 // axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
-Sentry.init({dsn: "https://263fefbc56504ff3b2c5ab6f7c7ba885@o436249.ingest.sentry.io/5396968"});
+if (process.env.REACT_APP_ENABLE_SENTRY_TRACKING === 'true')
+{
+    Sentry.init({dsn: "https://263fefbc56504ff3b2c5ab6f7c7ba885@o436249.ingest.sentry.io/5396968"});
+}
 
 ReactDOM.render(<MaterialAdmin />, document.getElementById('root'));
 

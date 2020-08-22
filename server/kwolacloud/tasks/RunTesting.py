@@ -232,7 +232,7 @@ def runTesting(testingRunId):
                     errorMessage = f"A training step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}. The job did not produce a result object."
                     logging.error(errorMessage)
 
-            time.sleep(10)
+            time.sleep(60)
 
 #         if currentTrainingStepJob is not None:
 #             currentTrainingStepJob.wait()

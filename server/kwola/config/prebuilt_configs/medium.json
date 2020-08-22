@@ -125,7 +125,7 @@
   "random_html_element_other_weight": 0.5,
   "random_html_element_p_weight": 0.7,
   "random_html_element_span_weight": 0.7,
-  "random_initialization_testing_sequence_timeout": 600,
+  "random_initialization_testing_sequence_timeout": 3600,
   "random_weight_clear": 0.5,
   "random_weight_click": 1.0,
   "random_weight_double_click": 0.2,

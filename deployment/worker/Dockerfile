@@ -199,6 +199,7 @@ ENV REVISION_ID=${REVISION_ID}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 ENV CLOUDSDK_COMPUTE_ZONE=us-central1-c
 ENV CLOUDSDK_CONTAINER_CLUSTER=testing-workers
+ENV NODE_OPTIONS=--max-old-space-size=8192
 RUN gcloud container clusters get-credentials testing-workers
 
 ENV HOME=/home/kwola

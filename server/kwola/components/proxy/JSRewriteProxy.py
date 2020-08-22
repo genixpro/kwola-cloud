@@ -46,7 +46,14 @@ class JSRewriteProxy:
         ]
 
     def getCacheFileName(self, fileHash, fileName):
-        fileNameRoot, extension = os.path.splitext(fileName)
+        fileNameSplit = fileName.split("_")
+
+        if len(fileNameSplit) > 1:
+            extension = "." + fileNameSplit[-1]
+            fileNameRoot = "_".join(fileNameSplit[:-1])
+        else:
+            extension = ""
+            fileNameRoot = fileName
 
         badChars = "%=~`!@#$^&*(){}[]\\|'\":;,<>/?+"
         for char in badChars:

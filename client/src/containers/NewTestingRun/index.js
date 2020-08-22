@@ -27,6 +27,7 @@ import { createStore, combineReducers } from 'redux';
 import { reducer as reduxFormReducer } from 'redux-form';
 import {connect, Provider} from 'react-redux';
 import Auth0 from '../../helpers/auth0';
+import Promise from "bluebird";
 import {
     FormGroup,
     FormControlLabel,
@@ -35,6 +36,7 @@ import {PaymentRequestButtonElement, CardElement, useStripe, useElements, Elemen
 import stripePromise from "../../stripe";
 import mixpanel from 'mixpanel-browser';
 import SnackAlert from '@material-ui/lab/Alert';
+import LoaderButton from "../../components/LoaderButton";
 
 function addCommas(value)
 {
@@ -496,10 +498,10 @@ class SizeOfRun extends Component {
         )
     }
 
-    lengthTabChanged(newTab,sessions,actions,productId,priceId,amount)
+    lengthTabChanged(newTab,sessions,actions,productId,priceId,amount,hours)
     {
 
-        this.setState({lengthTab:newTab, length:actions , sessions: sessions, productId:productId, priceId:priceId, productAmount:amount}, () => this.updateParent());
+        this.setState({lengthTab:newTab, length:actions , sessions: sessions, productId:productId, priceId:priceId, productAmount:amount, hours:hours||12}, () => this.updateParent());
     
     }
 
@@ -570,6 +572,7 @@ class SizeOfRun extends Component {
                                 //console.log(index,product)
                                 let sessions = parseInt(product.metadata.sessions)
                                 let actions = parseInt(product.metadata.actions)
+                                let hours = parseInt(product.metadata.hours)
                                 let productId = product.product
                                 let priceId = product.id
                                 let amount = product.unit_amount
@@ -577,7 +580,7 @@ class SizeOfRun extends Component {
                                             variant="extended" 
                                             className={index == 0 ? (this.state.lengthTab === index ? "" : "orange") :"" }
                                             color={this.state.lengthTab === index ? "primary" : "default"} 
-                                            onClick={() => this.lengthTabChanged(index,sessions,actions,productId,priceId,amount)}>
+                                            onClick={() => this.lengthTabChanged(index,sessions,actions,productId,priceId,amount,hours)}>
                                 {product.nickname}
                             </Button>
                             })
@@ -1681,7 +1684,7 @@ class NewTestingRun extends Component {
             const testingRunData = this.createDataForTestingRun();
             const price = 0;
                 
-            axios.post(`/testing_runs`, testingRunData).then((response) => {
+            return axios.post(`/testing_runs`, testingRunData).then((response) => {
                 this.setState({snackbarSeverity:"success",snackbar:true,snackbarText:'Free Run completed successfully. Testing run will begin soon.'})
                 this.trackOrderSuccess(response.data.testingRunId, price);
                 this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
@@ -1689,6 +1692,7 @@ class NewTestingRun extends Component {
             {   
                 this.setState({snackbarSeverity:"warning",snackbar:true,snackbarText:'Order failed. Testing run could not start.'})
                 this.trackOrderFailure(price);
+                return Promise.rejected(error);
             });
         }
         else
@@ -1720,11 +1724,11 @@ class NewTestingRun extends Component {
     completeOrder(elements)
     {
         const price = this.calculatePrice();
-        stripePromise.then((stripe) =>
+        return stripePromise.then((stripe) =>
         {
             const cardElement = elements.getElement(CardElement);
 
-            stripe.createPaymentMethod({
+            return stripe.createPaymentMethod({
                 type: "card",
                 card: cardElement,
                 billing_details: {
@@ -1738,20 +1742,22 @@ class NewTestingRun extends Component {
                     // Show error to your customer (e.g., insufficient funds)
                     this.setState({snackbarSeverity:"warning",snackbar:true,snackbarText:'Processing Error. Please check your payment information and try again.'})
                     this.trackOrderFailure(price);
+                    return Promise.rejected(result.error);
                 }
                 else
                 {
                     const testingRunData = this.createDataForTestingRun();
                     testingRunData['payment_method'] = result.paymentMethod.id;
                     testingRunData['stripe'] = {productId:this.state.productId, priceId:this.state.priceId}
-                    axios.post(`/testing_runs`, testingRunData).then((response) => {
+                    return axios.post(`/testing_runs`, testingRunData).then((response) => {
                         this.setState({snackbarSeverity:"success",snackbar:true,snackbarText:'Order completed successfully. Your Testing run will begin soon.'})
                         this.trackOrderSuccess(response.data.testingRunId, price);
                         this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
                     }, (error) =>
-                    {   
+                    {
                         this.setState({snackbarSeverity:"warning",snackbar:true,snackbarText:'Order failed. Testing run could not start. Please ensure your payment method is valid or contact support.'})
                         this.trackOrderFailure(price);
+                        return Promise.rejected(error);
                     });
                 }
             });
@@ -2017,20 +2023,18 @@ class NewTestingRun extends Component {
 
                                                             {
                                                                 this.state.mode === "details" ?
-                                                                    <Button variant="extended" 
-                                                                            color="primary"
-                                                                            disabled={this.state.productId ? false : true}
-                                                                            className="orderBtn" onClick={() => this.launchTestingRunButtonClicked()}>
+                                                                    <LoaderButton disabled={!this.state.productId}
+                                                                            onClick={() => this.launchTestingRunButtonClicked()}
+                                                                    >
                                                                         Launch Testing Run
-                                                                    </Button> : null
+                                                                    </LoaderButton> : null
                                                             }
 
                                                             {
                                                                 this.state.mode === "payment" ?
-                                                                    <Button variant="extended" color="orange"
-                                                                            className="orderBtn" onClick={() => this.completeOrder(elements)}>
+                                                                    <LoaderButton color="orange" onClick={() => this.completeOrder(elements)}>
                                                                         Complete Order
-                                                                    </Button> : null
+                                                                    </LoaderButton> : null
                                                             }
                                                         </div>
                                                     </div>

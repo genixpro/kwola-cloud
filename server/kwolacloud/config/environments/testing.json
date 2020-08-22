@@ -20,7 +20,7 @@
   },
   "features": {
     "enableGoogleCloudLogging": false,
-    "enableSlackLogging": true,
+    "enableSlackLogging": false,
     "enableRuns": false,
     "localRuns": false
   }
