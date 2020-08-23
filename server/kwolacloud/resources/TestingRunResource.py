@@ -3,28 +3,31 @@
 #     All Rights Reserved.
 #
 
-import flask
-from flask_restful import Resource, reqparse, abort
-from flask_jwt_extended import (create_access_token, create_refresh_token,
-                                jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 from ..app import cache
-from ..datamodels.TestingRun import TestingRun
-from ..datamodels.ApplicationModel import ApplicationModel
-from ..tasks.RunTesting import runTesting
-import json
-import datetime
-import bson
-from kwola.datamodels.CustomIDField import CustomIDField
-from ..datamodels.id_utility import generateKwolaId
-from ..config.config import getKwolaConfiguration
-import stripe
 from ..auth import authenticate, isAdmin
-from ..config.config import loadConfiguration
 from ..components.KubernetesJob import KubernetesJob
-from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
+from ..config.config import getKwolaConfiguration
+from ..config.config import loadConfiguration
+from ..datamodels.ApplicationModel import ApplicationModel
+from ..datamodels.id_utility import generateKwolaId
+from ..datamodels.TestingRun import TestingRun
 from ..helpers.slack import postToKwolaSlack
-
+from ..helpers.email import sendStartTestingRunEmail
+from ..tasks.RunTesting import runTesting
+from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+from flask_restful import Resource, reqparse, abort
+from kwola.datamodels.CustomIDField import CustomIDField
+from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
+import bson
+import base64
+import datetime
+import flask
+import json
+import os
+import stripe
 import logging
+
+
 class TestingRunsGroup(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
@@ -140,6 +143,7 @@ class TestingRunsGroup(Resource):
         newTestingRun.save()
 
         postToKwolaSlack(f"New testing run was started with id {data['id']} for application {data['applicationId']}")
+        sendStartTestingRunEmail(claims['email'], application)
 
         newTestingRun.runJob()
 

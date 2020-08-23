@@ -1,3 +1,4 @@
+auth0-python
 billiard
 bs4
 cryptography==2.9
@@ -30,6 +31,7 @@ scikit-image
 scikit-learn
 scipy
 selenium
+sendgrid
 slack-webhook
 StringDist
 stripe

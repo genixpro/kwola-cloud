@@ -15,8 +15,18 @@
   },
   "auth0": {
     "apiUrl": "http://localhost:8000/api/",
-    "domain": "https://kwola.auth0.com/",
-    "keyFile": "config/keys/development_key.json"
+    "domain": "https://kwola.auth0.com",
+    "keyFile": "config/keys/development_key.json",
+    "clientId": "o0t16B5wdi12fnw0koozvdk8dq5qtOwk",
+    "clientSecret": "YZw3_REDKqyP3MCwzGYmVF_WRFJtBILzLvmurxVZ43WAI_9aW1kuYbpS7iyK1cfa",
+    "mgmtClientId": "L9agfUGCP4EEiZi6EiSFrqsYC2yg2wa1",
+    "mgmtClientSecret": "Rh_r5h-PDp7kMXprVPh0saN53x5VeFbk0AP0w08sDbogU4YArstHT4wt7cXWGm7W"
+  },
+  "sendgrid": {
+    "apiKey": "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"
+  },
+  "frontend": {
+    "url": "http://localhost:8000/"
   },
   "features": {
     "enableGoogleCloudLogging": false,

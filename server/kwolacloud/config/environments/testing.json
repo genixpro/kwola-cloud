@@ -15,8 +15,18 @@
   },
   "auth0": {
     "apiUrl": "https://testing.kwola.io/api/",
-    "domain": "https://kwola.auth0.com/",
-    "keyFile": "config/keys/testing_key.json"
+    "domain": "https://kwola.auth0.com",
+    "keyFile": "config/keys/testing_key.json",
+    "clientId": "L6in7aMdegG0Tv5NCYrnksvzSGi6ngmC",
+    "clientSecret": "5WH8zjXiLtbtgOzOKbk-gVnd64kLwCuxH4r20Ilio94dkpokdak6TWLY1WWFgyjK",
+    "mgmtClientId": "L9agfUGCP4EEiZi6EiSFrqsYC2yg2wa1",
+    "mgmtClientSecret": "Rh_r5h-PDp7kMXprVPh0saN53x5VeFbk0AP0w08sDbogU4YArstHT4wt7cXWGm7W"
+  },
+  "sendgrid": {
+    "apiKey": "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"
+  },
+  "frontend": {
+    "url": "https://testing.kwola.io/"
   },
   "features": {
     "enableGoogleCloudLogging": false,

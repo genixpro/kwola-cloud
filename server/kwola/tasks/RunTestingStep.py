@@ -71,7 +71,7 @@ def predictedActionSubProcess(configDir, shouldBeRandom, subProcessCommandQueue,
         subProcessResultQueue.put(resultFileName)
 
 
-def createDebugVideoSubProcess(configDir, executionSessionId, name="", includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilightStepNumber=None, folder="debug_videos"):
+def createDebugVideoSubProcess(configDir, executionSessionId, name="", includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilightStepNumber=None, cutoffStepNumber=None, folder="debug_videos"):
     setupLocalLogging()
 
     config = Configuration(configDir)
@@ -84,7 +84,7 @@ def createDebugVideoSubProcess(configDir, executionSessionId, name="", includeNe
 
     executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
-    videoData = agent.createDebugVideoForExecutionSession(executionSession, includeNeuralNetworkCharts=includeNeuralNetworkCharts, includeNetPresentRewardChart=includeNetPresentRewardChart, hilightStepNumber=hilightStepNumber)
+    videoData = agent.createDebugVideoForExecutionSession(executionSession, includeNeuralNetworkCharts=includeNeuralNetworkCharts, includeNetPresentRewardChart=includeNetPresentRewardChart, hilightStepNumber=hilightStepNumber, cutoffStepNumber=cutoffStepNumber)
     with open(os.path.join(kwolaDebugVideoDirectory, f'{name + "_" if name else ""}{str(executionSession.id)}.mp4'), "wb") as cloneFile:
         cloneFile.write(videoData)
 
@@ -346,7 +346,7 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
         debugVideoSubprocesses = []
 
         for session in executionSessions:
-            debugVideoSubprocess = multiprocessing.Process(target=createDebugVideoSubProcess, args=(configDir, str(session.id), "", False, False, None, "annotated_videos"))
+            debugVideoSubprocess = multiprocessing.Process(target=createDebugVideoSubProcess, args=(configDir, str(session.id), "", False, False, None, None, "annotated_videos"))
             atexit.register(lambda: debugVideoSubprocess.terminate() if debugVideoSubprocess is not None else None)
             debugVideoSubprocesses.append(debugVideoSubprocess)
 
@@ -383,7 +383,7 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
                     with open(bugVideoFilePath, 'wb') as cloneFile:
                         cloneFile.write(origFile.read())
 
-                debugVideoSubprocess = multiprocessing.Process(target=createDebugVideoSubProcess, args=(configDir, str(executionSessionId), f"{bug.id}_bug", False, False, stepNumber, "bugs"))
+                debugVideoSubprocess = multiprocessing.Process(target=createDebugVideoSubProcess, args=(configDir, str(executionSessionId), f"{bug.id}_bug", False, False, stepNumber, stepNumber+3, "bugs"))
                 atexit.register(lambda: debugVideoSubprocess.terminate())
                 debugVideoSubprocesses.append(debugVideoSubprocess)
 
@@ -394,14 +394,14 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
 
         if not shouldBeRandom and generateDebugVideo:
             # Start some parallel processes generating debug videos.
-            debugVideoSubprocess1 = multiprocessing.Process(target=createDebugVideoSubProcess, args=(configDir, str(executionSessions[0].id), "prediction", True, True, None, "debug_videos"))
+            debugVideoSubprocess1 = multiprocessing.Process(target=createDebugVideoSubProcess, args=(configDir, str(executionSessions[0].id), "prediction", True, True, None, None, "debug_videos"))
             atexit.register(lambda: debugVideoSubprocess1.terminate())
             debugVideoSubprocesses.append(debugVideoSubprocess1)
 
             # Leave a gap between the two to reduce collision
             time.sleep(5)
 
-            debugVideoSubprocess2 = multiprocessing.Process(target=createDebugVideoSubProcess, args=(configDir, str(executionSessions[int(len(executionSessions) / 3)].id), "mix", True, True, None, "debug_videos"))
+            debugVideoSubprocess2 = multiprocessing.Process(target=createDebugVideoSubProcess, args=(configDir, str(executionSessions[int(len(executionSessions) / 3)].id), "mix", True, True, None, None, "debug_videos"))
             atexit.register(lambda: debugVideoSubprocess2.terminate())
             debugVideoSubprocesses.append(debugVideoSubprocess2)
 

@@ -1201,7 +1201,7 @@ class DeepLearningAgent:
 
         return actionX, actionY, actionType
 
-    def createDebugVideoForExecutionSession(self, executionSession, includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilightStepNumber=None):
+    def createDebugVideoForExecutionSession(self, executionSession, includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilightStepNumber=None, cutoffStepNumber=None):
         """
             This method is used to generate a debug video for the given execution session.
 
@@ -1212,6 +1212,7 @@ class DeepLearningAgent:
                                                 These can also require more CPU and memory to generate so they are strictly optional.
             :param hilightStepNumber: If there is a specific frame within the video that should be hilighted, (e.g. if you are generating this debug video
                                       for a bug), then this should be the frame index. A value of None indicates that no frame should be hilighted.
+            :param cutoffStepNumber: This will cut the video short at the given step number.
             :return: Nothing is returned from this function.
         """
         videoPath = self.config.getKwolaUserDataDirectory("videos")
@@ -1241,6 +1242,9 @@ class DeepLearningAgent:
 
         mpl.use('Agg')
         mpl.rcParams['figure.max_open_warning'] = 1000
+
+        executionTraces = executionTraces[:cutoffStepNumber]
+        rawImages = rawImages[:cutoffStepNumber]
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
             futures = []

@@ -27,7 +27,7 @@ def authenticate(returnAllClaims=False):
         token = JWT(jwt=token,
                     key=key,
                     check_claims={
-                        'iss': authDomain,
+                        'iss': authDomain + "/",
                         # 'aud': apiUrl # TODO: need to figure out why the aud claim is all wonky in our jwt tokens.
                     },
                     algs=['RS256'])

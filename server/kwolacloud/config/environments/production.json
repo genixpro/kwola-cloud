@@ -14,9 +14,19 @@
     "productId": "prod_HaMORiE1sMu6bP"
   },
   "auth0": {
-    "apiUrl": "https://app.kwola.io/",
-    "domain": "https://kwola.auth0.com/",
-    "keyFile": "config/keys/production_key.json"
+    "apiUrl": "https://app.kwola.io/api/",
+    "domain": "https://kwola.auth0.com",
+    "keyFile": "config/keys/production_key.json",
+    "clientId": "foWe7KBHXVcbUQN737Ph2wMUkGlUEOFI",
+    "clientSecret": "szMW6eI0ot-JXxNyJYh_mA69lLfYYHn4Ny9rZDsX8_bfnL4JWqs4nrTyXzTAGysR",
+    "mgmtClientId": "L9agfUGCP4EEiZi6EiSFrqsYC2yg2wa1",
+    "mgmtClientSecret": "Rh_r5h-PDp7kMXprVPh0saN53x5VeFbk0AP0w08sDbogU4YArstHT4wt7cXWGm7W"
+  },
+  "sendgrid": {
+    "apiKey": "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"
+  },
+  "frontend": {
+    "url": "https://app.kwola.io/"
   },
   "features": {
     "enableGoogleCloudLogging": true,
