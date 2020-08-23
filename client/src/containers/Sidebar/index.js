@@ -6,7 +6,7 @@ import Scrollbars from '../../components/utility/customScrollBar';
 import IntlMessages from '../../components/utility/intlMessages';
 import appActions from '../../redux/app/actions';
 import LogoBlackSolo from '../../images/logo-black-solo.png';
-import Logo from '../../images/logo-white.png.png';
+import Logo from '../../images/logo-white.png';
 import options from './options';
 import Drawer, {
   LogoWrapper,
