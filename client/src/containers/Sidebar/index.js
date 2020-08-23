@@ -5,6 +5,7 @@ import Collapse from '@material-ui/core/Collapse';
 import Scrollbars from '../../components/utility/customScrollBar';
 import IntlMessages from '../../components/utility/intlMessages';
 import appActions from '../../redux/app/actions';
+// Do not remove this import even if it looks unused. its used on the login screen.
 import LogoBlackSolo from '../../images/logo-black-solo.png';
 import Logo from '../../images/logo-white.png';
 import options from './options';

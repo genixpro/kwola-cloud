@@ -128,26 +128,6 @@ class ApplicationSingle(Resource):
 
         if application is not None:
             ApplicationModel.objects(**query).delete()
-
-            #application deleted, remove testing run
-            rmOwner = {"applicationId":application_id}
-            #remove testing runs 
-            TestingRun.objects(**rmOwner).delete()
-
-            #remove execution sessions
-            ExecutionSession.objects(**rmOwner).delete()
-
-            #remove execution traces 
-            ExecutionTrace.objects(**rmOwner).delete()
-
-            #remove testing steps
-            TestingStep.objects(**rmOwner).delete()
-
-            #remove training steps
-            TrainingStep.objects(**rmOwner).delete()
-
-            #remove bug model 
-            #BugModel.objects(**rmOwner).delete()
         else:
             abort(404)
 
