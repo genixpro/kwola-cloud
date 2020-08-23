@@ -3,26 +3,29 @@
 #     All Rights Reserved.
 #
 
-import flask
-from flask_restful import Resource, reqparse, abort
-from flask_jwt_extended import (create_access_token, create_refresh_token,
-                                jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 from ..app import cache
-from ..datamodels.TestingRun import TestingRun
-from ..datamodels.ApplicationModel import ApplicationModel
-from ..tasks.RunTesting import runTesting
-import json
-import datetime
-import bson
-from kwola.datamodels.CustomIDField import CustomIDField
-from ..datamodels.id_utility import generateKwolaId
-from ..config.config import getKwolaConfiguration
-import stripe
 from ..auth import authenticate, isAdmin
-from ..config.config import loadConfiguration
 from ..components.KubernetesJob import KubernetesJob
-from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
+from ..config.config import getKwolaConfiguration
+from ..config.config import loadConfiguration
+from ..datamodels.ApplicationModel import ApplicationModel
+from ..datamodels.id_utility import generateKwolaId
+from ..datamodels.TestingRun import TestingRun
 from ..helpers.slack import postToKwolaSlack
+from ..tasks.RunTesting import runTesting
+from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+from flask_restful import Resource, reqparse, abort
+from kwola.datamodels.CustomIDField import CustomIDField
+from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, From, Attachment, FileContent, FileName, FileType, Disposition, ContentId
+import bson
+import base64
+import datetime
+import flask
+import json
+import os
+import stripe
 
 import logging
 class TestingRunsGroup(Resource):
@@ -140,6 +143,25 @@ class TestingRunsGroup(Resource):
         newTestingRun.save()
 
         postToKwolaSlack(f"New testing run was started with id {data['id']} for application {data['applicationId']}")
+
+
+        message = Mail(
+            from_email=From('admin@kwola.io', 'Kwola'),
+            to_emails=claims['email'])
+        screenshot = application.fetchScreenshot()
+        dataUri = f'data:image/png;base64,{base64.b64encode(screenshot)}'
+        message.dynamic_template_data = {
+            "applicationImage": dataUri
+        }
+        message.attachment = Attachment(FileContent(str(base64.b64encode(screenshot), 'ascii')),
+                                        FileName('application.png'),
+                                        FileType('image/png'),
+                                        Disposition('inline'),
+                                        ContentId('applicationImage'))
+        message.template_id = 'd-e2504a7736cb4de4b35f3e164f1d5537'
+        sg = SendGridAPIClient(self.configData['sendgrid']['apiKey'])
+        response = sg.send(message)
+
 
         newTestingRun.runJob()
 

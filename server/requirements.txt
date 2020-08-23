@@ -30,6 +30,7 @@ scikit-image
 scikit-learn
 scipy
 selenium
+sendgrid
 slack-webhook
 StringDist
 stripe

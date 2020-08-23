@@ -18,16 +18,10 @@ from kwola.datamodels.BugModel import BugModel
 from ..datamodels.TestingRun import TestingRun
 
 import json
-from selenium import webdriver
-from selenium.webdriver.common.proxy import Proxy, ProxyType
-from selenium.webdriver.chrome.options import Options
 import flask
 from ..datamodels.id_utility import generateKwolaId
 from ..config.config import getKwolaConfiguration
 from ..auth import authenticate, isAdmin
-import selenium
-import time
-import selenium.common.exceptions
 from ..helpers.slack import postToKwolaSlack
 import logging
 
@@ -171,18 +165,7 @@ class ApplicationImage(Resource):
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
-        chrome_options = Options()
-        chrome_options.headless = True
-
-        driver = webdriver.Chrome(chrome_options=chrome_options)
-        driver.set_page_load_timeout(20)
-        try:
-            driver.get(application.url)
-            time.sleep(0.50)
-        except selenium.common.exceptions.TimeoutException:
-            pass
-        screenshotData = driver.get_screenshot_as_png()
-        driver.quit()
+        screenshotData = application.fetchScreenshot()
 
         response = flask.make_response(screenshotData)
         response.headers['content-type'] = 'image/png'

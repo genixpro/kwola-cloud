@@ -18,6 +18,9 @@
     "domain": "https://kwola.auth0.com/",
     "keyFile": "config/keys/production_key.json"
   },
+  "sendgrid": {
+    "apiKey": "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"
+  },
   "features": {
     "enableGoogleCloudLogging": true,
     "enableSlackLogging": true,
