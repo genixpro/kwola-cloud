@@ -23,6 +23,10 @@ import tempfile
 import traceback
 from pprint import pformat
 from ..helpers.slack import postToKwolaSlack
+from ..helpers.email import sendFinishTestingRunEmail
+from ..helpers.auth0 import getUserProfileFromId
+from ..datamodels.ApplicationModel import ApplicationModel
+from kwola.datamodels.BugModel import BugModel
 
 
 def runTesting(testingRunId):
@@ -261,6 +265,11 @@ def runTesting(testingRunId):
         logging.info(f"Finished testing run {testingRunId}")
         run.status = "completed"
         run.save()
+
+        email = getUserProfileFromId(run.owner)
+        application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
+        bugCount = BugModel.objects(testingRunId=run.id).count()
+        sendFinishTestingRunEmail(email, application, run, bugCount)
     except Exception as e:
         errorMessage = f"Error in the primary RunTesting job for the testing run with id {testingRunId}:\n\n{traceback.format_exc()}"
         logging.error(f"[{os.getpid()}] {errorMessage}")
