@@ -951,7 +951,7 @@ class WebEnvironmentSession:
     def getImage(self):
         try:
             if self.hasBrowserDied:
-                return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width', 3]])
+                return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
 
             image = cv2.imdecode(numpy.frombuffer(self.driver.get_screenshot_as_png(), numpy.uint8), -1)
 
@@ -960,10 +960,10 @@ class WebEnvironmentSession:
             return image
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
-            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width', 3]])
+            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
-            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width', 3]])
+            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
-            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width', 3]])
+            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])

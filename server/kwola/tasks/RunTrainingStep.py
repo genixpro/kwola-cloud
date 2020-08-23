@@ -56,7 +56,7 @@ def writeSingleExecutionTrace(traceBatch, sampleCacheDir):
     pickleBytes = pickle.dumps(traceBatch)
     compressedPickleBytes = gzip.compress(pickleBytes)
 
-    getLogger().info(f"Writing batch cache file {cacheFile}")
+    # getLogger().info(f"Writing batch cache file {cacheFile}")
     maxAttempts = 10
     for attempt in range(maxAttempts):
         try:

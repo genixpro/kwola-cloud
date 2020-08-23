@@ -24,6 +24,7 @@ import os
 import os.path
 import pkg_resources
 import re
+from pprint import pprint
 
 
 globalCachedPrebuiltConfigs = {}
@@ -91,7 +92,11 @@ class Configuration:
         return subDirectory
 
     def __getitem__(self, key):
-        return self.configData[key]
+        try:
+            return self.configData[key]
+        except KeyError:
+            pprint(self.configData)
+            raise
 
     def __setitem__(self, key, value):
         self.configData[key] = value

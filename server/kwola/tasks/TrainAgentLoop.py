@@ -108,14 +108,14 @@ def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber
         result = process.waitForProcessResult()
 
         if result is not None and 'trainingStepId' in result:
+            result['finishTime'] = datetime.now()
+
             trainingStepId = str(result['trainingStepId'])
             trainingStep = TrainingStep.loadFromDisk(trainingStepId, config)
             trainingSequence.trainingSteps.append(trainingStep)
             trainingSequence.saveToDisk(config)
         else:
             getLogger().error(f"[{os.getpid()}] Training task subprocess appears to have failed")
-
-        result['finishTime'] = datetime.now()
 
         return result
 
@@ -136,12 +136,13 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
     process.start()
     result = process.waitForProcessResult()
 
-    # Reload the testing sequence from the db. It will have been updated by the sub-process.
-    testingStep = TestingStep.loadFromDisk(testingStep.id, config)
-    trainingSequence.testingSteps.append(testingStep)
-    trainingSequence.saveToDisk(config)
+    if result is not None and 'testingStepId' in result:
+        result['finishTime'] = datetime.now()
 
-    result['finishTime'] = datetime.now()
+        # Reload the testing sequence from the db. It will have been updated by the sub-process.
+        testingStep = TestingStep.loadFromDisk(testingStep.id, config)
+        trainingSequence.testingSteps.append(testingStep)
+        trainingSequence.saveToDisk(config)
 
     return result
 
@@ -215,7 +216,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
                 result = future.result()
                 if result is None:
                     anyFailures = True
-                if 'success' in result and not result['success']:
+                elif 'success' in result and not result['success']:
                     anyFailures = True
 
             if anyFailures and exitOnFail:
