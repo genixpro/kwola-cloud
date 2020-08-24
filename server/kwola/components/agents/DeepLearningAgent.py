@@ -2331,7 +2331,7 @@ class DeepLearningAgent:
             # itself that is leading to NaN values in the results. So here, we print out all of the loss
             # values for all of the batchs to help you track down where the error is.
             message += f"[{os.getpid()}] ERROR! NaN detected in loss calculation. Skipping optimization step."
-            for batchIndex, batchResult in batchResultTensors:
+            for batchIndex, batchResult in enumerate(batchResultTensors):
                 presentRewardLoss, discountedFutureRewardLoss, stateValueLoss, \
                 advantageLoss, actionProbabilityLoss, tracePredictionLoss, predictedExecutionFeaturesLoss, \
                 predictedCursorLoss, totalRewardLoss, totalLoss, totalRebalancedLoss, \
