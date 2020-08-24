@@ -2,10 +2,13 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import To, Mail, From, Attachment, FileContent, FileName, FileType, Disposition, ContentId
 import base64
 from ..config.config import loadConfiguration
+import logging
 
 
 
 def sendStartTestingRunEmail(email, application):
+    logging.info(f"Sending the testing run started email to {email} for application {application.id}")
+
     configData = loadConfiguration()
 
     message = Mail(
@@ -29,6 +32,8 @@ def sendStartTestingRunEmail(email, application):
 
 
 def sendFinishTestingRunEmail(email, application, testingRun, bugCount):
+    logging.info(f"Sending the testing run finished email to {email} for testing run {testingRun.id}")
+
     configData = loadConfiguration()
 
     message = Mail(
