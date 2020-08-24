@@ -74,6 +74,8 @@ def predictedActionSubProcess(configDir, shouldBeRandom, subProcessCommandQueue,
 def createDebugVideoSubProcess(configDir, executionSessionId, name="", includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilightStepNumber=None, cutoffStepNumber=None, folder="debug_videos"):
     setupLocalLogging()
 
+    getLogger().info(f"Creating debug video for session {executionSessionId} with options includeNeuralNetworkCharts={includeNeuralNetworkCharts}, includeNetPresentRewardChart={includeNetPresentRewardChart}, hilightStepNumber={hilightStepNumber}, cutoffStepNumber={cutoffStepNumber}")
+
     config = Configuration(configDir)
 
     agent = DeepLearningAgent(config, whichGpu=None)
@@ -409,7 +411,7 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
 
         del environment
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=config['video_generation_processes']) as executor:
             futures = []
             for debugVideoSubprocess in debugVideoSubprocesses:
                 futures.append(executor.submit(runAndJoinSubprocess, debugVideoSubprocess))

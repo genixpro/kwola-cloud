@@ -294,5 +294,6 @@
     "vue",
     "webix",
     "worker"
-  ]
+  ],
+  "video_generation_processes": 4
 }

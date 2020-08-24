@@ -226,5 +226,6 @@
   "web_session_action_map_max_keyword_size": 1024,
   "web_session_ignored_javascript_file_keywords": [
     
-  ]
+  ],
+  "video_generation_processes": 2
 }
