@@ -172,10 +172,9 @@ def runTesting(testingRunId):
                 # otherwise it needs to be done over again.
                 if job.successful():
                     result = job.extractResultFromLogs()
-                    if result['success']:
-                        job.cleanup()
                     if isinstance(result, dict) and result['success']:
-                        logging.info(f"Finished a testing step for run {testingRunId}")
+                        logging.info(f"Finished a testing step for run {testingRunId} with name {job.kubeJobName()}")
+                        job.cleanup()
                         countTrainingIterationsNeeded += trainingIterationsNeededPerSession * kwolaConfigData['web_session_parallel_execution_sessions']
                         run.testingSessionsCompleted += kwolaConfigData['web_session_parallel_execution_sessions']
                         completedTestingSteps += 1
@@ -266,7 +265,7 @@ def runTesting(testingRunId):
         run.status = "completed"
         run.save()
 
-        email = getUserProfileFromId(run.owner)
+        email = getUserProfileFromId(run.owner)['email']
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
         bugCount = BugModel.objects(testingRunId=run.id).count()
         sendFinishTestingRunEmail(email, application, run, bugCount)
