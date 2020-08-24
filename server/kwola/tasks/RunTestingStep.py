@@ -411,7 +411,7 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
 
         del environment
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=config['video_generation_processes']) as executor:
             futures = []
             for debugVideoSubprocess in debugVideoSubprocesses:
                 futures.append(executor.submit(runAndJoinSubprocess, debugVideoSubprocess))
