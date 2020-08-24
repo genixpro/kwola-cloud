@@ -139,7 +139,10 @@ class ViewTestingRun extends Component {
                                     {
                                         this.state.testingRun.endTime ?
                                             <span>End Time: {moment(this.state.testingRun.endTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
-                                            : <span>End Time: N/A<br/></span>
+                                            :
+                                            this.state.testingRun.predictedEndTime ?
+                                            <span>Predicted End Time: {moment(this.state.testingRun.predictedEndTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
+                                            : <span />
                                     }
                                 </Papersheet>
                                 <br/>

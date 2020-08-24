@@ -27,6 +27,7 @@ from ..helpers.email import sendFinishTestingRunEmail
 from ..helpers.auth0 import getUserProfileFromId
 from ..datamodels.ApplicationModel import ApplicationModel
 from kwola.datamodels.BugModel import BugModel
+from dateutil.relativedelta import relativedelta
 
 
 def runTesting(testingRunId):
@@ -57,6 +58,9 @@ def runTesting(testingRunId):
 
     if run.startTime is None:
         run.startTime = datetime.datetime.now()
+
+    if run.predictedEndTime is None:
+        run.predictedEndTime = run.startTime + relativedelta(hours=run.configuration.hours)
 
     run.status = "running"
     run.save()
@@ -263,6 +267,7 @@ def runTesting(testingRunId):
 
         logging.info(f"Finished testing run {testingRunId}")
         run.status = "completed"
+        run.endTime = datetime.datetime.now()
         run.save()
 
         email = getUserProfileFromId(run.owner)['email']
