@@ -2,7 +2,6 @@ auth0-python
 billiard
 bs4
 cryptography==2.9
-dateutil
 dnspython
 filetype
 Flask-Caching
@@ -26,6 +25,7 @@ pandas
 protobuf==3.11.3
 psutil
 pyyaml
+python-dateutil
 questionary
 requests
 scikit-image
