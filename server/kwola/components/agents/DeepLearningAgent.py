@@ -1243,10 +1243,13 @@ class DeepLearningAgent:
         mpl.use('Agg')
         mpl.rcParams['figure.max_open_warning'] = 1000
 
-        executionTraces = executionTraces[:cutoffStepNumber]
-        rawImages = rawImages[:cutoffStepNumber]
+        if cutoffStepNumber is not None:
+            executionTraces = executionTraces[:cutoffStepNumber]
+            rawImages = rawImages[:cutoffStepNumber]
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
+        # Max workers set to 1 here temporarily due to a threading bug in the latest version of matplotlib
+        # with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             futures = []
             for trace, rawImage in zip(executionTraces, rawImages):
                 if trace is not None:
@@ -1264,7 +1267,12 @@ class DeepLearningAgent:
 
             concurrent.futures.wait(futures)
 
-        subprocess.run(['ffmpeg', '-f', 'image2', "-r", "2", '-i', 'kwola-screenshot-%05d.png', '-vcodec', chooseBestFfmpegVideoCodec(), '-pix_fmt', 'yuv420p', '-crf', '15', "debug.mp4"], cwd=tempScreenshotDirectory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(['ffmpeg', '-f', 'image2', "-r", "2", '-i', 'kwola-screenshot-%05d.png', '-vcodec', chooseBestFfmpegVideoCodec(), '-pix_fmt', 'yuv420p', '-crf', '15', "debug.mp4"], cwd=tempScreenshotDirectory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            errorMsg = f"Error! Attempted to create a movie using ffmpeg and the process exited with exit-code {result.returncode}. The following output was observed:\n"
+            errorMsg += str(result.stdout, 'utf8') + "\n"
+            errorMsg += str(result.stderr, 'utf8') + "\n"
+            getLogger().error(errorMsg)
 
         moviePath = os.path.join(tempScreenshotDirectory, "debug.mp4")
 
@@ -1716,8 +1724,8 @@ class DeepLearningAgent:
             fileName = f"kwola-screenshot-{debugImageIndex + 1:05d}.png"
             filePath = os.path.join(tempScreenshotDirectory, fileName)
             skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
-
-            # getLogger().info(f"[{os.getpid()}] Completed debug image {fileName}")
+            if includeNeuralNetworkCharts:
+                getLogger().info(f"[{os.getpid()}] Completed debug image {fileName}")
         except Exception:
             getLogger().error(f"[{os.getpid()}] Failed to create debug image!\n{traceback.format_exc()}")
 
