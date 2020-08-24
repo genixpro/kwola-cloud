@@ -1,5 +1,5 @@
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, From, Attachment, FileContent, FileName, FileType, Disposition, ContentId
+from sendgrid.helpers.mail import To, Mail, From, Attachment, FileContent, FileName, FileType, Disposition, ContentId
 import base64
 from ..config.config import loadConfiguration
 
@@ -10,7 +10,7 @@ def sendStartTestingRunEmail(email, application):
 
     message = Mail(
         from_email=From('admin@kwola.io', 'Kwola'),
-        to_emails=email)
+        to_emails=To(email))
 
     message.dynamic_template_data = {}
 
@@ -33,7 +33,7 @@ def sendFinishTestingRunEmail(email, application, testingRun, bugCount):
 
     message = Mail(
         from_email=From('admin@kwola.io', 'Kwola'),
-        to_emails=email)
+        to_emails=To(email))
 
     message.dynamic_template_data = {
         "bugCount": bugCount,
