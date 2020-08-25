@@ -76,6 +76,7 @@ RUN apt-get update && apt-get install \
     gfortran \
     git \
     google-cloud-sdk \
+    iotop \
     libatlas-base-dev \
     libblas-dev \
     libcurl4-openssl-dev \

@@ -282,6 +282,8 @@ def updateTraceRewardLoss(traceId, sampleRewardLoss, configDir):
 
 def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommandQueue, subProcessBatchResultQueue, subprocessIndex=0, applicationId=None):
     try:
+        setupLocalLogging()
+
         config = Configuration(configDir)
 
         getLogger().info(f"[{os.getpid()}] Starting initialization for batch preparation sub process.")
@@ -651,14 +653,14 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
                             for subProcessCommandQueue in subProcessCommandQueues:
                                 subProcessCommandQueue.put(("starved", {}))
                             starved = True
-                            getLogger().debug(f"[{os.getpid()}] GPU pipeline is starved for batches. Switching to starved state.")
+                            getLogger().info(f"[{os.getpid()}] GPU pipeline is starved for batches. Ready batches: {ready}. Switching to starved state.")
                             lastStarveStateAdjustment = trainingStep.numberOfIterationsCompleted
                     else:
                         if starved:
                             for subProcessCommandQueue in subProcessCommandQueues:
                                 subProcessCommandQueue.put(("full", {}))
                             starved = False
-                            getLogger().debug(f"[{os.getpid()}] GPU pipeline is full of batches. Switching to full state")
+                            getLogger().info(f"[{os.getpid()}] GPU pipeline is full of batches. Ready batches: {ready}. Switching to full state")
                             lastStarveStateAdjustment = trainingStep.numberOfIterationsCompleted
 
                 batches = []
