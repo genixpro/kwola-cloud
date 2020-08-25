@@ -115,6 +115,7 @@ class ViewBug extends Component {
                                     <span><Link href="#" onClick={()=>this.seekVideo()}>click to see bug in video</Link></span><br/><br/>
                                     <span>Bug Type: {this.state.bug.error._cls || "Unknown"}</span><br/><br/>
                                     <span>Log Level: {this.state.bug.error.logLevel || "Unknown"}</span><br/><br/>
+                                    <span>URL: {this.state.bug.error.page || "Unknown"}</span><br/><br/>
                                     <span>Message:</span><br/>
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message}</pre>
 
