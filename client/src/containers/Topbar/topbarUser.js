@@ -62,8 +62,9 @@ class TopbarUser extends Component {
 
     openFeedback()
     {
-        window.HubSpotConversations.widget.open();
+//        window.HubSpotConversations.widget.open();
         this.setState({ visible: false });
+        window.location.href = "https://kwola.atlassian.net/servicedesk/customer/portal/2";
     }
 
   render() {
