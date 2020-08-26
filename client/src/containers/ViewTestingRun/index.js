@@ -30,6 +30,7 @@ import { CSVLink, CSVDownload } from "react-csv";
 
 import SessionTable from './sessionTable'
 import BugsTable from './bugsTable'
+import FeedbackWidget from "../FeedbackWidget";
 
 class ViewTestingRun extends Component {
     state = {
@@ -158,6 +159,10 @@ class ViewTestingRun extends Component {
                                         </Papersheet>
                                         : null
                                 }
+                                <br/>
+                                <Papersheet title={`Feedback`} subtitle={"What do you think of the bugs we found?"}>
+                                    <FeedbackWidget applicationId={this.state.testingRun.applicationId} testingRunId={this.state.testingRun._id} />
+                                </Papersheet>
                             </HalfColumn>
                         </Row>
 
