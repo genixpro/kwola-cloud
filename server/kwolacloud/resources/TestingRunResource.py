@@ -21,6 +21,7 @@ from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 import bson
 import base64
 import datetime
+from dateutil.relativedelta import relativedelta
 import flask
 import json
 import os
@@ -116,11 +117,11 @@ class TestingRunsGroup(Resource):
               price=data['stripe']['priceId']
             )
             invoiceId = subscription.id
-            data['payment_method']
+
             invoice = stripe.Invoice.create(
                 customer=customer.id,
             )
-            payment = stripe.Invoice.pay(sid=invoice.id,payment_method=data['payment_method'])
+            payment = stripe.Invoice.pay(sid=invoice.id, payment_method=data['payment_method'])
             #return payment;
             
             if payment.paid != True:
@@ -135,8 +136,11 @@ class TestingRunsGroup(Resource):
         data['owner'] = application.owner
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
+        data['predictedEndTime'] = data['startTime'] + relativedelta(hours=data['configuration']['hours'])
         data['testingSessionsRemaining'] = data['configuration']['totalTestingSessions']
-        if 'stripe' in data : del data['stripe']
+
+        if 'stripe' in data:
+            del data['stripe']
         
         newTestingRun = TestingRun(**data)
 

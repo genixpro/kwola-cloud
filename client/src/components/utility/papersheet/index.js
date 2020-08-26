@@ -57,7 +57,9 @@ export default props => (
       }
     }}
   >
-    {props.title ? <Title title={props.title} subtitle={props.subtitle} tooltip={props.tooltip} /> : ""}
+    {props.title ? <Title title={props.title} subtitle={props.subtitle} tooltip={props.tooltip}>
+        {props.button ? <div style={{"float":"right"}}>{props.button}</div> : null}
+    </Title>: ""}
     <Content {...props}>{props.children}</Content>
   </Papersheet>
 );

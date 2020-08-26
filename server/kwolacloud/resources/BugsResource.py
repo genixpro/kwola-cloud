@@ -44,6 +44,8 @@ class BugsGroup(Resource):
         if testingRunId is not None:
             queryParams["testingRunId"] = testingRunId
 
+        queryParams["isMuted"] = False
+
         bugs = BugModel.objects(**queryParams).no_dereference().order_by("-startTime")
 
         return {"bugs": json.loads(bugs.to_json())}
@@ -70,6 +72,31 @@ class BugsSingle(Resource):
             return abort(404)
 
         return {"bug": json.loads(bug.to_json())}
+
+    def post(self, bug_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": bug_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        bug = BugModel.objects(**queryParams).first()
+
+        if bug is None:
+            return abort(404)
+
+        data = flask.request.get_json()
+        # Only allow updating the muted field
+        if 'isMuted' in data:
+            bug.isMuted = data['isMuted']
+        if 'mutedErrorId' in data:
+            bug.mutedErrorId = data['mutedErrorId']
+
+        bug.save()
+
+        return {}
 
 
 
