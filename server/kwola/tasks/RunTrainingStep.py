@@ -586,6 +586,7 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
         trainingStep.totalRewardLosses = []
         trainingStep.totalLosses = []
         trainingStep.totalRebalancedLosses = []
+        trainingStep.hadNaN = False
         trainingStep.saveToDisk(config)
 
         agent = DeepLearningAgent(config=config, whichGpu=gpu)
@@ -707,6 +708,9 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
                         for executionTraceId, sampleRewardLoss in zip(batch['traceIds'], sampleRewardLosses):
                             for subProcessCommandQueue in subProcessCommandQueues:
                                 subProcessCommandQueue.put(("update-loss", {"executionTraceId": executionTraceId, "sampleRewardLoss": sampleRewardLoss}))
+                else:
+                    trainingStep.hadNaN = True
+                    break
 
                 if trainingStep.numberOfIterationsCompleted % config['training_update_target_network_every'] == (config['training_update_target_network_every'] - 1):
                     getLogger().info(f"[{os.getpid()}] Updating the target network weights to the current primary network weights.")
@@ -736,7 +740,7 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
             subProcess.join()
 
         # Safe guard, don't save the model if any nan's were detected
-        if numpy.count_nonzero(numpy.isnan(trainingStep.totalLosses)) == 0:
+        if not trainingStep.hadNaN:
             if gpu is None or gpu == 0:
                 agent.save()
                 agent.save(saveName=str(trainingStep.id))
