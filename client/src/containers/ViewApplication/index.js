@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import {connect, Provider} from 'react-redux';
 import { createStore, combineReducers } from 'redux';
 import { reducer as reduxFormReducer } from 'redux-form';
+import { Link } from 'react-router-dom';
 import LayoutWrapper from '../../components/utility/layoutWrapper';
 import PageTitle from '../../components/utility/paperTitle';
 import Papersheet, { DemoWrapper } from '../../components/utility/papersheet';
@@ -75,10 +76,6 @@ class ViewApplication extends Component {
         this.setState({applicationSettingsMenuOpen: false});
     }
 
-    mutedErrorsMenuEntryClicked()
-    {
-        this.props.history.push(`/app/dashboard/applications/${this.props.match.params.id}/muted_errors`);
-    }
 
     render() {
         const { result } = this.state;
@@ -112,7 +109,8 @@ class ViewApplication extends Component {
                                                     open={this.state.applicationSettingsMenuOpen}
                                                     onClose={() => this.closeApplicationSettingsMenuOpen()}
                                                 >
-                                                    <MenuItem onClick={() => this.mutedErrorsMenuEntryClicked()}>View Muted Errors</MenuItem>
+                                                    <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/muted_errors`} style={{"color":"black", "textDecoration": "none"}}>View Muted Errors</Link></MenuItem>
+                                                    <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/notifications`} style={{"color":"black", "textDecoration": "none"}}>Configure Notifications</Link></MenuItem>
                                                 </Menus>
                                             </div>
                                         }

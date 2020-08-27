@@ -28,6 +28,7 @@ from ..helpers.auth0 import getUserProfileFromId
 from ..datamodels.ApplicationModel import ApplicationModel
 from kwola.datamodels.BugModel import BugModel
 from dateutil.relativedelta import relativedelta
+from kwolacloud.helpers.slack import postToCustomerSlack
 
 
 def runTesting(testingRunId):
@@ -274,6 +275,10 @@ def runTesting(testingRunId):
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
         bugCount = BugModel.objects(testingRunId=run.id, isMuted=False).count()
         sendFinishTestingRunEmail(email, application, run, bugCount)
+
+        if application.enableSlackTestingRunCompletedNotifications:
+            postToCustomerSlack(f"A testing run has completed and found {bugCount} errors. View the results here: {configData['frontend']['url']}app/dashboard/testing_runs/{run.id}", application)
+
     except Exception as e:
         errorMessage = f"Error in the primary RunTesting job for the testing run with id {testingRunId}:\n\n{traceback.format_exc()}"
         logging.error(f"[{os.getpid()}] {errorMessage}")

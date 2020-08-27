@@ -30,6 +30,14 @@ class ApplicationModel(Document):
 
     url = StringField(required=True)
 
+    slackAccessToken = StringField(default=None)
+
+    slackChannel = StringField(default=None)
+
+    enableSlackNewBugNotifications = BooleanField(default=True)
+
+    enableSlackTestingRunCompletedNotifications = BooleanField(default=True)
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
 

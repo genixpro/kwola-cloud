@@ -20,6 +20,10 @@ const routes = [
     component: lazy(() => import('../ViewMutedErrors')),
   },
   {
+    path: 'applications/:id/notifications',
+    component: lazy(() => import('../ConfigureNotifications')),
+  },
+  {
     path: 'applications',
     component: lazy(() => import('../ListApplications')),
   },

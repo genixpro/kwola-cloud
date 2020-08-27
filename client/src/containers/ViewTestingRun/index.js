@@ -62,20 +62,24 @@ class ViewTestingRun extends Component {
         });
     }
 
-    formatCSVData(){
+    formatCSVData()
+    {
         let headers = []
         let data = []
         let bugsClone = [...this.state.bugs];
         bugsClone.map(Bug =>{
             let bug = Object.assign({}, Bug);
-            if(headers.length == 0 ){
+            if(headers.length === 0 )
+            {
                 Object.keys(bug).map(key =>{
                     headers.push({label:key,key:key})
                     
                 }) 
             }
-            for(let arg in bug){
-                if(Array.isArray(bug[arg]) || typeof bug[arg] === "object"){
+            for(let arg in bug)
+            {
+                if(Array.isArray(bug[arg]) || typeof bug[arg] === "object")
+                {
                     bug[arg] = JSON.stringify(bug[arg])
                 }
                 
@@ -95,7 +99,8 @@ class ViewTestingRun extends Component {
         }
     }
 
-    render() {
+    render()
+    {
         const { result } = this.state;
         const testingTooltip = <Tooltip placement="right-end" title="Info related to this testing run.  View bugs and web browser sessions below.">
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
@@ -160,7 +165,7 @@ class ViewTestingRun extends Component {
                                         : null
                                 }
                                 <br/>
-                                <Papersheet title={`Feedback`} subtitle={"What do you think of the bugs we found?"}>
+                                <Papersheet title={`What do you think of the results?`}>
                                     <FeedbackWidget applicationId={this.state.testingRun.applicationId} testingRunId={this.state.testingRun._id} />
                                 </Papersheet>
                             </HalfColumn>
