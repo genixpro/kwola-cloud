@@ -16,6 +16,9 @@ import {MenuItem} from "../../components/uielements/menus";
 import {Select} from "../UiElements/Select/select.style";
 import {FormControl, InputLabel} from "@material-ui/core";
 import Promise from "bluebird";
+import TextField from "../../components/uielements/textfield";
+import Auth from "../../helpers/auth0/index"
+import _ from "underscore";
 
 // InputLabel
 
@@ -81,13 +84,13 @@ class ConfigureNotifications extends Component {
         this.setState({application: application}, () => this.saveApplication())
     }
 
-    saveApplication()
+    saveApplication = _.debounce(() =>
     {
         axios.post(`/application/${this.props.match.params.id}`, this.state.application).then((response) =>
         {
             // this.setState({application: response.data.application})
         });
-    }
+    }, 500)
 
     computeSlackRedirectURI()
     {
@@ -123,6 +126,14 @@ class ConfigureNotifications extends Component {
     }
 
 
+    notificationEmailChanged(newValue)
+    {
+        const application = this.state.application;
+        application.overrideNotificationEmail = newValue;
+        this.setState({application: application}, () => this.saveApplication())
+    }
+
+
     render() {
         const { result } = this.state;
 
@@ -137,10 +148,62 @@ class ConfigureNotifications extends Component {
                     <Row>
                         <Column xs={12} sm={10} md={8} lg={6} xl={4}>
                             <Papersheet
-                                title={`Configure Notifications`}
-                                // subtitle={}
+                                title={`Email Notifications`}
                             >
-                                <h4>Slack Notifications</h4>
+                                <div>
+                                    <FormGroup>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={this.state.application.enableEmailNewTestingRunNotifications}
+                                                    onChange={() => this.toggleNotificationEnabled('enableEmailNewTestingRunNotifications')}
+                                                    value="enableEmailNewTestingRunNotifications"
+                                                />
+                                            }
+                                            label="Email when a testing run is started?"
+                                        />
+                                        <br/>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={this.state.application.enableEmailNewBugNotifications}
+                                                    onChange={() => this.toggleNotificationEnabled('enableEmailNewBugNotifications')}
+                                                    value="enableEmailNewBugNotifications"
+                                                />
+                                            }
+                                            label="Email when a bug is found?"
+                                        />
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={this.state.application.enableEmailTestingRunCompletedNotifications}
+                                                    onChange={() => this.toggleNotificationEnabled('enableEmailTestingRunCompletedNotifications')}
+                                                    value="enableEmailTestingRunCompletedNotifications"
+                                                />
+                                            }
+                                            label="Email when a testing run is completed?"
+                                        />
+                                        <TextField
+                                            id="notification-email"
+                                            label="Notification Email"
+                                            title={"Notification Email"}
+                                            type={"text"}
+                                            placeholder={`Default: ${Auth.getUserInfo()['email']}`}
+                                            value={this.state.application.overrideNotificationEmail}
+                                            onChange={(event) => this.notificationEmailChanged(event.target.value)}
+                                            margin="normal"
+                                        />
+                                        <br/>
+                                    </FormGroup>
+                                </div>
+                            </Papersheet>
+                        </Column>
+                    </Row>
+
+
+                    <Row>
+                        <Column xs={12} sm={10} md={8} lg={6} xl={4}>
+                            <Papersheet title={`Slack Notifications`}>
                                 {
                                     this.state.application.slackAccessToken ?
                                         <div>

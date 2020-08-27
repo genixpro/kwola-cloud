@@ -271,10 +271,11 @@ def runTesting(testingRunId):
         run.endTime = datetime.datetime.now()
         run.save()
 
-        email = getUserProfileFromId(run.owner)['email']
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
-        bugCount = BugModel.objects(testingRunId=run.id, isMuted=False).count()
-        sendFinishTestingRunEmail(email, application, run, bugCount)
+        bugCount = BugModel.objects(owner=application.owner, testingRunId=run.id, isMuted=False).count()
+
+        if application.enableEmailTestingRunCompletedNotifications:
+            sendFinishTestingRunEmail(application, run, bugCount)
 
         if application.enableSlackTestingRunCompletedNotifications:
             postToCustomerSlack(f"A testing run has completed and found {bugCount} errors. View the results here: {configData['frontend']['url']}app/dashboard/testing_runs/{run.id}", application)

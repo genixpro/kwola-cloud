@@ -115,8 +115,14 @@ class ApplicationSingle(Resource):
                 'url',
                 'slackAccessToken',
                 'slackChannel',
+                'enableSlackNewTestingRunNotifications',
                 'enableSlackNewBugNotifications',
-                'enableSlackTestingRunCompletedNotifications'
+                'enableSlackTestingRunCompletedNotifications',
+                'overrideNotificationEmail',
+                'enableEmailNewTestingRunNotifications',
+                'enableEmailNewBugNotifications',
+                'enableEmailTestingRunCompletedNotifications'
+
             ]
             for key, value in data.items():
                 if key in allowedEditFields:

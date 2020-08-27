@@ -18,11 +18,23 @@ class SlackLogHandler(logging.Handler):
             slack.post(text=message)
 
 
-def postToCustomerSlack(message, application):
+def postToCustomerSlack(message, application, attachmentText=None):
     if application.slackChannel is not None and application.slackAccessToken is not None:
+        blocks = []
+
+        if attachmentText is not None:
+            blocks.append({
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": attachmentText
+                }
+            })
+
         data = {
             "channel": application.slackChannel,
-            "text": message
+            "text": message,
+            "blocks": blocks
         }
 
         headers = {

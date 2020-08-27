@@ -34,9 +34,19 @@ class ApplicationModel(Document):
 
     slackChannel = StringField(default=None)
 
+    enableSlackNewTestingRunNotifications = BooleanField(default=True)
+
     enableSlackNewBugNotifications = BooleanField(default=True)
 
     enableSlackTestingRunCompletedNotifications = BooleanField(default=True)
+
+    enableEmailNewTestingRunNotifications = BooleanField(default=True)
+
+    enableEmailNewBugNotifications = BooleanField(default=True)
+
+    enableEmailTestingRunCompletedNotifications = BooleanField(default=True)
+
+    overrideNotificationEmail = StringField(default=None)
 
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
