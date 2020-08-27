@@ -1,0 +1,209 @@
+import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
+import {connect, Provider} from 'react-redux';
+import { createStore, combineReducers } from 'redux';
+import { reducer as reduxFormReducer } from 'redux-form';
+import LayoutWrapper from '../../components/utility/layoutWrapper';
+import Papersheet, { DemoWrapper } from '../../components/utility/papersheet';
+import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, Row, Column} from '../../components/utility/rowColumn';
+import axios from "axios";
+import 'plyr/dist/plyr.css'
+import {FormControlLabel, FormGroup} from "../../components/uielements/form";
+import Checkbox from "../../components/uielements/checkbox";
+import LoaderButton from "../../components/LoaderButton";
+import Input from "../../components/uielements/input";
+import {MenuItem} from "../../components/uielements/menus";
+import {Select} from "../UiElements/Select/select.style";
+import {FormControl, InputLabel} from "@material-ui/core";
+import Promise from "bluebird";
+import TextField from "../../components/uielements/textfield";
+import Auth from "../../helpers/auth0/index"
+import _ from "underscore";
+import {Button} from "../UiElements/Button/button.style";
+import ThumbDownIcon from "@material-ui/icons/ThumbDown";
+
+// InputLabel
+
+
+class ConfigureIntegrations extends Component {
+    state = {
+        application: null,
+        availableJIRAProjects: []
+    };
+
+    componentDidMount()
+    {
+        if (window.location.search)
+        {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('code'))
+            {
+                axios.post(`/application/${this.props.match.params.id}/slack`, {
+                    "code": urlParams.get("code"),
+                    "redirect_uri": this.computeJIRARedirectURI()
+                }).then((response) =>
+                {
+                    this.loadApplication();
+                });
+
+                window.location.search = "";
+            }
+            else
+            {
+                this.loadApplication();
+            }
+        }
+        else
+        {
+            this.loadApplication();
+        }
+    }
+
+    loadApplication()
+    {
+        axios.get(`/application/${this.props.match.params.id}`).then((response) =>
+        {
+            this.setState({application: response.data});
+            this.loadAvailableJIRAProjects();
+        });
+    }
+
+    loadAvailableJIRAProjects()
+    {
+        axios.get(`/application/${this.props.match.params.id}/jira`).then((response) =>
+        {
+            this.setState({availableJIRAProjects: response.data.projects})
+        });
+    }
+
+
+    computeJIRARedirectURI()
+    {
+        return process.env.REACT_APP_FRONTEND_URL + "app/dashboard/jira";
+    }
+
+    disconnectJIRA()
+    {
+        return new Promise((reject, resolve) =>
+        {
+            const application = this.state.application;
+            application.jiraAccessToken = null;
+            application.jiraCloudId = null;
+            this.setState({application: application}, () => resolve(this.saveApplication()))
+        });
+    }
+
+
+    changeJIRAProject(newProject)
+    {
+        const application = this.state.application;
+        application.jiraProject = newProject;
+        this.setState({application: application}, () => this.saveApplication())
+    }
+
+
+    saveApplication = _.debounce(() =>
+    {
+        axios.post(`/application/${this.props.match.params.id}`, this.state.application).then((response) =>
+        {
+            // this.setState({application: response.data.application})
+        });
+    }, 500)
+
+    togglePushBugsToJiraEnabled()
+    {
+        const application = this.state.application;
+        application.enablePushBugsToJIRA = !application.enablePushBugsToJIRA;
+        this.setState({application}, () => this.saveApplication());
+    }
+
+
+
+    render() {
+        const { result } = this.state;
+
+        if (!this.state.application)
+        {
+            return <LayoutWrapper />;
+        }
+
+        return (
+            <LayoutWrapper>
+                <FullColumn>
+                    <Row>
+                        <Column xs={12} sm={10} md={8} lg={6} xl={4}>
+                            <Papersheet title={`JIRA Integration`}>
+                                {
+                                    this.state.application.jiraAccessToken ?
+                                        <div>
+                                            <FormGroup>
+                                                <FormControl>
+                                                    <InputLabel id="jira-project-label">JIRA Project</InputLabel>
+                                                    <Select
+                                                        value={this.state.application.jiraProject}
+                                                        onChange={(evt) => this.changeJIRAProject(evt.target.value)}
+                                                        labelId={"jira-project-label"}
+                                                        input={<Input id="jira-project" />}
+                                                        placeholder={"Select a project..."}
+                                                    >
+                                                        {
+                                                            this.state.availableJIRAProjects.map((project) =>
+                                                            {
+                                                                return <MenuItem value={project.id} key={project.id}>
+                                                                    <span>{project.name}</span>
+                                                                </MenuItem>
+                                                            })
+                                                        }
+                                                    </Select>
+                                                </FormControl>
+                                            </FormGroup>
+                                            <br/>
+                                            <FormGroup>
+                                                <FormControlLabel
+                                                    control={
+                                                        <Checkbox
+                                                            checked={this.state.application.enablePushBugsToJIRA}
+                                                            onChange={() => this.togglePushBugsToJiraEnabled()}
+                                                            value="enablePushBugsToJIRA"
+                                                        />
+                                                    }
+                                                    label="Post bugs found to JIRA?"
+                                                />
+                                                <br/>
+                                            </FormGroup>
+                                            <br/>
+                                            <div style={{"display": "flex", "flexDirection": "row"}}>
+                                                <LoaderButton onClick={() => this.disconnectJIRA()}>
+                                                    Disconnect JIRA
+                                                </LoaderButton>
+                                            </div>
+                                        </div> : null
+                                }
+
+                                {
+                                    !this.state.application.jiraAccessToken ?
+                                        <div>
+                                            <a href={`https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=V5H8QVarAt0oytdolmjMzoIIrmRc1i41&scope=write%3Ajira-work%20read%3Ajira-work%20manage%3Ajira-configuration&redirect_uri=${encodeURIComponent(this.computeJIRARedirectURI())}&state=${this.props.match.params.id}&response_type=code&prompt=consent`}>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                 >
+                                                    Connect to JIRA
+                                                </Button>
+                                            </a>
+                                        </div> : null
+                                }
+
+
+                            </Papersheet>
+                        </Column>
+                    </Row>
+                </FullColumn>
+            </LayoutWrapper>
+        );
+    }
+}
+
+const mapStateToProps = (state) => {return { ...state.ConfigureIntegrations} };
+export default connect(mapStateToProps)(ConfigureIntegrations);
+

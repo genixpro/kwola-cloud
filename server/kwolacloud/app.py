@@ -51,7 +51,7 @@ if configData['features']['enableSlackLogging']:
 application = flaskApplication
 
 # import models
-from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage, ApplicationSubscribeToSlack, ApplicationTestSlack
+from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage, ApplicationSubscribeToSlack, ApplicationTestSlack, ApplicationIntegrateWithJIRA
 from .resources.TestingStepResource import TestingStepsGroup, TestingStepsSingle
 from .resources.ExecutionSessionResource import ExecutionSessionGroup, ExecutionSessionSingle, ExecutionSessionVideo
 from .resources.ExecutionTraceResource import ExecutionTraceGroup, ExecutionTraceSingle
@@ -71,6 +71,7 @@ api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
 api.add_resource(ApplicationImage, '/api/application/<string:application_id>/image')
 api.add_resource(ApplicationTestSlack, '/api/application/<string:application_id>/slack/test')
 api.add_resource(ApplicationSubscribeToSlack, '/api/application/<string:application_id>/slack')
+api.add_resource(ApplicationIntegrateWithJIRA, '/api/application/<string:application_id>/jira')
 
 
 api.add_resource(TestingStepsGroup, '/api/testing_sequences')

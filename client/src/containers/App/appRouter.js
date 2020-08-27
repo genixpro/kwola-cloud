@@ -12,6 +12,10 @@ const routes = [
     component: lazy(() => import('../NewApplication')),
   },
   {
+    path: 'jira',
+    component: lazy(() => import('../JIRARedirect')),
+  },
+  {
     path: 'applications/:id/new_testing_run',
     component: lazy(() => import('../NewTestingRun')),
   },
@@ -22,6 +26,10 @@ const routes = [
   {
     path: 'applications/:id/notifications',
     component: lazy(() => import('../ConfigureNotifications')),
+  },
+  {
+    path: 'applications/:id/integrations',
+    component: lazy(() => import('../ConfigureIntegrations')),
   },
   {
     path: 'applications',

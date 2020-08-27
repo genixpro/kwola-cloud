@@ -121,7 +121,11 @@ class ApplicationSingle(Resource):
                 'overrideNotificationEmail',
                 'enableEmailNewTestingRunNotifications',
                 'enableEmailNewBugNotifications',
-                'enableEmailTestingRunCompletedNotifications'
+                'enableEmailTestingRunCompletedNotifications',
+                'jiraAccessToken',
+                'jiraCloudId',
+                'jiraProject',
+                'enablePushBugsToJIRA'
 
             ]
             for key, value in data.items():
@@ -251,5 +255,85 @@ class ApplicationTestSlack(Resource):
             postToCustomerSlack("Hooray! Kwola has been successfully connected to your Slack workspace.", application)
 
             return {}
+        else:
+            abort(404)
+
+
+
+class ApplicationIntegrateWithJIRA(Resource):
+    def get(self, application_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
+        query = {"id": application_id}
+        if not isAdmin():
+            query['owner'] = user
+
+        application = ApplicationModel.objects(**query).limit(1).first()
+
+        if application is not None:
+            if application.jiraAccessToken is None:
+                return {"projects": []}
+
+            headers = {
+                "Authorization": f"Bearer {application.jiraAccessToken}",
+                "Content-Type": "application/json"
+            }
+
+            response = requests.get(f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/3/project/search", headers=headers)
+
+            if response.status_code != 200:
+                abort(500)
+                return
+            else:
+                return {
+                    "projects": response.json()['values']
+                }
+        else:
+            abort(404)
+
+
+
+    def post(self, application_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
+        query = {"id": application_id}
+        if not isAdmin():
+            query['owner'] = user
+
+        application = ApplicationModel.objects(**query).limit(1).first()
+
+        if application is not None:
+            data = flask.request.get_json()
+
+            response = requests.post("https://auth.atlassian.com/oauth/token", {
+                "code": data['code'],
+                "redirect_uri": data['redirect_uri'],
+                "grant_type": "authorization_code",
+                "client_id": "V5H8QVarAt0oytdolmjMzoIIrmRc1i41",
+                "client_secret": "rNzHZLKqiB1DNp0Mv3bw7nQ_DngMepAt6vTViWJEA6ekf1f904whaWPNxhR0C3Ji"
+            })
+
+            if response.status_code != 200:
+                abort(400)
+            else:
+                application.jiraAccessToken = response.json()['access_token']
+
+                headers = {
+                    "Authorization": f"Bearer {application.jiraAccessToken}"
+                }
+
+                response = requests.get("https://api.atlassian.com/oauth/token/accessible-resources", headers=headers)
+
+                if response.status_code != 200:
+                    return abort(500)
+
+                application.jiraCloudId = response.json()[0]['id']
+
+                application.save()
+            return ""
         else:
             abort(404)

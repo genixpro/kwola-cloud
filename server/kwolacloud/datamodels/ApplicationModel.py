@@ -48,6 +48,14 @@ class ApplicationModel(Document):
 
     overrideNotificationEmail = StringField(default=None)
 
+    jiraAccessToken = StringField(default=None)
+
+    jiraCloudId = StringField(default=None)
+
+    jiraProject = StringField(default=None)
+
+    enablePushBugsToJIRA = BooleanField(default=True)
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
 
