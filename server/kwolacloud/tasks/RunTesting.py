@@ -272,7 +272,7 @@ def runTesting(testingRunId):
 
         email = getUserProfileFromId(run.owner)['email']
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
-        bugCount = BugModel.objects(testingRunId=run.id).count()
+        bugCount = BugModel.objects(testingRunId=run.id, isMuted=False).count()
         sendFinishTestingRunEmail(email, application, run, bugCount)
     except Exception as e:
         errorMessage = f"Error in the primary RunTesting job for the testing run with id {testingRunId}:\n\n{traceback.format_exc()}"

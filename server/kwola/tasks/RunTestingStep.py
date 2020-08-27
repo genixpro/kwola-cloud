@@ -113,6 +113,15 @@ def loadAllBugs(config):
     return bugs
 
 
+def loadAllMutedErrors(config, applicationId):
+    if config['data_serialization_method'] == 'mongo':
+        from kwolacloud.datamodels.MutedError import MutedError
+        mutedErrors = MutedError.objects(applicationId=applicationId)
+        return list(mutedErrors)
+    else:
+        return []
+
+
 def runAndJoinSubprocess(debugVideoSubprocess):
     debugVideoSubprocess.start()
     debugVideoSubprocess.join()
@@ -353,6 +362,7 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
             debugVideoSubprocesses.append(debugVideoSubprocess)
 
         existingBugs = loadAllBugs(config)
+        mutedErrors = loadAllMutedErrors(config, testStep.applicationId)
 
         getLogger().info(f"[{os.getpid()}] Found {len(newErrorsThisTestingStep)} new unique errors this session.")
         for errorIndex, error, executionSessionId, stepNumber in zip(range(len(newErrorsThisTestingStep)), newErrorsThisTestingStep, newErrorOriginalExecutionSessionIds, newErrorOriginalStepNumbers):
@@ -362,6 +372,7 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
             bug.applicationId = testStep.applicationId
             bug.testingStepId = testStep.id
             bug.executionSessionId = executionSessionId
+            bug.creationDate = datetime.now()
             bug.stepNumber = stepNumber
             bug.error = error
             bug.testingRunId = testStep.testingRunId
@@ -371,6 +382,15 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
                 if bug.isDuplicateOf(existingBug):
                     duplicate = True
                     break
+
+            for mutedError in mutedErrors:
+                if bug.isDuplicateOf(mutedError):
+                    bug.isMuted = True
+                    bug.mutedErrorId = mutedError.id
+                    mutedError.totalOccurrences += 1
+                    mutedError.mostRecentOccurrence = datetime.now()
+                    mutedError.saveToDisk(config)
+
 
             if not duplicate:
                 bug.saveToDisk(config, overrideSaveFormat="json", overrideCompression=0)

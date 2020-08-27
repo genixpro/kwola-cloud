@@ -63,6 +63,8 @@ from .resources.Webhooks import StripeWebhook
 from .resources.Billing import BillingURLResource, Products
 from .resources.PromoCodes import PromoCodes
 from .resources.HomeResource import Home
+from .resources.MutedErrorResource import MutedErrorsGroup, MutedErrorsSingle
+from .resources.FeedbackSubmissionResource import FeedbackSubmissionsGroup, FeedbackSubmissionSingle
 
 api.add_resource(ApplicationGroup, '/api/application')
 api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
@@ -94,6 +96,9 @@ api.add_resource(TestingRunsRestart, '/api/testing_runs/<string:testing_run_id>/
 api.add_resource(TrainingStepGroup, '/api/training_steps')
 api.add_resource(TrainingStepSingle, '/api/training_steps/<string:training_step_id>')
 
+api.add_resource(MutedErrorsGroup, '/api/muted_errors')
+api.add_resource(MutedErrorsSingle, '/api/muted_errors/<string:muted_error_id>')
+
 
 api.add_resource(BugsGroup, '/api/bugs')
 api.add_resource(BugsSingle, '/api/bugs/<string:bug_id>')
@@ -106,6 +111,9 @@ api.add_resource(PromoCodes, '/api/promocodes')
 api.add_resource(StripeWebhook, '/api/stripe_webhook')
 
 api.add_resource(Home, '/api/home')
+
+api.add_resource(FeedbackSubmissionsGroup, '/api/feedback_submission')
+api.add_resource(FeedbackSubmissionSingle, '/api/feedback_submission/<string:feedback_submission_id>')
 
 # api.add_resource(resources.TokenRefresh, '/refresh')
 # api.add_resource(resources.SecretResource, '/api/secret/test')

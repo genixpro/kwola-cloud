@@ -24,10 +24,15 @@ import axios from "axios";
 import Auth from "../../helpers/auth0/index"
 import mixpanel from 'mixpanel-browser';
 import Tooltip from "../../components/uielements/tooltip";
+import Title from "../../components/utility/paperTitle";
+import SettingsIcon from '@material-ui/icons/Settings';
+import Menus, { MenuItem } from '../../components/uielements/menus';
 
 class ViewApplication extends Component {
     state = {
         result: '',
+        applicationSettingsMenuOpen: false,
+        applicationSettingsMenuAnchorElement: null
     };
 
     componentDidMount()
@@ -57,6 +62,24 @@ class ViewApplication extends Component {
         this.props.history.push(`/app/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
     }
 
+    toggleApplicationSettingsMenuOpen(event)
+    {
+        this.setState({
+            applicationSettingsMenuOpen: !this.state.applicationSettingsMenuOpen,
+            applicationSettingsMenuAnchorElement: event.currentTarget
+        });
+    }
+
+    closeApplicationSettingsMenuOpen()
+    {
+        this.setState({applicationSettingsMenuOpen: false});
+    }
+
+    mutedErrorsMenuEntryClicked()
+    {
+        this.props.history.push(`/app/dashboard/applications/${this.props.match.params.id}/muted_errors`);
+    }
+
     render() {
         const { result } = this.state;
         const recentRunTooltip = <Tooltip placement="right-end" title="Your Kwola Applications. Click an application to view more.">
@@ -71,6 +94,28 @@ class ViewApplication extends Component {
                                     <Papersheet
                                         title={`${this.state.application.name}`}
                                         subtitle={`Last Tested ${moment(this.props.timestamp).format('MMM Do, YYYY')}`}
+                                        button={
+                                            <div>
+                                                <Button variant="contained"
+                                                                size="small"
+                                                                color={"default"}
+                                                                title={"Settings"}
+                                                                aria-owns={this.state.applicationSettingsMenuOpen ? 'application-settings-menu' : null}
+                                                                aria-haspopup="true"
+                                                                onClick={(event) => this.toggleApplicationSettingsMenuOpen(event)}
+                                                                >
+                                                    <SettingsIcon />
+                                                </Button>
+                                                <Menus
+                                                    id="application-settings-menu"
+                                                    anchorEl={this.state.applicationSettingsMenuAnchorElement}
+                                                    open={this.state.applicationSettingsMenuOpen}
+                                                    onClose={() => this.closeApplicationSettingsMenuOpen()}
+                                                >
+                                                    <MenuItem onClick={() => this.mutedErrorsMenuEntryClicked()}>View Muted Errors</MenuItem>
+                                                </Menus>
+                                            </div>
+                                        }
                                     >
                                         <Row>
                                         <HalfColumn>

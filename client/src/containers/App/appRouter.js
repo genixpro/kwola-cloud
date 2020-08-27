@@ -16,6 +16,10 @@ const routes = [
     component: lazy(() => import('../NewTestingRun')),
   },
   {
+    path: 'applications/:id/muted_errors',
+    component: lazy(() => import('../ViewMutedErrors')),
+  },
+  {
     path: 'applications',
     component: lazy(() => import('../ListApplications')),
   },
