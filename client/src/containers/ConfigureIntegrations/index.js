@@ -28,7 +28,8 @@ import ThumbDownIcon from "@material-ui/icons/ThumbDown";
 class ConfigureIntegrations extends Component {
     state = {
         application: null,
-        availableJIRAProjects: []
+        availableJIRAProjects: [],
+        availableJIRAIssueTypes: []
     };
 
     componentDidMount()
@@ -64,15 +65,18 @@ class ConfigureIntegrations extends Component {
         axios.get(`/application/${this.props.match.params.id}`).then((response) =>
         {
             this.setState({application: response.data});
-            this.loadAvailableJIRAProjects();
+            this.loadJIRAData();
         });
     }
 
-    loadAvailableJIRAProjects()
+    loadJIRAData()
     {
         axios.get(`/application/${this.props.match.params.id}/jira`).then((response) =>
         {
-            this.setState({availableJIRAProjects: response.data.projects})
+            this.setState({
+                availableJIRAProjects: response.data.projects,
+                availableJIRAIssueTypes: response.data.issueTypes
+            })
         });
     }
 
@@ -98,6 +102,14 @@ class ConfigureIntegrations extends Component {
     {
         const application = this.state.application;
         application.jiraProject = newProject;
+        this.setState({application: application}, () => {this.saveApplication()})
+    }
+
+
+    changeJIRAIssueType(newIssueType)
+    {
+        const application = this.state.application;
+        application.jiraIssueType = newIssueType;
         this.setState({application: application}, () => this.saveApplication())
     }
 
@@ -106,6 +118,7 @@ class ConfigureIntegrations extends Component {
     {
         axios.post(`/application/${this.props.match.params.id}`, this.state.application).then((response) =>
         {
+            this.loadJIRAData();
             // this.setState({application: response.data.application})
         });
     }, 500)
@@ -137,28 +150,6 @@ class ConfigureIntegrations extends Component {
                                     this.state.application.jiraAccessToken ?
                                         <div>
                                             <FormGroup>
-                                                <FormControl>
-                                                    <InputLabel id="jira-project-label">JIRA Project</InputLabel>
-                                                    <Select
-                                                        value={this.state.application.jiraProject}
-                                                        onChange={(evt) => this.changeJIRAProject(evt.target.value)}
-                                                        labelId={"jira-project-label"}
-                                                        input={<Input id="jira-project" />}
-                                                        placeholder={"Select a project..."}
-                                                    >
-                                                        {
-                                                            this.state.availableJIRAProjects.map((project) =>
-                                                            {
-                                                                return <MenuItem value={project.id} key={project.id}>
-                                                                    <span>{project.name}</span>
-                                                                </MenuItem>
-                                                            })
-                                                        }
-                                                    </Select>
-                                                </FormControl>
-                                            </FormGroup>
-                                            <br/>
-                                            <FormGroup>
                                                 <FormControlLabel
                                                     control={
                                                         <Checkbox
@@ -172,6 +163,55 @@ class ConfigureIntegrations extends Component {
                                                 <br/>
                                             </FormGroup>
                                             <br/>
+                                            {
+                                                this.state.application.enablePushBugsToJIRA ?
+                                                    <FormGroup>
+                                                        <FormControl>
+                                                            <InputLabel id="jira-project-label">JIRA Project</InputLabel>
+                                                            <Select
+                                                                value={this.state.application.jiraProject}
+                                                                onChange={(evt) => this.changeJIRAProject(evt.target.value)}
+                                                                labelId={"jira-project-label"}
+                                                                input={<Input id="jira-project" />}
+                                                                placeholder={"Select a project..."}
+                                                            >
+                                                                {
+                                                                    this.state.availableJIRAProjects.map((project) =>
+                                                                    {
+                                                                        return <MenuItem value={project.id} key={project.id}>
+                                                                            <span>{project.name}</span>
+                                                                        </MenuItem>
+                                                                    })
+                                                                }
+                                                            </Select>
+                                                        </FormControl>
+                                                    </FormGroup> : null
+                                            }
+                                            <br/>
+                                            {
+                                                (this.state.application.enablePushBugsToJIRA && this.state.application.jiraProject) ? <FormGroup>
+                                                    <FormControl>
+                                                        <InputLabel id="jira-issue-type-label">JIRA Issue Type</InputLabel>
+                                                        <Select
+                                                            value={this.state.application.jiraIssueType}
+                                                            onChange={(evt) => this.changeJIRAIssueType(evt.target.value)}
+                                                            labelId={"jira-issue-type-label"}
+                                                            input={<Input id="jira-issue-type" />}
+                                                            placeholder={"Select an issue type..."}
+                                                        >
+                                                            {
+                                                                this.state.availableJIRAIssueTypes.map((issueType) =>
+                                                                {
+                                                                    return <MenuItem value={issueType.id} key={issueType.id}>
+                                                                        <span>{issueType.name} [{issueType.id}]</span>
+                                                                    </MenuItem>
+                                                                })
+                                                            }
+                                                        </Select>
+                                                    </FormControl>
+                                                </FormGroup> : null
+                                            }
+                                            <br/>
                                             <div style={{"display": "flex", "flexDirection": "row"}}>
                                                 <LoaderButton onClick={() => this.disconnectJIRA()}>
                                                     Disconnect JIRA
@@ -183,7 +223,7 @@ class ConfigureIntegrations extends Component {
                                 {
                                     !this.state.application.jiraAccessToken ?
                                         <div>
-                                            <a href={`https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=V5H8QVarAt0oytdolmjMzoIIrmRc1i41&scope=write%3Ajira-work%20read%3Ajira-work%20manage%3Ajira-configuration&redirect_uri=${encodeURIComponent(this.computeJIRARedirectURI())}&state=${this.props.match.params.id}&response_type=code&prompt=consent`}>
+                                            <a href={`https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=V5H8QVarAt0oytdolmjMzoIIrmRc1i41&scope=write%3Ajira-work%20read%3Ajira-work%20manage%3Ajira-configuration%20offline_access&redirect_uri=${encodeURIComponent(this.computeJIRARedirectURI())}&state=${this.props.match.params.id}&response_type=code&prompt=consent`}>
                                                 <Button
                                                     variant="contained"
                                                     color="primary"

@@ -16,6 +16,7 @@ from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.datamodels.TrainingStepModel import TrainingStep
 from kwola.datamodels.BugModel import BugModel
 from ..datamodels.TestingRun import TestingRun
+from ..config.config import getKwolaConfiguration, loadConfiguration
 
 import json
 import flask
@@ -125,6 +126,7 @@ class ApplicationSingle(Resource):
                 'jiraAccessToken',
                 'jiraCloudId',
                 'jiraProject',
+                'jiraIssueType',
                 'enablePushBugsToJIRA'
 
             ]
@@ -273,23 +275,53 @@ class ApplicationIntegrateWithJIRA(Resource):
         application = ApplicationModel.objects(**query).limit(1).first()
 
         if application is not None:
-            if application.jiraAccessToken is None:
-                return {"projects": []}
+            responseData = {
+                "projects": [],
+                "issueTypes": []
+            }
+
+            if application.jiraRefreshToken is None:
+                return responseData
+
+            refreshTokenSuccess = application.refreshJiraAccessToken()
+            if not refreshTokenSuccess:
+                abort(500)
+                return
 
             headers = {
                 "Authorization": f"Bearer {application.jiraAccessToken}",
                 "Content-Type": "application/json"
             }
 
-            response = requests.get(f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/3/project/search", headers=headers)
-
-            if response.status_code != 200:
+            jiraAPIResponse = requests.get(f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/3/project/search", headers=headers)
+            if jiraAPIResponse.status_code != 200:
+                logging.error(jiraAPIResponse.text)
                 abort(500)
                 return
             else:
-                return {
-                    "projects": response.json()['values']
-                }
+                responseData['projects'] = jiraAPIResponse.json()['values']
+
+            if application.jiraProject:
+                jiraAPIResponse = requests.get(f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/2/issuetype", headers=headers)
+                if jiraAPIResponse.status_code != 200:
+                    logging.error("Error fetching issue types for JIRA project.", jiraAPIResponse.text)
+                    abort(500)
+                    return
+                else:
+                    responseData['issueTypes'] = [
+                        issueType
+                        for issueType in jiraAPIResponse.json()
+                        if ('scope' in issueType and 'project' in issueType['scope'] and issueType['scope']['project']['id'] == application.jiraProject)
+                    ]
+
+                    if len(responseData['issueTypes']) == 0:
+                        responseData['issueTypes'] = [
+                            issueType
+                            for issueType in jiraAPIResponse.json()
+                            if 'scope' not in issueType or 'project' not in issueType['scope']
+                        ]
+
+            return responseData
         else:
             abort(404)
 
@@ -321,6 +353,7 @@ class ApplicationIntegrateWithJIRA(Resource):
                 abort(400)
             else:
                 application.jiraAccessToken = response.json()['access_token']
+                application.jiraRefreshToken = response.json()['refresh_token']
 
                 headers = {
                     "Authorization": f"Bearer {application.jiraAccessToken}"
