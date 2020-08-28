@@ -101,7 +101,7 @@ def sendFinishTestingRunEmail(application, testingRun, bugCount):
 
     message.dynamic_template_data = {
         "bugCount": bugCount,
-        "testingRunUrl": configData['frontend']['url'] + "dashboard/testing_runs/" + testingRun.id
+        "testingRunUrl": configData['frontend']['url'] + "app/dashboard/testing_runs/" + testingRun.id
     }
 
     screenshot = application.fetchScreenshot()
