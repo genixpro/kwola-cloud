@@ -68,26 +68,29 @@ def writeSingleExecutionTrace(traceBatch, sampleCacheDir):
             continue
 
 def addExecutionSessionToSampleCache(executionSessionId, config):
-    try:
-        getLogger().info(f"Adding {executionSessionId} to the sample cache.")
-        agent = DeepLearningAgent(config, whichGpu=None)
+    getLogger().info(f"Adding {executionSessionId} to the sample cache.")
+    maxAttempts = 10
+    for attempt in range(maxAttempts):
+        try:
+            agent = DeepLearningAgent(config, whichGpu=None)
 
-        sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples")
+            sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples")
 
-        executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
+            executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
-        batches = agent.prepareBatchesForExecutionSession(executionSession)
+            batches = agent.prepareBatchesForExecutionSession(executionSession)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            futures = []
-            for traceIndex, traceBatch in zip(range(len(executionSession.executionTraces) - 1), batches):
-                futures.append(executor.submit(writeSingleExecutionTrace, traceBatch, sampleCacheDir))
-            for future in futures:
-                future.result()
-        getLogger().info(f"Finished adding {executionSessionId} to the sample cache.")
-    except Exception as e:
-        getLogger().error(f"[{os.getpid()}] Error! Failed to prepare samples for execution session {executionSessionId}. Error was: {traceback.print_exc()}")
-        raise
+            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+                futures = []
+                for traceIndex, traceBatch in zip(range(len(executionSession.executionTraces) - 1), batches):
+                    futures.append(executor.submit(writeSingleExecutionTrace, traceBatch, sampleCacheDir))
+                for future in futures:
+                    future.result()
+            getLogger().info(f"Finished adding {executionSessionId} to the sample cache.")
+        except Exception as e:
+            if attempt == (maxAttempts - 1):
+                getLogger().error(f"[{os.getpid()}] Error! Failed to prepare samples for execution session {executionSessionId}. Error was: {traceback.print_exc()}")
+                raise
 
 
 def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory):
