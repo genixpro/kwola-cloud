@@ -24,6 +24,8 @@ import os
 import os.path
 import pkg_resources
 import re
+import time
+import pymongo.errors
 from pprint import pprint
 
 
@@ -68,7 +70,16 @@ class Configuration:
 
         if self.configData['data_serialization_method'] == "mongo" and 'mongo_uri' in self.configData and self.configData['mongo_uri']:
             import mongoengine
-            mongoengine.connect(host=self.configData['mongo_uri'])
+            maxAttempts = 5
+            for attempt in range(maxAttempts):
+                try:
+                    mongoengine.connect(host=self.configData['mongo_uri'])
+                except Exception as e:
+                    if attempt == (maxAttempts - 1):
+                        raise
+                    else:
+                        time.sleep(2**attempt)
+
 
 
 
