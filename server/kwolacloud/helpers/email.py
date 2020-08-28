@@ -4,7 +4,7 @@ import base64
 from ..config.config import loadConfiguration
 import logging
 import os.path
-from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from kwola.config.config import Configuration
 from ..helpers.auth0 import getUserProfileFromId
 
@@ -80,6 +80,9 @@ def sendBugFoundNotification(application, bug):
     message.template_id = 'd-a7f557fbf657448b9a38f7e3e5be3f8a'
     sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
     response = sg.send(message)
+
+    if not configData['features']['localRuns']:
+        unmountTestingRunStorageDrive(configDir)
 
 
 def sendFinishTestingRunEmail(application, testingRun, bugCount):
