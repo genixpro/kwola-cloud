@@ -15,6 +15,9 @@ import CircularProgress from '../../components/uielements/circularProgress';
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 import FeedbackWidget from "../FeedbackWidget";
+import FastForwardIcon from '@material-ui/icons/FastForward';
+
+
 class ViewBug extends Component {
     state = {
         result: '',
@@ -105,6 +108,15 @@ class ViewBug extends Component {
                                         <source  type="video/mp4" />
                                         <span>Your browser does not support the video tag.</span>
                                     </video>
+                                    <br />
+                                    <Button variant="contained"
+                                            color={"primary"}
+                                            className="orderBtn"
+                                            title={"Show Bug"}
+                                            onClick={() => this.seekVideo()}>
+                                        <span>Skip to bug frame in video</span>
+                                        <FastForwardIcon />
+                                    </Button>
                                 </Papersheet>
                             </HalfColumn>
 
@@ -113,7 +125,6 @@ class ViewBug extends Component {
                                     title={`Bug ${this.state.bug._id}`}
                                     // subtitle={}
                                 >
-                                    <span><Link href="#" onClick={()=>this.seekVideo()}>click to see bug in video</Link></span><br/><br/>
                                     <span>Bug Type: {this.state.bug.error._cls || "Unknown"}</span><br/><br/>
                                     <span>Log Level: {this.state.bug.error.logLevel || "Unknown"}</span><br/><br/>
                                     <span>Message:</span><br/>
