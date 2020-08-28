@@ -72,7 +72,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         bugs = BugModel.objects(owner=run.owner, testingStepId=newID, isMuted=False)
         for bug in bugs:
             if application.enableEmailNewBugNotifications:
-                sendBugFoundNotification(application, bug)
+                # sendBugFoundNotification(application, bug)
+                pass
 
             if application.enableSlackNewBugNotifications:
                 postToCustomerSlack(
