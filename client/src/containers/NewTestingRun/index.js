@@ -37,6 +37,7 @@ import stripePromise from "../../stripe";
 import mixpanel from 'mixpanel-browser';
 import SnackAlert from '@material-ui/lab/Alert';
 import LoaderButton from "../../components/LoaderButton";
+import FeedbackWidget from "../FeedbackWidget";
 
 function addCommas(value)
 {
@@ -589,8 +590,7 @@ class SizeOfRun extends Component {
                         :<div></div>
                     }
                     <p>
-                        Select the size of the run to be performed.  The size is dependent upon the number of browsers and number of actions per browser.  
-                        <br/>*A test run of Kwola is recommended to ensure proper configuration.
+                        Select the size of the run to be performed. The size changes how many browsers get launched, and thus how thorough the AI will search through your application to find bugs.
                     </p>
 
                     {/*
@@ -1941,106 +1941,113 @@ class NewTestingRun extends Component {
                                         title={`Checkout`}
                                         subtitle={``}
                                     >
-                                        <CheckoutPageWrapper className="checkoutPageWrapper">
-                                            <Row>
-                                                <FullColumn>
-                                                    <div className="orderInfo">
-                                                        <div className="orderTable">
-                                                            <div className="orderTableHead">
-                                                                <span className="tableHead">Item</span>
-                                                                <span className="tableHead">Amount</span>
-                                                            </div>
-
-                                                            <div className="orderTableBody">
-                                                                <div className="singleOrderInfo">
-                                                                    <p>
-                                                                        <span>Actions (ie. clicks) per browser session</span>
-                                                                    </p>
-                                                                    <span
-                                                                        className="totalPrice">{addCommas(this.state.length)}</span>
-                                                                </div>
-                                                                <div className="singleOrderInfo">
-                                                                    <p>
-                                                                        <span>Browser Sessions</span>
-                                                                    </p>
-                                                                    <span
-                                                                        className="totalPrice">* {addCommas(this.state.sessions)}</span>
-                                                                </div>
-                                                                <div className="singleOrderInfo">
-                                                                    <p>
-                                                                        <span>Total actions to be performed</span>
-                                                                    </p>
-                                                                    <span
-                                                                        className="totalPrice">= {addCommas(this.state.length * this.state.sessions)}</span>
-                                                                </div>
-                                                            {/*<div className="singleOrderInfo">
-                                                                    <p>
-                                                                        <span>Cost per 1,000 actions</span>
-                                                                    </p>
-                                                                    <span
-                                                                        className="totalPrice">* ${1.00.toFixed(2)}</span>
-                                                                </div>
-                                                            */}
-                                                            </div>
-                                                            {
-                                                                this.state.discountApplied === 0 ?
-                                                                    <div className="orderTableFooter">
-                                                                        <span>Total</span>
-                                                                        <span>= ${this.calculateFinalTotal().toFixed(2)} CAN / run</span>
-                                                                    </div> : null
-                                                            }
-                                                            {
-                                                                this.state.discountApplied > 0 ? [
-                                                                    <div className="orderTableFooter" key={0}>
-                                                                        <span>Sub total</span>
-                                                                        <span>= ${this.calculatePrice().toFixed(2)} CAN / run</span>
-                                                                    </div>,
-                                                                    <div className="orderTableFooter" key={0}>
-                                                                        <span>Discount Applied</span>
-                                                                        <span>= (${(this.calculateDiscount()).toFixed(2)})</span>
-                                                                    </div>,
-                                                                    <div className="orderTableFooter" key={0}>
-                                                                        <span>Total</span>
-                                                                        <span>= ${(this.calculateFinalTotal() * (1.0 - this.state.discountApplied)).toFixed(2)} CAN / run</span>
-                                                                    </div>
-                                                                ] : null
-                                                            }
-
-                                                            <div className="orderTableFooter">
-                                                                <span>Apply Promo Code</span>
-                                                                <span>
-                                                                <TextField
-                                                                    id={`promo-code-field`}
-                                                                    label={`Promo Code`}
-                                                                    title={"Promo Code"}
-                                                                    type={"text"}
-                                                                    value={this.state.promoCode}
-                                                                    onChange={(event) => this.changePromoCode(event.target.value)}
-                                                                    margin="normal"
-                                                                />
-                                                                </span>
-                                                            </div>
-
-                                                            {
-                                                                this.state.mode === "details" ?
-                                                                    <LoaderButton disabled={!this.state.productId}
-                                                                            onClick={() => this.launchTestingRunButtonClicked()}
-                                                                    >
-                                                                        Launch Testing Run
-                                                                    </LoaderButton> : null
-                                                            }
-
-                                                            {
-                                                                this.state.mode === "payment" ?
-                                                                    <LoaderButton color="orange" onClick={() => this.completeOrder(elements)}>
-                                                                        Complete Order
-                                                                    </LoaderButton> : null
-                                                            }
-                                                        </div>
+                                        <CheckoutPageWrapper className="checkoutPageWrapper" style={{"marginTop": "-20px", "marginBottom": "-20px"}}>
+                                            <div className="orderInfo">
+                                                <div className="orderTable">
+                                                    <div className="orderTableHead">
+                                                        <span className="tableHead">Item</span>
+                                                        <span className="tableHead">Amount</span>
                                                     </div>
-                                                </FullColumn>
-                                            </Row>
+
+                                                    <div className="orderTableBody">
+                                                        <div className="singleOrderInfo">
+                                                            <p>
+                                                                <span>Actions (ie. clicks) per browser session</span>
+                                                            </p>
+                                                            <span
+                                                                className="totalPrice">{addCommas(this.state.length)}</span>
+                                                        </div>
+                                                        <div className="singleOrderInfo">
+                                                            <p>
+                                                                <span>Browser Sessions</span>
+                                                            </p>
+                                                            <span
+                                                                className="totalPrice">* {addCommas(this.state.sessions)}</span>
+                                                        </div>
+                                                        <div className="singleOrderInfo">
+                                                            <p>
+                                                                <span>Total actions to be performed</span>
+                                                            </p>
+                                                            <span
+                                                                className="totalPrice">= {addCommas(this.state.length * this.state.sessions)}</span>
+                                                        </div>
+                                                    {/*<div className="singleOrderInfo">
+                                                            <p>
+                                                                <span>Cost per 1,000 actions</span>
+                                                            </p>
+                                                            <span
+                                                                className="totalPrice">* ${1.00.toFixed(2)}</span>
+                                                        </div>
+                                                    */}
+                                                    </div>
+                                                    {
+                                                        this.state.discountApplied === 0 ?
+                                                            <div className="orderTableFooter" style={{"marginBottom": "10px"}}>
+                                                                <span>Total</span>
+                                                                <span>= ${this.calculateFinalTotal().toFixed(2)} CAN / run</span>
+                                                            </div> : null
+                                                    }
+                                                    {
+                                                        this.state.discountApplied > 0 ? [
+                                                            <div className="orderTableFooter" key={0} style={{"marginBottom": "0px"}}>
+                                                                <span>Sub total</span>
+                                                                <span>= ${this.calculatePrice().toFixed(2)} CAN / run</span>
+                                                            </div>,
+                                                            <div className="orderTableFooter" key={0} style={{"marginBottom": "0px"}}>
+                                                                <span>Discount Applied</span>
+                                                                <span>= (${(this.calculateDiscount()).toFixed(2)})</span>
+                                                            </div>,
+                                                            <div className="orderTableFooter" key={0} style={{"marginBottom": "10px"}}>
+                                                                <span>Total</span>
+                                                                <span>= ${(this.calculateFinalTotal() * (1.0 - this.state.discountApplied)).toFixed(2)} CAN / run</span>
+                                                            </div>
+                                                        ] : null
+                                                    }
+
+                                                    <div className="orderTableFooter" style={{"marginBottom": "10px"}}>
+                                                        <span>Apply Promo Code</span>
+                                                        <span>
+                                                        <TextField
+                                                            id={`promo-code-field`}
+                                                            label={`Promo Code`}
+                                                            title={"Promo Code"}
+                                                            type={"text"}
+                                                            value={this.state.promoCode}
+                                                            onChange={(event) => this.changePromoCode(event.target.value)}
+                                                            margin="normal"
+                                                        />
+                                                        </span>
+                                                    </div>
+
+                                                    {
+                                                        this.state.mode === "details" ?
+                                                            <LoaderButton disabled={!this.state.productId}
+                                                                    onClick={() => this.launchTestingRunButtonClicked()}
+                                                            >
+                                                                Launch Testing Run
+                                                            </LoaderButton> : null
+                                                    }
+
+                                                    {
+                                                        this.state.mode === "payment" ?
+                                                            <LoaderButton color="orange" onClick={() => this.completeOrder(elements)}>
+                                                                Complete Order
+                                                            </LoaderButton> : null
+                                                    }
+                                                </div>
+                                            </div>
                                         </CheckoutPageWrapper>
+                                    </Papersheet>
+                                    <br/>
+                                    <Papersheet title={`Did you like this checkout page?`}>
+                                        <FeedbackWidget
+                                            applicationId={this.props.match.params.id}
+                                            positivePlaceholder={"What did you like about it?"}
+                                            negativePlaceholder={"How could we make it better?"}
+                                            screen={"New Testing Run"}
+                                            positiveText={"Thumbs up: I like this checkout page."}
+                                            negativeText={"Thumbs down: I find this confusing or don't like the price."}
+                                        />
                                     </Papersheet>
                                 </div>
                             </OneThirdColumn>

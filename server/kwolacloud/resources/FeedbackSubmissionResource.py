@@ -48,7 +48,7 @@ class FeedbackSubmissionsGroup(Resource):
         newFeedbackSubmission = FeedbackSubmission(**data)
         newFeedbackSubmission.save()
 
-        message = f"We received feedback with id {data['id']}. Valence: {data['valence']}."
+        message = f"We received feedback with id {data['id']}. Screen: {data['screen']}. Valence: {data['valence']}."
         if data['text']:
             message += f" Text: {data['text']}"
         postToKwolaSlack(message)

@@ -21,6 +21,7 @@ import Auth from "../../helpers/auth0/index"
 import _ from "underscore";
 import {Button} from "../UiElements/Button/button.style";
 import ThumbDownIcon from "@material-ui/icons/ThumbDown";
+import FeedbackWidget from "../FeedbackWidget";
 
 // InputLabel
 
@@ -39,7 +40,7 @@ class ConfigureIntegrations extends Component {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('code'))
             {
-                axios.post(`/application/${this.props.match.params.id}/slack`, {
+                axios.post(`/application/${this.getApplicationId()}/slack`, {
                     "code": urlParams.get("code"),
                     "redirect_uri": this.computeJIRARedirectURI()
                 }).then((response) =>
@@ -60,9 +61,14 @@ class ConfigureIntegrations extends Component {
         }
     }
 
+    getApplicationId()
+    {
+        return this.props.match.params.id;
+    }
+
     loadApplication()
     {
-        axios.get(`/application/${this.props.match.params.id}`).then((response) =>
+        axios.get(`/application/${this.getApplicationId()}`).then((response) =>
         {
             this.setState({application: response.data});
             this.loadJIRAData();
@@ -71,7 +77,7 @@ class ConfigureIntegrations extends Component {
 
     loadJIRAData()
     {
-        axios.get(`/application/${this.props.match.params.id}/jira`).then((response) =>
+        axios.get(`/application/${this.getApplicationId()}/jira`).then((response) =>
         {
             this.setState({
                 availableJIRAProjects: response.data.projects,
@@ -116,7 +122,7 @@ class ConfigureIntegrations extends Component {
 
     saveApplication = _.debounce(() =>
     {
-        axios.post(`/application/${this.props.match.params.id}`, this.state.application).then((response) =>
+        axios.post(`/application/${this.getApplicationId()}`, this.state.application).then((response) =>
         {
             this.loadJIRAData();
             // this.setState({application: response.data.application})
@@ -144,7 +150,7 @@ class ConfigureIntegrations extends Component {
             <LayoutWrapper>
                 <FullColumn>
                     <Row>
-                        <Column xs={12} sm={10} md={8} lg={6} xl={4}>
+                        <Column xs={12} sm={12} md={9} lg={6} xl={4}>
                             <Papersheet title={`JIRA Integration`}>
                                 {
                                     this.state.application.jiraAccessToken ?
@@ -223,7 +229,7 @@ class ConfigureIntegrations extends Component {
                                 {
                                     !this.state.application.jiraAccessToken ?
                                         <div>
-                                            <a href={`https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=V5H8QVarAt0oytdolmjMzoIIrmRc1i41&scope=write%3Ajira-work%20read%3Ajira-work%20manage%3Ajira-configuration%20offline_access&redirect_uri=${encodeURIComponent(this.computeJIRARedirectURI())}&state=${this.props.match.params.id}&response_type=code&prompt=consent`}>
+                                            <a href={`https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=V5H8QVarAt0oytdolmjMzoIIrmRc1i41&scope=write%3Ajira-work%20read%3Ajira-work%20manage%3Ajira-configuration%20offline_access&redirect_uri=${encodeURIComponent(this.computeJIRARedirectURI())}&state=${this.getApplicationId()}&response_type=code&prompt=consent`}>
                                                 <Button
                                                     variant="contained"
                                                     color="primary"
@@ -235,6 +241,20 @@ class ConfigureIntegrations extends Component {
                                 }
 
 
+                            </Papersheet>
+                        </Column>
+                    </Row>
+                    <Row>
+                        <Column xs={12} sm={12} md={9} lg={6} xl={4}>
+                            <br/>
+                            <Papersheet title={`Did you find the integrations you were looking for?`}>
+                                <FeedbackWidget
+                                    applicationId={this.getApplicationId()}
+                                    placeholder={"What do you want Kwola to integrate with?"}
+                                    screen={"Configure Integrations"}
+                                    positiveText={"Thumbs up: I liked these integrations."}
+                                    negativeText={"Thumbs down: An integration I need is missing."}
+                                />
                             </Papersheet>
                         </Column>
                     </Row>

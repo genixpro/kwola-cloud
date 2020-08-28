@@ -19,6 +19,7 @@ import Promise from "bluebird";
 import TextField from "../../components/uielements/textfield";
 import Auth from "../../helpers/auth0/index"
 import _ from "underscore";
+import FeedbackWidget from "../FeedbackWidget";
 
 // InputLabel
 
@@ -36,7 +37,7 @@ class ConfigureNotifications extends Component {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('code'))
             {
-                axios.post(`/application/${this.props.match.params.id}/slack`, {
+                axios.post(`/application/${this.getApplicationId()}/slack`, {
                     "code": urlParams.get("code"),
                     "redirect_uri": this.computeSlackRedirectURI()
                 }).then((response) =>
@@ -55,12 +56,16 @@ class ConfigureNotifications extends Component {
         {
             this.loadApplication();
         }
+    }
 
+    getApplicationId()
+    {
+        return this.props.match.params.id;
     }
 
     loadApplication()
     {
-        axios.get(`/application/${this.props.match.params.id}`).then((response) =>
+        axios.get(`/application/${this.getApplicationId()}`).then((response) =>
         {
             this.setState({application: response.data})
             this.loadAvailableSlackChannels();
@@ -70,7 +75,7 @@ class ConfigureNotifications extends Component {
 
     loadAvailableSlackChannels()
     {
-        axios.get(`/application/${this.props.match.params.id}/slack`).then((response) =>
+        axios.get(`/application/${this.getApplicationId()}/slack`).then((response) =>
         {
             this.setState({availableSlackChannels: response.data.channels})
         });
@@ -86,7 +91,7 @@ class ConfigureNotifications extends Component {
 
     saveApplication = _.debounce(() =>
     {
-        axios.post(`/application/${this.props.match.params.id}`, this.state.application).then((response) =>
+        axios.post(`/application/${this.getApplicationId()}`, this.state.application).then((response) =>
         {
             // this.setState({application: response.data.application})
         });
@@ -94,7 +99,7 @@ class ConfigureNotifications extends Component {
 
     computeSlackRedirectURI()
     {
-        return process.env.REACT_APP_FRONTEND_URL + "app/dashboard/applications/" + this.props.match.params.id + "/notifications";
+        return process.env.REACT_APP_FRONTEND_URL + "app/dashboard/applications/" + this.getApplicationId() + "/notifications";
     }
 
     disconnectSlack()
@@ -111,7 +116,7 @@ class ConfigureNotifications extends Component {
 
     testSlack()
     {
-        return axios.post(`/application/${this.props.match.params.id}/slack/test`, this.state.application).then((response) =>
+        return axios.post(`/application/${this.getApplicationId()}/slack/test`, this.state.application).then((response) =>
         {
 
         });
@@ -146,7 +151,7 @@ class ConfigureNotifications extends Component {
             <LayoutWrapper>
                 <FullColumn>
                     <Row>
-                        <Column xs={12} sm={10} md={8} lg={6} xl={4}>
+                        <Column xs={12} sm={12} md={9} lg={6} xl={4}>
                             <Papersheet
                                 title={`Email Notifications`}
                             >
@@ -202,7 +207,7 @@ class ConfigureNotifications extends Component {
 
 
                     <Row>
-                        <Column xs={12} sm={10} md={8} lg={6} xl={4}>
+                        <Column xs={12} sm={12} md={9} lg={6} xl={4}>
                             <Papersheet title={`Slack Notifications`}>
                                 {
                                     this.state.application.slackAccessToken ?
@@ -279,6 +284,20 @@ class ConfigureNotifications extends Component {
                                 }
 
 
+                            </Papersheet>
+                        </Column>
+                    </Row>
+                    <Row>
+                        <Column xs={12} sm={12} md={9} lg={6} xl={4}>
+                            <br/>
+                            <Papersheet title={`Did you find the notifications you were looking for?`}>
+                                <FeedbackWidget
+                                    applicationId={this.getApplicationId()}
+                                    placeholder={"What kind of notifications do you want?"}
+                                    screen={"Configure Notifications"}
+                                    positiveText={"Thumbs up: I liked these notifications."}
+                                    negativeText={"Thumbs down: A notification I need is missing."}
+                                />
                             </Papersheet>
                         </Column>
                     </Row>

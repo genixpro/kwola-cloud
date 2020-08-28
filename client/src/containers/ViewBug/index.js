@@ -14,6 +14,7 @@ import Icon from "../../components/uielements/icon";
 import CircularProgress from '../../components/uielements/circularProgress';
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
+import FeedbackWidget from "../FeedbackWidget";
 class ViewBug extends Component {
     state = {
         result: '',
@@ -119,6 +120,17 @@ class ViewBug extends Component {
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message}</pre>
 
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.stacktrace}</pre>
+                                </Papersheet>
+                                <br/>
+                                <Papersheet title={`Did you like the information you got about this bug?`}>
+                                    <FeedbackWidget
+                                        applicationId={this.props.match.params.id}
+                                        positivePlaceholder={"What did you like about it?"}
+                                        negativePlaceholder={"What would you like to see on this page?"}
+                                        screen={"View Bug"}
+                                        positiveText={"Thumbs up: I got what I needed from this page."}
+                                        negativeText={"Thumbs down: This didn't help me. I need more."}
+                                    />
                                 </Papersheet>
                             </HalfColumn>
                         </Row>
