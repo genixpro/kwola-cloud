@@ -233,10 +233,13 @@ class ApplicationSubscribeToSlack(Resource):
             if response.status_code != 200:
                 abort(400)
             else:
-                application.slackAccessToken = response.json()['access_token']
-                application.slackChannel = None
-                application.save()
-            return ""
+                if 'access_token' in response.json():
+                    application.slackAccessToken = response.json()['access_token']
+                    application.slackChannel = None
+                    application.save()
+                    return ""
+                else:
+                    return abort(400)
         else:
             abort(404)
 
@@ -352,21 +355,24 @@ class ApplicationIntegrateWithJIRA(Resource):
             if response.status_code != 200:
                 abort(400)
             else:
-                application.jiraAccessToken = response.json()['access_token']
-                application.jiraRefreshToken = response.json()['refresh_token']
+                if 'access_token' in response.json() and 'refresh_token' in response.json():
+                    application.jiraAccessToken = response.json()['access_token']
+                    application.jiraRefreshToken = response.json()['refresh_token']
 
-                headers = {
-                    "Authorization": f"Bearer {application.jiraAccessToken}"
-                }
+                    headers = {
+                        "Authorization": f"Bearer {application.jiraAccessToken}"
+                    }
 
-                response = requests.get("https://api.atlassian.com/oauth/token/accessible-resources", headers=headers)
+                    response = requests.get("https://api.atlassian.com/oauth/token/accessible-resources", headers=headers)
 
-                if response.status_code != 200:
-                    return abort(500)
+                    if response.status_code != 200:
+                        return abort(500)
 
-                application.jiraCloudId = response.json()[0]['id']
+                    application.jiraCloudId = response.json()[0]['id']
 
-                application.save()
+                    application.save()
+                else:
+                    return abort(400)
             return ""
         else:
             abort(404)
