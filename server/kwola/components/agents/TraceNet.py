@@ -300,7 +300,7 @@ class TraceNet(torch.nn.Module):
 
             actorProbExp = torch.exp(actorLogProbs) * data['pixelActionMaps']
             actorProbSums = torch.sum(actorProbExp.reshape(shape=[-1, width * height * self.numActions]), dim=1).unsqueeze(1).unsqueeze(1).unsqueeze(1)
-            actorProbSums = torch.max((actorProbSums == 0) * 1e-8, actorProbSums)
+            actorProbSums = torch.max(torch.eq(actorProbSums, 0).type_as(actorProbSums) * 1e-8, actorProbSums)
             actorActionProbs = torch.true_divide(actorProbExp, actorProbSums)
             actorActionProbs = actorActionProbs.reshape([-1, self.numActions, height, width])
 
@@ -421,7 +421,7 @@ class TraceNet(torch.nn.Module):
         self.bestPossibleReward = bestPossibleReward
         self.worstPossibleReward = worstPossibleReward
 
-        return worstPossibleReward, bestPossibleReward 
+        return worstPossibleReward, bestPossibleReward
 
     def computeDiscountedFutureRewardBounds(self):
         oneFrameBounds = self.computePresentRewardBounds()

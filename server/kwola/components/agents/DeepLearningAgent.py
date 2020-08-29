@@ -2330,22 +2330,22 @@ class DeepLearningAgent:
             # This else statement should only happen if there is a significant error in the neural network
             # itself that is leading to NaN values in the results. So here, we print out all of the loss
             # values for all of the batchs to help you track down where the error is.
-            message += f"[{os.getpid()}] ERROR! NaN detected in loss calculation. Skipping optimization step."
+            message += f"[{os.getpid()}] ERROR! NaN detected in loss calculation. Skipping optimization step.\n"
             for batchIndex, batchResult in enumerate(batchResultTensors):
                 presentRewardLoss, discountedFutureRewardLoss, stateValueLoss, \
                 advantageLoss, actionProbabilityLoss, tracePredictionLoss, predictedExecutionFeaturesLoss, \
                 predictedCursorLoss, totalRewardLoss, totalLoss, totalRebalancedLoss, \
                 totalSampleLosses, batch = batchResult
 
-                message += f"[{os.getpid()}] Batch {batchIndex}"
-                message += f"[{os.getpid()}] presentRewardLoss {float(presentRewardLoss.data.item())}"
-                message += f"[{os.getpid()}] discountedFutureRewardLoss {float(discountedFutureRewardLoss.data.item())}"
-                message += f"[{os.getpid()}] stateValueLoss {float(stateValueLoss.data.item())}"
-                message += f"[{os.getpid()}] advantageLoss {float(advantageLoss.data.item())}"
-                message += f"[{os.getpid()}] actionProbabilityLoss {float(actionProbabilityLoss.data.item())}"
-                message += f"[{os.getpid()}] tracePredictionLoss {float(tracePredictionLoss.data.item())}"
-                message += f"[{os.getpid()}] predictedExecutionFeaturesLoss {float(predictedExecutionFeaturesLoss.data.item())}"
-                message += f"[{os.getpid()}] predictedCursorLoss {float(predictedCursorLoss.data.item())}"
+                message += f"[{os.getpid()}] Batch {batchIndex}\n"
+                message += f"[{os.getpid()}] presentRewardLoss {float(presentRewardLoss.data.item())}\n"
+                message += f"[{os.getpid()}] discountedFutureRewardLoss {float(discountedFutureRewardLoss.data.item())}\n"
+                message += f"[{os.getpid()}] stateValueLoss {float(stateValueLoss.data.item())}\n"
+                message += f"[{os.getpid()}] advantageLoss {float(advantageLoss.data.item())}\n"
+                message += f"[{os.getpid()}] actionProbabilityLoss {float(actionProbabilityLoss.data.item())}\n"
+                message += f"[{os.getpid()}] tracePredictionLoss {float(tracePredictionLoss.data.item())}\n"
+                message += f"[{os.getpid()}] predictedExecutionFeaturesLoss {float(predictedExecutionFeaturesLoss.data.item())}\n"
+                message += f"[{os.getpid()}] predictedCursorLoss {float(predictedCursorLoss.data.item())}\n"
 
             getLogger().critical(message)
 
