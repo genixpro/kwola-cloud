@@ -74,6 +74,7 @@ class Configuration:
             for attempt in range(maxAttempts):
                 try:
                     mongoengine.connect(host=self.configData['mongo_uri'])
+                    break
                 except Exception as e:
                     if attempt == (maxAttempts - 1):
                         raise

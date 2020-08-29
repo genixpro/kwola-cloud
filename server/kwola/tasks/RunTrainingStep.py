@@ -87,10 +87,13 @@ def addExecutionSessionToSampleCache(executionSessionId, config):
                 for future in futures:
                     future.result()
             getLogger().info(f"Finished adding {executionSessionId} to the sample cache.")
+            break
         except Exception as e:
             if attempt == (maxAttempts - 1):
                 getLogger().error(f"[{os.getpid()}] Error! Failed to prepare samples for execution session {executionSessionId}. Error was: {traceback.print_exc()}")
                 raise
+            else:
+                getLogger().warning(f"[{os.getpid()}] Warning! Failed to prepare samples for execution session {executionSessionId}. Error was: {traceback.print_exc()}")
 
 
 def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory):
