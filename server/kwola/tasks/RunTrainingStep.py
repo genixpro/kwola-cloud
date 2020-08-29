@@ -347,8 +347,8 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
             subProcessBatchResultQueue.put("error")
             raise RuntimeError("There are no execution trace weight datas to process in the algorithm.")
 
-        processPool = multiprocessingpool.Pool(processes=config['training_initial_batch_prep_workers'])
-        backgroundTraceSaveProcessPool = multiprocessingpool.Pool(processes=config['training_background_trace_save_workers'])
+        processPool = multiprocessingpool.Pool(processes=config['training_initial_batch_prep_workers'], initializer=setupLocalLogging)
+        backgroundTraceSaveProcessPool = multiprocessingpool.Pool(processes=config['training_background_trace_save_workers'], initializer=setupLocalLogging)
         executionTraceSaveFutures = {}
 
         batchCount = 0
@@ -415,7 +415,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
 
                         getLogger().debug(f"[{os.getpid()}] Resetting batch prep process pool. Cache full state. New workers: {config['training_cache_full_batch_prep_workers']}")
 
-                        processPool = multiprocessingpool.Pool(processes=config['training_cache_full_batch_prep_workers'])
+                        processPool = multiprocessingpool.Pool(processes=config['training_cache_full_batch_prep_workers'], initializer=setupLocalLogging)
 
                         cacheFullState = True
                     # Otherwise we have a full sized process pool so we can plow through all the results.
@@ -426,7 +426,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
 
                         getLogger().debug(f"[{os.getpid()}] Resetting batch prep process pool. Cache starved state. New workers: {config['training_max_batch_prep_workers']}")
 
-                        processPool = multiprocessingpool.Pool(processes=config['training_max_batch_prep_workers'])
+                        processPool = multiprocessingpool.Pool(processes=config['training_max_batch_prep_workers'], initializer=setupLocalLogging)
 
                         cacheFullState = False
 
@@ -644,6 +644,7 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
         recentCacheHits = []
         starved = False
         lastStarveStateAdjustment = 0
+        coreLearningTimes = []
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['training_max_batch_prep_thread_workers'] * config['training_batch_prep_subprocesses']) as threadExecutor:
             # First we chuck some batch requests into the queue.
@@ -678,12 +679,22 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
 
                 for batchIndex in range(config['batches_per_iteration']):
                     chosenBatchIndex = 0
+                    found = False
                     for futureIndex, future in enumerate(batchFutures):
                         if future.done():
                             chosenBatchIndex = futureIndex
+                            found = True
                             break
 
+                    batchFetchStartTime = datetime.now()
                     batch, cacheHitRate = batchFutures.pop(chosenBatchIndex).result()
+                    batchFetchFinishTime = datetime.now()
+
+                    fetchTime = (batchFetchFinishTime - batchFetchStartTime).total_seconds()
+
+                    if not found:
+                        getLogger().info(f"[{os.getpid()}] I was starved waiting for a batch to be assembled. Waited: {fetchTime:.2f}")
+
                     recentCacheHits.append(float(cacheHitRate))
                     batches.append(batch)
 
@@ -693,7 +704,10 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
                         batchFutures.append(threadExecutor.submit(prepareAndLoadBatch, subProcessCommandQueues[subProcessIndex], subProcessBatchResultQueues[subProcessIndex]))
                         batchesPrepared += 1
 
+                learningIterationStartTime = datetime.now()
                 results = agent.learnFromBatches(batches)
+                learningIterationFinishTime = datetime.now()
+                coreLearningTimes.append((learningIterationFinishTime - learningIterationStartTime).total_seconds())
 
                 if results is not None:
                     for result, batch in zip(results, batches):
@@ -730,7 +744,8 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
 
                 if trainingStep.numberOfIterationsCompleted % config['print_loss_iterations'] == (config['print_loss_iterations'] - 1):
                     if gpu is None or gpu == 0:
-                        getLogger().info(f"[{os.getpid()}] Completed {trainingStep.numberOfIterationsCompleted + 1} batches")
+                        timePerBatch = (datetime.now() - trainingStep.startTime).total_seconds() / trainingStep.numberOfIterationsCompleted
+                        getLogger().info(f"[{os.getpid()}] Completed {trainingStep.numberOfIterationsCompleted + 1} batches. Average time per batch: {timePerBatch:.3f}. Core learning time: {numpy.average(coreLearningTimes):.3f}")
                         printMovingAverageLosses(config, trainingStep)
                         if config['print_cache_hit_rate']:
                             getLogger().info(f"[{os.getpid()}] Batch cache hit rate {100 * numpy.mean(recentCacheHits[-config['print_cache_hit_rate_moving_average_length']:]):.0f}%")
