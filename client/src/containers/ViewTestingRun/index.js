@@ -166,7 +166,14 @@ class ViewTestingRun extends Component {
                                 }
                                 <br/>
                                 <Papersheet title={`What do you think of the results?`}>
-                                    <FeedbackWidget applicationId={this.state.testingRun.applicationId} testingRunId={this.state.testingRun._id} />
+                                    <FeedbackWidget
+                                        applicationId={this.state.testingRun.applicationId}
+                                        testingRunId={this.state.testingRun._id}
+                                        placeholder={"Written Feedback"}
+                                        positiveText={"Thumbs up: I liked these results."}
+                                        negativeText={"Thumbs down: I didn't like these results."}
+                                        screen={"View Testing Run"}
+                                    />
                                 </Papersheet>
                             </HalfColumn>
                         </Row>

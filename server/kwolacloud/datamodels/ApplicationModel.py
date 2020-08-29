@@ -11,6 +11,8 @@ import selenium
 import time
 import selenium.common.exceptions
 import cv2
+import requests
+import logging
 from google.cloud import storage
 import numpy
 
@@ -47,6 +49,18 @@ class ApplicationModel(Document):
     enableEmailTestingRunCompletedNotifications = BooleanField(default=True)
 
     overrideNotificationEmail = StringField(default=None)
+
+    jiraAccessToken = StringField(default=None)
+
+    jiraRefreshToken = StringField(default=None)
+
+    jiraCloudId = StringField(default=None)
+
+    jiraProject = StringField(default=None)
+
+    jiraIssueType = StringField(default=None)
+
+    enablePushBugsToJIRA = BooleanField(default=True)
 
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
@@ -88,3 +102,20 @@ class ApplicationModel(Document):
                 blob.upload_from_string(screenshotData, content_type="image/png")
 
             return screenshotData
+
+    def refreshJiraAccessToken(self):
+        response = requests.post("https://auth.atlassian.com/oauth/token", {
+            "refresh_token": self.jiraRefreshToken,
+            "grant_type": "refresh_token",
+            "client_id": "V5H8QVarAt0oytdolmjMzoIIrmRc1i41",
+            "client_secret": "rNzHZLKqiB1DNp0Mv3bw7nQ_DngMepAt6vTViWJEA6ekf1f904whaWPNxhR0C3Ji"
+        })
+
+        if response.status_code != 200:
+            logging.error(f"Error while refreshing JIRA access token with the refresh token! Status code: {response.status_code}. Text: {response.text}")
+            self.jiraAccessToken = None
+            self.jiraRefreshToken = None
+            return False
+        else:
+            self.jiraAccessToken = response.json()['access_token']
+            return True

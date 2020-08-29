@@ -16,6 +16,7 @@ from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.datamodels.TrainingStepModel import TrainingStep
 from kwola.datamodels.BugModel import BugModel
 from ..datamodels.TestingRun import TestingRun
+from ..config.config import getKwolaConfiguration, loadConfiguration
 
 import json
 import flask
@@ -121,7 +122,12 @@ class ApplicationSingle(Resource):
                 'overrideNotificationEmail',
                 'enableEmailNewTestingRunNotifications',
                 'enableEmailNewBugNotifications',
-                'enableEmailTestingRunCompletedNotifications'
+                'enableEmailTestingRunCompletedNotifications',
+                'jiraAccessToken',
+                'jiraCloudId',
+                'jiraProject',
+                'jiraIssueType',
+                'enablePushBugsToJIRA'
 
             ]
             for key, value in data.items():
@@ -227,10 +233,13 @@ class ApplicationSubscribeToSlack(Resource):
             if response.status_code != 200:
                 abort(400)
             else:
-                application.slackAccessToken = response.json()['access_token']
-                application.slackChannel = None
-                application.save()
-            return ""
+                if 'access_token' in response.json():
+                    application.slackAccessToken = response.json()['access_token']
+                    application.slackChannel = None
+                    application.save()
+                    return ""
+                else:
+                    return abort(400)
         else:
             abort(404)
 
@@ -251,5 +260,119 @@ class ApplicationTestSlack(Resource):
             postToCustomerSlack("Hooray! Kwola has been successfully connected to your Slack workspace.", application)
 
             return {}
+        else:
+            abort(404)
+
+
+
+class ApplicationIntegrateWithJIRA(Resource):
+    def get(self, application_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
+        query = {"id": application_id}
+        if not isAdmin():
+            query['owner'] = user
+
+        application = ApplicationModel.objects(**query).limit(1).first()
+
+        if application is not None:
+            responseData = {
+                "projects": [],
+                "issueTypes": []
+            }
+
+            if application.jiraRefreshToken is None:
+                return responseData
+
+            refreshTokenSuccess = application.refreshJiraAccessToken()
+            if not refreshTokenSuccess:
+                abort(500)
+                return
+
+            headers = {
+                "Authorization": f"Bearer {application.jiraAccessToken}",
+                "Content-Type": "application/json"
+            }
+
+            jiraAPIResponse = requests.get(f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/3/project/search", headers=headers)
+            if jiraAPIResponse.status_code != 200:
+                logging.error(jiraAPIResponse.text)
+                abort(500)
+                return
+            else:
+                responseData['projects'] = jiraAPIResponse.json()['values']
+
+            if application.jiraProject:
+                jiraAPIResponse = requests.get(f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/2/issuetype", headers=headers)
+                if jiraAPIResponse.status_code != 200:
+                    logging.error("Error fetching issue types for JIRA project.", jiraAPIResponse.text)
+                    abort(500)
+                    return
+                else:
+                    responseData['issueTypes'] = [
+                        issueType
+                        for issueType in jiraAPIResponse.json()
+                        if ('scope' in issueType and 'project' in issueType['scope'] and issueType['scope']['project']['id'] == application.jiraProject)
+                    ]
+
+                    if len(responseData['issueTypes']) == 0:
+                        responseData['issueTypes'] = [
+                            issueType
+                            for issueType in jiraAPIResponse.json()
+                            if 'scope' not in issueType or 'project' not in issueType['scope']
+                        ]
+
+            return responseData
+        else:
+            abort(404)
+
+
+
+    def post(self, application_id):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
+        query = {"id": application_id}
+        if not isAdmin():
+            query['owner'] = user
+
+        application = ApplicationModel.objects(**query).limit(1).first()
+
+        if application is not None:
+            data = flask.request.get_json()
+
+            response = requests.post("https://auth.atlassian.com/oauth/token", {
+                "code": data['code'],
+                "redirect_uri": data['redirect_uri'],
+                "grant_type": "authorization_code",
+                "client_id": "V5H8QVarAt0oytdolmjMzoIIrmRc1i41",
+                "client_secret": "rNzHZLKqiB1DNp0Mv3bw7nQ_DngMepAt6vTViWJEA6ekf1f904whaWPNxhR0C3Ji"
+            })
+
+            if response.status_code != 200:
+                abort(400)
+            else:
+                if 'access_token' in response.json() and 'refresh_token' in response.json():
+                    application.jiraAccessToken = response.json()['access_token']
+                    application.jiraRefreshToken = response.json()['refresh_token']
+
+                    headers = {
+                        "Authorization": f"Bearer {application.jiraAccessToken}"
+                    }
+
+                    response = requests.get("https://api.atlassian.com/oauth/token/accessible-resources", headers=headers)
+
+                    if response.status_code != 200:
+                        return abort(500)
+
+                    application.jiraCloudId = response.json()[0]['id']
+
+                    application.save()
+                else:
+                    return abort(400)
+            return ""
         else:
             abort(404)

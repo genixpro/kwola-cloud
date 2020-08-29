@@ -4,7 +4,7 @@ import base64
 from ..config.config import loadConfiguration
 import logging
 import os.path
-from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from kwola.config.config import Configuration
 from ..helpers.auth0 import getUserProfileFromId
 
@@ -81,6 +81,9 @@ def sendBugFoundNotification(application, bug):
     sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
     response = sg.send(message)
 
+    if not configData['features']['localRuns']:
+        unmountTestingRunStorageDrive(configDir)
+
 
 def sendFinishTestingRunEmail(application, testingRun, bugCount):
     if application.overrideNotificationEmail:
@@ -98,7 +101,7 @@ def sendFinishTestingRunEmail(application, testingRun, bugCount):
 
     message.dynamic_template_data = {
         "bugCount": bugCount,
-        "testingRunUrl": configData['frontend']['url'] + "dashboard/testing_runs/" + testingRun.id
+        "testingRunUrl": configData['frontend']['url'] + "app/dashboard/testing_runs/" + testingRun.id
     }
 
     screenshot = application.fetchScreenshot()

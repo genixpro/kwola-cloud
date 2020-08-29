@@ -143,7 +143,8 @@ class BugVideo(Resource):
         response = flask.make_response(videoData)
         response.headers['content-type'] = 'video/mp4'
 
-        unmountTestingRunStorageDrive(configDir)
+        if not configData['features']['localRuns']:
+            unmountTestingRunStorageDrive(configDir)
 
         return response
 

@@ -20,6 +20,8 @@ class FeedbackSubmission(Document):
 
     testingRunId = StringField()
 
+    screen = StringField()
+
     valence = StringField(enumerate=[None, 'good', 'bad'])
 
     text = StringField()

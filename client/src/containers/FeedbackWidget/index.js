@@ -68,6 +68,7 @@ class FeedbackWidget extends Component {
         const feedbackData = {
             applicationId: this.props.applicationId,
             testingRunId: this.props.testingRunId,
+            screen: this.props.screen,
             creationDate: new Date().toISOString(),
             valence: this.state.valence,
             text: this.state.writtenFeedback
@@ -117,6 +118,20 @@ class FeedbackWidget extends Component {
     }
 
     render() {
+        let placeholder = "Written Feedback";
+        if (this.props.placeholder)
+        {
+            placeholder = this.props.placeholder;
+        }
+        if (this.props.positivePlaceholder && this.state.valence === 'good')
+        {
+            placeholder = this.props.positivePlaceholder;
+        }
+        if (this.props.negativePlaceholder && this.state.valence === 'bad')
+        {
+            placeholder = this.props.negativePlaceholder;
+        }
+
         return <div style={{
             "display": "flex",
             "flexDirection": "row"
@@ -125,7 +140,7 @@ class FeedbackWidget extends Component {
                 !this.state.showFeedbackText ?
                     <div>
                         <Button
-                            title={"Thumbs Up - I liked these results"}
+                            title={this.props.positiveText || "Thumbs Up - I am happy"}
                             variant="extended"
                             color="primary"
                             style={{"backgroundColor": "#08bd08"}}
@@ -139,7 +154,7 @@ class FeedbackWidget extends Component {
                 !this.state.showFeedbackText ?
                     <div>
                         <Button
-                            title={"Thumbs Down - I did not like these results"}
+                            title={this.props.negativeText || "Thumbs Down - I am unhappy"}
                             variant="extended"
                             color="primary"
                             style={{"backgroundColor": "#c70505"}}
@@ -154,7 +169,7 @@ class FeedbackWidget extends Component {
                     this.state.showFeedbackText ?
                         <TextField
                             id="feedback-text-input"
-                            label="Written feedback"
+                            label={placeholder}
                             type={"text"}
                             value={this.state.writtenFeedback}
                             style={{"flexGrow": "1"}}

@@ -42,6 +42,8 @@ import traceback
 
 
 def predictedActionSubProcess(configDir, shouldBeRandom, subProcessCommandQueue, subProcessResultQueue):
+    setupLocalLogging()
+
     config = Configuration(configDir)
 
     agent = DeepLearningAgent(config, whichGpu=None)

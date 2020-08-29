@@ -16,6 +16,7 @@ from ..config.config import loadConfiguration, getKwolaConfiguration
 import logging
 from ..helpers.email import sendBugFoundNotification
 from ..helpers.slack import postToCustomerSlack
+from ..helpers.jira import postBugToCustomerJIRA
 import os
 from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription, attachUsageBilling
 from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
@@ -71,7 +72,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         bugs = BugModel.objects(owner=run.owner, testingStepId=newID, isMuted=False)
         for bug in bugs:
             if application.enableEmailNewBugNotifications:
-                sendBugFoundNotification(application, bug)
+                # sendBugFoundNotification(application, bug)
+                pass
 
             if application.enableSlackNewBugNotifications:
                 postToCustomerSlack(
@@ -79,6 +81,9 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
                     application,
                     bug.error.message
                 )
+
+            if application.enablePushBugsToJIRA:
+                postBugToCustomerJIRA(bug, application)
 
         #if result['success'] and 'successfulExecutionSessions' in result:
             #attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])

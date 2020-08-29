@@ -158,8 +158,8 @@ def runTesting(testingRunId):
                                         image="worker",
                                         cpuRequest="1600m",
                                         cpuLimit="2500m",
-                                        memoryRequest="3.5Gi",
-                                        memoryLimit="5.0Gi"
+                                        memoryRequest="4.5Gi",
+                                        memoryLimit="6.0Gi"
                                         )
                 job.start()
                 testingStepActiveJobs.append(job)
