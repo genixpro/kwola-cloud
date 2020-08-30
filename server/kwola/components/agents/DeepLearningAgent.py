@@ -2166,16 +2166,18 @@ class DeepLearningAgent:
             # Here we are just iterating over all of the relevant data and tensors for each sample in the batch
             for sampleIndex, presentRewardImage, discountedFutureRewardImage, \
                 nextStatePresentRewardImage, nextStateDiscountedFutureRewardImage, \
-                rewardPixelMask, presentReward, stateValuePrediction, advantageImage, \
+                origRewardPixelMask, presentReward, stateValuePrediction, advantageImage, \
                 actionType, actionX, actionY, pixelActionMap, actionProbabilityImage, processedImage in zippedValues:
+
+                comboPixelMask = origRewardPixelMask * pixelActionMap[self.actionsSorted.index(actionType)]
 
                 # Here, we fetch out the reward and advantage images associated with the action that the AI actually
                 # took in the trace. We then multiply by the reward pixel mask. This gives us a reward image that only
                 # has values in the area covering the HTML element the algorithm actually touched with its action
                 # at this step.
-                presentRewardsMasked = presentRewardImage[self.actionsSorted.index(actionType)] * rewardPixelMask
-                discountedFutureRewardsMasked = discountedFutureRewardImage[self.actionsSorted.index(actionType)] * rewardPixelMask
-                advantageMasked = advantageImage[self.actionsSorted.index(actionType)] * rewardPixelMask
+                presentRewardsMasked = presentRewardImage[self.actionsSorted.index(actionType)] * comboPixelMask
+                discountedFutureRewardsMasked = discountedFutureRewardImage[self.actionsSorted.index(actionType)] * comboPixelMask
+                advantageMasked = advantageImage[self.actionsSorted.index(actionType)] * comboPixelMask
 
                 # Here, we compute the best possible action we can take in the subsequent step from this one, and what is
                 # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
@@ -2189,15 +2191,15 @@ class DeepLearningAgent:
                 # in the next step after this one.
                 # In both cases, the image is constructed with the same mask that the reward images were masked with above. This ensures that we
                 # are only updating the values for the pixels of the html element the algo actually clicked on
-                targetPresentRewards = torch.ones_like(presentRewardImage[self.actionsSorted.index(actionType)]) * presentReward * rewardPixelMask
-                targetDiscountedFutureRewards = torch.ones_like(discountedFutureRewardImage[self.actionsSorted.index(actionType)]) * discountedFutureReward * rewardPixelMask
+                targetPresentRewards = torch.ones_like(presentRewardImage[self.actionsSorted.index(actionType)]) * presentReward * comboPixelMask
+                targetDiscountedFutureRewards = torch.ones_like(discountedFutureRewardImage[self.actionsSorted.index(actionType)]) * discountedFutureReward * comboPixelMask
 
                 # We basically do the same with the advantage to create the target advantage image, and again its multiplied by the same
                 # pixel mask. The difference with advantage is that the advantage is updated to be the difference between the predicted reward
                 # value for the action we took v.s. the average reward value no matter what action we take. E.g. its a measure of how much
                 # better a particular action is versus the average action.
                 targetAdvantage = ((presentReward.detach() + discountedFutureReward.detach()) - stateValuePrediction.detach())
-                targetAdvantageImage = torch.ones_like(advantageImage[self.actionsSorted.index(actionType)]) * targetAdvantage * rewardPixelMask
+                targetAdvantageImage = torch.ones_like(advantageImage[self.actionsSorted.index(actionType)]) * targetAdvantage * comboPixelMask
 
                 # Now to train the "actor" in the actor critic model, we have to do something different. Instead of
                 # training the actor to predict how much better / worse particular actions are versus other actions,
@@ -2218,13 +2220,13 @@ class DeepLearningAgent:
                 actionProbabilityTargetImage[bestActionType] /= torch.max(oneTensorFloat, countActionProbabilityTargetPixels)
 
                 # The max here is just for safety, if any weird bugs happen we don't want any NaN values or division by zero
-                countPixelMask = torch.max(oneTensorLong, rewardPixelMask.sum())
+                countPixelMask = torch.max(oneTensorLong, comboPixelMask.sum())
 
                 # Now here we create tensors which represent the different between the predictions of the neural network and
                 # our target values that were all calculated above.
-                presentRewardLossMap = (targetPresentRewards - presentRewardsMasked) * pixelActionMap[self.actionsSorted.index(actionType)]
-                discountedFutureRewardLossMap = (targetDiscountedFutureRewards - discountedFutureRewardsMasked) * pixelActionMap[self.actionsSorted.index(actionType)]
-                advantageLossMap = (targetAdvantageImage - advantageMasked) * pixelActionMap[self.actionsSorted.index(actionType)]
+                presentRewardLossMap = (targetPresentRewards - presentRewardsMasked) * comboPixelMask
+                discountedFutureRewardLossMap = (targetDiscountedFutureRewards - discountedFutureRewardsMasked) * comboPixelMask
+                advantageLossMap = (targetAdvantageImage - advantageMasked) * comboPixelMask
                 actionProbabilityLossMap = (actionProbabilityTargetImage - actionProbabilityImage) * pixelActionMap
 
                 # Here we compute an average loss value for all pixels in the reward pixel mask.
@@ -2393,6 +2395,15 @@ class DeepLearningAgent:
                                  predictedCursorLoss, totalLoss, totalRebalancedLoss, batchReward, sampleLosses))
         return batchResults
 
+    def saveDebugImageQuick(self, array, fileName):
+        fig = plt.figure(dpi=200)
+        ax = fig.add_subplot(111)
+        mainColorMap = plt.get_cmap('inferno')
+        im = ax.imshow(numpy.array(array), cmap=mainColorMap)
+        fig.colorbar(im, orientation='vertical')
+        fig.savefig(fileName)
+        plt.close(fig)
+
     @staticmethod
     def processRawImageParallel(rawImage, config):
         """
@@ -2404,7 +2415,7 @@ class DeepLearningAgent:
             :param config: The global configuration object
             :return: A new numpy array, in the shape [1, height, width] containing the processed image data.
         """
-        # Create local variables for convenince
+        # Create local variables for convenience
         width = rawImage.shape[1]
         height = rawImage.shape[0]
 
