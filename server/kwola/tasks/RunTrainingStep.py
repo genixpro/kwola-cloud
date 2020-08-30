@@ -98,7 +98,6 @@ def addExecutionSessionToSampleCache(executionSessionId, config):
 
 def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory):
     try:
-        getLogger().info(f"Preparing batches for trace {executionTraceId}.")
         config = Configuration(configDir)
 
         agent = DeepLearningAgent(config, whichGpu=None)
@@ -112,10 +111,8 @@ def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessio
         else:
             cacheHit = True
 
-        getLogger().info(f"Loading cache file {cacheFile}.")
         with open(cacheFile, 'rb') as file:
             sampleBatch = pickle.loads(gzip.decompress(file.read()))
-        getLogger().info(f"Finished loading cache file {cacheFile}.")
 
         imageWidth = sampleBatch['processedImages'].shape[3]
         imageHeight = sampleBatch['processedImages'].shape[2]
@@ -169,8 +166,6 @@ def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessio
 
         with open(fileDescriptor, 'wb') as batchFile:
             pickle.dump(sampleBatch, batchFile)
-
-        getLogger().info(f"Finished preparing batches for trace {executionTraceId}.")
 
         return fileName, cacheHit
     except Exception:
