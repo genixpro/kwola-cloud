@@ -297,16 +297,11 @@ class TraceNet(torch.nn.Module):
             outputDict['decayingFutureSymbolEmbedding'] = decayingFutureSymbolEmbedding
 
         if data["computeActionProbabilities"]:
-            # We have to do this section of the calculations using a double tensor instead
-            # of a float tensor, because without the extra precision, we are sometimes causing
-            # calculations to go outside the bounds of 32bit floats, which then cause NaNs
-            # to show up
-            castType = torch.DoubleTensor
-            if isinstance(mergedPixelFeatureMap, torch.cuda.FloatTensor):
-                castType = torch.cuda.DoubleTensor
+            # We have to do this clamp here to preserve numerical stability and prevent calculations from going
+            # out of bounds in the torch.exp command below.
+            actorLogProbs = self.actorConvolution(mergedPixelFeatureMap).clamp(-30, 30)
 
-            actorLogProbs = self.actorConvolution(mergedPixelFeatureMap).type(castType)
-            actorProbExp = torch.exp(actorLogProbs * data['pixelActionMaps'].type(castType)) * data['pixelActionMaps'].type(castType)
+            actorProbExp = torch.exp(actorLogProbs) * data['pixelActionMaps']
             actorProbSums = torch.sum(actorProbExp.reshape(shape=[-1, width * height * self.numActions]), dim=1).unsqueeze(1).unsqueeze(1).unsqueeze(1)
             actorProbSums = torch.max(torch.eq(actorProbSums, 0).type_as(actorProbSums) * 1.0, actorProbSums)
             actorActionProbs = torch.true_divide(actorProbExp, actorProbSums)
