@@ -35,7 +35,7 @@ def mountTestingRunStorageDrive(applicationId):
             pass
 
 
-    result = subprocess.run(["gcsfuse", "--stat-cache-ttl", "1.5h", "--stat-cache-capacity", "16777216", bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(["gcsfuse", "--stat-cache-ttl", "1.5h", "--stat-cache-capacity", "16777216", "--type-cache-ttl", "1.5h", bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
         logging.error(f"Error! gcsfuse did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
         return None
