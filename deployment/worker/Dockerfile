@@ -139,6 +139,7 @@ RUN useradd -s /bin/bash --home-dir /home/kwola kwola && \
 RUN pip3 install --upgrade pip && \
     pip3 install --upgrade setuptools && \
     pip3 install --upgrade cryptography && \
+    pip3 install pymongo[srv] && \
     pip3 install celery && \
     pip3 install flask && \
     pip3 install google-cloud-storage && \

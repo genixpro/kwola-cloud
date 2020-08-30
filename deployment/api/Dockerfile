@@ -86,6 +86,7 @@ RUN pip3 install --upgrade pip && \
     pip3 install --upgrade setuptools && \
     pip3 install --upgrade cryptography && \
     pip3 install protobuf==3.11.3 && \
+    pip3 install pymongo[srv] && \
     pip3 install celery && \
     pip3 install flask && \
     pip3 install google-cloud-storage==1.29.0 && \
