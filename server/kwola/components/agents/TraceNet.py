@@ -20,6 +20,7 @@
 
 
 import torch
+import torch.cuda
 
 
 class TraceNet(torch.nn.Module):
@@ -296,15 +297,22 @@ class TraceNet(torch.nn.Module):
             outputDict['decayingFutureSymbolEmbedding'] = decayingFutureSymbolEmbedding
 
         if data["computeActionProbabilities"]:
-            actorLogProbs = self.actorConvolution(mergedPixelFeatureMap)
+            # We have to do this section of the calculations using a double tensor instead
+            # of a float tensor, because without the extra precision, we are sometimes causing
+            # calculations to go outside the bounds of 32bit floats, which then cause NaNs
+            # to show up
+            castType = torch.DoubleTensor
+            if isinstance(mergedPixelFeatureMap, torch.cuda.FloatTensor):
+                castType = torch.cuda.DoubleTensor
 
-            actorProbExp = torch.exp(actorLogProbs) * data['pixelActionMaps']
+            actorLogProbs = self.actorConvolution(mergedPixelFeatureMap).type(castType)
+            actorProbExp = torch.exp(actorLogProbs * data['pixelActionMaps'].type(castType)) * data['pixelActionMaps'].type(castType)
             actorProbSums = torch.sum(actorProbExp.reshape(shape=[-1, width * height * self.numActions]), dim=1).unsqueeze(1).unsqueeze(1).unsqueeze(1)
-            actorProbSums = torch.max(torch.eq(actorProbSums, 0).type_as(actorProbSums) * 1e-8, actorProbSums)
+            actorProbSums = torch.max(torch.eq(actorProbSums, 0).type_as(actorProbSums) * 1.0, actorProbSums)
             actorActionProbs = torch.true_divide(actorProbExp, actorProbSums)
             actorActionProbs = actorActionProbs.reshape([-1, self.numActions, height, width])
 
-            outputDict["actionProbabilities"] = actorActionProbs
+            outputDict["actionProbabilities"] = actorActionProbs.type_as(mergedPixelFeatureMap)
 
         if data['computeStateValues']:
             shrunkTrainingWidth = int(self.config['training_crop_width'] / 8)
