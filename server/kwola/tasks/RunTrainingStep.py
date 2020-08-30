@@ -102,17 +102,18 @@ def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessio
 
         agent = DeepLearningAgent(config, whichGpu=None)
 
-        sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples")
+        sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples", ensureExists=False)
         cacheFile = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
 
-        if not os.path.exists(cacheFile):
+        try:
+            with open(cacheFile, 'rb') as file:
+                sampleBatch = pickle.loads(gzip.decompress(file.read()))
+            cacheHit = True
+        except FileNotFoundError:
             addExecutionSessionToSampleCache(executionSessionId, config)
             cacheHit = False
-        else:
-            cacheHit = True
-
-        with open(cacheFile, 'rb') as file:
-            sampleBatch = pickle.loads(gzip.decompress(file.read()))
+            with open(cacheFile, 'rb') as file:
+                sampleBatch = pickle.loads(gzip.decompress(file.read()))
 
         imageWidth = sampleBatch['processedImages'].shape[3]
         imageHeight = sampleBatch['processedImages'].shape[2]

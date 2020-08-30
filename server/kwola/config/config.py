@@ -84,22 +84,24 @@ class Configuration:
 
 
 
-    def getKwolaUserDataDirectory(self, subDirName):
+    def getKwolaUserDataDirectory(self, subDirName, ensureExists=True):
         """
         This returns a sub-directory within the kwola user data directory.
 
-        It will ensure the path exists prior to returning
+        ensureExists - when set to True (default), this will ensure the directory exists first before returning it
         """
 
-        if not os.path.exists(self.configurationDirectory):
-            os.mkdir(self.configurationDirectory)
+        if ensureExists:
+            if not os.path.exists(self.configurationDirectory):
+                os.mkdir(self.configurationDirectory)
 
         subDirectory = os.path.join(self.configurationDirectory, subDirName)
-        if not os.path.exists(subDirectory):
-            try:
-                os.mkdir(subDirectory)
-            except FileExistsError:
-                pass
+        if ensureExists:
+            if not os.path.exists(subDirectory):
+                try:
+                    os.mkdir(subDirectory)
+                except FileExistsError:
+                    pass
 
         return subDirectory
 
