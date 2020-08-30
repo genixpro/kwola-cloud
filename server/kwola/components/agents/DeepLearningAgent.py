@@ -876,16 +876,20 @@ class DeepLearningAgent:
                     # pixels. The advantage values give provide a better way of weighting the various pixels.
                     reshaped = numpy.array(sampleAdvantageValues.data).reshape([len(self.actionsSorted) * height * width])
 
+                    # Compute the minimum after removing all the impossible actions
+                    minAdvantage = numpy.min(reshaped[reshaped != self.config['reward_impossible_action']])
+
                     # Ensure all of the values are positive by shifting it so the minimum value is 0
-                    reshaped = reshaped - numpy.min(reshaped)
+                    reshapedAdjusted = reshaped - minAdvantage
+                    reshapedAdjusted[reshaped == self.config['reward_impossible_action']] = 0
 
                     # Here we resize the array so that it adds up to 1.
-                    reshapedSum = numpy.sum(reshaped)
+                    reshapedSum = numpy.sum(reshapedAdjusted)
                     if reshapedSum > 0:
-                        reshaped = reshaped / reshapedSum
+                        reshapedAdjusted = reshapedAdjusted / reshapedSum
 
                         # Choose the random action. What we get back is an index for that action in the original array
-                        actionIndex = numpy.random.choice(range(len(self.actionsSorted) * height * width), p=reshaped)
+                        actionIndex = numpy.random.choice(range(len(self.actionsSorted) * height * width), p=reshapedAdjusted)
 
                         # Now we do a clever trick here to recover the x,y coordinates of the action and the index
                         # of the action type
