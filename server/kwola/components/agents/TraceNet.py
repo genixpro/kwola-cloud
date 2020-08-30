@@ -397,7 +397,6 @@ class TraceNet(torch.nn.Module):
         bestPossibleReward += max(0.0, config['reward_no_new_url'])
         bestPossibleReward += max(0.0, config['reward_log_output'])
         bestPossibleReward += max(0.0, config['reward_no_log_output'])
-        bestPossibleReward += max(0.0, config['reward_impossible_action'])
 
         worstPossibleReward += min(0.0, config['reward_action_success'])
         worstPossibleReward += min(0.0, config['reward_action_failure'])
@@ -419,7 +418,6 @@ class TraceNet(torch.nn.Module):
         worstPossibleReward += min(0.0, config['reward_no_new_url'])
         worstPossibleReward += min(0.0, config['reward_log_output'])
         worstPossibleReward += min(0.0, config['reward_no_log_output'])
-        worstPossibleReward += min(0.0, config['reward_impossible_action'])
 
         self.bestPossibleReward = bestPossibleReward
         self.worstPossibleReward = worstPossibleReward
