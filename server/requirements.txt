@@ -2,7 +2,6 @@ auth0-python
 billiard
 bs4
 cryptography==2.9
-dnspython
 filetype
 Flask-Caching
 flask-cors
