@@ -18,6 +18,7 @@ jwcrypto
 kombu
 mitmproxy
 mongoengine
+pymongo[srv]
 numpy
 opencv-python
 pandas
