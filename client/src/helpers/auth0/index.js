@@ -1,7 +1,6 @@
 import auth0 from 'auth0-js';
 import history from './history';
 import { Auth0Config } from '../../settings';
-import { notification } from '../../components';
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import mixpanel from 'mixpanel-browser';
