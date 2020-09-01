@@ -341,7 +341,10 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
                 executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationStorageBucket]))
 
         for traceFuture in executionTraceFutures:
+            startTime = datetime.now()
             traceWeightData = pickle.loads(traceFuture.get())
+            finishTime = datetime.now()
+            getLogger().info((finishTime - startTime).total_seconds())
             if traceWeightData is not None:
                 executionTraceWeightDatas.append(traceWeightData)
                 executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
@@ -533,7 +536,6 @@ def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStora
 
     blob = storageClient.Blob(os.path.join('execution_trace_weight_files', traceId + ".json"), applicationStorageBucket)
 
-    startTime = datetime.now()
     data = {}
     useDefault = True
     try:
@@ -558,9 +560,6 @@ def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStora
             "weight": config['training_trace_selection_maximum_weight']
         }
 
-    finishTime = datetime.now()
-
-    getLogger().info((finishTime - startTime).total_seconds())
 
     return pickle.dumps(data)
 
