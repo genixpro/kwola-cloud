@@ -46,6 +46,7 @@ import time
 import torch
 import torch.distributed
 import traceback
+import google.api_core.exceptions
 from google.cloud import storage
 
 storageClient = storage.Client()
@@ -338,20 +339,20 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
         executionTraceFutures = []
         for session in executionSessions:
             for traceId in session.executionTraces[:-1]:
-                startTime = datetime.now()
-                traceWeightData = pickle.loads(loadExecutionTraceWeightData(traceId, session.id, configDir, applicationStorageBucket))
-                if traceWeightData is not None:
-                    executionTraceWeightDatas.append(traceWeightData)
-                    executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
-                # executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationStorageBucket]))
-                finishTime = datetime.now()
-                getLogger().info((finishTime - startTime).total_seconds())
+                # startTime = datetime.now()
+                # traceWeightData = pickle.loads(loadExecutionTraceWeightData(traceId, session.id, configDir, applicationStorageBucket))
+                # if traceWeightData is not None:
+                #     executionTraceWeightDatas.append(traceWeightData)
+                #     executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
+                executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationStorageBucket]))
+                # finishTime = datetime.now()
+                # getLogger().info((finishTime - startTime).total_seconds())
 
-        # for traceFuture in executionTraceFutures:
-        #     traceWeightData = pickle.loads(traceFuture.get())
-        #     if traceWeightData is not None:
-        #         executionTraceWeightDatas.append(traceWeightData)
-        #         executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
+        for traceFuture in executionTraceFutures:
+            traceWeightData = pickle.loads(traceFuture.get())
+            if traceWeightData is not None:
+                executionTraceWeightDatas.append(traceWeightData)
+                executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
 
         initialDataLoadProcessPool.close()
         initialDataLoadProcessPool.join()
@@ -546,6 +547,8 @@ def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStora
         try:
             data = json.loads(blob.download_as_string())
             useDefault = False
+        except google.api_core.exceptions.NotFound as e:
+            useDefault = True
         except Exception as e:
             getLogger().info(traceback.format_exc())
 
