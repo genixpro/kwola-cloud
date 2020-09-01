@@ -876,8 +876,11 @@ class DeepLearningAgent:
                     # pixels. The advantage values give provide a better way of weighting the various pixels.
                     reshaped = numpy.array(sampleAdvantageValues.data).reshape([len(self.actionsSorted) * height * width])
 
-                    # Compute the minimum after removing all the impossible actions
-                    minAdvantage = numpy.min(reshaped[reshaped != self.config['reward_impossible_action']])
+                    try:
+                        # Compute the minimum after removing all the impossible actions
+                        minAdvantage = numpy.min(reshaped[reshaped != self.config['reward_impossible_action']])
+                    except ValueError:
+                        minAdvantage = 0
 
                     # Ensure all of the values are positive by shifting it so the minimum value is 0
                     reshapedAdjusted = reshaped - minAdvantage
@@ -2051,6 +2054,7 @@ class DeepLearningAgent:
             executionFeatureLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, [self.config['loss_execution_feature_weight']])
             executionTraceLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, [self.config['loss_execution_trace_weight']])
             cursorPredictionLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, [self.config['loss_cursor_prediction_weight']])
+            rewardImpossibleAction = self.variableWrapperFunc(torch.FloatTensor, [self.config['reward_impossible_action']])
             widthTensor = self.variableWrapperFunc(torch.IntTensor, [batch["processedImages"].shape[3]])
             heightTensor = self.variableWrapperFunc(torch.IntTensor, [batch["processedImages"].shape[2]])
             presentRewardsTensor = self.variableWrapperFunc(torch.FloatTensor, batch["presentRewards"])
@@ -2183,7 +2187,8 @@ class DeepLearningAgent:
                 # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
                 # the action we took in this sequence, could lead to in the future.
                 nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage + nextStateDiscountedFutureRewardImage)
-                discountedFutureReward = nextStateBestPossibleTotalReward * discountRate
+                isNextStateValid = torch.ne(nextStateBestPossibleTotalReward, rewardImpossibleAction * 2)
+                discountedFutureReward = nextStateBestPossibleTotalReward * discountRate * isNextStateValid
 
                 # Here we are basically calculating the target images. E.g., this is what we want the neural network to be predicting as outputs.
                 # For the present reward, we want the neural network to predict the exact present reward value that we have for this execution trace.
@@ -2230,8 +2235,8 @@ class DeepLearningAgent:
                 actionProbabilityLossMap = (actionProbabilityTargetImage - actionProbabilityImage) * pixelActionMap
 
                 # Here we compute an average loss value for all pixels in the reward pixel mask.
-                presentRewardLoss = torch.true_divide(presentRewardLossMap.pow(2).sum(), countPixelMask)
-                discountedFutureRewardLoss = torch.true_divide(discountedFutureRewardLossMap.pow(2).sum(), countPixelMask)
+                presentRewardLoss = torch.true_divide(presentRewardLossMap.pow(2).sum(), countPixelMask) * isNextStateValid
+                discountedFutureRewardLoss = torch.true_divide(discountedFutureRewardLossMap.pow(2).sum(), countPixelMask) * isNextStateValid
                 advantageLoss = torch.true_divide(advantageLossMap.pow(2).sum(), countPixelMask)
                 actionProbabilityLoss = actionProbabilityLossMap.abs().sum()
                 # Additionally, we calculate a loss for the 'state' value, which is the average value the neural network
