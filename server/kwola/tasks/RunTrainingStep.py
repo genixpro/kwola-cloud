@@ -338,7 +338,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
         executionTraceFutures = []
         for session in executionSessions:
             for traceId in session.executionTraces[:-1]:
-                executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, traceId, session.id, configDir, applicationStorageBucket))
+                executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationStorageBucket]))
 
         for traceFuture in executionTraceFutures:
             traceWeightData = pickle.loads(traceFuture.get())
