@@ -10,6 +10,7 @@ from ..config.config import getKwolaConfiguration
 from ..config.config import loadConfiguration
 from ..datamodels.ApplicationModel import ApplicationModel
 from ..datamodels.id_utility import generateKwolaId
+import random
 from ..datamodels.TestingRun import TestingRun
 from ..helpers.slack import postToKwolaSlack
 from ..helpers.email import sendStartTestingRunEmail
@@ -190,5 +191,55 @@ class TestingRunsRestart(Resource):
             return abort(404)
 
         testingRun.runJob()
+
+        return {}
+
+
+class TestingRunsRestartTraining(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+        # self.postParser.add_argument('version', help='This field cannot be blank', required=False)
+        # self.postParser.add_argument('startTime', help='This field cannot be blank', required=False)
+        # self.postParser.add_argument('endTime', help='This field cannot be blank', required=False)
+        # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=False)
+        # self.postParser.add_argument('status', help='This field cannot be blank', required=False)
+
+        self.configData = loadConfiguration()
+
+    def post(self, testing_run_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": testing_run_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        testingRun = TestingRun.objects(**queryParams).first()
+
+        if testingRun is None:
+            return abort(404)
+
+        if self.configData['features']['localRuns']:
+            currentTrainingStepJob = ManagedTaskSubprocess(
+                ["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTaskLocal"], {
+                    "testingRunId": testingRun.id,
+                    "trainingStepsCompleted": 0
+                }, timeout=7200, config=getKwolaConfiguration(), logId=None)
+        else:
+            currentTrainingStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
+                                                   data={
+                                                       "testingRunId": testingRun.id,
+                                                       "trainingStepsCompleted": 0
+                                                   },
+                                                   referenceId=f"{testingRun.id}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
+                                                   image="worker",
+                                                   cpuRequest="6000m",
+                                                   cpuLimit=None,
+                                                   memoryRequest="12.0Gi",
+                                                   memoryLimit=None,
+                                                   gpu=True
+                                                   )
+        currentTrainingStepJob.start()
 
         return {}

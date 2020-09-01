@@ -99,6 +99,16 @@ class ViewTestingRun extends Component {
         }
     }
 
+    restartTrainingKubeJob()
+    {
+        if (window.confirm("Are you sure you want to restart the kube job? This will cause problems if there is already a kube job doing training."))
+        {
+            axios.post(`/testing_runs/${this.props.match.params.id}/restart_training`).then((response) => {
+                window.alert("Successfully restarted Kube job");
+            });
+        }
+    }
+
     render()
     {
         const { result } = this.state;
@@ -159,6 +169,11 @@ class ViewTestingRun extends Component {
                                             <Button variant="extended" color="primary"
                                                     onClick={() => this.restartTestingRunKubeJob()}>
                                                 Restart Testing Run Kube Job
+                                                <Icon className="rightIcon">send</Icon>
+                                            </Button>
+                                            <Button variant="extended" color="primary"
+                                                    onClick={() => this.restartTrainingKubeJob()}>
+                                                Restart Training Kube Job
                                                 <Icon className="rightIcon">send</Icon>
                                             </Button>
                                         </Papersheet>

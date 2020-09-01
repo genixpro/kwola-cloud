@@ -46,7 +46,9 @@ import time
 import torch
 import torch.distributed
 import traceback
+from google.cloud import storage
 
+storageClient = storage.Client()
 
 def writeSingleExecutionTrace(traceBatch, sampleCacheDir):
     traceId = traceBatch['traceIds'][0]
@@ -96,7 +98,7 @@ def addExecutionSessionToSampleCache(executionSessionId, config):
                 getLogger().warning(f"[{os.getpid()}] Warning! Failed to prepare samples for execution session {executionSessionId}. Error was: {traceback.print_exc()}")
 
 
-def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory):
+def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory, applicationStorageBucket):
     try:
         config = Configuration(configDir)
 
@@ -105,9 +107,12 @@ def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessio
         sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples", ensureExists=False)
         cacheFile = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
 
+        blob = storageClient.Blob(os.path.join('prepared_samples', executionTraceId + ".pickle.gz"), applicationStorageBucket)
+
         try:
-            with open(cacheFile, 'rb') as file:
-                sampleBatch = pickle.loads(gzip.decompress(file.read()))
+            # with open(cacheFile, 'rb') as file:
+            #     sampleBatch = pickle.loads(gzip.decompress(file.read()))
+            sampleBatch = pickle.loads(gzip.decompress(blob.download_as_string()))
             cacheHit = True
         except FileNotFoundError:
             addExecutionSessionToSampleCache(executionSessionId, config)
@@ -178,7 +183,7 @@ def isNumpyArray(obj):
     return type(obj).__module__ == numpy.__name__
 
 
-def prepareAndLoadSingleBatchForSubprocess(config, executionTraceWeightDatas, executionTraceWeightDataIdMap, batchDirectory, cacheFullState, processPool, subProcessCommandQueue, subProcessBatchResultQueue):
+def prepareAndLoadSingleBatchForSubprocess(config, executionTraceWeightDatas, executionTraceWeightDataIdMap, batchDirectory, cacheFullState, processPool, subProcessCommandQueue, subProcessBatchResultQueue, applicationStorageBucket):
     try:
         traceWeights = numpy.array([traceWeightData['weight'] for traceWeightData in executionTraceWeightDatas])
 
@@ -206,7 +211,7 @@ def prepareAndLoadSingleBatchForSubprocess(config, executionTraceWeightDatas, ex
         for traceId in chosenExecutionTraceIds:
             traceWeightData = executionTraceWeightDataIdMap[str(traceId)]
 
-            future = processPool.apply_async(prepareBatchesForExecutionTrace, (config.configurationDirectory, str(traceId), str(traceWeightData['executionSessionId']), batchDirectory))
+            future = processPool.apply_async(prepareBatchesForExecutionTrace, (config.configurationDirectory, str(traceId), str(traceWeightData['executionSessionId']), batchDirectory, applicationStorageBucket))
             futures.append(future)
 
         cacheHits = []
@@ -295,6 +300,8 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
 
         config = Configuration(configDir)
 
+        applicationStorageBucket = storageClient.get_bucket("kwola-testing-run-data-" + applicationId)
+
         getLogger().info(f"[{os.getpid()}] Starting initialization for batch preparation sub process.")
 
         testingSteps = sorted([step for step in loadAllTestingSteps(config, applicationId) if step.status == "completed"], key=lambda step: step.startTime, reverse=True)
@@ -329,7 +336,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
             executionTraceFutures = []
             for session in executionSessions:
                 for traceId in session.executionTraces[:-1]:
-                    executionTraceFutures.append(executor.submit(loadExecutionTraceWeightData, traceId, session.id, configDir))
+                    executionTraceFutures.append(executor.submit(loadExecutionTraceWeightData, traceId, session.id, configDir, applicationStorageBucket))
 
             for traceFuture in executionTraceFutures:
                 traceWeightData = pickle.loads(traceFuture.result())
@@ -381,7 +388,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
                         needToResetPool = True
 
                     future = threadExecutor.submit(prepareAndLoadSingleBatchForSubprocess, config, executionTraceWeightDatas, executionTraceWeightDataIdMap, batchDirectory, cacheFullState, processPool, subProcessCommandQueue,
-                                                   subProcessBatchResultQueue)
+                                                   subProcessBatchResultQueue, applicationStorageBucket)
                     cacheRateFutures.append(future)
                     currentProcessPoolFutures.append(future)
 
@@ -513,20 +520,29 @@ def loadExecutionTrace(traceId, configDir):
     return pickle.dumps(trace)
 
 
-def loadExecutionTraceWeightData(traceId, sessionId, configDir):
+def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStorageBucket):
     config = Configuration(configDir)
 
-    weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + ".json")
+    # weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + ".json")
+
+    blob = storageClient.Blob(os.path.join('execution_trace_weight_files', traceId + ".json"), applicationStorageBucket)
 
     data = {}
     useDefault = True
-    if os.path.exists(weightFile):
+    try:
+        data = json.loads(blob.download_as_string())
         useDefault = False
-        with open(weightFile, "rt") as f:
-            try:
-                data = json.load(f)
-            except json.JSONDecodeError:
-                useDefault = True
+    except Exception as e:
+        getLogger().info(traceback.format_exc())
+
+    
+    # if os.path.exists(weightFile):
+    #     useDefault = False
+    #     with open(weightFile, "rt") as f:
+    #         try:
+    #             data = json.load(f)
+    #         except json.JSONDecodeError:
+    #             useDefault = True
 
     if useDefault:
         data = {

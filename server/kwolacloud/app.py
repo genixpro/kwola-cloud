@@ -57,7 +57,7 @@ from .resources.ExecutionSessionResource import ExecutionSessionGroup, Execution
 from .resources.ExecutionTraceResource import ExecutionTraceGroup, ExecutionTraceSingle
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
 from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSingle
-from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle, TestingRunsRestart
+from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle, TestingRunsRestart, TestingRunsRestartTraining
 from .resources.BugsResource import BugsGroup, BugsSingle, BugVideo
 from .resources.Webhooks import StripeWebhook
 from .resources.Billing import BillingURLResource, Products
@@ -94,6 +94,7 @@ api.add_resource(ExecutionTraceSingle, '/api/execution_traces/<string:execution_
 api.add_resource(TestingRunsGroup, '/api/testing_runs')
 api.add_resource(TestingRunsSingle, '/api/testing_runs/<string:testing_run_id>')
 api.add_resource(TestingRunsRestart, '/api/testing_runs/<string:testing_run_id>/restart')
+api.add_resource(TestingRunsRestartTraining, '/api/testing_runs/<string:testing_run_id>/restart_training')
 
 
 api.add_resource(TrainingStepGroup, '/api/training_steps')
