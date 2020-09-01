@@ -164,7 +164,9 @@ RUN chown -R kwola:kwola /kwola && \
 
 RUN rm -rf /usr/include/*
 
+WORKDIR /home/kwola
 RUN chmod +r+r+r -R /usr/lib/python3 && su kwola -c "kwola_test_installation"
+WORKDIR /kwola/server
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
