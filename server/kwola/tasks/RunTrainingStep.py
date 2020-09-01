@@ -332,17 +332,23 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
 
         executionTraceWeightDatas = []
         executionTraceWeightDataIdMap = {}
-        with concurrent.futures.ProcessPoolExecutor(max_workers=int(config['training_max_initialization_workers'] / config['training_batch_prep_subprocesses'])) as executor:
-            executionTraceFutures = []
-            for session in executionSessions:
-                for traceId in session.executionTraces[:-1]:
-                    executionTraceFutures.append(executor.submit(loadExecutionTraceWeightData, traceId, session.id, configDir, applicationStorageBucket))
 
-            for traceFuture in executionTraceFutures:
-                traceWeightData = pickle.loads(traceFuture.result())
-                if traceWeightData is not None:
-                    executionTraceWeightDatas.append(traceWeightData)
-                    executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
+        initialDataLoadProcessPool = multiprocessingpool.Pool(processes=int(config['training_max_initialization_workers'] / config['training_batch_prep_subprocesses']), initializer=setupLocalLogging)
+
+        executionTraceFutures = []
+        for session in executionSessions:
+            for traceId in session.executionTraces[:-1]:
+                executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, traceId, session.id, configDir, applicationStorageBucket))
+
+        for traceFuture in executionTraceFutures:
+            traceWeightData = pickle.loads(traceFuture.get())
+            if traceWeightData is not None:
+                executionTraceWeightDatas.append(traceWeightData)
+                executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
+
+        initialDataLoadProcessPool.close()
+        initialDataLoadProcessPool.join()
+        del initialDataLoadProcessPool
 
         getLogger().info(f"[{os.getpid()}] Finished loading of weight datas for {len(executionTraceWeightDatas)} execution traces.")
 
