@@ -348,11 +348,16 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
                 # finishTime = datetime.now()
                 # getLogger().info((finishTime - startTime).total_seconds())
 
+        completed = 0
         for traceFuture in executionTraceFutures:
             traceWeightData = pickle.loads(traceFuture.get())
             if traceWeightData is not None:
                 executionTraceWeightDatas.append(traceWeightData)
                 executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
+            completed += 1
+            if completed % 100 == 0:
+                getLogger().info(f"Finished loading {completed} execution trace weight datas.")
+            
 
         initialDataLoadProcessPool.close()
         initialDataLoadProcessPool.join()
