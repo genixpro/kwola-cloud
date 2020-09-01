@@ -44,7 +44,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         configDir = os.path.join("data", run.applicationId)
 
     try:
-        gpu = 0
+        gpu = None
 
         result = RunTrainingStep.runTrainingStep(configDir, testingRunId, trainingStepsCompleted, gpu=gpu, testingRunId=testingRunId, applicationId=run.applicationId, gpuWorldSize=1)
 
