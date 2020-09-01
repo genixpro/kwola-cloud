@@ -545,7 +545,10 @@ def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStora
         data = {}
         useDefault = True
         try:
+            startTime = datetime.now()
             data = json.loads(blob.download_as_string())
+            finishTime = datetime.now()
+            getLogger().info((finishTime - startTime).total_seconds())
             useDefault = False
         except google.api_core.exceptions.NotFound as e:
             useDefault = True
