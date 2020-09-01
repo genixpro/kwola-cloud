@@ -539,7 +539,7 @@ def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStora
 
         # weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + ".json")
 
-        blob = storageClient.Blob(os.path.join('execution_trace_weight_files', traceId + ".json"), applicationStorageBucket)
+        blob = storage.Blob(os.path.join('execution_trace_weight_files', traceId + ".json"), applicationStorageBucket)
 
         data = {}
         useDefault = True
