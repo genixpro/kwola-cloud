@@ -534,38 +534,42 @@ def loadExecutionTrace(traceId, configDir):
 
 
 def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStorageBucket):
-    config = Configuration(configDir)
-
-    # weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + ".json")
-
-    blob = storageClient.Blob(os.path.join('execution_trace_weight_files', traceId + ".json"), applicationStorageBucket)
-
-    data = {}
-    useDefault = True
     try:
-        data = json.loads(blob.download_as_string())
-        useDefault = False
+        config = Configuration(configDir)
+
+        # weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + ".json")
+
+        blob = storageClient.Blob(os.path.join('execution_trace_weight_files', traceId + ".json"), applicationStorageBucket)
+
+        data = {}
+        useDefault = True
+        try:
+            data = json.loads(blob.download_as_string())
+            useDefault = False
+        except Exception as e:
+            getLogger().info(traceback.format_exc())
+
+
+        # if os.path.exists(weightFile):
+        #     useDefault = False
+        #     with open(weightFile, "rt") as f:
+        #         try:
+        #             data = json.load(f)
+        #         except json.JSONDecodeError:
+        #             useDefault = True
+
+        if useDefault:
+            data = {
+                "id": traceId,
+                "executionSessionId": sessionId,
+                "weight": config['training_trace_selection_maximum_weight']
+            }
+
+
+        return pickle.dumps(data)
     except Exception as e:
-        getLogger().info(traceback.format_exc())
-
-    
-    # if os.path.exists(weightFile):
-    #     useDefault = False
-    #     with open(weightFile, "rt") as f:
-    #         try:
-    #             data = json.load(f)
-    #         except json.JSONDecodeError:
-    #             useDefault = True
-
-    if useDefault:
-        data = {
-            "id": traceId,
-            "executionSessionId": sessionId,
-            "weight": config['training_trace_selection_maximum_weight']
-        }
-
-
-    return pickle.dumps(data)
+        getLogger().error(traceback.format_exc())
+        return None
 
 
 def saveExecutionTraceWeightData(traceWeightData, configDir):
