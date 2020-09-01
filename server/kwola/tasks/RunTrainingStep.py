@@ -356,7 +356,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
                 executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
             completed += 1
             if completed % 100 == 0:
-                getLogger().info(f"Finished loading {completed} execution trace weight datas.")
+                getLogger().info(f"[{os.getpid()}] Finished loading {completed} execution trace weight datas.")
             
 
         initialDataLoadProcessPool.close()
