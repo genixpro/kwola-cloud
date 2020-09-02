@@ -576,7 +576,7 @@ def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStora
                 "weight": config['training_trace_selection_maximum_weight']
             }
 
-
+        getLogger().info(f"Loaded {traceId}")
         return pickle.dumps(data)
     except Exception as e:
         getLogger().error(traceback.format_exc())
