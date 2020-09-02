@@ -230,6 +230,8 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
             stepsRemaining -= 1
 
             removeBadSessions()
+            if len(executionSessions) == 0:
+                break
 
             taskStartTime = datetime.now()
             images = environment.getImages()
@@ -340,7 +342,7 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
 
         kwolaVideoDirectory = config.getKwolaUserDataDirectory("videos")
 
-        for sessionN, videoPath, executionSession in zip(range(len(videoPaths)), videoPaths, executionSessions):
+        for executionSession, sessionN, videoPath in zip(executionSessions, range(len(videoPaths)), videoPaths):
             with open(videoPath, 'rb') as origFile:
                 with open(os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4'), "wb") as cloneFile:
                     cloneFile.write(origFile.read())
@@ -351,7 +353,8 @@ def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebug
             session.saveToDisk(config)
             totalRewards.append(session.totalReward)
 
-        getLogger().info(f"[{os.getpid()}] Mean total reward of all sessions: {numpy.mean(totalRewards):.3f}")
+        if len(totalRewards) > 0:
+            getLogger().info(f"[{os.getpid()}] Mean total reward of all sessions: {numpy.mean(totalRewards):.3f}")
 
         testStep.bugsFound = len(newErrorsThisTestingStep)
         testStep.errors = newErrorsThisTestingStep
