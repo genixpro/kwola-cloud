@@ -202,7 +202,7 @@ def runTesting(testingRunId):
                 logging.info(f"Starting a training step for run {testingRunId}")
                 if configData['features']['localRuns']:
                     currentTrainingStepJob = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTaskLocal"], {
-                        "testingRunId":testingRunId,
+                        "testingRunId": testingRunId,
                         "trainingStepsCompleted": completedTrainingSteps
                     }, timeout=7200, config=getKwolaConfiguration(), logId=None)
                 else:

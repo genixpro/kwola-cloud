@@ -790,12 +790,14 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
                     if gpu is None or gpu == 0:
                         trainingStep.saveToDisk(config)
 
+        getLogger().info(f"[{os.getpid()}] Finished the core training loop. Saving the training step {trainingStep.id}")
         trainingStep.endTime = datetime.now()
         trainingStep.averageTimePerIteration = (trainingStep.endTime - trainingStep.startTime).total_seconds() / trainingStep.numberOfIterationsCompleted
         trainingStep.averageLoss = float(numpy.mean(trainingStep.totalLosses))
         trainingStep.status = "completed"
         trainingStep.saveToDisk(config)
 
+        getLogger().info(f"[{os.getpid()}] Shutting down and joining the sub-processes")
         for subProcess, subProcessCommandQueue in zip(subProcesses, subProcessCommandQueues):
             subProcessCommandQueue.put(("quit", {}))
             subProcess.join()
@@ -803,6 +805,7 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
         # Safe guard, don't save the model if any nan's were detected
         if not trainingStep.hadNaN:
             if gpu is None or gpu == 0:
+                getLogger().info(f"[{os.getpid()}] Saving the core training model.")
                 agent.save()
                 agent.save(saveName=str(trainingStep.id))
                 getLogger().info(f"[{os.getpid()}] Agent saved!")
