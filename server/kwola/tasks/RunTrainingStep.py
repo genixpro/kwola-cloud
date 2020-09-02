@@ -301,8 +301,6 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
 
         config = Configuration(configDir)
 
-        applicationStorageBucket = storageClient.get_bucket("kwola-testing-run-data-" + applicationId)
-
         getLogger().info(f"[{os.getpid()}] Starting initialization for batch preparation sub process.")
 
         testingSteps = sorted([step for step in loadAllTestingSteps(config, applicationId) if step.status == "completed"], key=lambda step: step.startTime, reverse=True)
@@ -339,11 +337,11 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
         executionTraceFutures = []
         for session in executionSessions:
             for traceId in session.executionTraces[:-1]:
-                # traceWeightData = pickle.loads(loadExecutionTraceWeightData(traceId, session.id, configDir, applicationStorageBucket))
+                # traceWeightData = pickle.loads(loadExecutionTraceWeightData(traceId, session.id, configDir, applicationId))
                 # if traceWeightData is not None:
                 #     executionTraceWeightDatas.append(traceWeightData)
                 #     executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
-                executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationStorageBucket]))
+                executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationId]))
 
         completed = 0
         for traceFuture in executionTraceFutures:
@@ -538,12 +536,13 @@ def loadExecutionTrace(traceId, configDir):
     return pickle.dumps(trace)
 
 
-def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStorageBucket):
+def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationId):
     try:
         config = Configuration(configDir)
 
         # weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + ".json")
 
+        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId)
         blob = storage.Blob(os.path.join('execution_trace_weight_files', traceId + ".json"), applicationStorageBucket)
 
         data = {}
