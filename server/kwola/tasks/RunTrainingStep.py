@@ -99,7 +99,7 @@ def addExecutionSessionToSampleCache(executionSessionId, config):
                 getLogger().warning(f"[{os.getpid()}] Warning! Failed to prepare samples for execution session {executionSessionId}. Error was: {traceback.print_exc()}")
 
 
-def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory, applicationStorageBucket):
+def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory, applicationId):
     try:
         config = Configuration(configDir)
 
@@ -108,6 +108,7 @@ def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessio
         sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples", ensureExists=False)
         cacheFile = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
 
+        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId)
         blob = storageClient.Blob(os.path.join('prepared_samples', executionTraceId + ".pickle.gz"), applicationStorageBucket)
 
         try:
@@ -184,7 +185,7 @@ def isNumpyArray(obj):
     return type(obj).__module__ == numpy.__name__
 
 
-def prepareAndLoadSingleBatchForSubprocess(config, executionTraceWeightDatas, executionTraceWeightDataIdMap, batchDirectory, cacheFullState, processPool, subProcessCommandQueue, subProcessBatchResultQueue, applicationStorageBucket):
+def prepareAndLoadSingleBatchForSubprocess(config, executionTraceWeightDatas, executionTraceWeightDataIdMap, batchDirectory, cacheFullState, processPool, subProcessCommandQueue, subProcessBatchResultQueue, applicationId):
     try:
         traceWeights = numpy.array([traceWeightData['weight'] for traceWeightData in executionTraceWeightDatas])
 
@@ -212,7 +213,7 @@ def prepareAndLoadSingleBatchForSubprocess(config, executionTraceWeightDatas, ex
         for traceId in chosenExecutionTraceIds:
             traceWeightData = executionTraceWeightDataIdMap[str(traceId)]
 
-            future = processPool.apply_async(prepareBatchesForExecutionTrace, (config.configurationDirectory, str(traceId), str(traceWeightData['executionSessionId']), batchDirectory, applicationStorageBucket))
+            future = processPool.apply_async(prepareBatchesForExecutionTrace, (config.configurationDirectory, str(traceId), str(traceWeightData['executionSessionId']), batchDirectory, applicationId))
             futures.append(future)
 
         cacheHits = []
@@ -404,7 +405,7 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
                         needToResetPool = True
 
                     future = threadExecutor.submit(prepareAndLoadSingleBatchForSubprocess, config, executionTraceWeightDatas, executionTraceWeightDataIdMap, batchDirectory, cacheFullState, processPool, subProcessCommandQueue,
-                                                   subProcessBatchResultQueue, applicationStorageBucket)
+                                                   subProcessBatchResultQueue, applicationId)
                     cacheRateFutures.append(future)
                     currentProcessPoolFutures.append(future)
 
