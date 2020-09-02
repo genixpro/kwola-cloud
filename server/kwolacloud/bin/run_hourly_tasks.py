@@ -4,6 +4,8 @@
 #
 
 
+import google
+import google.cloud
 import google.cloud.logging
 from ..config.config import loadConfiguration
 import stripe
