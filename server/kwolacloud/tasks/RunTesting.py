@@ -61,7 +61,7 @@ def runTesting(testingRunId):
         run.startTime = datetime.datetime.now()
 
     if run.predictedEndTime is None:
-        run.predictedEndTime = run.startTime + relativedelta(hours=run.configuration.hours)
+        run.predictedEndTime = run.startTime + relativedelta(hours=run.configuration.hours + 1, minute=0, second=0)
 
     run.status = "running"
     run.save()

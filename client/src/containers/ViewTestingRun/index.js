@@ -31,6 +31,7 @@ import { CSVLink, CSVDownload } from "react-csv";
 import SessionTable from './sessionTable'
 import BugsTable from './bugsTable'
 import FeedbackWidget from "../FeedbackWidget";
+import CircularProgress from "../../components/uielements/circularProgress";
 
 class ViewTestingRun extends Component {
     state = {
@@ -137,10 +138,20 @@ class ViewTestingRun extends Component {
 
                             <HalfColumn>
                                 <Papersheet
-                                    title={`Testing Run`}
+                                    title={
+                                        <div>
+                                            Testing Run
+                                            {
+                                                this.state.testingRun.status !== "completed" ?
+                                                    <div style={{"paddingLeft": "40px", "display": "inline", "position": "relative", "top": "20px"}}>
+                                                        <CircularProgress size={28} color="primary"/>
+                                                    </div>
+                                                    : null
+                                            }
+                                        </div>}
                                     subtitle={this.state.testingRun.status}
-                                    tooltip={testingTooltip}
                                 >
+
 
                                     <span>Testing Browsers Completed: {this.state.testingRun.testingSessionsCompleted}<br/></span>
 
@@ -180,16 +191,20 @@ class ViewTestingRun extends Component {
                                         : null
                                 }
                                 <br/>
-                                <Papersheet title={`What do you think of the results?`}>
-                                    <FeedbackWidget
-                                        applicationId={this.state.testingRun.applicationId}
-                                        testingRunId={this.state.testingRun._id}
-                                        placeholder={"Written Feedback"}
-                                        positiveText={"Thumbs up: I liked these results."}
-                                        negativeText={"Thumbs down: I didn't like these results."}
-                                        screen={"View Testing Run"}
-                                    />
-                                </Papersheet>
+                                {
+                                    this.state.testingRun.status === "completed" ?
+                                        <Papersheet title={`What do you think of the results?`}>
+                                            <FeedbackWidget
+                                                applicationId={this.state.testingRun.applicationId}
+                                                testingRunId={this.state.testingRun._id}
+                                                placeholder={"Written Feedback"}
+                                                positiveText={"Thumbs up: I liked these results."}
+                                                negativeText={"Thumbs down: I didn't like these results."}
+                                                screen={"View Testing Run"}
+                                            />
+                                        </Papersheet>
+                                        : null
+                                }
                             </HalfColumn>
                         </Row>
 
