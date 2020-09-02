@@ -339,25 +339,24 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
         executionTraceFutures = []
         for session in executionSessions:
             for traceId in session.executionTraces[:-1]:
-                traceWeightData = pickle.loads(loadExecutionTraceWeightData(traceId, session.id, configDir, applicationStorageBucket))
-                if traceWeightData is not None:
-                    executionTraceWeightDatas.append(traceWeightData)
-                    executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
-                # executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationStorageBucket]))
+                # traceWeightData = pickle.loads(loadExecutionTraceWeightData(traceId, session.id, configDir, applicationStorageBucket))
+                # if traceWeightData is not None:
+                #     executionTraceWeightDatas.append(traceWeightData)
+                #     executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
+                executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationStorageBucket]))
 
-        # completed = 0
-        # for traceFuture in executionTraceFutures:
-        #     startTime = datetime.now()
-        #     traceWeightData = pickle.loads(traceFuture.get())
-        #     if traceWeightData is not None:
-        #         executionTraceWeightDatas.append(traceWeightData)
-        #         executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
-        #     finishTime = datetime.now()
-        #     getLogger().info((finishTime - startTime).total_seconds())
-        #     completed += 1
-        #     if completed % 100 == 0:
-        #         getLogger().info(f"[{os.getpid()}] Finished loading {completed} execution trace weight datas.")
-            
+        completed = 0
+        for traceFuture in executionTraceFutures:
+            startTime = datetime.now()
+            traceWeightData = pickle.loads(traceFuture.get(timeout=30))
+            if traceWeightData is not None:
+                executionTraceWeightDatas.append(traceWeightData)
+                executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
+            finishTime = datetime.now()
+            getLogger().info((finishTime - startTime).total_seconds())
+            completed += 1
+            if completed % 100 == 0:
+                getLogger().info(f"[{os.getpid()}] Finished loading {completed} execution trace weight datas.")
 
         initialDataLoadProcessPool.close()
         initialDataLoadProcessPool.join()
@@ -550,10 +549,10 @@ def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStora
         data = {}
         useDefault = True
         try:
-            startTime = datetime.now()
+            # startTime = datetime.now()
             data = json.loads(blob.download_as_string())
-            finishTime = datetime.now()
-            getLogger().info((finishTime - startTime).total_seconds())
+            # finishTime = datetime.now()
+            # getLogger().info((finishTime - startTime).total_seconds())
             useDefault = False
         except google.api_core.exceptions.NotFound as e:
             useDefault = True
@@ -576,7 +575,7 @@ def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationStora
                 "weight": config['training_trace_selection_maximum_weight']
             }
 
-        getLogger().info(f"Loaded {traceId}")
+        # getLogger().info(f"Loaded {traceId}")
         return pickle.dumps(data)
     except Exception as e:
         getLogger().error(traceback.format_exc())
