@@ -339,24 +339,24 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
         executionTraceFutures = []
         for session in executionSessions:
             for traceId in session.executionTraces[:-1]:
-                # traceWeightData = pickle.loads(loadExecutionTraceWeightData(traceId, session.id, configDir, applicationStorageBucket))
-                # if traceWeightData is not None:
-                #     executionTraceWeightDatas.append(traceWeightData)
-                #     executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
-                executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationStorageBucket]))
+                traceWeightData = pickle.loads(loadExecutionTraceWeightData(traceId, session.id, configDir, applicationStorageBucket))
+                if traceWeightData is not None:
+                    executionTraceWeightDatas.append(traceWeightData)
+                    executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
+                # executionTraceFutures.append(initialDataLoadProcessPool.apply_async(loadExecutionTraceWeightData, [traceId, session.id, configDir, applicationStorageBucket]))
 
-        completed = 0
-        for traceFuture in executionTraceFutures:
-            startTime = datetime.now()
-            traceWeightData = pickle.loads(traceFuture.get())
-            if traceWeightData is not None:
-                executionTraceWeightDatas.append(traceWeightData)
-                executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
-            finishTime = datetime.now()
-            getLogger().info((finishTime - startTime).total_seconds())
-            completed += 1
-            if completed % 100 == 0:
-                getLogger().info(f"[{os.getpid()}] Finished loading {completed} execution trace weight datas.")
+        # completed = 0
+        # for traceFuture in executionTraceFutures:
+        #     startTime = datetime.now()
+        #     traceWeightData = pickle.loads(traceFuture.get())
+        #     if traceWeightData is not None:
+        #         executionTraceWeightDatas.append(traceWeightData)
+        #         executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
+        #     finishTime = datetime.now()
+        #     getLogger().info((finishTime - startTime).total_seconds())
+        #     completed += 1
+        #     if completed % 100 == 0:
+        #         getLogger().info(f"[{os.getpid()}] Finished loading {completed} execution trace weight datas.")
             
 
         initialDataLoadProcessPool.close()
