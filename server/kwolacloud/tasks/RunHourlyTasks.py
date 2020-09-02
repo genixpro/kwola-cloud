@@ -17,9 +17,9 @@ from ..helpers.auth0 import authService, updateUserProfileMetadataValue
 
 def runHourlyTasks():
     try:
-        logging.info(f"Starting the hourly task job.")
-
         now = datetime.now()
+
+        logging.info(f"Starting the hourly task job at {now.isoformat()}")
 
         # Try to send these in the day time.
         if now.hour >= 11 and now.hour <= 16:
