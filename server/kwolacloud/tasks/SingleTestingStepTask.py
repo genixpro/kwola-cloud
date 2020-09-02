@@ -36,8 +36,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         return {"success": False, "exception": errorMessage}
 
     # Verify this subscription with stripe
-    #if not verifyStripeSubscription(run):
-    #    return {"success": False}
+    if not verifyStripeSubscription(run):
+       return {"success": False}
 
     if not configData['features']['localRuns']:
         configDir = mountTestingRunStorageDrive(run.applicationId)
@@ -85,8 +85,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
             if application.enablePushBugsToJIRA:
                 postBugToCustomerJIRA(bug, application)
 
-        #if result['success'] and 'successfulExecutionSessions' in result:
-            #attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])
+        if result['success'] and 'successfulExecutionSessions' in result:
+            attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])
 
         logging.info(f"Finished testing step for testing run {testingRunId}")
 

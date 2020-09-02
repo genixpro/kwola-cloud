@@ -457,33 +457,16 @@ class RecurringOptions extends Component {
 
 class SizeOfRun extends Component {
     state = {
-        lengthTab: null,
-        length: 0,
-        sessionsTab: 0,
-        sessions: null,
-        hoursTab: 0,
-        hours: 12,
-        products:null,
-        productId:null,
-        priceId:null,
-        productAmount:0,
+        chosenPackage: 2,
+        length: 100,
+        sessions: 250,
+        hours: 12
     }
 
-    componentDidMount() {
+    componentDidMount()
+    {
         this.updateParent();
-        this.getsomeProduct();
-    }
-
-    getsomeProduct(){
-
-        axios.get(`/products`, []).then((response) => {
-            //console.log('products',response.data.products);
-            this.setState({products:response.data.products})
-
-        }, (error) =>
-        {
-            console.log('error getting products:',error);
-        });
+        this.packageChanged(2);
     }
 
     updateParent()
@@ -491,19 +474,9 @@ class SizeOfRun extends Component {
         this.props.onChange({
                 length: this.state.length,
                 sessions: this.state.sessions,
-                hours: this.state.hours,
-                productId:this.state.productId,
-                priceId:this.state.priceId,
-                productAmount:this.state.productAmount
+                hours: this.state.hours
             }
         )
-    }
-
-    lengthTabChanged(newTab,sessions,actions,productId,priceId,amount,hours)
-    {
-
-        this.setState({lengthTab:newTab, length:actions , sessions: sessions, productId:productId, priceId:priceId, productAmount:amount, hours:hours||12}, () => this.updateParent());
-    
     }
 
     lengthChanged(newValue)
@@ -511,50 +484,56 @@ class SizeOfRun extends Component {
         this.setState({length: newValue}, () => this.updateParent());
     }
 
-    // sessionsTabChanged(newTab)
-    // {
-    //     if (newTab === 0)
-    //     {
-    //         this.setState({sessionsTab: 0, sessions: 250}, () => this.updateParent());
-    //     }
-    //     else if (newTab === 1)
-    //     {
-    //         this.setState({sessionsTab: 1, sessions: 1000}, () => this.updateParent());
-    //     }
-    //     else if (newTab === 2)
-    //     {
-    //         this.setState({sessionsTab: 2, sessions: 5000}, () => this.updateParent());
-    //     }
-    //     else if (newTab === 3)
-    //     {
-    //         this.setState({sessionsTab: 3}, () => this.updateParent());
-    //     }
-    // }
+    packageChanged(newPackage)
+    {
+        this.setState({chosenPackage: newPackage}, () => this.updateParent());
 
-    // sessionsChanged(newValue)
-    // {
-    //     this.setState({sessions: newValue}, () => this.updateParent());
-    // }
+        if (newPackage === 0)
+        {
+            this.setState({
+                hours: 4,
+                length: 50,
+                sessions: 50
+            })
+        }
+        else if (newPackage === 1)
+        {
+            this.setState({
+                hours: 6,
+                length: 100,
+                sessions: 100
+            })
+        }
+        else if (newPackage === 2)
+        {
+            this.setState({
+                hours: 9,
+                length: 100,
+                sessions: 400
+            })
+        }
+        else if (newPackage === 3)
+        {
+            this.setState({
+                hours: 12,
+                length: 250,
+                sessions: 500
+            })
+        }
+        else if (newPackage === 4)
+        {
+            this.setState({
+                hours: 12,
+                length: 250,
+                sessions: 1000
+            })
+        }
+    }
 
-    // hoursTabChanged(newTab)
-    // {
-    //     if (newTab === 0)
-    //     {
-    //         this.setState({hoursTab: 0, hours: 1}, () => this.updateParent());
-    //     }
-    //     else if (newTab === 1)
-    //     {
-    //         this.setState({hoursTab: 1, hours: 6}, () => this.updateParent());
-    //     }
-    //     else if (newTab === 2)
-    //     {
-    //         this.setState({hoursTab: 2, hours: 24}, () => this.updateParent());
-    //     }
-    //     else if (newTab === 3)
-    //     {
-    //         this.setState({hoursTab: 3}, () => this.updateParent());
-    //     }
-    // }
+    sessionsChanged(newValue)
+    {
+        this.setState({sessions: newValue}, () => this.updateParent());
+    }
 
     hoursChanged(newValue)
     {
@@ -564,88 +543,55 @@ class SizeOfRun extends Component {
     render() {
         return <div>
             <Row>
-                <Column xs={12} md={12} lg={9}>
-                    <p>Number of actions per browser</p>
+                <Column xs={12} md={12} lg={12}>
+                    <p>Size of testing run</p>
                     <RunTypes>
-                    {
-                        this.state.products ?
-                            this.state.products.data.map((product,index)=>{
-                                //console.log(index,product)
-                                let sessions = parseInt(product.metadata.sessions)
-                                let actions = parseInt(product.metadata.actions)
-                                let hours = parseInt(product.metadata.hours)
-                                let productId = product.product
-                                let priceId = product.id
-                                let amount = product.unit_amount
-                                return <Button size="medium" 
-                                            variant="extended" 
-                                            className={index == 0 ? (this.state.lengthTab === index ? "" : "orange") :"" }
-                                            color={this.state.lengthTab === index ? "primary" : "default"} 
-                                            onClick={() => this.lengthTabChanged(index,sessions,actions,productId,priceId,amount,hours)}>
-                                {product.nickname}
-                            </Button>
-                            })
-                            
-
-                        :<div></div>
-                    }
-                    <p>
-                        Select the size of the run to be performed. The size changes how many browsers get launched, and thus how thorough the AI will search through your application to find bugs.
-                    </p>
-
-                    {/*
-                    <Button size="medium" variant="extended" color={this.state.lengthTab === 0 ? "primary" : "default"} onClick={() => this.lengthTabChanged(0)}>
-                        Short (100)
-                    </Button>
-                    <Button size="medium" variant="extended" color={this.state.lengthTab === 1 ? "primary" : "default"} onClick={() => this.lengthTabChanged(1)}>
-                        Medium (250)
-                    </Button>
-                    <Button size="medium" variant="extended" color={this.state.lengthTab === 2 ? "primary" : "default"} onClick={() => this.lengthTabChanged(2)}>
-                        Long (1,000)
-                    </Button>
-                    <Button size="medium" variant="extended" color={this.state.lengthTab === 3 ? "primary" : "default"} onClick={() => this.lengthTabChanged(3)}>
-                        Custom
-                    </Button>
-                
-                    <br/>
-                    {
-                        this.state.lengthTab === 3 ?
+                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 0 ? "primary" : "default"} onClick={() => this.packageChanged(0)}>
+                            Extra Quick
+                        </Button>
+                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 1 ? "primary" : "default"} onClick={() => this.packageChanged(1)}>
+                            Quick
+                        </Button>
+                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 2 ? "primary" : "default"} onClick={() => this.packageChanged(2)}>
+                            Medium
+                        </Button>
+                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 3 ? "primary" : "default"} onClick={() => this.packageChanged(3)}>
+                            Thorough
+                        </Button>
+                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 4 ? "primary" : "default"} onClick={() => this.packageChanged(4)}>
+                            Extra Thorough
+                        </Button>
+                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 5 ? "primary" : "default"} onClick={() => this.packageChanged(5)}>
+                            Custom
+                        </Button>
+                    </RunTypes>
+                </Column>
+            </Row>
+            {
+                this.state.chosenPackage === 5 ?
+                    <Row>
+                        <Column xs={12} md={9} lg={9}>
                             <div style={{"paddingLeft":"20px"}}>
                                 <TextField
                                     id="length"
-                                    label="# of actions"
+                                    label="# of actions per browser"
                                     type={"number"}
                                     min={10}
                                     value={this.state.length}
                                     onChange={(event) => this.lengthChanged(event.target.value)}
                                     margin="normal"
                                 />
-                            </div> : null
-                    }
-                    */}
-                    </RunTypes>
-                </Column>
-            </Row>
-            <Row>
-            <Column xs={12} md={12} lg={9}>
-            {/*
-                
-                    <p>Number of browsers</p>
-                    <Button size="medium" variant="extended" color={this.state.sessionsTab === 0 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(0)}>
-                        Small (250)
-                    </Button>
-                    <Button size="medium" variant="extended" color={this.state.sessionsTab === 1 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(1)}>
-                        Medium (1,000)
-                    </Button>
-                    <Button size="medium" variant="extended" color={this.state.sessionsTab === 2 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(2)}>
-                        Large (5,000)
-                    </Button>
-                    <Button size="medium" variant="extended" color={this.state.sessionsTab === 3 ? "primary" : "default"} onClick={() => this.sessionsTabChanged(3)}>
-                        Custom
-                    </Button>
-                    <br/>
-                    {
-                        this.state.sessionsTab === 3 ?
+                            </div>
+                        </Column>
+                        <Column xs={12} md={3} lg={3}>
+                            <p>The number of actions performed on your web application for each web-browser (e.g. clicks, typing something, etc..)</p>
+                        </Column>
+                    </Row>: null
+            }
+            {
+                this.state.chosenPackage === 5 ?
+                    <Row>
+                        <Column xs={12} md={9} lg={9}>
                             <div style={{"paddingLeft":"20px"}}>
                                 <TextField
                                     id="sessions"
@@ -657,54 +603,13 @@ class SizeOfRun extends Component {
                                     onChange={(event) => this.sessionsChanged(event.target.value)}
                                     margin="normal"
                                 />
-                            </div> : null
-                    }
-                
-                </Column>
-                <Column xs={12}  md={12} lg={3}>
-                    <p>How many total web browsers do you want run on your application? This impacts how thorough Kwola will be in triggering all edge-case behaviours of your application.</p>
-                */}
-                </Column>
-
-            </Row>
-
-            {/*<Row>*/}
-            {/*    <Column xs={9}>*/}
-            {/*        <p>Pace of Run</p>*/}
-            {/*        <Button variant="extended" color={this.state.hoursTab === 0 ? "primary" : "default"} onClick={() => this.hoursTabChanged(0)}>*/}
-            {/*            Fast (1 hour)*/}
-            {/*        </Button>*/}
-            {/*        <Button variant="extended" color={this.state.hoursTab === 1 ? "primary" : "default"} onClick={() => this.hoursTabChanged(1)}>*/}
-            {/*            Medium (6 hours)*/}
-            {/*        </Button>*/}
-            {/*        <Button variant="extended" color={this.state.hoursTab === 2 ? "primary" : "default"} onClick={() => this.hoursTabChanged(2)}>*/}
-            {/*            Slow (1 day)*/}
-            {/*        </Button>*/}
-            {/*        <Button variant="extended" color={this.state.hoursTab === 3 ? "primary" : "default"} onClick={() => this.hoursTabChanged(3)}>*/}
-            {/*            Custom*/}
-            {/*        </Button>*/}
-            {/*        <br/>*/}
-            {/*        {*/}
-            {/*            this.state.hoursTab === 3 ?*/}
-            {/*                <div style={{"paddingLeft":"20px"}}>*/}
-            {/*                    <TextField*/}
-            {/*                        id="hours"*/}
-            {/*                        label="# of hours to extend the session over"*/}
-            {/*                        type={"number"}*/}
-            {/*                        min={1}*/}
-            {/*                        max={1000}*/}
-            {/*                        value={this.state.hours}*/}
-            {/*                        onChange={(event) => this.hoursChanged(event.target.value)}*/}
-            {/*                        margin="normal"*/}
-            {/*                    />*/}
-            {/*                </div> : null*/}
-            {/*        }*/}
-            {/*    </Column>*/}
-            {/*    <Column xs={3}>*/}
-            {/*        <p>How quickly do you want this run to go? This impacts load on your web application. Extending it also allows Kwola AI to do more learning.</p>*/}
-            {/*    </Column>*/}
-            {/*</Row>*/}
-
+                            </div>
+                        </Column>
+                        <Column xs={12} md={3} lg={3}>
+                            <p>The total number of web browsers that will be opened on your web application.</p>
+                        </Column>
+                    </Row>: null
+            }
         </div>;
     }
 }
@@ -1703,9 +1608,7 @@ class NewTestingRun extends Component {
 
     calculatePrice()
     {
-        //return Math.max(1.00, Number((this.state.length * this.state.sessions * 0.001).toFixed(2)));
-        //let am = this.state.productAmount ?? 0
-        return this.state.productAmount ? 0.01 * this.state.productAmount : 0.00;
+        return Math.max(1.00, Number((this.state.length * this.state.sessions * 0.001).toFixed(2)));
     }
 
 
@@ -1748,7 +1651,7 @@ class NewTestingRun extends Component {
                 {
                     const testingRunData = this.createDataForTestingRun();
                     testingRunData['payment_method'] = result.paymentMethod.id;
-                    testingRunData['stripe'] = {productId:this.state.productId, priceId:this.state.priceId}
+                    // testingRunData['stripe'] = {productId:this.state.productId, priceId:this.}
                     return axios.post(`/testing_runs`, testingRunData).then((response) => {
                         this.setState({snackbarSeverity:"success",snackbar:true,snackbarText:'Order completed successfully. Your Testing run will begin soon.'})
                         this.trackOrderSuccess(response.data.testingRunId, price);
@@ -1764,7 +1667,8 @@ class NewTestingRun extends Component {
         })
     }
 
-    closeSnackbar(){
+    closeSnackbar()
+    {
         this.setState({snackbar:false});
     }
 
@@ -1971,14 +1875,13 @@ class NewTestingRun extends Component {
                                                             <span
                                                                 className="totalPrice">= {addCommas(this.state.length * this.state.sessions)}</span>
                                                         </div>
-                                                    {/*<div className="singleOrderInfo">
+                                                        <div className="singleOrderInfo">
                                                             <p>
                                                                 <span>Cost per 1,000 actions</span>
                                                             </p>
                                                             <span
                                                                 className="totalPrice">* ${1.00.toFixed(2)}</span>
                                                         </div>
-                                                    */}
                                                     </div>
                                                     {
                                                         this.state.discountApplied === 0 ?

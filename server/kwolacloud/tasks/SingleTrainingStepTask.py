@@ -31,8 +31,8 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         return {"success": False, "exception": errorMessage}
 
     # Verify this subscription with stripe
-    #if not verifyStripeSubscription(run):
-    #    return {"success": False}
+    if not verifyStripeSubscription(run):
+       return {"success": False}
 
     if not configData['features']['localRuns']:
         configDir = mountTestingRunStorageDrive(run.applicationId)

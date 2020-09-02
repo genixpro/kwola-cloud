@@ -83,10 +83,7 @@ class TestingRunsGroup(Resource):
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
-        #return data;
-        #change this for production. using dev user for billing
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
-        #stripeCustomerId = 'cus_HWGxAP6pB9znK4'
 
         allowFreeRuns = claims['https://kwola.io/freeRuns']
         
@@ -106,30 +103,19 @@ class TestingRunsGroup(Resource):
                   customer=stripeCustomerId,
                 )
 
-            #update this to the new product with price attached
-            #subscription = stripe.Subscription.create(
-            #    customer=customer.id,
-            #    items=[{'price': data['stripe']['priceId']}],
-            #    expand=['latest_invoice.payment_intent'],
-            #)
-
-            subscription = stripe.InvoiceItem.create(
-              customer=customer.id,
-              price=data['stripe']['priceId']
+            # Update this to the new product with price attached
+            subscription = stripe.Subscription.create(
+               customer=customer.id,
+               items=[{'plan': self.configData['stripe']['planId']}],
+               coupon=coupon,
+               expand=['latest_invoice.payment_intent'],
             )
-            invoiceId = subscription.id
 
-            invoice = stripe.Invoice.create(
-                customer=customer.id,
-            )
-            payment = stripe.Invoice.pay(sid=invoice.id, payment_method=data['payment_method'])
-            #return payment;
-            
-            if payment.paid != True:
+            if subscription.status != "active":
                 return abort(400)
 
             del data['payment_method']
-            data['stripeSubscriptionId'] = None#subscription.id
+            data['stripeSubscriptionId'] = subscription.id
         else:
             data['stripeSubscriptionId'] = None
 
