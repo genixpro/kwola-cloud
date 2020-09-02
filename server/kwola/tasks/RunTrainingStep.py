@@ -109,7 +109,7 @@ def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessio
         cacheFile = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
 
         applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId)
-        blob = storageClient.Blob(os.path.join('prepared_samples', executionTraceId + ".pickle.gz"), applicationStorageBucket)
+        blob = storage.Blob(os.path.join('prepared_samples', executionTraceId + ".pickle.gz"), applicationStorageBucket)
 
         try:
             # with open(cacheFile, 'rb') as file:
@@ -346,13 +346,10 @@ def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommand
 
         completed = 0
         for traceFuture in executionTraceFutures:
-            startTime = datetime.now()
             traceWeightData = pickle.loads(traceFuture.get(timeout=30))
             if traceWeightData is not None:
                 executionTraceWeightDatas.append(traceWeightData)
                 executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
-            finishTime = datetime.now()
-            getLogger().info((finishTime - startTime).total_seconds())
             completed += 1
             if completed % 100 == 0:
                 getLogger().info(f"[{os.getpid()}] Finished loading {completed} execution trace weight datas.")
