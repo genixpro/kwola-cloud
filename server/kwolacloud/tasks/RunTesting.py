@@ -215,7 +215,7 @@ def runTesting(testingRunId):
                                                            image="worker",
                                                            cpuRequest="6000m",
                                                            cpuLimit=None,
-                                                           memoryRequest="12.0Gi",
+                                                           memoryRequest="14.0Gi",
                                                            memoryLimit=None,
                                                            gpu=True
                                                            )
