@@ -19,9 +19,13 @@ def runHourlyTasks():
     try:
         logging.info(f"Starting the hourly task job.")
 
-        sendSupportOfferEmailsOnApplications()
-        sendSupportOfferEmailsOnUsers()
-        sendFeedbackRequestEmails()
+        now = datetime.now()
+
+        # Try to send these in the day time.
+        if now.hour >= 11 and now.hour <= 16:
+            sendSupportOfferEmailsOnApplications()
+            sendSupportOfferEmailsOnUsers()
+            sendFeedbackRequestEmails()
 
     except Exception as e:
         errorMessage = f"Error in the hourly tasks job:\n\n{traceback.format_exc()}"
@@ -38,6 +42,8 @@ def sendSupportOfferEmailsOnApplications():
         hasSentSupportOfferEmail=False
     )
 
+    logging.info(f"Found {len(applications)} application objects that need a support offer sent to them.")
+
     for app in applications:
         sendOfferSupportEmail(application=app)
         app.hasSentSupportOfferEmail = True
@@ -45,8 +51,12 @@ def sendSupportOfferEmailsOnApplications():
 
 
 
+
 def sendSupportOfferEmailsOnUsers():
-    users = authService.users.list(q=f"user_metadata.hasCreatedFirstApplication:false AND user_metadata.hasSentInitialSupportEmail:false AND created_at:[* TO {(datetime.datetime.now() - relativedelta(hours=24)).isoformat()}]")['users']
+    users = authService.users.list(q=f"user_metadata.hasCreatedFirstApplication:false AND user_metadata.hasSentInitialSupportEmail:false AND created_at:[* TO {(datetime.now() - relativedelta(hours=24)).isoformat()}]")['users']
+
+    logging.info(f"Found {len(users)} users that need a support offer sent to them.")
+
     for user in users:
         sendOfferSupportEmail(email=user['email'])
         updateUserProfileMetadataValue(user['user_id'], "hasSentInitialSupportEmail", True)
@@ -59,6 +69,8 @@ def sendFeedbackRequestEmails():
         needsFeedbackRequestEmail=True,
         endTime__lt=(datetime.now() - relativedelta(hours=24))
     )
+
+    logging.info(f"Found {len(testingRunsNeedingFeedbackRequest)} testing runs that need a feedback request sent for them.")
 
     for run in testingRunsNeedingFeedbackRequest:
         sendRequestFeedbackEmail(run.owner)
