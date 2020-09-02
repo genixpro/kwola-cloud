@@ -800,7 +800,9 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
         getLogger().info(f"[{os.getpid()}] Shutting down and joining the sub-processes")
         for subProcess, subProcessCommandQueue in zip(subProcesses, subProcessCommandQueues):
             subProcessCommandQueue.put(("quit", {}))
-            subProcess.join()
+            subProcess.join(timeout=30)
+            if subProcess.is_alive():
+                subProcess.kill()
 
         # Safe guard, don't save the model if any nan's were detected
         if not trainingStep.hadNaN:
