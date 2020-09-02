@@ -66,6 +66,9 @@ def runTesting(testingRunId):
     run.status = "running"
     run.save()
 
+    # Make sure that this application has recorded that at least one testing run has launched
+    ApplicationModel.objects(id=run.applicationId).update_one(hasFirstTestingRunLaunched=True)
+
     try:
         configFilePath = os.path.join(configDir, "kwola.json")
 
@@ -269,9 +272,17 @@ def runTesting(testingRunId):
         logging.info(f"Finished testing run {testingRunId}")
         run.status = "completed"
         run.endTime = datetime.datetime.now()
-        run.save()
 
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
+        application.hasFirstTestingRunCompleted = True
+
+        if not application.hasSentFeedbackRequestEmail:
+            run.needsFeedbackRequestEmail = True
+            application.hasSentFeedbackRequestEmail = True
+
+        application.save()
+        run.save()
+
         bugCount = BugModel.objects(owner=application.owner, testingRunId=run.id, isMuted=False).count()
 
         if application.enableEmailTestingRunCompletedNotifications:

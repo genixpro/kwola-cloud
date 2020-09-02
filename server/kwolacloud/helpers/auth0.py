@@ -2,6 +2,9 @@ from auth0.v3.authentication import GetToken
 from auth0.v3.management import Auth0
 from kwolacloud.config.config import loadConfiguration
 import time
+import datetime
+from dateutil.relativedelta import relativedelta
+
 
 authService = None
 
@@ -38,3 +41,25 @@ def getUserProfileFromId(ownerId):
                 time.sleep(2**attempt)
 
 
+def updateUserProfileMetadataValue(ownerId, key, value):
+    global authService
+
+    maxAttempts = 5
+    for attempt in range(maxAttempts):
+        try:
+            if authService is None:
+                authService = loadAuth0Service()
+
+            user = authService.users.get(ownerId)
+
+            metadata = user['user_metadata']
+            metadata[key] = value
+
+            authService.users.update(ownerId, {"user_metadata": metadata})
+
+        except Exception as e:
+            authService = None
+            if attempt == maxAttempts - 1:
+                raise
+            else:
+                time.sleep(2**attempt)

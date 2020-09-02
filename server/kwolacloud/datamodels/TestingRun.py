@@ -20,6 +20,7 @@ class TestingRun(Document):
         'indexes': [
             ('owner',),
             ('owner', 'applicationId'),
+            ('needsFeedbackRequestEmail', 'endTime'),
         ]
     }
 
@@ -56,6 +57,8 @@ class TestingRun(Document):
     trainingSteps = ListField(StringField())
 
     averageTimePerStep = FloatField(default=0)
+
+    needsFeedbackRequestEmail = BooleanField(default=False)
 
     def saveToDisk(self, config):
         self.save()

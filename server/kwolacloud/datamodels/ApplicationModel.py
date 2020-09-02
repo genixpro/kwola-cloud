@@ -32,6 +32,8 @@ class ApplicationModel(Document):
 
     url = StringField(required=True)
 
+    creationDate = DateTimeField()
+
     slackAccessToken = StringField(default=None)
 
     slackChannel = StringField(default=None)
@@ -61,6 +63,14 @@ class ApplicationModel(Document):
     jiraIssueType = StringField(default=None)
 
     enablePushBugsToJIRA = BooleanField(default=True)
+
+    hasFirstTestingRunLaunched = BooleanField(default=False)
+
+    hasFirstTestingRunCompleted = BooleanField(default=False)
+
+    hasSentSupportOfferEmail = BooleanField(default=False)
+
+    hasSentFeedbackRequestEmail = BooleanField(default=False)
 
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)

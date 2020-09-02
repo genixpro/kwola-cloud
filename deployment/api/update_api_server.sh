@@ -11,5 +11,5 @@ kubectl apply -f api_autoscaler_$KWOLA_ENV.yaml
 sed "s/__REVISION_ID__/$REVISION_ID/g;s/__KWOLA_ENV__/$KWOLA_ENV/g" deployment/api/api_service.yaml > api_service_$KWOLA_ENV.yaml
 kubectl apply -f api_service_$KWOLA_ENV.yaml
 
-
-
+sed "s/__REVISION_ID__/$REVISION_ID/g;s/__KWOLA_ENV__/$KWOLA_ENV/g" deployment/api/hourly_tasks.yaml > hourly_tasks_$KWOLA_ENV.yaml
+kubectl apply -f hourly_tasks_$KWOLA_ENV.yaml
