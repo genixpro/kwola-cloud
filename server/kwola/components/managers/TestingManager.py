@@ -28,7 +28,7 @@ from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.BugModel import BugModel
 from ...datamodels.CustomIDField import CustomIDField
 from ...datamodels.TestingStepModel import TestingStep
-from ...tasks.RunTrainingStep import addExecutionSessionToSampleCache
+from .TrainingManager import TrainingManager
 from datetime import datetime
 import atexit
 import concurrent.futures
@@ -395,7 +395,7 @@ class TestingManager:
             futures = []
             for session in self.executionSessions:
                 getLogger().info(f"[{os.getpid()}] Preparing samples for {session.id} and adding them to the sample cache.")
-                futures.append(executor.submit(addExecutionSessionToSampleCache, session.id, self.config))
+                futures.append(executor.submit(TrainingManager.addExecutionSessionToSampleCache, session.id, self.config))
             for future in futures:
                 future.result()
 

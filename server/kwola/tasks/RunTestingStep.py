@@ -25,7 +25,7 @@ from ..components.managers.TestingManager import TestingManager
 
 def runTestingStep(configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False):
     manager = TestingManager(configDir, testingStepId, shouldBeRandom, generateDebugVideo)
-    manager.runTesting()
+    return manager.runTesting()
 
 
 if __name__ == "__main__":
