@@ -273,7 +273,7 @@ class TrainingManager:
             subProcessCommandQueue = multiprocessing.Queue()
             subProcessBatchResultQueue = multiprocessing.Queue()
 
-            subProcess = multiprocessing.Process(target=TrainingManager.prepareAndLoadBatchesSubprocess, args=(self.configDir, batchDirectory, subProcessCommandQueue, subProcessBatchResultQueue, subprocessIndex, self.applicationId))
+            subProcess = multiprocessing.Process(target=TrainingManager.prepareAndLoadBatchesSubprocess, args=(self.configDir, self.batchDirectory, subProcessCommandQueue, subProcessBatchResultQueue, subprocessIndex, self.applicationId))
             subProcess.start()
             atexit.register(lambda: subProcess.terminate())
 
