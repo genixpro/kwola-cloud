@@ -802,7 +802,11 @@ def runTrainingStep(configDir, trainingSequenceId, trainingStepIndex, gpu=None, 
             subProcessCommandQueue.put(("quit", {}))
             subProcess.join(timeout=30)
             if subProcess.is_alive():
-                subProcess.kill()
+                # Use kill in python 3.7+, terminate in lower versions
+                if hasattr(subProcess, 'kill'):
+                    subProcess.kill()
+                else:
+                    subProcess.terminate()
 
         # Safe guard, don't save the model if any nan's were detected
         if not trainingStep.hadNaN:
