@@ -8,7 +8,6 @@
 from kwola.datamodels.CustomIDField import CustomIDField
 from .RunConfiguration import RunConfiguration
 from mongoengine import *
-from ..components.KubernetesJob import KubernetesJob
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from ..config.config import getKwolaConfiguration
 from ..config.config import loadConfiguration
@@ -70,6 +69,8 @@ class TestingRun(Document):
 
 
     def runJob(self):
+        from ..components.KubernetesJob import KubernetesJob
+        
         configData = loadConfiguration()
 
         if configData['features']['localRuns']:
