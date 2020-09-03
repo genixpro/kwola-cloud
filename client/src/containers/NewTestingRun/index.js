@@ -73,7 +73,8 @@ class NewTestingRun extends Component {
         snackbar:false,
         snackbarSeverity:"info",
         promoCode: "",
-        discountApplied: 0
+        discountApplied: 0,
+        runConfiguration: {}
     };
 
     constructor()
@@ -98,29 +99,26 @@ class NewTestingRun extends Component {
 
     createDataForTestingRun()
     {
+        const runConfig = this.state.runConfiguration;
+        runConfig.url = this.state.application.url;
+        runConfig.name = "";
+        runConfig.paragraph = "";
+        runConfig.preventOffsiteLinks = true;
         return {
             applicationId: this.props.match.params.id,
             promoCode: this.state.promoCode,
-            configuration: {
-                url: this.state.application.url,
-                email: this.state.email,
-                password: this.state.password,
-                name: "",
-                paragraph: "",
-                enableRandomNumberCommand: this.state.enableRandomNumbers,
-                enableRandomBracketCommand: this.state.enableRandomBrackets,
-                enableRandomMathCommand: this.state.enableRandomMathSymbols,
-                enableRandomOtherSymbolCommand: this.state.enableRandomOtherSymbols,
-                enableDoubleClickCommand: this.state.enableDoubleClick,
-                enableRightClickCommand: this.state.enableRightClick,
-                autologin: this.state.autologin,
-                preventOffsiteLinks: true,
-                urlWhitelistRegexes: this.state.pathRegexes,
-                testingSequenceLength: this.state.length,
-                totalTestingSessions: this.state.sessions,
-                hours: this.state.hours
-            }
+            configuration: runConfig
         };
+    }
+
+    changeRunConfiguration(newValues)
+    {
+        const runConfig = this.state.runConfiguration;
+        Object.keys(newValues).forEach((key) =>
+        {
+            runConfig[key] = newValues[key];
+        });
+        this.setState({runConfiguration: runConfig})
     }
 
     trackOrderSuccess(testingRunId, price)
@@ -280,6 +278,12 @@ class NewTestingRun extends Component {
 
     render() {
         const { result } = this.state;
+
+        if (!this.state.application)
+        {
+            return <LayoutWrapper />;
+        }
+
         return (
                 <LayoutWrapper>
                     <ElementsConsumer>
@@ -307,7 +311,7 @@ class NewTestingRun extends Component {
                                                     {/*    title={``}*/}
                                                     {/*    subtitle={``}*/}
                                                     {/*>*/}
-                                                    {/*    <RecurringOptions onChange={(data) => this.setState(data)} />*/}
+                                                    {/*    <RecurringOptions onChange={(data) => this.changeRunConfiguration(data)} />*/}
                                                     {/*</Papersheet>*/}
                                                     {/*<br/>*/}
                                                     {/*<br/>*/}
@@ -317,7 +321,10 @@ class NewTestingRun extends Component {
                                                         title={``}
                                                         subtitle={``}
                                                     >
-                                                        <SizeOfRun onChange={(data) => this.setState(data)} />
+                                                        <SizeOfRun
+                                                            defaultRunConfiguration={this.state.application.defaultRunConfiguration}
+                                                            onChange={(data) => this.changeRunConfiguration(data)}
+                                                        />
                                                     </Papersheet>
                                                     <br/>
                                                     <br/>
@@ -326,16 +333,23 @@ class NewTestingRun extends Component {
                                                         title={`Credentials`}
                                                         subtitle={``}
                                                     >
-                                                        <AutologinCredentials onChange={(data) => this.setState(data)} />
+                                                        <AutologinCredentials
+                                                            defaultRunConfiguration={this.state.application.defaultRunConfiguration}
+                                                            onChange={(data) => this.changeRunConfiguration(data)}
+                                                        />
                                                     </Papersheet>
                                                     <br/>
                                                     <br/>
+                                    disabled={this.props.disabled}
                                                     <br/>
                                                     <Papersheet
                                                         title={`Actions`}
                                                         subtitle={``}
                                                     >
-                                                        <ActionsConfiguration onChange={(data) => this.setState(data)} />
+                                                        <ActionsConfiguration
+                                                            defaultRunConfiguration={this.state.application.defaultRunConfiguration}
+                                                            onChange={(data) => this.changeRunConfiguration(data)}
+                                                        />
                                                     </Papersheet>
                                                     <br/>
                                                     <br/>
@@ -344,7 +358,11 @@ class NewTestingRun extends Component {
                                                         title={`Path Restriction`}
                                                         subtitle={``}
                                                     >
-                                                        <PathWhitelistConfiguration onChange={(data) => this.setState(data)} application={this.state.application} />
+                                                        <PathWhitelistConfiguration
+                                                            defaultRunConfiguration={this.state.application.defaultRunConfiguration}
+                                                            onChange={(data) => this.changeRunConfiguration(data)}
+                                                            application={this.state.application}
+                                                        />
                                                     </Papersheet>
                                                     {/*<br/>*/}
                                                     {/*<br/>*/}
@@ -353,7 +371,7 @@ class NewTestingRun extends Component {
                                                     {/*    title={`Errors`}*/}
                                                     {/*    subtitle={``}*/}
                                                     {/*>*/}
-                                                    {/*    <ErrorsConfiguration onChange={(data) => this.setState(data)} />*/}
+                                                    {/*    <ErrorsConfiguration onChange={(data) => this.changeRunConfiguration(data)} />*/}
                                                     {/*</Papersheet>*/}
                                                 </div>
                                                 : null
@@ -365,7 +383,10 @@ class NewTestingRun extends Component {
                                                             title={`Size of Testing Run`}
                                                             subtitle={``}
                                                         >
-                                                            <SizeOfRun onChange={(data) => this.setState(data)} />
+                                                            <SizeOfRun
+                                                                defaultRunConfiguration={this.state.application.defaultRunConfiguration}
+                                                                onChange={(data) => this.changeRunConfiguration(data)}
+                                                            />
                                                         </Papersheet>
                                                         <br/>
                                                         <br/>
@@ -374,7 +395,10 @@ class NewTestingRun extends Component {
                                                             title={`Credentials`}
                                                             subtitle={``}
                                                         >
-                                                            <AutologinCredentials onChange={(data) => this.setState(data)} />
+                                                            <AutologinCredentials
+                                                                defaultRunConfiguration={this.state.application.defaultRunConfiguration}
+                                                                onChange={(data) => this.changeRunConfiguration(data)}
+                                                            />
                                                         </Papersheet>
                                                         <br/>
                                                         <br/>
@@ -383,7 +407,10 @@ class NewTestingRun extends Component {
                                                             title={`Actions`}
                                                             subtitle={``}
                                                         >
-                                                            <ActionsConfiguration onChange={(data) => this.setState(data)} />
+                                                            <ActionsConfiguration
+                                                                defaultRunConfiguration={this.state.application.defaultRunConfiguration}
+                                                                onChange={(data) => this.changeRunConfiguration(data)}
+                                                            />
                                                         </Papersheet>
                                                         <br/>
                                                         <br/>
@@ -392,7 +419,10 @@ class NewTestingRun extends Component {
                                                             title={`Path Restriction`}
                                                             subtitle={``}
                                                         >
-                                                            <PathWhitelistConfiguration onChange={(data) => this.setState(data)} application={this.state.application} />
+                                                            <PathWhitelistConfiguration
+                                                                defaultRunConfiguration={this.state.application.defaultRunConfiguration}
+                                                                onChange={(data) => this.changeRunConfiguration(data)} application={this.state.application}
+                                                            />
                                                         </Papersheet>
                                                         <br/>
                                                         <br/>
@@ -401,7 +431,10 @@ class NewTestingRun extends Component {
                                                             title={`Errors`}
                                                             subtitle={``}
                                                         >
-                                                            <ErrorsConfiguration onChange={(data) => this.setState(data)} />
+                                                            <ErrorsConfiguration
+                                                                defaultRunConfiguration={this.state.application.defaultRunConfiguration}
+                                                                onChange={(data) => this.changeRunConfiguration(data)}
+                                                            />
                                                         </Papersheet>
                                                     </div>
                                                     : null

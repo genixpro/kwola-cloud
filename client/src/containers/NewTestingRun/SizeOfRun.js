@@ -7,23 +7,95 @@ import {connect, Provider} from 'react-redux';
 
 class SizeOfRun extends Component {
     state = {
-        chosenPackage: 2,
+        chosenPackage: null,
         length: 100,
         sessions: 250,
         hours: 12
     }
 
+    static packages = [
+        {
+            name: "Extra Quick",
+            hours: 4,
+            length: 50,
+            sessions: 50
+        },
+        {
+            name: "Quick",
+            hours: 6,
+            length: 100,
+            sessions: 100
+        },
+        {
+            name: "Medium",
+            hours: 9,
+            length: 100,
+            sessions: 400
+        },
+        {
+            name: "Thorough",
+            hours: 12,
+            length: 250,
+            sessions: 500
+        },
+        {
+            name: "Extra Thorough",
+            hours: 12,
+            length: 250,
+            sessions: 1000
+        }
+    ]
+
+    static findMatchingPackageIndex(length, sessions, hours)
+    {
+        let index = 0;
+        for (let pack of SizeOfRun.packages)
+        {
+            if (pack.length === length && pack.hours === hours && pack.sessions === sessions)
+            {
+                return index;
+            }
+            index += 1;
+        }
+        return null;
+    }
+
     componentDidMount()
     {
+        if (this.props.defaultRunConfiguration)
+        {
+            const config = this.props.defaultRunConfiguration;
+            const packageIndex = SizeOfRun.findMatchingPackageIndex(config.testingSequenceLength, config.totalTestingSessions, config.hours);
+            const stateData = {
+                length: config.testingSequenceLength,
+                sessions: config.totalTestingSessions,
+                hours: config.hours
+            };
+
+            if (packageIndex === null)
+            {
+                stateData.chosenPackage = SizeOfRun.packages.length;
+            }
+            else
+            {
+                stateData.chosenPackage = packageIndex;
+            }
+
+            this.setState(stateData);
+        }
+        else
+        {
+            this.packageChanged(2);
+        }
+
         this.updateParent();
-        this.packageChanged(2);
     }
 
     updateParent()
     {
         this.props.onChange({
-                length: this.state.length,
-                sessions: this.state.sessions,
+                testingSequenceLength: this.state.length,
+                totalTestingSessions: this.state.sessions,
                 hours: this.state.hours
             }
         )
@@ -34,49 +106,24 @@ class SizeOfRun extends Component {
         this.setState({length: newValue}, () => this.updateParent());
     }
 
-    packageChanged(newPackage)
+    packageChanged(newPackageIndex)
     {
-        this.setState({chosenPackage: newPackage}, () => this.updateParent());
+        if (this.props.disabled)
+        {
+            // Do nothing
+            return;
+        }
 
-        if (newPackage === 0)
+        if (newPackageIndex < SizeOfRun.packages.length)
         {
             this.setState({
-                hours: 4,
-                length: 50,
-                sessions: 50
-            })
+                chosenPackage: newPackageIndex,
+                ...SizeOfRun.packages[newPackageIndex]
+            }, () => this.updateParent())
         }
-        else if (newPackage === 1)
+        else
         {
-            this.setState({
-                hours: 6,
-                length: 100,
-                sessions: 100
-            })
-        }
-        else if (newPackage === 2)
-        {
-            this.setState({
-                hours: 9,
-                length: 100,
-                sessions: 400
-            })
-        }
-        else if (newPackage === 3)
-        {
-            this.setState({
-                hours: 12,
-                length: 250,
-                sessions: 500
-            })
-        }
-        else if (newPackage === 4)
-        {
-            this.setState({
-                hours: 12,
-                length: 250,
-                sessions: 1000
-            })
+            this.setState({chosenPackage: newPackageIndex}, () => this.updateParent())
         }
     }
 
@@ -93,25 +140,54 @@ class SizeOfRun extends Component {
     render() {
         return <div>
             <Row>
-                <Column xs={12} md={12} lg={12}>
+                <Column xs={this.props.hideHelp ? 12 : 9}>
                     <p>Size of testing run</p>
                     <RunTypes>
-                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 0 ? "primary" : "default"} onClick={() => this.packageChanged(0)}>
+                        <Button size="medium"
+                                variant="extended"
+                                color={this.state.chosenPackage === 0 ? "primary" : "default"}
+                                style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                onClick={() => this.packageChanged(0)}>
                             Extra Quick
                         </Button>
-                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 1 ? "primary" : "default"} onClick={() => this.packageChanged(1)}>
+                        <Button
+                            size="medium"
+                            variant="extended"
+                            color={this.state.chosenPackage === 1 ? "primary" : "default"}
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                            onClick={() => this.packageChanged(1)}>
                             Quick
                         </Button>
-                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 2 ? "primary" : "default"} onClick={() => this.packageChanged(2)}>
+                        <Button
+                            size="medium"
+                            variant="extended"
+                            color={this.state.chosenPackage === 2 ? "primary" : "default"}
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                            onClick={() => this.packageChanged(2)}>
                             Medium
                         </Button>
-                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 3 ? "primary" : "default"} onClick={() => this.packageChanged(3)}>
+                        <Button
+                            size="medium"
+                            variant="extended"
+                            color={this.state.chosenPackage === 3 ? "primary" : "default"}
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                            onClick={() => this.packageChanged(3)}>
                             Thorough
                         </Button>
-                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 4 ? "primary" : "default"} onClick={() => this.packageChanged(4)}>
+                        <Button
+                            size="medium"
+                            variant="extended"
+                            color={this.state.chosenPackage === 4 ? "primary" : "default"}
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                            onClick={() => this.packageChanged(4)}>
                             Extra Thorough
                         </Button>
-                        <Button size="medium" variant="extended" color={this.state.chosenPackage === 5 ? "primary" : "default"} onClick={() => this.packageChanged(5)}>
+                        <Button
+                            size="medium"
+                            variant="extended"
+                            color={this.state.chosenPackage === 5 ? "primary" : "default"}
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                            onClick={() => this.packageChanged(5)}>
                             Custom
                         </Button>
                     </RunTypes>
@@ -120,7 +196,7 @@ class SizeOfRun extends Component {
             {
                 this.state.chosenPackage === 5 ?
                     <Row>
-                        <Column xs={12} md={9} lg={9}>
+                        <Column xs={this.props.hideHelp ? 12 : 9}>
                             <div style={{"paddingLeft":"20px"}}>
                                 <TextField
                                     id="length"
@@ -128,20 +204,24 @@ class SizeOfRun extends Component {
                                     type={"number"}
                                     min={10}
                                     value={this.state.length}
+                                    disabled={this.props.disabled}
                                     onChange={(event) => this.lengthChanged(event.target.value)}
                                     margin="normal"
                                 />
                             </div>
                         </Column>
-                        <Column xs={12} md={3} lg={3}>
-                            <p>The number of actions performed on your web application for each web-browser (e.g. clicks, typing something, etc..)</p>
-                        </Column>
+                        {
+                            !this.props.hideHelp ?
+                                <Column xs={3}>
+                                    <p>The number of actions performed on your web application for each web-browser (e.g. clicks, typing something, etc..)</p>
+                                </Column> : null
+                        }
                     </Row>: null
             }
             {
                 this.state.chosenPackage === 5 ?
                     <Row>
-                        <Column xs={12} md={9} lg={9}>
+                        <Column xs={this.props.hideHelp ? 12 : 9}>
                             <div style={{"paddingLeft":"20px"}}>
                                 <TextField
                                     id="sessions"
@@ -150,14 +230,18 @@ class SizeOfRun extends Component {
                                     min={1}
                                     max={10000000}
                                     value={this.state.sessions}
+                                    disabled={this.props.disabled}
                                     onChange={(event) => this.sessionsChanged(event.target.value)}
                                     margin="normal"
                                 />
                             </div>
                         </Column>
-                        <Column xs={12} md={3} lg={3}>
-                            <p>The total number of web browsers that will be opened on your web application.</p>
-                        </Column>
+                        {
+                            !this.props.hideHelp ?
+                                <Column xs={3}>
+                                    <p>The total number of web browsers that will be opened on your web application.</p>
+                                </Column> : null
+                        }
                     </Row>: null
             }
         </div>;

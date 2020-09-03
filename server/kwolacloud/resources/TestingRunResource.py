@@ -130,8 +130,10 @@ class TestingRunsGroup(Resource):
             del data['stripe']
         
         newTestingRun = TestingRun(**data)
-
         newTestingRun.save()
+
+        application.defaultRunConfiguration = newTestingRun.configuration
+        application.save()
 
         postToKwolaSlack(f"New testing run was started with id {data['id']} for application {data['applicationId']}")
 

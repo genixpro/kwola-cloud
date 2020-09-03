@@ -32,6 +32,9 @@ import SessionTable from './sessionTable'
 import BugsTable from './bugsTable'
 import FeedbackWidget from "../FeedbackWidget";
 import CircularProgress from "../../components/uielements/circularProgress";
+import SettingsIcon from "@material-ui/icons/Settings";
+import Menus, {MenuItem} from "../../components/uielements/menus";
+import {Link} from "react-router-dom";
 
 class ViewTestingRun extends Component {
     state = {
@@ -41,7 +44,8 @@ class ViewTestingRun extends Component {
         newPage:0,
         setPage:0,
         bugs:[],
-        isAdmin: Auth.isAdmin()
+        isAdmin: Auth.isAdmin(),
+        settingsMenuOpen: false
     };
 
     componentDidMount() {
@@ -110,6 +114,20 @@ class ViewTestingRun extends Component {
         }
     }
 
+    toggleSettingsMenuOpen(event)
+    {
+        this.setState({
+            settingsMenuOpen: !this.state.settingsMenuOpen,
+            applicationSettingsMenuAnchorElement: event.currentTarget
+        });
+    }
+
+    closeSettingsMenuOpen()
+    {
+        this.setState({settingsMenuOpen: false});
+    }
+
+
     render()
     {
         const { result } = this.state;
@@ -150,6 +168,28 @@ class ViewTestingRun extends Component {
                                             }
                                         </div>}
                                     subtitle={this.state.testingRun.status}
+                                    button={
+                                        <div>
+                                            <Button variant="contained"
+                                                    size="small"
+                                                    color={"default"}
+                                                    title={"Settings"}
+                                                    aria-owns={this.state.settingsMenuOpen ? 'application-settings-menu' : null}
+                                                    aria-haspopup="true"
+                                                    onClick={(event) => this.toggleSettingsMenuOpen(event)}
+                                            >
+                                                <SettingsIcon />
+                                            </Button>
+                                            <Menus
+                                                id="settings-menu"
+                                                anchorEl={this.state.applicationSettingsMenuAnchorElement}
+                                                open={this.state.settingsMenuOpen}
+                                                onClose={() => this.closeSettingsMenuOpen()}
+                                            >
+                                                <MenuItem><Link to={`/app/dashboard/testing_runs/${this.props.match.params.id}/configuration`} style={{"color":"black", "textDecoration": "none"}}>View Configuration</Link></MenuItem>
+                                            </Menus>
+                                        </div>
+                                    }
                                 >
 
 

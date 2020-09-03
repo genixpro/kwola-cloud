@@ -7,6 +7,7 @@ import {
     FormGroup,
     FormControlLabel,
 } from '../../components/uielements/form';
+import {Button} from "../UiElements/Button/button.style";
 
 
 class AutologinCredentials extends Component {
@@ -25,31 +26,55 @@ class AutologinCredentials extends Component {
         })
     }
 
-    componentDidMount() {
-
+    componentDidMount()
+    {
+        if (this.props.defaultRunConfiguration)
+        {
+            const config = this.props.defaultRunConfiguration;
+            this.setState({
+                autologin: config.autologin,
+                email: config.email,
+                password: config.password
+            });
+        }
     }
 
     toggleEnableAutologin()
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         this.setState({autologin: !this.state.autologin}, () => this.updateParent());
     }
 
 
     emailChanged(newValue)
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         this.setState({email: newValue}, () => this.updateParent());
     }
 
 
     passwordChanged(newValue)
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         this.setState({password: newValue}, () => this.updateParent());
     }
 
     render() {
         return <div>
             <Row>
-                <Column xs={12}  md={12} lg={9}>
+                <Column xs={this.props.hideHelp ? 12 : 9}>
                     <FormGroup row>
                         <FormControlLabel
                             control={
@@ -57,9 +82,11 @@ class AutologinCredentials extends Component {
                                     checked={this.state.autologin}
                                     onChange={() => this.toggleEnableAutologin()}
                                     value="autologin"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
                             label="Enable Heuristic Auto Login?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                     </FormGroup>
                     <br/>
@@ -87,9 +114,12 @@ class AutologinCredentials extends Component {
                             /> : null
                     }
                 </Column>
-                <Column xs={12}  md={12} lg={3}>
-                    <p>Select whether you want Kwola to attempt an automatic login as soon as it lands on your application URL.</p>
-                </Column>
+                {
+                    !this.props.hideHelp ?
+                        <Column xs={3}>
+                            <p>Select whether you want Kwola to attempt an automatic login as soon as it lands on your application URL.</p>
+                        </Column> : null
+                }
             </Row>
         </div>;
     }

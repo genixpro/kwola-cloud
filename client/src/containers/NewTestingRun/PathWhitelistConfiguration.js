@@ -46,25 +46,43 @@ class PathWhitelistConfiguration extends Component {
         {
             this.props.onChange({
                 enablePathWhitelist: this.state.enablePathWhitelist,
-                pathRegexes: []
+                urlWhitelistRegexes: []
             })
         }
     }
 
+
     componentDidMount()
     {
-
+        if (this.props.defaultRunConfiguration)
+        {
+            const config = this.props.defaultRunConfiguration;
+            this.setState({
+                enablePathWhitelist: config.enablePathWhitelist,
+                pathRegexes: config.urlWhitelistRegexes
+            });
+        }
     }
 
 
     togglePathWhitelist()
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         this.setState({enablePathWhitelist: !this.state.enablePathWhitelist}, () => this.updateParent());
     }
 
 
     addNewPathRegex()
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         const pathRegexes = this.state.pathRegexes;
         const testerOpen = this.state.testerOpen;
         pathRegexes.push(".*")
@@ -75,6 +93,11 @@ class PathWhitelistConfiguration extends Component {
 
     changePathRegex(index, newValue)
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         const pathRegexes = this.state.pathRegexes;
         pathRegexes[index] = newValue;
         this.setState({pathRegexes}, () => this.updateParent())
@@ -87,6 +110,11 @@ class PathWhitelistConfiguration extends Component {
 
     removePathRegex(index)
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         const pathRegexes = this.state.pathRegexes;
         pathRegexes.splice(index, 1);
         this.setState({pathRegexes}, () => this.updateParent())
@@ -184,7 +212,7 @@ class PathWhitelistConfiguration extends Component {
     render() {
         return <div>
             <Row>
-                <Column xs={12}  md={12} lg={9}>
+                <Column xs={this.props.hideHelp ? 12 : 9}>
                     <FormGroup row>
                         <FormControlLabel
                             control={
@@ -192,9 +220,11 @@ class PathWhitelistConfiguration extends Component {
                                     checked={this.state.enablePathWhitelist}
                                     onChange={() => this.togglePathWhitelist()}
                                     value="autologin"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
                             label="Enable whitelist of target paths / URLs?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                     </FormGroup>
                     {
@@ -292,9 +322,12 @@ class PathWhitelistConfiguration extends Component {
                             </div> : null
                     }
                 </Column>
-                <Column xs={12}  md={12} lg={3}>
-                    <p>Select whether you want to keep Kwola constrained within URL's that match your provided regexes.</p>
-                </Column>
+                {
+                    !this.props.hideHelp ?
+                        <Column xs={3}>
+                            <p>Select whether you want to keep Kwola constrained within URL's that match your provided regexes.</p>
+                        </Column> : null
+                }
             </Row>
         </div>;
     }

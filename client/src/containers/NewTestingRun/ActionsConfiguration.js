@@ -27,7 +27,26 @@ class ActionsConfiguration extends Component {
         customTypeStrings: []
     }
 
-    componentDidMount() {
+    componentDidMount()
+    {
+        if (this.props.defaultRunConfiguration)
+        {
+            const config = this.props.defaultRunConfiguration;
+            this.setState({
+                enableDoubleClick: config.enableDoubleClick,
+                enableRightClick: config.enableRightClick,
+                enableRandomLetters: config.enableRandomLetters,
+                enableRandomBrackets: config.enableRandomBrackets,
+                enableRandomMathSymbols: config.enableRandomMathSymbols,
+                enableRandomOtherSymbols: config.enableRandomOtherSymbols,
+                enableRandomNumbers: config.enableRandomNumbers,
+                enableScrolling: config.enableScrolling,
+                enableDragging: config.enableDragging,
+                enableTypeEmail: config.enableTypeEmail,
+                enableTypePassword: config.enableTypePassword,
+                customTypeStrings: config.customTypeStrings || []
+            });
+        }
 
     }
 
@@ -52,12 +71,22 @@ class ActionsConfiguration extends Component {
 
     toggle(key)
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         this.setState({[key]: !this.state[key]}, () => this.updateParent())
     }
 
 
     addNewCustomString()
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         const customTypeStrings = this.state.customTypeStrings;
 
         customTypeStrings.push("")
@@ -67,6 +96,11 @@ class ActionsConfiguration extends Component {
 
     changeCustomString(index, newValue)
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         const customTypeStrings = this.state.customTypeStrings;
 
         customTypeStrings[index] = newValue;
@@ -76,6 +110,11 @@ class ActionsConfiguration extends Component {
 
     removeCustomString(index)
     {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
         const customTypeStrings = this.state.customTypeStrings;
 
         customTypeStrings.splice(index, 1)
@@ -87,7 +126,7 @@ class ActionsConfiguration extends Component {
     render() {
         return <div>
             <Row>
-                <Column xs={9}>
+                <Column xs={this.props.hideHelp ? 12 : 9}>
                     <FormGroup>
                         <FormControlLabel
                             control={
@@ -95,9 +134,11 @@ class ActionsConfiguration extends Component {
                                     checked={true}
                                     disabled={true}
                                     value="enableClick"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
                             label="Enable click action (mandatory)?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
                         <FormControlLabel
@@ -106,9 +147,11 @@ class ActionsConfiguration extends Component {
                                     checked={this.state.enableDoubleClick}
                                     onChange={() => this.toggle('enableDoubleClick')}
                                     value="enableDoubleClick"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
                             label="Enable double click action?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
                         <FormControlLabel
@@ -117,9 +160,11 @@ class ActionsConfiguration extends Component {
                                     checked={this.state.enableRightClick}
                                     onChange={() => this.toggle('enableRightClick')}
                                     value="enableRightClick"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
                             label="Enable right click action?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
                         {/*<FormControlLabel*/}
@@ -128,9 +173,11 @@ class ActionsConfiguration extends Component {
                         {/*            checked={this.state.enableScrolling}*/}
                         {/*            onChange={() => this.toggle('enableScrolling')}*/}
                         {/*            value="enableScrolling"*/}
+                        {/*            style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
                         {/*        />*/}
                         {/*    }*/}
                         {/*    label="Enable scrolling actions?"*/}
+                        {/*    style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
                         {/*/>*/}
                         {/*<br/>*/}
                         {/*<FormControlLabel*/}
@@ -139,9 +186,11 @@ class ActionsConfiguration extends Component {
                         {/*            checked={this.state.enableDragging}*/}
                         {/*            onChange={() => this.toggle('enableDragging')}*/}
                         {/*            value="enableDragging"*/}
+                        {/*            style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
                         {/*        />*/}
                         {/*    }*/}
                         {/*    label="Enable drag action?"*/}
+                        {/*    style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
                         {/*/>*/}
                         {/*<br/>*/}
                         {/*<FormControlLabel*/}
@@ -150,9 +199,11 @@ class ActionsConfiguration extends Component {
                         {/*            checked={this.state.enableTypeEmail}*/}
                         {/*            onChange={() => this.toggle('enableTypeEmail')}*/}
                         {/*            value="enableTypeEmail"*/}
+                        {/*            style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
                         {/*        />*/}
                         {/*    }*/}
                         {/*    label="Enable type email action?"*/}
+                        {/*    style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
                         {/*/>*/}
                         {/*<br/>*/}
                         {/*<FormControlLabel*/}
@@ -161,9 +212,11 @@ class ActionsConfiguration extends Component {
                         {/*            checked={this.state.enableTypePassword}*/}
                         {/*            onChange={() => this.toggle('enableTypePassword')}*/}
                         {/*            value="enableTypePassword"*/}
+                        {/*            style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
                         {/*        />*/}
                         {/*    }*/}
                         {/*    label="Enable type password action?"*/}
+                        {/*    style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
                         {/*/>*/}
                         {/*<br/>*/}
                         <FormControlLabel
@@ -172,9 +225,11 @@ class ActionsConfiguration extends Component {
                                     checked={this.state.enableRandomLetters}
                                     onChange={() => this.toggle('enableRandomLetters')}
                                     value="enableRandomLetters"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
                             label="Enable type random letters action?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
                         <FormControlLabel
@@ -183,9 +238,11 @@ class ActionsConfiguration extends Component {
                                     checked={this.state.enableRandomBrackets}
                                     onChange={() => this.toggle('enableRandomBrackets')}
                                     value="enableRandomBrackets"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
                             label="Enable type random brackets action?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
                         <FormControlLabel
@@ -197,6 +254,7 @@ class ActionsConfiguration extends Component {
                                 />
                             }
                             label="Enable type random math symbols action?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
                         <FormControlLabel
@@ -205,9 +263,11 @@ class ActionsConfiguration extends Component {
                                     checked={this.state.enableRandomOtherSymbols}
                                     onChange={() => this.toggle('enableRandomOtherSymbols')}
                                     value="enableRandomOtherSymbols"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
                             label="Enable type random other symbols action?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
                         <FormControlLabel
@@ -216,9 +276,11 @@ class ActionsConfiguration extends Component {
                                     checked={this.state.enableRandomNumbers}
                                     onChange={() => this.toggle('enableRandomNumbers')}
                                     value="enableRandomNumbers"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
                             label="Enable type random numbers action?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
                     </FormGroup>
@@ -227,7 +289,8 @@ class ActionsConfiguration extends Component {
                     <br/>
 
                     {/*{*/}
-                    {/*    <Button variant="extended" color={"primary"} onClick={() => this.addNewCustomString()}>*/}
+                    {/*    <Button variant="extended" color={"primary"} onClick={() => this.addNewCustomString()} */}
+                    {/*            style={{"cursor": this.props.disabled ? "default" : "pointer"}}>*/}
                     {/*        Add a Custom Typing Action*/}
                     {/*        <AddIcon className="rightIcon"></AddIcon>*/}
                     {/*    </Button>*/}
@@ -254,9 +317,12 @@ class ActionsConfiguration extends Component {
                     }
 
                 </Column>
-                <Column xs={3}>
-                    <p>Select which of the default, built-in actions you would like to enable?</p>
-                </Column>
+                {
+                    !this.props.hideHelp ?
+                        <Column xs={3}>
+                            <p>Select which of the default, built-in actions you would like to enable?</p>
+                        </Column> : null
+                }
             </Row>
         </div>;
     }

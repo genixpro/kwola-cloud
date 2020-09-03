@@ -60,6 +60,10 @@ const routes = [
     component: lazy(() => import('../ViewExecutionTrace')),
   },
   {
+    path: 'testing_runs/:id/configuration',
+    component: lazy(() => import('../ViewTestingRunConfiguration')),
+  },
+  {
     path: 'testing_runs/:id',
     component: lazy(() => import('../ViewTestingRun')),
   },

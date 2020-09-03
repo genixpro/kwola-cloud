@@ -3,6 +3,7 @@
 
 from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.datamodels.DiskUtilities import saveObjectToDisk, loadObjectFromDisk
+from kwolacloud.datamodels.RunConfiguration import RunConfiguration
 from mongoengine import *
 from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
@@ -71,6 +72,8 @@ class ApplicationModel(Document):
     hasSentSupportOfferEmail = BooleanField(default=False)
 
     hasSentFeedbackRequestEmail = BooleanField(default=False)
+
+    defaultRunConfiguration = EmbeddedDocumentField(RunConfiguration)
 
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
