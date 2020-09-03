@@ -27,6 +27,8 @@ def runHourlyTasks():
             sendSupportOfferEmailsOnUsers()
             sendFeedbackRequestEmails()
 
+        logging.info(f"Finished the hourly task job at {now.isoformat()}")
+
     except Exception as e:
         errorMessage = f"Error in the hourly tasks job:\n\n{traceback.format_exc()}"
         logging.error(f"[{os.getpid()}] {errorMessage}")
