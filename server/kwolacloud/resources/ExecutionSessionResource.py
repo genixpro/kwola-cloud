@@ -16,7 +16,7 @@ import flask
 from kwola.config.config import Configuration
 from kwolacloud.config.config import loadConfiguration
 import os.path
-from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from ..auth import authenticate, isAdmin
 
 class ExecutionSessionGroup(Resource):

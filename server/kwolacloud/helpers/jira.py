@@ -3,7 +3,7 @@ import requests
 from ..config.config import loadConfiguration, getKwolaConfiguration
 from kwola.config.config import Configuration
 import os.path
-from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
 
 def postBugToCustomerJIRA(bug, application):

@@ -27,6 +27,9 @@ from ..datamodels.ApplicationModel import ApplicationModel
 from kwola.datamodels.BugModel import BugModel
 from dateutil.relativedelta import relativedelta
 from kwolacloud.helpers.slack import postToCustomerSlack
+from .utils import unmountTestingRunStorageDrive
+import zipfile
+import io
 
 
 def runTesting(testingRunId):
@@ -281,7 +284,32 @@ def runTesting(testingRunId):
         application.save()
         run.save()
 
-        bugCount = BugModel.objects(owner=application.owner, testingRunId=run.id, isMuted=False).count()
+        bugs = list(BugModel.objects(owner=application.owner, testingRunId=run.id, isMuted=False))
+        bugCount = len(bugs)
+
+        bugsZipFileOnDisk = open(os.path.join(config.getKwolaUserDataDirectory("bug_zip_files"), testingRunId.id + ".zip"), 'wb')
+        bugsZip = zipfile.ZipFile(file=bugsZipFileOnDisk, mode='w')
+
+        for bugIndex, bug in enumerate(bugs):
+            bugJsonFilePath = os.path.join(configDir, "bugs", bug.id + ".json")
+            bugTextFilePath = os.path.join(configDir, "bugs", bug.id + ".txt")
+            bugRawVideoFilePath = os.path.join(configDir, "bugs", f'{str(bug.id)}.mp4')
+            bugAnnotatedVideoFilePath = os.path.join(configDir, "bugs", f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
+
+            with open(bugJsonFilePath, 'rb') as f:
+                bugsZip.writestr(f"bug_{bugIndex+1}.json", f.read())
+
+            with open(bugTextFilePath, 'rb') as f:
+                bugsZip.writestr(f"bug_{bugIndex+1}.txt", f.read())
+
+            with open(bugRawVideoFilePath, 'rb') as f:
+                bugsZip.writestr(f"bug_{bugIndex+1}_raw.mp4", f.read())
+
+            with open(bugAnnotatedVideoFilePath, 'rb') as f:
+                bugsZip.writestr(f"bug_{bugIndex+1}_annotated.mp4", f.read())
+
+        bugsZip.close()
+        bugsZipFileOnDisk.close()
 
         if application.enableEmailTestingRunCompletedNotifications:
             sendFinishTestingRunEmail(application, run, bugCount)
@@ -294,8 +322,7 @@ def runTesting(testingRunId):
         logging.error(f"[{os.getpid()}] {errorMessage}")
         return {"success": False, "exception": errorMessage}
     finally:
-        # unmountTestingRunStorageDrive(configDir)
-        pass
+        unmountTestingRunStorageDrive(configDir)
 
 
 if __name__ == "__main__":

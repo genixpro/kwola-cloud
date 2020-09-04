@@ -20,6 +20,8 @@ from dateutil.relativedelta import relativedelta
 import flask
 import json
 import stripe
+import os
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
 
 class TestingRunsGroup(Resource):
@@ -223,3 +225,43 @@ class TestingRunsRestartTraining(Resource):
         currentTrainingStepJob.start()
 
         return {}
+
+
+class TestingRunsDownloadZip(Resource):
+    def __init__(self):
+        self.configData = loadConfiguration()
+
+    def get(self, testing_run_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": testing_run_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        testingRun = TestingRun.objects(**queryParams).first()
+
+        if testingRun is None:
+            return abort(404)
+
+        if not self.configData['features']['localRuns']:
+            configDir = mountTestingRunStorageDrive(testingRun.applicationId)
+        else:
+            configDir = os.path.join("data", testingRun.applicationId)
+
+        try:
+            with open(os.path.join(configDir, "bug_zip_files", testingRun.id + ".zip"), 'rb') as f:
+                zipData = f.read()
+
+            response = flask.make_response(zipData)
+            response.headers['content-type'] = 'application/zip'
+            response.headers['content-disposition'] = f'attachment; filename="{testingRun.id}.zip"'
+
+            return response
+        except FileNotFoundError:
+            abort(404)
+        finally:
+            if not self.configData['features']['localRuns']:
+                unmountTestingRunStorageDrive(configDir)
+

@@ -145,6 +145,12 @@ class ViewTestingRun extends Component {
 
         const downloadCSVButton = <CSVLink filename="BugsCSV.csv" headers={this.state.csvheaders} data={this.state.csvData}><Icon color="primary" className="fontSizeSmall">get_app</Icon></CSVLink>;
 
+        let zipFileLink = "";
+        if (this.state.testingRun)
+        {
+            zipFileLink = `${process.env.REACT_APP_BACKEND_API_URL}testing_runs/${this.state.testingRun._id}/bugs_zip?token=${Auth.getQueryParameterToken()}`;
+        }
+
         return (
             this.state.testingRun ?
                 <LayoutWrapper>
@@ -187,6 +193,16 @@ class ViewTestingRun extends Component {
                                                 onClose={() => this.closeSettingsMenuOpen()}
                                             >
                                                 <MenuItem><Link to={`/app/dashboard/testing_runs/${this.props.match.params.id}/configuration`} style={{"color":"black", "textDecoration": "none"}}>View Configuration</Link></MenuItem>
+
+                                                {
+                                                    this.state.testingRun.status === "completed" ?
+                                                        <MenuItem><a
+                                                            href={zipFileLink}
+                                                            style={{"color": "black", "textDecoration": "none"}}>
+                                                            <span>Download Zip of Bugs</span>
+                                                        </a></MenuItem>
+                                                        : null
+                                                }
                                             </Menus>
                                         </div>
                                     }
@@ -253,6 +269,13 @@ class ViewTestingRun extends Component {
                                 <Papersheet title={"Bugs Found"} tooltip={bugsTooltip}>
                                     <span>Total bugs Found: {this.state.bugs ? this.state.bugs.length: "0"}</span><br/>
                                     <span>Download CSV: {downloadCSVButton}</span><br/>
+                                    {
+                                        this.state.testingRun.status === "completed" ?
+                                            <span>Download Zip File: <a href={zipFileLink}><Icon color="primary" className="fontSizeSmall">get_app</Icon></a></span>
+                                        : null
+                                    }
+                                    <br/>
+                                    <br/>
                                     <BugsTable {...this.props} data={this.state.bugs} />
                                 </Papersheet>
                             </FullColumn>
