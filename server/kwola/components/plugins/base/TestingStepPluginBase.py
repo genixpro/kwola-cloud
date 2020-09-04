@@ -17,10 +17,13 @@ class TestingStepPluginBase:
         pass
 
 
-    def afterActionsRun(self, testingStep, executionSessions, actions):
+    def afterActionsRun(self, testingStep, executionSessions, traces):
         pass
 
 
     def testingStepFinished(self, testingStep, executionSessions):
         pass
 
+
+    def sessionFailed(self, testingStep, executionSession):
+        pass

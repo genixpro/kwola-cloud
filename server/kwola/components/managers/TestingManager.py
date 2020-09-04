@@ -19,27 +19,28 @@
 #
 
 
-from ...config.logger import getLogger, setupLocalLogging
 from ...components.agents.DeepLearningAgent import DeepLearningAgent
 from ...components.environments.WebEnvironment import WebEnvironment
 from ...config.config import Configuration
+from ...config.logger import getLogger, setupLocalLogging
 from ...datamodels.ExecutionSessionModel import ExecutionSession
-from ...datamodels.BugModel import BugModel
-from ...datamodels.CustomIDField import CustomIDField
 from ...datamodels.TestingStepModel import TestingStep
-from .TrainingManager import TrainingManager
-from kwola.components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
-from kwola.components.plugins.base.TestingStepPluginBase import TestingStepPluginBase
-from kwola.components.plugins.core.RecordScreenshots import RecordScreenshots
+from ..plugins.core.CreateLocalBugObjects import CreateLocalBugObjects
 from datetime import datetime
+from kwola.components.plugins.base.TestingStepPluginBase import TestingStepPluginBase
+from kwola.components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
+from kwola.components.plugins.core.GenerateAnnotatedVideos import GenerateAnnotatedVideos
+from kwola.components.plugins.core.GenerateDebugVideos import GenerateDebugVideos
+from kwola.components.plugins.core.LogSessionActionExecutionTimes import LogSessionActionExecutionTimes
+from kwola.components.plugins.core.LogSessionRewards import LogSessionRewards
+from kwola.components.plugins.core.PrecomputeSessionsForSampleCache import PrecomputeSessionsForSampleCache
+from kwola.components.plugins.core.RecordScreenshots import RecordScreenshots
 import atexit
-import concurrent.futures
 import billiard as multiprocessing
 import numpy
 import os
 import pickle
 import tempfile
-import time
 import traceback
 
 
@@ -62,22 +63,19 @@ class TestingManager:
         self.executionSessions = []
         self.executionSessionTraces = []
 
-        self.allKnownErrorHashes = set()
-        self.newErrorsThisTestingStep = []
-        self.newErrorOriginalExecutionSessionIds = []
-        self.newErrorOriginalStepNumbers = []
-
         self.step = 0
 
-        self.listOfTimesForScreenshot = []
-        self.listOfTimesForActionMapRetrieval = []
-        self.listOfTimesForActionDecision = []
-        self.listOfTimesForActionExecution = []
-        self.listOfTimesForMiscellaneous = []
-        self.listOfTotalLoopTimes = []
-
         if self.plugins is None:
-            self.plugins = []
+            self.plugins = [
+                CreateLocalBugObjects(self.config),
+                LogSessionRewards(self.config),
+                LogSessionActionExecutionTimes(self.config),
+                PrecomputeSessionsForSampleCache(self.config),
+                GenerateAnnotatedVideos(self.config)
+            ]
+
+            if not shouldBeRandom and generateDebugVideo:
+                self.plugins.append(GenerateDebugVideos(self.config))
         else:
             self.plugins = plugins
 
@@ -91,10 +89,6 @@ class TestingManager:
             if isinstance(plugin, TestingStepPluginBase)
         ]
 
-    def loadKnownErrorHashes(self):
-        for bug in self.loadAllBugs():
-            hash = bug.error.computeHash()
-            self.allKnownErrorHashes.add(hash)
 
     def createExecutionSessions(self):
         self.executionSessions = [
@@ -149,73 +143,20 @@ class TestingManager:
             subProcessCommandQueue.put("quit")
             subProcess.join()
 
-    def loadAllBugs(self):
-        bugsDir = self.config.getKwolaUserDataDirectory("bugs")
-
-        bugs = []
-
-        for fileName in os.listdir(bugsDir):
-            if ".lock" not in fileName and ".txt" not in fileName and ".mp4" not in fileName:
-                bugId = fileName
-                bugId = bugId.replace(".json", "")
-                bugId = bugId.replace(".gz", "")
-                bugId = bugId.replace(".pickle", "")
-
-                bug = BugModel.loadFromDisk(bugId, self.config)
-
-                if bug is not None:
-                    bugs.append(bug)
-
-        return bugs
-
-    def loadAllMutedErrors(self):
-        if self.config['data_serialization_method'] == 'mongo':
-            from kwolacloud.datamodels.MutedError import MutedError
-            mutedErrors = MutedError.objects(applicationId=self.testStep.applicationId)
-            return list(mutedErrors)
-        else:
-            return []
-
     def removeBadSessions(self):
         sessionToRemove = self.environment.removeBadSessionIfNeeded()
         while sessionToRemove is not None:
             getLogger().warning(f"[{os.getpid()}] Removing web browser session at index {sessionToRemove} because the browser has crashed!")
 
-            sessionId = self.executionSessions[sessionToRemove].id
+            session = self.executionSessions[sessionToRemove]
 
             del self.executionSessions[sessionToRemove]
             del self.executionSessionTraces[sessionToRemove]
 
-            n = 0
-            while n < len(self.newErrorsThisTestingStep):
-                if self.newErrorOriginalExecutionSessionIds[n] == sessionId:
-                    del self.newErrorsThisTestingStep[n]
-                    del self.newErrorOriginalStepNumbers[n]
-                    del self.newErrorOriginalExecutionSessionIds[n]
-                else:
-                    n += 1
+            for plugin in self.plugins:
+                plugin.sessionFailed(self.testStep, session)
 
             sessionToRemove = self.environment.removeBadSessionIfNeeded()
-
-    def logSessionRewards(self):
-        totalRewards = []
-        for session in self.executionSessions:
-            getLogger().info(f"[{os.getpid()}] Session {session.tabNumber} finished with total reward: {session.totalReward:.3f}")
-            totalRewards.append(session.totalReward)
-
-        if len(totalRewards) > 0:
-            getLogger().info(f"[{os.getpid()}] Mean total reward of all sessions: {numpy.mean(totalRewards):.3f}")
-
-    def logActionTimeInfo(self):
-        msg = f"[{os.getpid()}] Finished {self.step + 1} testing actions."
-        if len(self.listOfTimesForScreenshot):
-            msg += f"\n     Avg Screenshot time: {numpy.average(self.listOfTimesForScreenshot[-self.config['testing_print_every'] * len(self.executionSessions):])}"
-            msg += f"\n     Avg Action Map Retrieval Time: {numpy.average(self.listOfTimesForActionMapRetrieval[-self.config['testing_print_every'] * len(self.executionSessions):])}"
-            msg += f"\n     Avg Action Decision Time: {numpy.average(self.listOfTimesForActionDecision[-self.config['testing_print_every'] * len(self.executionSessions):])}"
-            msg += f"\n     Avg Action Execution Time: {numpy.average(self.listOfTimesForActionExecution[-self.config['testing_print_every'] * len(self.executionSessions):])}"
-            msg += f"\n     Avg Miscellaneous Time: {numpy.average(self.listOfTimesForMiscellaneous[-self.config['testing_print_every'] * len(self.executionSessions):])}"
-            msg += f"\n     Avg Total Loop Time: {numpy.average(self.listOfTotalLoopTimes[-self.config['testing_print_every'] * len(self.executionSessions):])}"
-        getLogger().info(msg)
 
     def executeSingleAction(self):
         taskStartTime = datetime.now()
@@ -243,8 +184,8 @@ class TestingManager:
             actions = pickle.load(file)
         os.unlink(resultFileName)
 
-        if self.stepsRemaining % self.config['testing_print_every'] == 0:
-            self.logActionTimeInfo()
+        for plugin in self.testingStepPlugins:
+            plugin.beforeActionsRun(self.testStep, self.executionSessions, actions)
 
         taskStartTime = datetime.now()
         traces = self.environment.runActions(actions)
@@ -254,13 +195,6 @@ class TestingManager:
         self.loopTime = datetime.now()
 
         miscellaneousTime = totalLoopTime - (screenshotTime + actionMapRetrievalTime + actionDecisionTime + actionExecutionTime)
-
-        self.listOfTimesForScreenshot.append(screenshotTime)
-        self.listOfTimesForActionMapRetrieval.append(actionMapRetrievalTime)
-        self.listOfTimesForActionDecision.append(actionDecisionTime)
-        self.listOfTimesForActionExecution.append(actionExecutionTime)
-        self.listOfTimesForMiscellaneous.append(miscellaneousTime)
-        self.listOfTotalLoopTimes.append(totalLoopTime)
 
         for sessionN, executionSession, trace in zip(range(len(traces)), self.executionSessions, traces):
             if trace is None:
@@ -283,18 +217,12 @@ class TestingManager:
             self.executionSessionTraces[sessionN].append(trace)
             self.executionSessions[sessionN].totalReward = float(numpy.sum(DeepLearningAgent.computePresentRewards(self.executionSessionTraces[sessionN], self.config)))
 
-            for error in trace.errorsDetected:
-                hash = error.computeHash()
-
-                if hash not in self.allKnownErrorHashes:
-                    self.allKnownErrorHashes.add(hash)
-                    self.newErrorsThisTestingStep.append(error)
-                    self.newErrorOriginalExecutionSessionIds.append(str(executionSession.id))
-                    self.newErrorOriginalStepNumbers.append(self.step)
+        for plugin in self.testingStepPlugins:
+            plugin.afterActionsRun(self.testStep, self.executionSessions, traces)
 
         del traces
 
-    def generatePlainVideoFiles(self):
+    def savePlainVideoFiles(self):
         getLogger().info(f"[{os.getpid()}] Creating movies for the execution sessions of this testing sequence.")
 
         moviePlugin = [plugin for plugin in self.environment.plugins if isinstance(plugin, RecordScreenshots)][0]
@@ -307,116 +235,11 @@ class TestingManager:
                 with open(os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4'), "wb") as cloneFile:
                     cloneFile.write(origFile.read())
 
-    def createAndSaveBugObjects(self):
-        kwolaVideoDirectory = self.config.getKwolaUserDataDirectory("videos")
-
-        existingBugs = self.loadAllBugs()
-        mutedErrors = self.loadAllMutedErrors()
-
-        bugObjects = []
-
-        for errorIndex, error, executionSessionId, stepNumber in zip(range(len(self.newErrorsThisTestingStep)),
-                                                                     self.newErrorsThisTestingStep,
-                                                                     self.newErrorOriginalExecutionSessionIds,
-                                                                     self.newErrorOriginalStepNumbers):
-            bug = BugModel()
-            bug.id = CustomIDField.generateNewUUID(BugModel, self.config)
-            bug.owner = self.testStep.owner
-            bug.applicationId = self.testStep.applicationId
-            bug.testingStepId = self.testStep.id
-            bug.executionSessionId = executionSessionId
-            bug.creationDate = datetime.now()
-            bug.stepNumber = stepNumber
-            bug.error = error
-            bug.testingRunId = self.testStep.testingRunId
-
-            duplicate = False
-            for existingBug in existingBugs:
-                if bug.isDuplicateOf(existingBug):
-                    duplicate = True
-                    break
-
-            for mutedError in mutedErrors:
-                if bug.isDuplicateOf(mutedError):
-                    bug.isMuted = True
-                    bug.mutedErrorId = mutedError.id
-                    mutedError.totalOccurrences += 1
-                    mutedError.mostRecentOccurrence = datetime.now()
-                    mutedError.saveToDisk(self.config)
-
-            if not duplicate:
-                bug.saveToDisk(self.config, overrideSaveFormat="json", overrideCompression=0)
-                bug.saveToDisk(self.config)
-
-                bugTextFile = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".txt")
-                with open(bugTextFile, "wb") as file:
-                    file.write(bytes(bug.generateBugText(), "utf8"))
-
-                bugVideoFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".mp4")
-                with open(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), "rb") as origFile:
-                    with open(bugVideoFilePath, 'wb') as cloneFile:
-                        cloneFile.write(origFile.read())
-
-                getLogger().info(f"\n\n[{os.getpid()}] Bug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
-
-                existingBugs.append(bug)
-                bugObjects.append(bug)
-
-                getLogger().info(f"\n\n[{os.getpid()}] Bug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
-        return bugObjects
-
-
-    def generateAnnotatedVideos(self, bugObjects):
-        debugVideoSubprocesses = []
-
-        for session in self.executionSessions:
-            debugVideoSubprocess = multiprocessing.Process(target=TestingManager.createDebugVideoSubProcess, args=(self.configDir, str(session.id), "", False, False, None, None, "annotated_videos"))
-            atexit.register(lambda: debugVideoSubprocess.terminate() if debugVideoSubprocess is not None else None)
-            debugVideoSubprocesses.append(debugVideoSubprocess)
-
-        getLogger().info(f"[{os.getpid()}] Found {len(self.newErrorsThisTestingStep)} new unique errors this session.")
-
-        for bugIndex, bug in enumerate(bugObjects):
-            debugVideoSubprocess = multiprocessing.Process(target=TestingManager.createDebugVideoSubProcess, args=(
-                self.configDir, str(bug.executionSessionId), f"{bug.id}_bug", False, False, bug.stepNumber, bug.stepNumber + 3, "bugs"))
-            atexit.register(lambda: debugVideoSubprocess.terminate())
-            debugVideoSubprocesses.append(debugVideoSubprocess)
-
-        if not self.shouldBeRandom and self.generateDebugVideo:
-            # Start some parallel processes generating debug videos.
-            debugVideoSubprocess1 = multiprocessing.Process(target=TestingManager.createDebugVideoSubProcess, args=(
-            self.configDir, str(self.executionSessions[0].id), "prediction", True, True, None, None, "debug_videos"))
-            atexit.register(lambda: debugVideoSubprocess1.terminate())
-            debugVideoSubprocesses.append(debugVideoSubprocess1)
-
-            # Leave a gap between the two to reduce collision
-            time.sleep(5)
-
-            debugVideoSubprocess2 = multiprocessing.Process(target=TestingManager.createDebugVideoSubProcess, args=(
-            self.configDir, str(self.executionSessions[int(len(self.executionSessions) / 3)].id), "mix", True, True, None, None, "debug_videos"))
-            atexit.register(lambda: debugVideoSubprocess2.terminate())
-            debugVideoSubprocesses.append(debugVideoSubprocess2)
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['video_generation_processes']) as executor:
-            futures = []
-            for debugVideoSubprocess in debugVideoSubprocesses:
-                futures.append(executor.submit(TestingManager.runAndJoinSubprocess, debugVideoSubprocess))
-            for future in futures:
-                future.result()
 
     def shutdownEnvironment(self):
         self.environment.shutdown()
         del self.environment
 
-
-    def addSessionsToSampleCache(self):
-        with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
-            futures = []
-            for session in self.executionSessions:
-                getLogger().info(f"[{os.getpid()}] Preparing samples for {session.id} and adding them to the sample cache.")
-                futures.append(executor.submit(TrainingManager.addExecutionSessionToSampleCache, session.id, self.config))
-            for future in futures:
-                future.result()
 
     @staticmethod
     def predictedActionSubProcess(configDir, shouldBeRandom, subProcessCommandQueue, subProcessResultQueue):
@@ -450,33 +273,6 @@ class TestingManager:
 
             subProcessResultQueue.put(resultFileName)
 
-    @staticmethod
-    def createDebugVideoSubProcess(configDir, executionSessionId, name="", includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilightStepNumber=None, cutoffStepNumber=None, folder="debug_videos"):
-        setupLocalLogging()
-
-        getLogger().info(f"Creating debug video for session {executionSessionId} with options includeNeuralNetworkCharts={includeNeuralNetworkCharts}, includeNetPresentRewardChart={includeNetPresentRewardChart}, hilightStepNumber={hilightStepNumber}, cutoffStepNumber={cutoffStepNumber}")
-
-        config = Configuration(configDir)
-
-        agent = DeepLearningAgent(config, whichGpu=None)
-        agent.initialize(enableTraining=False)
-        agent.load()
-
-        kwolaDebugVideoDirectory = config.getKwolaUserDataDirectory(folder)
-
-        executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
-
-        videoData = agent.createDebugVideoForExecutionSession(executionSession, includeNeuralNetworkCharts=includeNeuralNetworkCharts, includeNetPresentRewardChart=includeNetPresentRewardChart, hilightStepNumber=hilightStepNumber, cutoffStepNumber=cutoffStepNumber)
-        with open(os.path.join(kwolaDebugVideoDirectory, f'{name + "_" if name else ""}{str(executionSession.id)}.mp4'), "wb") as cloneFile:
-            cloneFile.write(videoData)
-
-        del agent
-
-    @staticmethod
-    def runAndJoinSubprocess(debugVideoSubprocess):
-        debugVideoSubprocess.start()
-        debugVideoSubprocess.join()
-
     def runTesting(self):
         getLogger().info(f"[{os.getpid()}] Starting New Testing Sequence")
 
@@ -493,8 +289,10 @@ class TestingManager:
             self.testStep.saveToDisk(self.config)
 
             self.createExecutionSessions()
-            self.loadKnownErrorHashes()
             self.createTestingSubprocesses()
+
+            for plugin in self.testingStepPlugins:
+                plugin.testingStepStarted(self.testStep, self.executionSessions)
 
             self.environment = WebEnvironment(config=self.config, executionSessions=self.executionSessions)
 
@@ -518,26 +316,22 @@ class TestingManager:
 
             self.environment.runSessionCompletedHooks()
 
-            self.generatePlainVideoFiles()
-
-            self.logSessionRewards()
+            self.savePlainVideoFiles()
 
             for session in self.executionSessions:
                 session.saveToDisk(self.config)
 
-            self.testStep.bugsFound = len(self.newErrorsThisTestingStep)
-            self.testStep.errors = self.newErrorsThisTestingStep
-
-            bugs = self.createAndSaveBugObjects()
-
-            # Do this here before generating the annotated bug videos in order
-            # to conserve memory
+            # We shutdown the environment before generating the annotated videos in order
+            # to conserve memory, since the environment is no longer needed after this point
             self.shutdownEnvironment()
-            self.generateAnnotatedVideos(bugs)
 
             self.testStep.status = "completed"
             self.testStep.endTime = datetime.now()
             self.testStep.executionSessions = [session.id for session in self.executionSessions]
+
+            for plugin in self.testingStepPlugins:
+                plugin.testingStepFinished(self.testStep, self.executionSessions)
+
             self.testStep.saveToDisk(self.config)
             resultValue['successfulExecutionSessions'] = len(self.testStep.executionSessions)
             resultValue['success'] = True
