@@ -80,6 +80,14 @@ class TrainingManager:
         self.lastStarveStateAdjustment = 0
         self.coreLearningTimes = []
 
+        self.testingSteps = []
+        self.agent = None
+
+        self.batchDirectory = None
+        self.subProcessCommandQueues = []
+        self.subProcessBatchResultQueues = []
+        self.subProcesses = []
+
         if self.plugins is None:
             self.plugins = []
         else:
@@ -139,6 +147,7 @@ class TrainingManager:
 
             self.initializeGPU()
             self.createTrainingStep()
+            self.loadTestingSteps()
 
             if len(self.testingSteps) == 0:
                 errorMessage = f"Error, no test sequences to train on for training step."
@@ -151,6 +160,10 @@ class TrainingManager:
             self.agent.load()
 
             self.createSubproccesses()
+
+            for plugin in self.plugins:
+                plugin.trainingStepStarted(self.trainingStep)
+
         except Exception as e:
             errorMessage = f"Error occurred during initiation of training! {traceback.format_exc()}"
             getLogger().warning(f"[{os.getpid()}] {errorMessage}")
@@ -188,11 +201,18 @@ class TrainingManager:
                     if self.gpu is None or self.gpu == 0:
                         self.trainingStep.saveToDisk(self.config)
 
+                for plugin in self.plugins:
+                    plugin.iterationCompleted(self.trainingStep)
+
             getLogger().info(f"[{os.getpid()}] Finished the core training loop. Saving the training step {self.trainingStep.id}")
             self.trainingStep.endTime = datetime.now()
             self.trainingStep.averageTimePerIteration = (self.trainingStep.endTime - self.trainingStep.startTime).total_seconds() / self.trainingStep.numberOfIterationsCompleted
             self.trainingStep.averageLoss = float(numpy.mean(self.trainingStep.totalLosses))
             self.trainingStep.status = "completed"
+
+            for plugin in self.plugins:
+                plugin.trainingStepFinished(self.trainingStep)
+
             self.trainingStep.saveToDisk(self.config)
 
             self.threadExecutor.shutdown(wait=True)
@@ -260,8 +280,9 @@ class TrainingManager:
         for n in range(self.config['training_precompute_batches_count']):
             subProcessIndex = (self.batchesPrepared % self.config['training_batch_prep_subprocesses'])
             self.batchFutures.append(
-                self.threadExecutor.submit(TrainingManager.prepareAndLoadBatch, self.subProcessCommandQueues[subProcessIndex],
-                                      self.subProcessBatchResultQueues[subProcessIndex]))
+                self.threadExecutor.submit(TrainingManager.prepareAndLoadBatch,
+                                           self.subProcessCommandQueues[subProcessIndex],
+                                           self.subProcessBatchResultQueues[subProcessIndex]))
             self.batchesPrepared += 1
 
     def createSubproccesses(self):
@@ -348,8 +369,8 @@ class TrainingManager:
                 # Request another session be prepared
                 subProcessIndex = (self.batchesPrepared % self.config['training_batch_prep_subprocesses'])
                 self.batchFutures.append(self.threadExecutor.submit(TrainingManager.prepareAndLoadBatch,
-                                                               self.subProcessCommandQueues[subProcessIndex],
-                                                               self.subProcessBatchResultQueues[subProcessIndex]))
+                                                                    self.subProcessCommandQueues[subProcessIndex],
+                                                                    self.subProcessBatchResultQueues[subProcessIndex]))
                 self.batchesPrepared += 1
 
         return batches
