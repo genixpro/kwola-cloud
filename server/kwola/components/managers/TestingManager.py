@@ -22,13 +22,15 @@
 from ...config.logger import getLogger, setupLocalLogging
 from ...components.agents.DeepLearningAgent import DeepLearningAgent
 from ...components.environments.WebEnvironment import WebEnvironment
-from ...tasks.TaskProcess import TaskProcess
 from ...config.config import Configuration
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.BugModel import BugModel
 from ...datamodels.CustomIDField import CustomIDField
 from ...datamodels.TestingStepModel import TestingStep
 from .TrainingManager import TrainingManager
+from kwola.components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
+from kwola.components.plugins.base.TestingStepPluginBase import TestingStepPluginBase
+from kwola.components.plugins.core.RecordScreenshots import RecordScreenshots
 from datetime import datetime
 import atexit
 import concurrent.futures
@@ -79,6 +81,16 @@ class TestingManager:
         else:
             self.plugins = plugins
 
+        self.webEnvironmentPlugins = [
+            plugin for plugin in self.plugins
+            if isinstance(plugin, WebEnvironmentPluginBase)
+        ]
+
+        self.testingStepPlugins = [
+            plugin for plugin in self.plugins
+            if isinstance(plugin, TestingStepPluginBase)
+        ]
+
     def loadKnownErrorHashes(self):
         for bug in self.loadAllBugs():
             hash = bug.error.computeHash()
@@ -97,10 +109,10 @@ class TestingManager:
                 tabNumber=sessionN,
                 executionTraces=[]
             )
-            for sessionN in range(self.environment.numberParallelSessions())
+            for sessionN in range(self.config['web_session_parallel_execution_sessions'])
         ]
 
-        self.executionSessionTraces = [[] for sessionN in range(self.environment.numberParallelSessions())]
+        self.executionSessionTraces = [[] for sessionN in range(self.config['web_session_parallel_execution_sessions'])]
 
         for session in self.executionSessions:
             session.saveToDisk(self.config)
@@ -235,7 +247,7 @@ class TestingManager:
             self.logActionTimeInfo()
 
         taskStartTime = datetime.now()
-        traces = self.environment.runActions(actions, [executionSession.id for executionSession in self.executionSessions])
+        traces = self.environment.runActions(actions)
         actionExecutionTime = (datetime.now() - taskStartTime).total_seconds()
 
         totalLoopTime = (datetime.now() - self.loopTime).total_seconds()
@@ -284,7 +296,9 @@ class TestingManager:
 
     def generatePlainVideoFiles(self):
         getLogger().info(f"[{os.getpid()}] Creating movies for the execution sessions of this testing sequence.")
-        videoPaths = self.environment.createMovies()
+
+        moviePlugin = [plugin for plugin in self.environment.plugins if isinstance(plugin, RecordScreenshots)][0]
+        videoPaths = [moviePlugin.movieFilePath(executionSession) for executionSession in self.executionSessions]
 
         kwolaVideoDirectory = self.config.getKwolaUserDataDirectory("videos")
 
@@ -474,8 +488,6 @@ class TestingManager:
             except RuntimeError:
                 pass
 
-            self.environment = WebEnvironment(config=self.config)
-
             self.testStep.startTime = datetime.now()
             self.testStep.status = "running"
             self.testStep.saveToDisk(self.config)
@@ -483,6 +495,8 @@ class TestingManager:
             self.createExecutionSessions()
             self.loadKnownErrorHashes()
             self.createTestingSubprocesses()
+
+            self.environment = WebEnvironment(config=self.config, executionSessions=self.executionSessions)
 
             self.loopTime = datetime.now()
             while self.stepsRemaining > 0:
@@ -501,6 +515,9 @@ class TestingManager:
 
             self.killAndJoinTestingSubprocesses()
             self.removeBadSessions()
+
+            self.environment.runSessionCompletedHooks()
+
             self.generatePlainVideoFiles()
 
             self.logSessionRewards()
