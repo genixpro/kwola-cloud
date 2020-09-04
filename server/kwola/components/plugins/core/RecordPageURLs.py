@@ -1,5 +1,4 @@
-from kwola.components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
-import selenium.common.exceptions
+from ....components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
 
 
 class RecordPageURLs(WebEnvironmentPluginBase):

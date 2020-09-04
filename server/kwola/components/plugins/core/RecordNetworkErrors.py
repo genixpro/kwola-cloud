@@ -1,10 +1,6 @@
-from kwola.components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
-import selenium.common.exceptions
+from ....components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
 import os
 from ....config.logger import getLogger
-import re
-from ....datamodels.errors.LogError import LogError
-from .common import kwolaJSRewriteErrorDetectionStrings
 
 class RecordNetworkErrors(WebEnvironmentPluginBase):
     def __init__(self):
