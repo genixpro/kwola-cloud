@@ -3,9 +3,8 @@
 #     All Rights Reserved.
 #
 
-from ..app import cache
 from ..auth import authenticate, isAdmin
-from ..components.KubernetesJob import KubernetesJob
+from kwolacloud.components.utils.KubernetesJob import KubernetesJob
 from ..config.config import getKwolaConfiguration
 from ..config.config import loadConfiguration
 from ..datamodels.ApplicationModel import ApplicationModel
@@ -14,20 +13,13 @@ import random
 from ..datamodels.TestingRun import TestingRun
 from ..helpers.slack import postToKwolaSlack
 from ..helpers.email import sendStartTestingRunEmail
-from ..tasks.RunTesting import runTesting
-from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 from flask_restful import Resource, reqparse, abort
-from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
-import bson
-import base64
 import datetime
 from dateutil.relativedelta import relativedelta
 import flask
 import json
-import os
 import stripe
-import logging
 
 
 class TestingRunsGroup(Resource):

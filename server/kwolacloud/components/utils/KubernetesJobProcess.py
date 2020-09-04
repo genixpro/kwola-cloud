@@ -26,10 +26,10 @@ import base64
 import sys
 import os
 import google.cloud.logging
-from ..config.config import loadConfiguration
+from kwolacloud.config.config import loadConfiguration
 import stripe
 from kwola.config.logger import getLogger
-from ..db import connectToMongoWithRetries
+from kwolacloud.db import connectToMongoWithRetries
 
 class KubernetesJobProcess:
     """

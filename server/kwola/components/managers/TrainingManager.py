@@ -58,7 +58,7 @@ def isNumpyArray(obj):
 
 
 class TrainingManager:
-    def __init__(self, configDir, trainingSequenceId, trainingStepIndex, gpu=None, coordinatorTempFileName="kwola_distributed_coordinator", testingRunId=None, applicationId=None, gpuWorldSize=torch.cuda.device_count()):
+    def __init__(self, configDir, trainingSequenceId, trainingStepIndex, gpu=None, coordinatorTempFileName="kwola_distributed_coordinator", testingRunId=None, applicationId=None, gpuWorldSize=torch.cuda.device_count(), plugins=None):
         self.config = Configuration(configDir)
         self.configDir = configDir
 
@@ -79,6 +79,11 @@ class TrainingManager:
         self.starved = False
         self.lastStarveStateAdjustment = 0
         self.coreLearningTimes = []
+
+        if self.plugins is None:
+            self.plugins = []
+        else:
+            self.plugins = plugins
 
 
     def createTrainingStep(self):

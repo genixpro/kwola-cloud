@@ -69,7 +69,7 @@ class TestingRun(Document):
 
 
     def runJob(self):
-        from ..components.KubernetesJob import KubernetesJob
+        from kwolacloud.components.utils.KubernetesJob import KubernetesJob
         
         configData = loadConfiguration()
 

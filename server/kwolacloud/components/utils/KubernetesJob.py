@@ -1,13 +1,12 @@
 import yaml
 import os
 import subprocess
-import logging
 import json
 import pickle
 import time
 import logging
 import base64
-from .KubernetesJobProcess import KubernetesJobProcess
+from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 
 class KubernetesJob:
     def __init__(self, module, data, referenceId, image="worker", cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi", gpu=False):

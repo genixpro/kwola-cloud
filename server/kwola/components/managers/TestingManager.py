@@ -43,7 +43,7 @@ import traceback
 
 
 class TestingManager:
-    def __init__(self, configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False):
+    def __init__(self, configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False, plugins=None):
         getLogger().info(f"[{os.getpid()}] Starting New Testing Sequence")
 
         self.generateDebugVideo = generateDebugVideo
@@ -73,6 +73,11 @@ class TestingManager:
         self.listOfTimesForActionExecution = []
         self.listOfTimesForMiscellaneous = []
         self.listOfTotalLoopTimes = []
+
+        if self.plugins is None:
+            self.plugins = []
+        else:
+            self.plugins = plugins
 
     def loadKnownErrorHashes(self):
         for bug in self.loadAllBugs():

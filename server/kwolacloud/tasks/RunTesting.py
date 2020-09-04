@@ -13,18 +13,16 @@ import time
 import datetime
 from kwola.config.config import Configuration
 import logging
-from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
-from ..components.KubernetesJob import KubernetesJob
+from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
+from kwolacloud.components.utils.KubernetesJob import KubernetesJob
 import random
 from ..config.config import loadConfiguration, getKwolaConfiguration
-from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
+from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
-import tempfile
 import traceback
 from pprint import pformat
 from ..helpers.slack import postToKwolaSlack
 from ..helpers.email import sendFinishTestingRunEmail
-from ..helpers.auth0 import getUserProfileFromId
 from ..datamodels.ApplicationModel import ApplicationModel
 from kwola.datamodels.BugModel import BugModel
 from dateutil.relativedelta import relativedelta
