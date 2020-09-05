@@ -35,7 +35,7 @@ steps:
   id: Run Migration Job
   entrypoint: /bin/bash
   args:
-  - "./deployment/api_server/run_migration_job.sh"
+  - "./deployment/api/run_migration_job.sh"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
   - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain'
