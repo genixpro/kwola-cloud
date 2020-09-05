@@ -71,6 +71,7 @@ def mountTestingRunStorageDrive(applicationId):
 
     return configDir
 
+
 def unmountTestingRunStorageDrive(configDir):
     preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
     result = subprocess.run(["fusermount", "-u", preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
