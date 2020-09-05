@@ -39,7 +39,7 @@ def mountTestingRunStorageDrive(applicationId):
 
     result = subprocess.run(fuseCommandParameters + [bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        logging.error(f"Error! gcsfuse did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+        logging.error(f"Error! gcsfuse did not return success for initial mount. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
         return None
 
     cacheBucket = storage_client.lookup_bucket(cacheBucketName)
@@ -60,13 +60,13 @@ def mountTestingRunStorageDrive(applicationId):
     preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
     result = subprocess.run(fuseCommandParameters + [cacheBucketName, preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        logging.error(f"Error! gcsfuse did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+        logging.error(f"Error! gcsfuse did not return success for prepared samples mount. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
         return None
 
     executionTraceWeightFilesDir = os.path.join(configDir, "execution_trace_weight_files")
     result = subprocess.run(fuseCommandParameters + [cacheBucketName, executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        logging.error(f"Error! gcsfuse did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+        logging.error(f"Error! gcsfuse did not return success for weight files mount. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
         return None
 
     return configDir
