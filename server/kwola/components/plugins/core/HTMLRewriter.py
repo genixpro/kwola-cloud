@@ -12,8 +12,8 @@ class HTMLRewriter(ProxyPluginBase):
         self.config = config
 
 
-    def willRewriteFile(self, path, contentType, fileData):
-        if '.js' not in path and not ".json" in path and ".css" not in path:
+    def willRewriteFile(self, url, contentType, fileData):
+        if '.js' not in url and not ".json" in url and ".css" not in url:
             kind = filetype.guess(fileData)
             mime = ''
             if kind is not None:
@@ -38,8 +38,8 @@ class HTMLRewriter(ProxyPluginBase):
 
 
 
-    def rewriteFile(self, path, contentType, fileData):
-        stringData = str(path, 'utf8')
+    def rewriteFile(self, url, contentType, fileData):
+        stringData = str(url, 'utf8')
 
         # We want to strip out any "integrity" attributes that we see on html elements
         integrityRegex = re.compile(r"integrity\w*=\w*['\"]sha\d\d?\d?-[a-zA-Z0-9+/=]+['\"]")
@@ -52,6 +52,6 @@ class HTMLRewriter(ProxyPluginBase):
 
 
 
-    def observeRequest(self, path, statusCode, contentType, headers, origFileData, transformedFileData, didTransform):
+    def observeRequest(self, url, statusCode, contentType, headers, origFileData, transformedFileData, didTransform):
         pass
 

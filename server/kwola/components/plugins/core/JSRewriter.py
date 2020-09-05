@@ -21,7 +21,7 @@ class JSRewriter(ProxyPluginBase):
     def __init__(self, config):
         self.config = config
 
-    def willRewriteFile(self, path, contentType, fileData):
+    def willRewriteFile(self, url, contentType, fileData):
         jsMimeTypes = [
             "application/x-javascript",
             "application/javascript",
@@ -30,9 +30,9 @@ class JSRewriter(ProxyPluginBase):
             "text/ecmascript"
         ]
 
-        cleanedFileName = self.getCleanedFileName(path)
+        cleanedFileName = self.getCleanedFileName(url)
 
-        if ('_js' in path and not "_json" in path and not "_jsp" in path and not path.endswith("_css")) or str(contentType).strip().lower() in jsMimeTypes:
+        if ('_js' in url and not "_json" in url and not "_jsp" in url and not url.endswith("_css")) or str(contentType).strip().lower() in jsMimeTypes:
             kind = filetype.guess(fileData)
             mime = ''
             if kind is not None:
@@ -72,7 +72,7 @@ class JSRewriter(ProxyPluginBase):
 
 
 
-    def rewriteFile(self, path, contentType, fileData):
+    def rewriteFile(self, url, contentType, fileData):
         jsFileContents = fileData.strip()
 
         strictMode = False
@@ -89,7 +89,7 @@ class JSRewriter(ProxyPluginBase):
                 wrapperStart = wrapper[0]
                 wrapperEnd = wrapper[1]
 
-        cleanedFileName = self.getCleanedFileName(path)
+        cleanedFileName = self.getCleanedFileName(url)
         longFileHash, shortFileHash = ProxyPluginBase.computeHashes(bytes(fileData))
 
         fileNameForBabel = shortFileHash + "_" + cleanedFileName
@@ -112,7 +112,7 @@ class JSRewriter(ProxyPluginBase):
                 mime = kind.mime
 
             getLogger().warning(
-                f"[{os.getpid()}] Unable to install Kwola line-counting in the Javascript file {path}. Most"
+                f"[{os.getpid()}] Unable to install Kwola line-counting in the Javascript file {url}. Most"
                 f" likely this is because Babel thinks your javascript has invalid syntax, or that"
                 f" babel is not working / not able to find the babel-plugin-kwola / unable to"
                 f" transpile the javascript for some other reason. See the following truncated"
@@ -130,7 +130,7 @@ class JSRewriter(ProxyPluginBase):
             return fileData
         else:
             getLogger().info(
-                f"[{os.getpid()}] Successfully translated {path} with Kwola branch counting and event tracing.")
+                f"[{os.getpid()}] Successfully translated {url} with Kwola branch counting and event tracing.")
             transformed = wrapperStart + result.stdout + wrapperEnd
 
             if strictMode:
@@ -147,7 +147,7 @@ class JSRewriter(ProxyPluginBase):
 
 
 
-    def observeRequest(self, path, statusCode, contentType, headers, origFileData, transformedFileData, didTransform):
+    def observeRequest(self, url, statusCode, contentType, headers, origFileData, transformedFileData, didTransform):
         pass
 
 

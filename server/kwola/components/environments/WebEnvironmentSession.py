@@ -29,6 +29,8 @@ from ...datamodels.actions.WaitAction import WaitAction
 from ...datamodels.errors.ExceptionError import ExceptionError
 from ...datamodels.errors.LogError import LogError
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
+from ..plugins.base.ProxyPluginBase import ProxyPluginBase
+from ..plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -65,11 +67,15 @@ class WebEnvironmentSession:
         else:
             self.plugins = plugins
 
+
+        proxyPlugins = [plugin for plugin in self.plugins if isinstance(plugin, ProxyPluginBase)]
+        self.plugins = [plugin for plugin in self.plugins if isinstance(plugin, WebEnvironmentPluginBase)]
+
         self.executionSession = executionSession
 
         self.targetHostRoot = self.getHostRoot(self.targetURL)
 
-        self.proxy = ProxyProcess(config)
+        self.proxy = ProxyProcess(config, plugins=proxyPlugins)
         self.urlWhitelistRegexes = [re.compile(pattern) for pattern in self.config['web_session_restrict_url_to_regexes']]
 
         chrome_options = Options()

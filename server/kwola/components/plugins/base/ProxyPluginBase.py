@@ -9,15 +9,15 @@ class ProxyPluginBase:
         Represents a plugin for the rewrite proxy
     """
 
-    def willRewriteFile(self, path, contentType, fileData):
+    def willRewriteFile(self, url, contentType, fileData):
         pass
 
 
-    def rewriteFile(self, path, contentType, fileData):
+    def rewriteFile(self, url, contentType, fileData):
         pass
 
 
-    def observeRequest(self, path, statusCode, contentType, headers, origFileData, transformedFileData, didTransform):
+    def observeRequest(self, url, statusCode, contentType, headers, origFileData, transformedFileData, didTransform):
         pass
 
 

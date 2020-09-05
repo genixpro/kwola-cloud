@@ -36,8 +36,8 @@ class RewriteProxy:
 
         self.plugins = plugins
 
-    def getCacheFileName(self, fileHash, filePath):
-        fileName = ProxyPluginBase.getCleanedFileName(filePath)
+    def getCacheFileName(self, fileHash, fileURL):
+        fileName = ProxyPluginBase.getCleanedFileName(fileURL)
 
         fileNameSplit = fileName.split("_")
 
@@ -60,8 +60,8 @@ class RewriteProxy:
         return cacheFileName
 
 
-    def findInCache(self, fileHash, filePath):
-        cacheFileName = self.getCacheFileName(fileHash, filePath)
+    def findInCache(self, fileHash, fileURL):
+        cacheFileName = self.getCacheFileName(fileHash, fileURL)
         if os.path.exists(cacheFileName):
             try:
                 with open(cacheFileName, 'rb') as f:
@@ -69,8 +69,8 @@ class RewriteProxy:
             except OSError:
                 return
 
-    def saveInCache(self, fileHash, filePath, data):
-        cacheFileName = self.getCacheFileName(fileHash, filePath)
+    def saveInCache(self, fileHash, fileURL, data):
+        cacheFileName = self.getCacheFileName(fileHash, fileURL)
         try:
             with open(cacheFileName, 'wb') as f:
                 return f.write(data)
@@ -133,7 +133,7 @@ class RewriteProxy:
         # Don't attempt to transform if its not a 2xx, just let it pass through
         if flow.response.status_code < 200 or flow.response.status_code >= 300:
             for plugin in self.plugins:
-                plugin.observeRequest(path=flow.request.path,
+                plugin.observeRequest(url=flow.request.url,
                                       statusCode=flow.request.status_code,
                                       contentType=contentType,
                                       headers=flow.request.headers,
@@ -147,7 +147,7 @@ class RewriteProxy:
 
         cached = self.memoryCache.get(longFileHash)
         if cached is None:
-            cached = self.findInCache(shortFileHash, flow.request.path)
+            cached = self.findInCache(shortFileHash, flow.request.url)
             if cached is not None:
                 self.memoryCache[longFileHash] = cached
 
@@ -156,7 +156,7 @@ class RewriteProxy:
             flow.response.data.content = cached
 
             for plugin in self.plugins:
-                plugin.observeRequest(path=flow.request.path,
+                plugin.observeRequest(url=flow.request.url,
                                       statusCode=flow.request.status_code,
                                       contentType=contentType,
                                       headers=flow.request.headers,
@@ -167,7 +167,7 @@ class RewriteProxy:
                                       )
             return
 
-        origFilePath = flow.request.path
+        fileURL = flow.request.url
 
         try:
             originalFileContents = bytes(flow.response.data.content)
@@ -176,24 +176,24 @@ class RewriteProxy:
 
             chosenPlugin = None
             for plugin in self.plugins:
-                if plugin.willRewriteFile(origFilePath, contentType, unzippedFileContents):
+                if plugin.willRewriteFile(fileURL, contentType, unzippedFileContents):
                     chosenPlugin = plugin
                     break
 
             if chosenPlugin is not None:
-                transformed = chosenPlugin.processFile(origFilePath, contentType, unzippedFileContents)
+                transformed = chosenPlugin.processFile(fileURL, contentType, unzippedFileContents)
 
                 if gzipped:
                     transformed = gzip.compress(transformed, compresslevel=9)
 
-                self.saveInCache(shortFileHash, origFilePath, transformed)
+                self.saveInCache(shortFileHash, fileURL, transformed)
                 self.memoryCache[longFileHash] = transformed
 
                 flow.response.data.headers['Content-Length'] = str(len(transformed))
                 flow.response.data.content = transformed
 
                 for plugin in self.plugins:
-                    plugin.observeRequest(path=flow.request.path,
+                    plugin.observeRequest(url=flow.request.url,
                                           statusCode=flow.request.status_code,
                                           contentType=contentType,
                                           headers=flow.request.headers,
@@ -203,11 +203,11 @@ class RewriteProxy:
                                           )
 
             else:
-                self.saveInCache(shortFileHash, origFilePath, originalFileContents)
+                self.saveInCache(shortFileHash, fileURL, originalFileContents)
                 self.memoryCache[longFileHash] = originalFileContents
 
                 for plugin in self.plugins:
-                    plugin.observeRequest(path=flow.request.path,
+                    plugin.observeRequest(url=flow.request.url,
                                           statusCode=flow.request.status_code,
                                           contentType=contentType,
                                           headers=flow.request.headers,
