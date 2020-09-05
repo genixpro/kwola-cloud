@@ -33,6 +33,8 @@ def main():
         stripe.api_key = configData['stripe']['apiKey']
 
         for session in ExecutionSession.objects():
+            getLogger().info(f"Processing session {session.id}")
+
             if session.applicationId is None:
                 continue
 
@@ -51,10 +53,11 @@ def main():
                 "ExecutionTrace": "json"
             }
 
-            config.saveConfig()
-
             for trace in traces:
+                getLogger().info(f"Saving trace object {trace.id}")
                 trace.saveToDisk(config)
+
+            config.saveConfig()
 
             unmountTestingRunStorageDrive(configDir)
 
