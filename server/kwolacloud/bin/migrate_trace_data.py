@@ -39,6 +39,14 @@ def main():
             configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
             config = Configuration(configDir)
 
+            config['data_compress_level'] = {
+                "default": 0
+              }
+
+            config["data_serialization_method"] = {
+                "default": "mongo"
+            }
+
             traces = [ExecutionTrace.loadFromDisk(traceId, config) for traceId in session.executionTraces]
 
             config['data_compress_level'] = {
