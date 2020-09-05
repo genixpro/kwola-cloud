@@ -9,7 +9,7 @@ spec:
       containers:
       - name: kwola-cloud-sha256
         image: gcr.io/kwola-cloud/kwola:__REVISION_ID__-__KWOLA_ENV__-api
-        command: ["kwola_migrate_trace_data"]
+        command: ["kwolacloud_migrate_trace_data"]
         resources:
           requests:
             cpu: 1
