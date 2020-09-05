@@ -394,7 +394,8 @@ class TrainingManager:
             if self.gpu is None or self.gpu == 0:
                 getLogger().info(f"[{os.getpid()}] Saving the core training model.")
                 self.agent.save()
-                self.agent.save(saveName=str(self.trainingStep.id))
+                if self.config['training_save_model_checkpoints']:
+                    self.agent.save(saveName=str(self.trainingStep.id))
                 getLogger().info(f"[{os.getpid()}] Agent saved!")
         else:
             getLogger().error(f"[{os.getpid()}] ERROR! A NaN was detected in this models output. Not saving model.")
