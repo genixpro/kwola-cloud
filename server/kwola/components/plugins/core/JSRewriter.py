@@ -4,7 +4,7 @@ import re
 import json
 import os
 import subprocess
-from ....config.logger import getLogger
+from kwola.config.logger import getLogger
 
 
 

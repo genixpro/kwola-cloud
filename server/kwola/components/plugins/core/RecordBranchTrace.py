@@ -1,6 +1,6 @@
-from ....components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
+from kwola.components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
 import selenium.common.exceptions
-from ....config.logger import getLogger
+from kwola.config.logger import getLogger
 import numpy
 import os
 

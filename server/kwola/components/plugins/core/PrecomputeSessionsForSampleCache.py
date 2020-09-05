@@ -1,4 +1,4 @@
-from ....config.logger import getLogger
+from kwola.config.logger import getLogger
 from ...managers.TrainingManager import TrainingManager
 from ..base.TestingStepPluginBase import TestingStepPluginBase
 import concurrent.futures

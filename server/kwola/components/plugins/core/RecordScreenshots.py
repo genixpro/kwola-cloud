@@ -1,9 +1,9 @@
-from ....components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
+from kwola.components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
 import tempfile
 import os
 import hashlib
 import subprocess
-from ....config.logger import getLogger
+from kwola.config.logger import getLogger
 from ...utils.video import chooseBestFfmpegVideoCodec
 
 class RecordScreenshots(WebEnvironmentPluginBase):

@@ -1,9 +1,9 @@
-from ....components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
+from kwola.components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
 import selenium.common.exceptions
 import os
-from ....config.logger import getLogger
+from kwola.config.logger import getLogger
 import re
-from ....datamodels.errors.LogError import LogError
+from kwola.datamodels.errors.LogError import LogError
 from .common import kwolaJSRewriteErrorDetectionStrings
 
 class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):

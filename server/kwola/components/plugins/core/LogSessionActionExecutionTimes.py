@@ -1,4 +1,4 @@
-from ....config.logger import getLogger
+from kwola.config.logger import getLogger
 from ..base.TestingStepPluginBase import TestingStepPluginBase
 import numpy
 import os

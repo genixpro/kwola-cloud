@@ -1,4 +1,4 @@
-from ....components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
+from kwola.components.plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
 
 
 class RecordPageURLs(WebEnvironmentPluginBase):
