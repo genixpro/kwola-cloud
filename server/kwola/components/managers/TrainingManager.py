@@ -404,16 +404,18 @@ class TrainingManager:
     def saveExecutionTraceWeightData(traceWeightData, configDir):
         config = Configuration(configDir)
 
-        weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceWeightData['id'] + ".json")
+        weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceWeightData['id'] + "-weight.json")
+
+        saveData = {"weight": traceWeightData['weight']}
 
         with open(weightFile, "wt") as f:
-            json.dump(traceWeightData, f)
+            json.dump(saveData, f)
 
     @staticmethod
     def writeSingleExecutionTrace(traceBatch, sampleCacheDir):
         traceId = traceBatch['traceIds'][0]
 
-        cacheFile = os.path.join(sampleCacheDir, traceId + ".pickle.gz")
+        cacheFile = os.path.join(sampleCacheDir, traceId + "-sample.pickle.gz")
 
         pickleBytes = pickle.dumps(traceBatch)
         compressedPickleBytes = gzip.compress(pickleBytes)
@@ -466,21 +468,30 @@ class TrainingManager:
             agent = DeepLearningAgent(config, whichGpu=None)
 
             sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples", ensureExists=False)
-            cacheFile = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
+            cacheFile = os.path.join(sampleCacheDir, executionTraceId + "-sample.pickle.gz")
 
-            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId)
-            blob = storage.Blob(os.path.join('prepared_samples', executionTraceId + ".pickle.gz"), applicationStorageBucket)
+            # Just for compatibility with the old naming scheme
+            oldCacheFileName = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
+
+            # applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId + "-cache")
+            # blob = storage.Blob(os.path.join(executionTraceId + "-sample.pickle.gz"), applicationStorageBucket)
 
             try:
-                # with open(cacheFile, 'rb') as file:
-                #     sampleBatch = pickle.loads(gzip.decompress(file.read()))
-                sampleBatch = pickle.loads(gzip.decompress(blob.download_as_string()))
-                cacheHit = True
-            except FileNotFoundError:
-                TrainingManager.addExecutionSessionToSampleCache(executionSessionId, config)
-                cacheHit = False
                 with open(cacheFile, 'rb') as file:
                     sampleBatch = pickle.loads(gzip.decompress(file.read()))
+                # sampleBatch = pickle.loads(gzip.decompress(blob.download_as_string()))
+                cacheHit = True
+            except FileNotFoundError:
+                try:
+                    with open(oldCacheFileName, 'rb') as file:
+                        sampleBatch = pickle.loads(gzip.decompress(file.read()))
+                    # sampleBatch = pickle.loads(gzip.decompress(blob.download_as_string()))
+                    cacheHit = True
+                except FileNotFoundError:
+                    TrainingManager.addExecutionSessionToSampleCache(executionSessionId, config)
+                    cacheHit = False
+                    with open(cacheFile, 'rb') as file:
+                        sampleBatch = pickle.loads(gzip.decompress(file.read()))
 
             imageWidth = sampleBatch['processedImages'].shape[3]
             imageHeight = sampleBatch['processedImages'].shape[2]
@@ -889,39 +900,40 @@ class TrainingManager:
         try:
             config = Configuration(configDir)
 
-            # weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + ".json")
-
-            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId)
-            blob = storage.Blob(os.path.join('execution_trace_weight_files', traceId + ".json"), applicationStorageBucket)
+            weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + "-weight.json")
 
             data = {}
             useDefault = True
-            try:
-                # startTime = datetime.now()
-                data = json.loads(blob.download_as_string())
-                # finishTime = datetime.now()
-                # getLogger().info((finishTime - startTime).total_seconds())
-                useDefault = False
-            except google.api_core.exceptions.NotFound as e:
-                useDefault = True
-            except Exception as e:
-                getLogger().info(traceback.format_exc())
 
-
-            # if os.path.exists(weightFile):
+            # applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId + "-cache")
+            # blob = storage.Blob(os.path.join('execution_trace_weight_files', traceId + "-weight.json"), applicationStorageBucket)
+            #
+            # try:
+            #     # startTime = datetime.now()
+            #     data = json.loads(blob.download_as_string())
+            #
+            #     # finishTime = datetime.now()
+            #     # getLogger().info((finishTime - startTime).total_seconds())
             #     useDefault = False
-            #     with open(weightFile, "rt") as f:
-            #         try:
-            #             data = json.load(f)
-            #         except json.JSONDecodeError:
-            #             useDefault = True
+            # except google.api_core.exceptions.NotFound as e:
+            #     useDefault = True
+            # except Exception as e:
+            #     getLogger().info(traceback.format_exc())
+
+            try:
+                with open(weightFile, "rt") as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        useDefault = True
+            except FileNotFoundError:
+                useDefault = False
 
             if useDefault:
-                data = {
-                    "id": traceId,
-                    "executionSessionId": sessionId,
-                    "weight": config['training_trace_selection_maximum_weight']
-                }
+                data = {"weight": config['training_trace_selection_maximum_weight']}
+
+            data['id'] = traceId
+            data['executionSessionId'] = sessionId
 
             # getLogger().info(f"Loaded {traceId}")
             return pickle.dumps(data)

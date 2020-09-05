@@ -55,7 +55,7 @@ class RewriteProxy:
         # Replace all unicode characters with -CODE-, with CODE being replaced by the unicode character code
         fileNameRoot = str(fileNameRoot.encode('ascii', 'xmlcharrefreplace'), 'ascii').replace("&#", "-").replace(";", "-")
 
-        cacheFileName = os.path.join(self.config.getKwolaUserDataDirectory("javascript"), fileNameRoot[:100] + "_" + fileHash + extension)
+        cacheFileName = os.path.join(self.config.getKwolaUserDataDirectory("proxy_cache"), fileNameRoot[:100] + "_" + fileHash + extension)
 
         return cacheFileName
 
