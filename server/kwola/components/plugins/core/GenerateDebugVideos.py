@@ -1,4 +1,4 @@
-from ...utils.video import createDebugVideoSubProcess
+from ...utils.debug_video import createDebugVideoSubProcess
 from ..base.TestingStepPluginBase import TestingStepPluginBase
 import atexit
 import concurrent.futures

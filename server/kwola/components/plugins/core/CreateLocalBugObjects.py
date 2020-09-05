@@ -1,7 +1,7 @@
 from kwola.config.logger import getLogger
 from kwola.datamodels.BugModel import BugModel
 from kwola.datamodels.CustomIDField import CustomIDField
-from ...utils.video import createDebugVideoSubProcess
+from ...utils.debug_video import createDebugVideoSubProcess
 from ..base.TestingStepPluginBase import TestingStepPluginBase
 from datetime import datetime
 import atexit

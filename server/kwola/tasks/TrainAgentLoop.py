@@ -30,7 +30,7 @@ from ..datamodels.TrainingSequenceModel import TrainingSequence
 from ..datamodels.TrainingStepModel import TrainingStep
 from ..datamodels.ExecutionSessionModel import ExecutionSession
 from ..datamodels.ExecutionTraceModel import ExecutionTrace
-from .RunTrainingStep import loadAllTestingSteps
+from ..components.managers.TrainingManager import TrainingManager
 from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -290,7 +290,7 @@ def trainAgent(configDir, exitOnFail=False):
     trainingSequence.trainingStepsCompleted = 0
     trainingSequence.saveToDisk(config)
 
-    testingSteps = [step for step in loadAllTestingSteps(config) if step.status == "completed"]
+    testingSteps = [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"]
     if len(testingSteps) == 0:
         runRandomInitialization(config, trainingSequence, exitOnFail=exitOnFail)
         trainingSequence.saveToDisk(config)

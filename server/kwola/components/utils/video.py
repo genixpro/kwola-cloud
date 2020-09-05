@@ -20,11 +20,6 @@
 
 
 
-from ...components.agents.DeepLearningAgent import DeepLearningAgent
-from ...config.config import Configuration
-from ...config.logger import getLogger, setupLocalLogging
-from ...datamodels.ExecutionSessionModel import ExecutionSession
-import os
 import subprocess
 
 
@@ -62,24 +57,3 @@ def chooseBestFfmpegVideoCodec():
             break
     return codec
 
-
-def createDebugVideoSubProcess(configDir, executionSessionId, name="", includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilightStepNumber=None, cutoffStepNumber=None, folder="debug_videos"):
-    setupLocalLogging()
-
-    getLogger().info(f"Creating debug video for session {executionSessionId} with options includeNeuralNetworkCharts={includeNeuralNetworkCharts}, includeNetPresentRewardChart={includeNetPresentRewardChart}, hilightStepNumber={hilightStepNumber}, cutoffStepNumber={cutoffStepNumber}")
-
-    config = Configuration(configDir)
-
-    agent = DeepLearningAgent(config, whichGpu=None)
-    agent.initialize(enableTraining=False)
-    agent.load()
-
-    kwolaDebugVideoDirectory = config.getKwolaUserDataDirectory(folder)
-
-    executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
-
-    videoData = agent.createDebugVideoForExecutionSession(executionSession, includeNeuralNetworkCharts=includeNeuralNetworkCharts, includeNetPresentRewardChart=includeNetPresentRewardChart, hilightStepNumber=hilightStepNumber, cutoffStepNumber=cutoffStepNumber)
-    with open(os.path.join(kwolaDebugVideoDirectory, f'{name + "_" if name else ""}{str(executionSession.id)}.mp4'), "wb") as cloneFile:
-        cloneFile.write(videoData)
-
-    del agent
