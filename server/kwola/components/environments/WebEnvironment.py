@@ -20,7 +20,7 @@
 
 
 from ...config.logger import getLogger
-from ...components.proxy.JSRewriteProxy import JSRewriteProxy
+from ...components.proxy.RewriteProxy import RewriteProxy
 from ...components.proxy.PathTracer import PathTracer
 from .WebEnvironmentSession import WebEnvironmentSession
 from contextlib import closing
