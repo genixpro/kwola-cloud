@@ -10,8 +10,12 @@
   "advantage_convolution_stride": 1,
   "batch_size": 8,
   "batches_per_iteration": 16,
-  "data_compress_level": 0,
-  "data_serialization_method": "pickle",
+  "data_compress_level": {
+    "default": 0
+  },
+  "data_serialization_method": {
+    "default": "pickle"
+  },
   "debug_video_action_prediction_circle_1_radius":10,
   "debug_video_action_prediction_circle_2_radius":5,
   "debug_video_action_prediction_circle_color_b":255,

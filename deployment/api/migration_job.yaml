@@ -9,11 +9,14 @@ spec:
       containers:
       - name: kwola-cloud-sha256
         image: gcr.io/kwola-cloud/kwola:__REVISION_ID__-__KWOLA_ENV__-api
-        command: ["appraisal_run_migrations",  "__KWOLA_ENV__.ini"]
+        command: ["kwola_migrate_trace_data"]
         resources:
           requests:
             cpu: 1
             memory: 512Mi
+        env:
+            - name: KWOLA_ENV
+              value: __KWOLA_ENV__
       restartPolicy: Never
   backoffLimit: 4
 

@@ -61,7 +61,8 @@ setup(
             'kwola_test_installation = kwola.bin.test_installation:main',
             'kwola_install_proxy_cert = kwola.bin.install_proxy_cert:main',
             'kwola_website_check = kwola.bin.website_check:main',
-            'kwolacloud_run_hourly_tasks = kwolacloud.bin.run_hourly_tasks:main'
+            'kwolacloud_run_hourly_tasks = kwolacloud.bin.run_hourly_tasks:main',
+            'kwolacloud_migrate_trace_data = kwolacloud.bin.migrate_trace_data:main'
         ]
     },
 )

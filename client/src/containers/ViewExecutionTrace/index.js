@@ -23,14 +23,19 @@ import Avatar from "../../components/uielements/avatars";
 import {Table} from "../ListApplications/materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielements/table";
 import { Line } from "react-chartjs-2";
+import axios from "axios";
 
 class ViewExecutionTrace extends Component {
     state = {
         result: '',
     };
 
-    componentDidMount() {
-        store.dispatch(action.requestExecutionTrace(this.props.match.params.id));
+    componentDidMount()
+    {
+        axios.get(`/execution_sessions/${this.props.match.id}/traces/${this.props.match.traceId}`).then((response) =>
+        {
+            this.setState({executionTrace: response.data.executionTrace})
+        })
     }
 
 
@@ -44,12 +49,12 @@ class ViewExecutionTrace extends Component {
                         <Row>
                             <FullColumn>
                                 <Papersheet
-                                    title={`Execution Trace ${this.props.executionTrace._id}`}
+                                    title={`Execution Trace ${this.state.executionTrace._id}`}
                                     // subtitle={}
                                 >
 
                                     <pre>
-                                        {JSON.stringify(this.props.executionTrace, null, 4)}
+                                        {JSON.stringify(this.state.executionTrace, null, 4)}
                                     </pre>
 
                                 </Papersheet>

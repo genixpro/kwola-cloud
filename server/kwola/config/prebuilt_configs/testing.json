@@ -10,8 +10,12 @@
   "advantage_convolution_stride": 1,
   "batch_size": 4,
   "batches_per_iteration": 8,
-  "data_compress_level": 1,
-  "data_serialization_method": "json",
+  "data_compress_level": {
+    "default": 1
+  },
+  "data_serialization_method": {
+    "default": "json"
+  },
   "debug_video_action_prediction_circle_1_radius":10,
   "debug_video_action_prediction_circle_2_radius":5,
   "debug_video_action_prediction_circle_color_b":255,

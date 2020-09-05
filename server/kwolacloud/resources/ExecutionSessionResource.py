@@ -9,6 +9,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
 
 from ..app import cache
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
+from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.tasks.RunTestingStep import runTestingStep
 import json
 import os
@@ -120,5 +121,71 @@ class ExecutionSessionVideo(Resource):
         unmountTestingRunStorageDrive(configDir)
 
         return response
+
+
+class ExecutionSessionTraces(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+
+    @cache.cached(timeout=36000)
+    def get(self, execution_session_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": execution_session_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        executionSession = ExecutionSession.objects(**queryParams).first()
+
+        if executionSession is None:
+            return abort(404)
+
+        configData = loadConfiguration()
+        if not configData['features']['localRuns']:
+            configDir = mountTestingRunStorageDrive(executionSession.applicationId)
+        else:
+            configDir = os.path.join("data", executionSession.applicationId)
+
+        config = Configuration(configDir)
+
+        traces = [
+            ExecutionTrace.loadFromDisk(traceId, config) for traceId in executionSession.executionTraces
+        ]
+
+        return {"executionTraces": [json.loads(trace.to_json()) for trace in traces]}
+
+
+class ExecutionSessionSingleTrace(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+
+    @cache.cached(timeout=36000)
+    def get(self, execution_session_id, execution_trace_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": execution_session_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        executionSession = ExecutionSession.objects(**queryParams).first()
+
+        if executionSession is None:
+            return abort(404)
+
+        configData = loadConfiguration()
+        if not configData['features']['localRuns']:
+            configDir = mountTestingRunStorageDrive(executionSession.applicationId)
+        else:
+            configDir = os.path.join("data", executionSession.applicationId)
+
+        config = Configuration(configDir)
+
+        trace = ExecutionTrace.loadFromDisk(execution_trace_id, config)
+
+        return {"executionTrace": json.loads(trace.to_json())}
 
 
