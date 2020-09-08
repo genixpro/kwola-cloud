@@ -57,16 +57,24 @@ def mountTestingRunStorageDrive(applicationId):
             # created.
             pass
 
-    preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
-    result = subprocess.run(fuseCommandParameters + [cacheBucketName, preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    cacheDir = tempfile.mkdtemp()
+
+    result = subprocess.run(fuseCommandParameters + [cacheBucketName, cacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
         logging.error(f"Error! gcsfuse did not return success for prepared samples mount. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
         return None
 
+    preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
     executionTraceWeightFilesDir = os.path.join(configDir, "execution_trace_weight_files")
-    result = subprocess.run(fuseCommandParameters + [cacheBucketName, executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    result = subprocess.run(['ln', '-s', cacheDir, preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        logging.error(f"Error! gcsfuse did not return success for weight files mount. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
+        logging.error(f"Error! ln did not return success for prepared samples link. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
+        return None
+
+    result = subprocess.run(['ln', '-s', cacheDir, executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        logging.error(f"Error! ln did not return success for prepared trace weight dir link. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
         return None
 
     return configDir
@@ -74,20 +82,23 @@ def mountTestingRunStorageDrive(applicationId):
 
 def unmountTestingRunStorageDrive(configDir):
     preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
-    result = subprocess.run(["fusermount", "-u", preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    actualCacheDir = None
+    result = subprocess.run(["readlink", "-f", preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        logging.error(f"Error! umount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+        logging.error(f"Error! readlink did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
         return False
 
-    executionTraceWeightFilesDir = os.path.join(configDir, "execution_trace_weight_files")
-    result = subprocess.run(["fusermount", "-u", executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    actualCacheDir=result.stdout
+
+    result = subprocess.run(["fusermount", "-u", actualCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        logging.error(f"Error! umount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+        logging.error(f"Error! fusermount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
         return False
 
     result = subprocess.run(["fusermount", "-u", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        logging.error(f"Error! umount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+        logging.error(f"Error! fusermount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
         return False
 
     os.rmdir(configDir)

@@ -157,7 +157,7 @@ class RewriteProxy:
 
             for plugin in self.plugins:
                 plugin.observeRequest(url=flow.request.url,
-                                      statusCode=flow.request.status_code,
+                                      statusCode=flow.response.status_code,
                                       contentType=contentType,
                                       headers=flow.request.headers,
                                       origFileData=bytes(flow.response.data.content),
@@ -181,7 +181,7 @@ class RewriteProxy:
                     break
 
             if chosenPlugin is not None:
-                transformed = chosenPlugin.processFile(fileURL, contentType, unzippedFileContents)
+                transformed = chosenPlugin.rewriteFile(fileURL, contentType, unzippedFileContents)
 
                 if gzipped:
                     transformed = gzip.compress(transformed, compresslevel=9)
@@ -194,7 +194,7 @@ class RewriteProxy:
 
                 for plugin in self.plugins:
                     plugin.observeRequest(url=flow.request.url,
-                                          statusCode=flow.request.status_code,
+                                          statusCode=flow.response.status_code,
                                           contentType=contentType,
                                           headers=flow.request.headers,
                                           origFileData=originalFileContents,
@@ -208,7 +208,7 @@ class RewriteProxy:
 
                 for plugin in self.plugins:
                     plugin.observeRequest(url=flow.request.url,
-                                          statusCode=flow.request.status_code,
+                                          statusCode=flow.response.status_code,
                                           contentType=contentType,
                                           headers=flow.request.headers,
                                           origFileData=originalFileContents,

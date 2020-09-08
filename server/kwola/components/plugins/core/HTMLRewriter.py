@@ -39,7 +39,7 @@ class HTMLRewriter(ProxyPluginBase):
 
 
     def rewriteFile(self, url, contentType, fileData):
-        stringData = str(url, 'utf8')
+        stringData = str(fileData, 'utf8')
 
         # We want to strip out any "integrity" attributes that we see on html elements
         integrityRegex = re.compile(r"integrity\w*=\w*['\"]sha\d\d?\d?-[a-zA-Z0-9+/=]+['\"]")
