@@ -88,7 +88,7 @@ class TrainingManager:
         self.subProcessBatchResultQueues = []
         self.subProcesses = []
 
-        if self.plugins is None:
+        if plugins is None:
             self.plugins = []
         else:
             self.plugins = plugins
@@ -714,7 +714,7 @@ class TrainingManager:
                     executionTraceWeightDatas.append(traceWeightData)
                     executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
                 completed += 1
-                if completed % 100 == 0:
+                if completed % 1000 == 0:
                     getLogger().info(f"[{os.getpid()}] Finished loading {completed} execution trace weight datas.")
 
             initialDataLoadProcessPool.close()
@@ -903,7 +903,7 @@ class TrainingManager:
             weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + "-weight.json")
 
             data = {}
-            useDefault = True
+            useDefault = False
 
             # applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId + "-cache")
             # blob = storage.Blob(os.path.join('execution_trace_weight_files', traceId + "-weight.json"), applicationStorageBucket)
@@ -924,10 +924,11 @@ class TrainingManager:
                 with open(weightFile, "rt") as f:
                     try:
                         data = json.load(f)
+                        useDefault = False
                     except json.JSONDecodeError:
                         useDefault = True
             except FileNotFoundError:
-                useDefault = False
+                useDefault = True
 
             if useDefault:
                 data = {"weight": config['training_trace_selection_maximum_weight']}
