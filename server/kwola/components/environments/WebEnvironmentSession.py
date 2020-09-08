@@ -575,14 +575,14 @@ class WebEnvironmentSession:
         except selenium.common.exceptions.TimeoutException:
             pass
 
-    def runAction(self, action, executionSessionId):
+    def runAction(self, action):
         try:
             if self.hasBrowserDied:
                 return None
 
             self.checkOffsite(priorURL=self.targetURL)
 
-            executionTrace = ExecutionTrace(id=str(executionSessionId) + "_trace_" + str(self.traceNumber))
+            executionTrace = ExecutionTrace(id=str(self.executionSession.id) + "_trace_" + str(self.traceNumber))
             executionTrace.time = datetime.now()
             executionTrace.actionPerformed = action
             executionTrace.errorsDetected = []

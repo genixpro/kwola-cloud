@@ -15,6 +15,19 @@ from ..db import connectToMongoWithRetries
 from kwolacloud.tasks.RunHourlyTasks import runHourlyTasks
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
+
+# Do not remove the following unused imports, as they are actually required
+# For the migration script to function correctly.
+from kwola.datamodels.actions.BaseAction import BaseAction
+from kwola.datamodels.actions.ClearFieldAction import ClearFieldAction
+from kwola.datamodels.actions.ClickTapAction import ClickTapAction
+from kwola.datamodels.actions.RightClickAction import RightClickAction
+from kwola.datamodels.actions.TypeAction import TypeAction
+from kwola.datamodels.actions.WaitAction import WaitAction
+from kwola.datamodels.errors.BaseError import BaseError
+from kwola.datamodels.errors.ExceptionError import ExceptionError
+from kwola.datamodels.errors.HttpError import HttpError
+from kwola.datamodels.errors.LogError import LogError
 from kwolacloud.tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
 def main():

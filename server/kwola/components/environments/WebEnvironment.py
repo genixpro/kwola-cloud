@@ -146,7 +146,7 @@ class WebEnvironment:
         resultFutures = []
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            for tab, action, executionSessionId in zip(self.sessions, actions):
+            for tab, action in zip(self.sessions, actions):
                 resultFuture = executor.submit(tab.runAction, action)
                 resultFutures.append(resultFuture)
 

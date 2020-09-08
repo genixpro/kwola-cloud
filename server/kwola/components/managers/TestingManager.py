@@ -65,7 +65,7 @@ class TestingManager:
 
         self.step = 0
 
-        if self.plugins is None:
+        if plugins is None:
             self.plugins = [
                 CreateLocalBugObjects(self.config),
                 LogSessionRewards(self.config),

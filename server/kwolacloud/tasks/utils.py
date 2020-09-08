@@ -67,6 +67,7 @@ def mountTestingRunStorageDrive(applicationId):
     preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
     executionTraceWeightFilesDir = os.path.join(configDir, "execution_trace_weight_files")
 
+    # Remove the symbolic links if they already exist.
     subprocess.run(['rm', '-rf', preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     subprocess.run(['rm', '-rf', executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 

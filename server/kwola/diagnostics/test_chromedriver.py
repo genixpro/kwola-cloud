@@ -30,7 +30,7 @@ def testChromedriver(verbose=True):
         This command is used to test whether chomedriver is installed correctly.
     """
 
-    targetURL = "https://google.com/"
+    targetURL = "http://kros1.kwola.io/"
 
     if verbose:
         print(f"Starting a Chrome browser through the chromedriver and pointing it at {targetURL}")
