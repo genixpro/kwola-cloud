@@ -54,14 +54,18 @@ def main():
             configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
             config = Configuration(configDir)
 
-            traces = [ExecutionTrace.loadFromDisk(traceId, config) for traceId in session.executionTraces]
-
             skip = False
-            for trace, traceId in zip(traces, session.executionTraces):
+            traces = []
+            for traceId in session.executionTraces:
+                getLogger().info(f"Loading trace object {traceId}")
+
+                trace = ExecutionTrace.loadFromDisk(traceId, config)
                 if trace is None:
                     getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces, specifically {traceId}")
                     skip = True
                     break
+                
+                traces.append(trace)
             if skip:
                 continue
 
