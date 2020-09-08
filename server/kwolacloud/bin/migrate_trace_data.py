@@ -31,6 +31,20 @@ from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.errors.LogError import LogError
 from kwolacloud.tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
+def loadTraces(config, session):
+    hasNone = False
+    traces = []
+    for traceId in session.executionTraces:
+        getLogger().info(f"Loading trace object {traceId}")
+
+        trace = ExecutionTrace.loadFromDisk(traceId, config)
+        if trace is None:
+            hasNone = True
+            break
+
+        traces.append(trace)
+    return traces, hasNone
+
 def main():
         configData = loadConfiguration()
 
@@ -60,19 +74,14 @@ def main():
 
             getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
 
-            skip = False
-            traces = []
-            for traceId in session.executionTraces:
-                getLogger().info(f"Loading trace object {traceId}")
-
-                trace = ExecutionTrace.loadFromDisk(traceId, config)
-                if trace is None:
-                    getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces, specifically {traceId}")
-                    skip = True
-                    break
-                
-                traces.append(trace)
-            if skip:
+            traces, hasNone = loadTraces(config, session)
+            if hasNone:
+                config["data_serialization_method"] = {
+                    "default": "mongo"
+                }
+                traces, hasNone = loadTraces(config, session)
+            if hasNone:
+                getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
                 continue
 
             config['data_compress_level'] = {
