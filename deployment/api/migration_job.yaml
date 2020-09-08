@@ -25,7 +25,6 @@ spec:
             capabilities:
               add:
                 - SYS_ADMIN
-
       restartPolicy: Never
   backoffLimit: 4
 
