@@ -32,7 +32,7 @@ class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):
                 message = message.replace("\\n", "\n")
 
                 # If it looks like a network error, then ignore it because those are handled separately
-                if RecordLogEntryErrors.networkErrorRegex.search(message) is not None:
+                if RecordLogEntriesAndLogErrors.networkErrorRegex.search(message) is not None:
                     continue
 
                 kwolaJSRewriteErrorFound = False
