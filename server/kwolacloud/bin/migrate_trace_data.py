@@ -46,6 +46,9 @@ def main():
         stripe.api_key = configData['stripe']['apiKey']
 
         for session in ExecutionSession.objects():
+            if len(session.executionTraces) == 0:
+                continue
+
             getLogger().info(f"Processing session {session.id}")
 
             if session.applicationId is None:
