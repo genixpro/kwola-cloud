@@ -10,6 +10,7 @@ import google.cloud.logging
 from ..config.config import loadConfiguration
 from kwola.config.config import Configuration
 import stripe
+from pprint import pformat
 from kwola.config.logger import getLogger
 from ..db import connectToMongoWithRetries
 from kwolacloud.tasks.RunHourlyTasks import runHourlyTasks
@@ -56,6 +57,8 @@ def main():
 
             configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
             config = Configuration(configDir)
+
+            getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
 
             skip = False
             traces = []
