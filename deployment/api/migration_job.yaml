@@ -26,5 +26,10 @@ spec:
             add:
               - SYS_ADMIN
       restartPolicy: Never
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+
   backoffLimit: 4
 
