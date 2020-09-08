@@ -32,18 +32,24 @@ import pickle
 def getDataFormatAndCompressionForClass(modelClass, config, overrideSaveFormat=None, overrideCompression=None):
     className = modelClass.__name__
 
-    if className in config.data_serialization_method:
-        dataFormat = config.data_serialization_method[className]
+    if isinstance(config.data_serialization_method, str):
+        dataFormat = config.data_serialization_method
     else:
-        dataFormat = config.data_serialization_method['default']
+        if className in config.data_serialization_method:
+            dataFormat = config.data_serialization_method[className]
+        else:
+            dataFormat = config.data_serialization_method['default']
 
     if overrideSaveFormat is not None:
         dataFormat = overrideSaveFormat
 
-    if className in config.data_compress_level:
-        compression = config.data_compress_level[className]
+    if isinstance(config.data_compress_level, int):
+        compression = config.data_compress_level
     else:
-        compression = config.data_compress_level['default']
+        if className in config.data_compress_level:
+            compression = config.data_compress_level[className]
+        else:
+            compression = config.data_compress_level['default']
 
     if overrideCompression is not None:
         compression = overrideCompression
