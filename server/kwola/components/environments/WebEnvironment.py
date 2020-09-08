@@ -73,7 +73,7 @@ class WebEnvironment:
             maxAttempts = 10
             for attempt in range(maxAttempts):
                 try:
-                    return WebEnvironmentSession(config, number, plugins, self.executionSessions[number])
+                    return WebEnvironmentSession(config, number, self.plugins, self.executionSessions[number])
                 except Exception as e:
                     if attempt == (maxAttempts - 1):
                         raise

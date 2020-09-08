@@ -83,7 +83,7 @@ class RecordScreenshots(WebEnvironmentPluginBase):
             if os.path.exists(filePath):
                 os.unlink(filePath)
 
-        self.screenshotPaths = []
+        self.screenshotPaths[executionSession.id] = {}
         if os.path.exists(self.movieFilePath(executionSession)):
             os.unlink(self.movieFilePath(executionSession))
 

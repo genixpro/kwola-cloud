@@ -119,7 +119,8 @@ class WebEnvironmentSession:
         self.traceNumber = 0
 
         for plugin in self.plugins:
-            plugin.browserSessionStarted(self.driver, self.proxy, self.executionSession)
+            if self.executionSession is not None:
+                plugin.browserSessionStarted(self.driver, self.proxy, self.executionSession)
 
     def __del__(self):
         self.shutdown()
@@ -139,7 +140,8 @@ class WebEnvironmentSession:
     def shutdown(self):
         if hasattr(self, 'plugins'):
             for plugin in self.plugins:
-                plugin.cleanup(self.driver, self.proxy, self.executionSession)
+                if self.executionSession is not None:
+                    plugin.cleanup(self.driver, self.proxy, self.executionSession)
 
         if hasattr(self, "driver"):
             if self.driver:
