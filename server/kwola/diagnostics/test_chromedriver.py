@@ -44,19 +44,23 @@ def testChromedriver(verbose=True):
 
     driver = selenium.webdriver.Chrome(desired_capabilities=capabilities, chrome_options=chrome_options)
 
-    driver.get(targetURL)
+    loginElement = None
 
-    googleBodyElement = None
-    try:
-        googleBodyElement = WebDriverWait(driver, 10, 0.25).until(
-            EC.presence_of_element_located((By.ID, "gsr"))
-        )
-    except selenium.common.exceptions.NoSuchElementException:
-        pass
+    for attempt in range(5):
+        driver.get(targetURL)
+        try:
+            loginElement = WebDriverWait(driver, 10, 0.25).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "btn-success"))
+            )
+        except selenium.common.exceptions.NoSuchElementException:
+            pass
+
+        if loginElement is not None:
+            break
 
     driver.close()
 
-    if googleBodyElement is not None:
+    if loginElement is not None:
         if verbose:
             print(f"Congratulations! Your Selenium installation appears to be working. We were able to load {targetURL} with a headless browser.")
         return True

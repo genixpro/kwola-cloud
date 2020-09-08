@@ -134,7 +134,7 @@ class RewriteProxy:
         if flow.response.status_code < 200 or flow.response.status_code >= 300:
             for plugin in self.plugins:
                 plugin.observeRequest(url=flow.request.url,
-                                      statusCode=flow.request.status_code,
+                                      statusCode=flow.response.status_code,
                                       contentType=contentType,
                                       headers=flow.request.headers,
                                       origFileData=bytes(flow.response.data.content),
