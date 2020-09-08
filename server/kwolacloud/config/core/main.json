@@ -36,7 +36,7 @@
   "debug_video_neural_network_chart_right_size_addition": 1150,
   "debug_video_neural_network_chart_right_size_addition_per_four_actions": 250,
   "debug_video_neural_network_chart_top_margin": 75,
-  "debug_video_reward_max_value": 1.5,
+  "debug_video_reward_max_value": 2.5,
   "debug_video_reward_min_value": -0.2,
   "debug_video_right_size": 100,
   "debug_video_target_circle_1_radius": 30,
