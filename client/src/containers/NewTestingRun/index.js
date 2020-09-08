@@ -74,7 +74,7 @@ class NewTestingRun extends Component {
         snackbarSeverity:"info",
         promoCode: "",
         discountApplied: 0,
-        runConfiguration: {}
+        runConfiguration: {        }
     };
 
     constructor()
@@ -188,7 +188,7 @@ class NewTestingRun extends Component {
 
     calculatePrice()
     {
-        return Math.max(1.00, Number((this.state.length * this.state.sessions * 0.001).toFixed(2)));
+        return Math.max(1.00, Number((this.state.runConfiguration.testingSequenceLength * this.state.runConfiguration.totalTestingSessions * 0.001).toFixed(2)));
     }
 
 
@@ -474,21 +474,21 @@ class NewTestingRun extends Component {
                                                                 <span>Actions (ie. clicks) per browser session</span>
                                                             </p>
                                                             <span
-                                                                className="totalPrice">{addCommas(this.state.length)}</span>
+                                                                className="totalPrice">{addCommas(this.state.runConfiguration.testingSequenceLength)}</span>
                                                         </div>
                                                         <div className="singleOrderInfo">
                                                             <p>
                                                                 <span>Browser Sessions</span>
                                                             </p>
                                                             <span
-                                                                className="totalPrice">* {addCommas(this.state.sessions)}</span>
+                                                                className="totalPrice">* {addCommas(this.state.runConfiguration.totalTestingSessions)}</span>
                                                         </div>
                                                         <div className="singleOrderInfo">
                                                             <p>
                                                                 <span>Total actions to be performed</span>
                                                             </p>
                                                             <span
-                                                                className="totalPrice">= {addCommas(this.state.length * this.state.sessions)}</span>
+                                                                className="totalPrice">= {addCommas(this.state.runConfiguration.testingSequenceLength * this.state.runConfiguration.totalTestingSessions)}</span>
                                                         </div>
                                                         <div className="singleOrderInfo">
                                                             <p>
@@ -539,9 +539,7 @@ class NewTestingRun extends Component {
 
                                                     {
                                                         this.state.mode === "details" ?
-                                                            <LoaderButton disabled={!this.state.productId}
-                                                                    onClick={() => this.launchTestingRunButtonClicked()}
-                                                            >
+                                                            <LoaderButton onClick={() => this.launchTestingRunButtonClicked()} >
                                                                 Launch Testing Run
                                                             </LoaderButton> : null
                                                     }

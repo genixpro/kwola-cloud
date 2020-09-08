@@ -56,6 +56,15 @@ def main():
 
             traces = [ExecutionTrace.loadFromDisk(traceId, config) for traceId in session.executionTraces]
 
+            skip = False
+            for trace, traceId in zip(traces, session.executionTraces):
+                if trace is None:
+                    getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces, specifically {traceId}")
+                    skip = True
+                    break
+            if skip:
+                continue
+
             config['data_compress_level'] = {
                 "default": 0,
                 "ExecutionTrace": 9
