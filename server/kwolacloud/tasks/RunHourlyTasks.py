@@ -12,7 +12,7 @@ import traceback
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from ..helpers.email import sendOfferSupportEmail, sendRequestFeedbackEmail
-from ..helpers.auth0 import authService, updateUserProfileMetadataValue
+from ..helpers.auth0 import loadAuth0Service, updateUserProfileMetadataValue
 
 
 def runHourlyTasks():
@@ -55,6 +55,8 @@ def sendSupportOfferEmailsOnApplications():
 
 
 def sendSupportOfferEmailsOnUsers():
+    authService = loadAuth0Service()
+
     users = authService.users.list(q=f"user_metadata.hasCreatedFirstApplication:false AND user_metadata.hasSentInitialSupportEmail:false AND created_at:[* TO {(datetime.now() - relativedelta(hours=24)).isoformat()}]")['users']
 
     logging.info(f"Found {len(users)} users that need a support offer sent to them.")
