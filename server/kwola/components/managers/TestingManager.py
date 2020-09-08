@@ -288,6 +288,8 @@ class TestingManager:
             self.testStep.status = "running"
             self.testStep.saveToDisk(self.config)
 
+            resultValue["testingStepId"] = str(self.testStep.id)
+
             self.createExecutionSessions()
             self.createTestingSubprocesses()
 

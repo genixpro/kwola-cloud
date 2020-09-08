@@ -655,5 +655,5 @@ class WebEnvironmentSession:
             return
 
         for plugin in self.plugins:
-            plugin.afterActionRuns(self.driver, self.proxy, self.executionSession)
+            plugin.browserSessionFinished(self.driver, self.proxy, self.executionSession)
 

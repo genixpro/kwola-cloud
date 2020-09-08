@@ -358,7 +358,7 @@ class TrainingManager:
 
             fetchTime = (batchFetchFinishTime - batchFetchStartTime).total_seconds()
 
-            if not found:
+            if not found and fetchTime > 0.5:
                 getLogger().info(
                     f"[{os.getpid()}] I was starved waiting for a batch to be assembled. Waited: {fetchTime:.2f}")
 
