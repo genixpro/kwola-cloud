@@ -67,6 +67,8 @@ class ExecutionTrace(Document):
 
     frameNumber = IntField()
 
+    traceNumber = IntField()
+
     tabNumber = IntField()
 
     startURL = StringField()

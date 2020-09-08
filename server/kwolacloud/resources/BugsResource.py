@@ -17,7 +17,7 @@ from ..config.config import getKwolaConfiguration, loadConfiguration
 import flask
 from kwola.config.config import Configuration
 import os.path
-from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from ..auth import authenticate, isAdmin
 
 class BugsGroup(Resource):

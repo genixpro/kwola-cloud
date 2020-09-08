@@ -56,8 +56,12 @@ const routes = [
     component: lazy(() => import('../ViewExecutionSession')),
   },
   {
-    path: 'execution_traces/:id',
+    path: 'execution_sessions/:id/execution_traces/:traceId',
     component: lazy(() => import('../ViewExecutionTrace')),
+  },
+  {
+    path: 'testing_runs/:id/configuration',
+    component: lazy(() => import('../ViewTestingRunConfiguration')),
   },
   {
     path: 'testing_runs/:id',

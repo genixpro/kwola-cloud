@@ -21,7 +21,7 @@ import Icon from "../../components/uielements/icon";
 import Snackbar from "../../components/uielements/snackbar";
 import Tooltip from "../../components/uielements/tooltip";
 import MaterialTable from 'material-table'
-import Auth from "../../helpers/auth0/index"
+import Auth0 from "../../helpers/auth0"
 
 const styles = theme => ({
   root: {
@@ -140,7 +140,7 @@ dialogComp = (application) => {
     />
 
     let apps = this.ListApps(this.state.applications)
-    const userData = Auth.getUserInfo();
+    const userData = Auth0.getUserInfo();
     const showFilter = userData["https://kwola.io/admin"]
     let tooltip = <Tooltip placement="right-end" title="Your Kwola Applications. Click an application to view more.">
                  <Icon color="primary" className="fontSizeSmall">help</Icon>

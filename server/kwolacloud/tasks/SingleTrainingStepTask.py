@@ -5,18 +5,13 @@
 
 
 from ..datamodels.TestingRun import TestingRun
-from kwola.datamodels.TrainingStepModel import TrainingStep
-from kwola.config.config import Configuration
-from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.tasks import RunTrainingStep
 import logging
 import traceback
 import os
-import torch
-from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
-from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
-from ..config.config import loadConfiguration, getKwolaConfiguration
-
+from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
+from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
+from ..config.config import loadConfiguration
 
 
 def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
@@ -31,8 +26,8 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         return {"success": False, "exception": errorMessage}
 
     # Verify this subscription with stripe
-    #if not verifyStripeSubscription(run):
-    #    return {"success": False}
+    if not verifyStripeSubscription(run):
+       return {"success": False}
 
     if not configData['features']['localRuns']:
         configDir = mountTestingRunStorageDrive(run.applicationId)

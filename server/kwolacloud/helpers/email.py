@@ -38,6 +38,7 @@ def sendStartTestingRunEmail(application):
 
 
 
+
 def sendBugFoundNotification(application, bug):
     if application.overrideNotificationEmail:
         email = application.overrideNotificationEmail
@@ -85,6 +86,7 @@ def sendBugFoundNotification(application, bug):
         unmountTestingRunStorageDrive(configDir)
 
 
+
 def sendFinishTestingRunEmail(application, testingRun, bugCount):
     if application.overrideNotificationEmail:
         email = application.overrideNotificationEmail
@@ -112,6 +114,45 @@ def sendFinishTestingRunEmail(application, testingRun, bugCount):
                                     ContentId('applicationImage'))
 
     message.template_id = 'd-f9cd06a48be7418d82a3648708fb5429'
+    sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
+    response = sg.send(message)
+
+
+
+def sendOfferSupportEmail(application=None, email=None):
+    if email is None:
+        email = getUserProfileFromId(application.owner)['email']
+
+    logging.info(f"Sending the 'offer support' email to {email}")
+
+    configData = loadConfiguration()
+
+    message = Mail(
+        from_email=From('brad@kwola.io', 'Brad from Kwola'),
+        to_emails=To(email))
+
+    message.dynamic_template_data = {}
+
+    message.template_id = 'd-179043fa251f4dc2b13984a2255aedde'
+    sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
+    response = sg.send(message)
+
+
+
+def sendRequestFeedbackEmail(owner):
+    email = getUserProfileFromId(owner)['email']
+
+    logging.info(f"Sending the 'request feedback' email to {email}")
+
+    configData = loadConfiguration()
+
+    message = Mail(
+        from_email=From('brad@kwola.io', 'Brad from Kwola'),
+        to_emails=To(email))
+
+    message.dynamic_template_data = {}
+
+    message.template_id = 'd-d57af2bdd553469c97edfef7841c41dc'
     sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
     response = sg.send(message)
 

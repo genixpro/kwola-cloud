@@ -17,6 +17,7 @@ from kwola.datamodels.TrainingStepModel import TrainingStep
 from kwola.datamodels.BugModel import BugModel
 from ..datamodels.TestingRun import TestingRun
 from ..config.config import getKwolaConfiguration, loadConfiguration
+from ..helpers.auth0 import updateUserProfileMetadataValue
 
 import json
 import flask
@@ -27,6 +28,7 @@ from ..helpers.slack import postToKwolaSlack, postToCustomerSlack
 import requests
 from pprint import pprint
 import logging
+from datetime import datetime
 
 class ApplicationGroup(Resource):
     def __init__(self):
@@ -59,8 +61,11 @@ class ApplicationGroup(Resource):
             name=data['name'],
             url=data['url'],
             owner=user,
-            id=generateKwolaId(modelClass=ApplicationModel, kwolaConfig=getKwolaConfiguration(), owner=user)
+            id=generateKwolaId(modelClass=ApplicationModel, kwolaConfig=getKwolaConfiguration(), owner=user),
+            creationDate=datetime.now()
         )
+
+        updateUserProfileMetadataValue(user, "hasCreatedFirstApplication", True)
 
         newApplication.save()
 

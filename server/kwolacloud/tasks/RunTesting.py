@@ -13,22 +13,23 @@ import time
 import datetime
 from kwola.config.config import Configuration
 import logging
-from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription
-from ..components.KubernetesJob import KubernetesJob
+from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
+from kwolacloud.components.utils.KubernetesJob import KubernetesJob
 import random
 from ..config.config import loadConfiguration, getKwolaConfiguration
-from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
+from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
-import tempfile
 import traceback
 from pprint import pformat
 from ..helpers.slack import postToKwolaSlack
 from ..helpers.email import sendFinishTestingRunEmail
-from ..helpers.auth0 import getUserProfileFromId
 from ..datamodels.ApplicationModel import ApplicationModel
 from kwola.datamodels.BugModel import BugModel
 from dateutil.relativedelta import relativedelta
 from kwolacloud.helpers.slack import postToCustomerSlack
+from .utils import unmountTestingRunStorageDrive
+import zipfile
+import io
 
 
 def runTesting(testingRunId):
@@ -61,10 +62,13 @@ def runTesting(testingRunId):
         run.startTime = datetime.datetime.now()
 
     if run.predictedEndTime is None:
-        run.predictedEndTime = run.startTime + relativedelta(hours=run.configuration.hours)
+        run.predictedEndTime = run.startTime + relativedelta(hours=run.configuration.hours + 1, minute=0, second=0)
 
     run.status = "running"
     run.save()
+
+    # Make sure that this application has recorded that at least one testing run has launched
+    ApplicationModel.objects(id=run.applicationId).update_one(hasFirstTestingRunLaunched=True)
 
     try:
         configFilePath = os.path.join(configDir, "kwola.json")
@@ -146,20 +150,20 @@ def runTesting(testingRunId):
                 if configData['features']['localRuns']:
                     job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTestingStepTaskLocal"], {
                         "testingRunId": testingRunId,
-                        "testingStepsCompleted": completedTestingSteps
+                        "testingStepsCompleted": completedTestingSteps + len(testingStepActiveJobs)
                     }, timeout=7200, config=getKwolaConfiguration(), logId=None)
                 else:
                     job = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
                                            data={
                                                 "testingRunId": testingRunId,
-                                                "testingStepsCompleted": completedTestingSteps
+                                                "testingStepsCompleted": completedTestingSteps + len(testingStepActiveJobs)
                                            },
                                         referenceId=f"{testingRunId}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                         image="worker",
-                                        cpuRequest="1600m",
-                                        cpuLimit="2500m",
-                                        memoryRequest="4.5Gi",
-                                        memoryLimit="6.0Gi"
+                                        cpuRequest="3200m",
+                                        cpuLimit="5000m",
+                                        memoryRequest="9.0Gi",
+                                        memoryLimit="12.0Gi"
                                         )
                 job.start()
                 testingStepActiveJobs.append(job)
@@ -191,15 +195,15 @@ def runTesting(testingRunId):
 
                         # Double check that the stripe subscription is still good. If the testing step failed because our
                         # stripe subscription is bad, we should just exit immediately.
-                        #if not verifyStripeSubscription(run):
-                        #    shouldExit = True
-                        #    break
+                        if not verifyStripeSubscription(run):
+                           shouldExit = True
+                           break
 
             if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None:
                 logging.info(f"Starting a training step for run {testingRunId}")
                 if configData['features']['localRuns']:
                     currentTrainingStepJob = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTaskLocal"], {
-                        "testingRunId":testingRunId,
+                        "testingRunId": testingRunId,
                         "trainingStepsCompleted": completedTrainingSteps
                     }, timeout=7200, config=getKwolaConfiguration(), logId=None)
                 else:
@@ -212,7 +216,7 @@ def runTesting(testingRunId):
                                                            image="worker",
                                                            cpuRequest="6000m",
                                                            cpuLimit=None,
-                                                           memoryRequest="12.0Gi",
+                                                           memoryRequest="14.0Gi",
                                                            memoryLimit=None,
                                                            gpu=True
                                                            )
@@ -269,10 +273,43 @@ def runTesting(testingRunId):
         logging.info(f"Finished testing run {testingRunId}")
         run.status = "completed"
         run.endTime = datetime.datetime.now()
-        run.save()
 
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
-        bugCount = BugModel.objects(owner=application.owner, testingRunId=run.id, isMuted=False).count()
+        application.hasFirstTestingRunCompleted = True
+
+        if not application.hasSentFeedbackRequestEmail:
+            run.needsFeedbackRequestEmail = True
+            application.hasSentFeedbackRequestEmail = True
+
+        application.save()
+        run.save()
+
+        bugs = list(BugModel.objects(owner=application.owner, testingRunId=run.id, isMuted=False))
+        bugCount = len(bugs)
+
+        bugsZipFileOnDisk = open(os.path.join(config.getKwolaUserDataDirectory("bug_zip_files"), testingRunId.id + ".zip"), 'wb')
+        bugsZip = zipfile.ZipFile(file=bugsZipFileOnDisk, mode='w')
+
+        for bugIndex, bug in enumerate(bugs):
+            bugJsonFilePath = os.path.join(configDir, "bugs", bug.id + ".json")
+            bugTextFilePath = os.path.join(configDir, "bugs", bug.id + ".txt")
+            bugRawVideoFilePath = os.path.join(configDir, "bugs", f'{str(bug.id)}.mp4')
+            bugAnnotatedVideoFilePath = os.path.join(configDir, "bugs", f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
+
+            with open(bugJsonFilePath, 'rb') as f:
+                bugsZip.writestr(f"bug_{bugIndex+1}.json", f.read())
+
+            with open(bugTextFilePath, 'rb') as f:
+                bugsZip.writestr(f"bug_{bugIndex+1}.txt", f.read())
+
+            with open(bugRawVideoFilePath, 'rb') as f:
+                bugsZip.writestr(f"bug_{bugIndex+1}_raw.mp4", f.read())
+
+            with open(bugAnnotatedVideoFilePath, 'rb') as f:
+                bugsZip.writestr(f"bug_{bugIndex+1}_annotated.mp4", f.read())
+
+        bugsZip.close()
+        bugsZipFileOnDisk.close()
 
         if application.enableEmailTestingRunCompletedNotifications:
             sendFinishTestingRunEmail(application, run, bugCount)
@@ -285,8 +322,7 @@ def runTesting(testingRunId):
         logging.error(f"[{os.getpid()}] {errorMessage}")
         return {"success": False, "exception": errorMessage}
     finally:
-        # unmountTestingRunStorageDrive(configDir)
-        pass
+        unmountTestingRunStorageDrive(configDir)
 
 
 if __name__ == "__main__":

@@ -3,30 +3,25 @@
 #     All Rights Reserved.
 #
 
-from ..app import cache
 from ..auth import authenticate, isAdmin
-from ..components.KubernetesJob import KubernetesJob
+from kwolacloud.components.utils.KubernetesJob import KubernetesJob
 from ..config.config import getKwolaConfiguration
 from ..config.config import loadConfiguration
 from ..datamodels.ApplicationModel import ApplicationModel
 from ..datamodels.id_utility import generateKwolaId
+import random
 from ..datamodels.TestingRun import TestingRun
 from ..helpers.slack import postToKwolaSlack
 from ..helpers.email import sendStartTestingRunEmail
-from ..tasks.RunTesting import runTesting
-from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 from flask_restful import Resource, reqparse, abort
-from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
-import bson
-import base64
 import datetime
 from dateutil.relativedelta import relativedelta
 import flask
 import json
-import os
 import stripe
-import logging
+import os
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
 
 class TestingRunsGroup(Resource):
@@ -82,10 +77,7 @@ class TestingRunsGroup(Resource):
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
-        #return data;
-        #change this for production. using dev user for billing
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
-        #stripeCustomerId = 'cus_HWGxAP6pB9znK4'
 
         allowFreeRuns = claims['https://kwola.io/freeRuns']
         
@@ -105,30 +97,19 @@ class TestingRunsGroup(Resource):
                   customer=stripeCustomerId,
                 )
 
-            #update this to the new product with price attached
-            #subscription = stripe.Subscription.create(
-            #    customer=customer.id,
-            #    items=[{'price': data['stripe']['priceId']}],
-            #    expand=['latest_invoice.payment_intent'],
-            #)
-
-            subscription = stripe.InvoiceItem.create(
-              customer=customer.id,
-              price=data['stripe']['priceId']
+            # Update this to the new product with price attached
+            subscription = stripe.Subscription.create(
+               customer=customer.id,
+               items=[{'plan': self.configData['stripe']['planId']}],
+               coupon=coupon,
+               expand=['latest_invoice.payment_intent'],
             )
-            invoiceId = subscription.id
 
-            invoice = stripe.Invoice.create(
-                customer=customer.id,
-            )
-            payment = stripe.Invoice.pay(sid=invoice.id, payment_method=data['payment_method'])
-            #return payment;
-            
-            if payment.paid != True:
+            if subscription.status != "active":
                 return abort(400)
 
             del data['payment_method']
-            data['stripeSubscriptionId'] = None#subscription.id
+            data['stripeSubscriptionId'] = subscription.id
         else:
             data['stripeSubscriptionId'] = None
 
@@ -143,8 +124,10 @@ class TestingRunsGroup(Resource):
             del data['stripe']
         
         newTestingRun = TestingRun(**data)
-
         newTestingRun.save()
+
+        application.defaultRunConfiguration = newTestingRun.configuration
+        application.save()
 
         postToKwolaSlack(f"New testing run was started with id {data['id']} for application {data['applicationId']}")
 
@@ -192,3 +175,93 @@ class TestingRunsRestart(Resource):
         testingRun.runJob()
 
         return {}
+
+
+class TestingRunsRestartTraining(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+        # self.postParser.add_argument('version', help='This field cannot be blank', required=False)
+        # self.postParser.add_argument('startTime', help='This field cannot be blank', required=False)
+        # self.postParser.add_argument('endTime', help='This field cannot be blank', required=False)
+        # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=False)
+        # self.postParser.add_argument('status', help='This field cannot be blank', required=False)
+
+        self.configData = loadConfiguration()
+
+    def post(self, testing_run_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": testing_run_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        testingRun = TestingRun.objects(**queryParams).first()
+
+        if testingRun is None:
+            return abort(404)
+
+        if self.configData['features']['localRuns']:
+            currentTrainingStepJob = ManagedTaskSubprocess(
+                ["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTaskLocal"], {
+                    "testingRunId": testingRun.id,
+                    "trainingStepsCompleted": 0
+                }, timeout=7200, config=getKwolaConfiguration(), logId=None)
+        else:
+            currentTrainingStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
+                                                   data={
+                                                       "testingRunId": testingRun.id,
+                                                       "trainingStepsCompleted": 0
+                                                   },
+                                                   referenceId=f"{testingRun.id}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
+                                                   image="worker",
+                                                   cpuRequest="6000m",
+                                                   cpuLimit=None,
+                                                   memoryRequest="12.0Gi",
+                                                   memoryLimit=None,
+                                                   gpu=True
+                                                   )
+        currentTrainingStepJob.start()
+
+        return {}
+
+
+class TestingRunsDownloadZip(Resource):
+    def __init__(self):
+        self.configData = loadConfiguration()
+
+    def get(self, testing_run_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": testing_run_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        testingRun = TestingRun.objects(**queryParams).first()
+
+        if testingRun is None:
+            return abort(404)
+
+        if not self.configData['features']['localRuns']:
+            configDir = mountTestingRunStorageDrive(testingRun.applicationId)
+        else:
+            configDir = os.path.join("data", testingRun.applicationId)
+
+        try:
+            with open(os.path.join(configDir, "bug_zip_files", testingRun.id + ".zip"), 'rb') as f:
+                zipData = f.read()
+
+            response = flask.make_response(zipData)
+            response.headers['content-type'] = 'application/zip'
+            response.headers['content-disposition'] = f'attachment; filename="{testingRun.id}.zip"'
+
+            return response
+        except FileNotFoundError:
+            abort(404)
+        finally:
+            if not self.configData['features']['localRuns']:
+                unmountTestingRunStorageDrive(configDir)
+

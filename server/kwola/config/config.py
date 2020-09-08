@@ -68,7 +68,12 @@ class Configuration:
 
         self.configData = data
 
-        if self.configData['data_serialization_method'] == "mongo" and 'mongo_uri' in self.configData and self.configData['mongo_uri']:
+        if isinstance(self.configData['data_serialization_method'], dict):
+            method = self.configData['data_serialization_method']['default']
+        else:
+            method = self.configData['data_serialization_method']
+
+        if method == "mongo" and 'mongo_uri' in self.configData and self.configData['mongo_uri']:
             import mongoengine
             maxAttempts = 5
             for attempt in range(maxAttempts):

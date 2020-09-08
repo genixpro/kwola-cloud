@@ -8,7 +8,6 @@
 from kwola.datamodels.CustomIDField import CustomIDField
 from .RunConfiguration import RunConfiguration
 from mongoengine import *
-from ..components.KubernetesJob import KubernetesJob
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from ..config.config import getKwolaConfiguration
 from ..config.config import loadConfiguration
@@ -20,6 +19,7 @@ class TestingRun(Document):
         'indexes': [
             ('owner',),
             ('owner', 'applicationId'),
+            ('needsFeedbackRequestEmail', 'endTime'),
         ]
     }
 
@@ -57,6 +57,8 @@ class TestingRun(Document):
 
     averageTimePerStep = FloatField(default=0)
 
+    needsFeedbackRequestEmail = BooleanField(default=False)
+
     def saveToDisk(self, config):
         self.save()
 
@@ -67,6 +69,8 @@ class TestingRun(Document):
 
 
     def runJob(self):
+        from kwolacloud.components.utils.KubernetesJob import KubernetesJob
+        
         configData = loadConfiguration()
 
         if configData['features']['localRuns']:

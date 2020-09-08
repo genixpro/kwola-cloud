@@ -90,6 +90,7 @@ RUN pip3 install --upgrade pip && \
     pip3 install flask && \
     pip3 install google-cloud-storage==1.29.0 && \
     pip3 install google-cloud-profiler && \
+    pip3 install google-cloud-logging && \
     pip3 install gunicorn && \
     pip3 install jwcrypto && \
     pip3 install matplotlib && \
@@ -164,8 +165,9 @@ RUN chown -R kwola:kwola /kwola && \
 
 RUN rm -rf /usr/include/*
 
-RUN chmod +r+r+r -R /usr/lib/python3
-RUN su kwola -c "kwola_test_installation"
+WORKDIR /home/kwola
+RUN chmod +r+r+r -R /usr/lib/python3 && su kwola -c "kwola_test_installation"
+WORKDIR /kwola/server
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
