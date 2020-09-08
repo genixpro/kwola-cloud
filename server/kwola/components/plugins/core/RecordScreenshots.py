@@ -60,7 +60,7 @@ class RecordScreenshots(WebEnvironmentPluginBase):
 
 
     def addScreenshot(self, webDriver, executionSession):
-        fileName = f"kwola-screenshot-{self.frameNumber:05d}.png"
+        fileName = f"kwola-screenshot-{self.frameNumber[executionSession.id]:05d}.png"
 
         filePath = os.path.join(self.screenshotDirectory[executionSession.id], fileName)
 
