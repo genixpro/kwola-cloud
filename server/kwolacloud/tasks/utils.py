@@ -67,6 +67,9 @@ def mountTestingRunStorageDrive(applicationId):
     preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
     executionTraceWeightFilesDir = os.path.join(configDir, "execution_trace_weight_files")
 
+    subprocess.run(['rm', '-rf', preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run(['rm', '-rf', executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     result = subprocess.run(['ln', '-s', cacheDir, preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
         logging.error(f"Error! ln did not return success for prepared samples link. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
