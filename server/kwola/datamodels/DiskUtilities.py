@@ -92,16 +92,15 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True)
             return modelClass.objects(id=id).first()
 
         object = None
-        pickleFileName = ''
-        gzipPickleFileName = ''
-        jsonFileName = ''
-        gzipJsonFileName = ''
+        pickleFileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(id) + ".pickle")
+        gzipPickleFileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(id) + ".pickle.gz")
+        jsonFileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(id) + ".json")
+        gzipJsonFileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(id) + ".json.gz")
 
         # We try loading the data using multiple formats - this allows the format to be changed mid run and the data will still load.
         def tryPickle():
             nonlocal object
             if object is None:
-                pickleFileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(id) + ".pickle")
                 if os.path.exists(pickleFileName):
                     with LockedFile(pickleFileName, 'rb') as f:
                         object = pickle.load(f)
@@ -109,7 +108,6 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True)
         def tryPickleGzip():
             nonlocal object
             if object is None:
-                gzipPickleFileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(id) + ".pickle.gz")
                 if os.path.exists(gzipPickleFileName):
                     with LockedFile(gzipPickleFileName, 'rb') as f:
                         object = pickle.loads(gzip.decompress(f.read()))
@@ -117,7 +115,6 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True)
         def tryJson():
             nonlocal object
             if object is None:
-                jsonFileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(id) + ".json")
                 if os.path.exists(jsonFileName):
                     with LockedFile(jsonFileName, 'rt') as f:
                         object = modelClass.from_json(f.read())
@@ -125,7 +122,6 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True)
         def tryJsonGzip():
             nonlocal object
             if object is None:
-                gzipJsonFileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(id) + ".json.gz")
                 if os.path.exists(gzipJsonFileName):
                     with LockedFile(gzipJsonFileName, 'rb') as f:
                         object = modelClass.from_json(str(gzip.decompress(f.read()), "utf8"))
