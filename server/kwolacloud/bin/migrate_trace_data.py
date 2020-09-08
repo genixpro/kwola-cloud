@@ -75,11 +75,7 @@ def main():
             getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
 
             traces, hasNone = loadTraces(config, session)
-            if hasNone:
-                config["data_serialization_method"] = {
-                    "default": "mongo"
-                }
-                traces, hasNone = loadTraces(config, session)
+
             if hasNone:
                 getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
                 continue
