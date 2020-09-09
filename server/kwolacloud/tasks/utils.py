@@ -130,12 +130,20 @@ def mountTestingRunStorageDrive(applicationId):
     ]
 
     for folder in mainStorageFolders:
-        success = runMakeSymbolicLinkCommand(os.path.join(mainBucketDir, folder), os.path.join(configDir, folder))
+        target = os.path.join(mainBucketDir, folder)
+        linkName = os.path.join(configDir, folder)
+        if not os.path.exists(target):
+            os.mkdir(target)
+        success = runMakeSymbolicLinkCommand(target, linkName)
         if not success:
             return None
 
     for folder in cacheFolders:
-        success = runMakeSymbolicLinkCommand(os.path.join(cacheDir, folder), os.path.join(configDir, folder))
+        target = os.path.join(cacheDir, folder)
+        linkName = os.path.join(configDir, folder)
+        if not os.path.exists(target):
+            os.mkdir(target)
+        success = runMakeSymbolicLinkCommand(target, linkName)
         if not success:
             return None
 
