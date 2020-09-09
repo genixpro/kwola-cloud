@@ -53,9 +53,11 @@ def testChromedriver(verbose=True):
             )
             break
         except selenium.common.exceptions.NoSuchElementException:
-            pass
+            print(f"Diagnostic URL {targetURL} did not appear to load correctly. Received a no-such-element error. Waiting 10 seconds and then retrying.")
+            time.sleep(10)
         except selenium.common.exceptions.TimeoutException:
-            pass
+            print(f"Diagnostic URL {targetURL} did not appear to load correctly. Received a timeout error. Waiting 10 seconds and then retrying.")
+            time.sleep(10)
 
     driver.close()
 
