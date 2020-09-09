@@ -151,7 +151,7 @@ class ExecutionSessionTraces(Resource):
         config = Configuration(configDir)
 
         traces = [
-            ExecutionTrace.loadFromDisk(traceId, config) for traceId in executionSession.executionTraces
+            ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True) for traceId in executionSession.executionTraces
         ]
 
         return {"executionTraces": [json.loads(trace.to_json()) for trace in traces]}
