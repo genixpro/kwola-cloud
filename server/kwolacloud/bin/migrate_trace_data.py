@@ -72,6 +72,9 @@ def main():
             configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
             config = Configuration(configDir)
 
+            if isinstance(config['data_serialization_method'], dict) and 'ExecutionTrace' in config['data_serialization_method']:
+                continue
+
             getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
 
             traces, hasNone = loadTraces(config, session)
