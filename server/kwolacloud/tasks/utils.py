@@ -12,17 +12,19 @@ import datetime
 import stripe
 import logging
 import json
+import shutil
 import google.api_core.exceptions
 
 
-
-def mountTestingRunStorageDrive(applicationId):
+def bucketNamesForApplication(applicationId):
     bucketName = "kwola-testing-run-data-" + applicationId
     cacheBucketName = bucketName + "-cache"
+    return bucketName, cacheBucketName
 
-    fuseCommandParameters = ["gcsfuse", "--stat-cache-ttl", "1.5h", "--stat-cache-capacity", "16777216", "--type-cache-ttl", "1.5h", "--limit-ops-per-sec", "-1"]
 
-    configDir = tempfile.mkdtemp()
+
+def createMainStorageBucketIfNeeded(applicationId):
+    bucketName, cacheBucketName = bucketNamesForApplication(applicationId)
 
     storage_client = storage.Client()
 
@@ -37,10 +39,11 @@ def mountTestingRunStorageDrive(applicationId):
             # created.
             pass
 
-    result = subprocess.run(fuseCommandParameters + [bucketName, configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! gcsfuse did not return success for initial mount. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
-        return None
+
+def createCacheBucketIfNeeded(applicationId):
+    bucketName, cacheBucketName = bucketNamesForApplication(applicationId)
+
+    storage_client = storage.Client()
 
     cacheBucket = storage_client.lookup_bucket(cacheBucketName)
     if cacheBucket is None:
@@ -57,62 +60,108 @@ def mountTestingRunStorageDrive(applicationId):
             # created.
             pass
 
+def runMountStorageBucketCommand(bucketName, localDirectory):
+    fuseCommandParameters = ["gcsfuse", "--stat-cache-ttl", "1.5h", "--stat-cache-capacity", "16777216",
+                             "--type-cache-ttl", "1.5h", "--limit-ops-per-sec", "-1"]
+
+    result = subprocess.run(fuseCommandParameters + [bucketName, localDirectory], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        logging.error(f"Error! gcsfuse did not return success for mounting bucket {bucketName}. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
+        return False
+    return True
+
+def runMakeSymbolicLinkCommand(targetDir, linkPath):
+    result = subprocess.run(['ln', '-s', targetDir, linkPath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        logging.error(f"Error! ln did not return success for linking {targetDir} to {linkPath}. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
+        return False
+    return True
+
+def getLinkTargetDirectory(linkPath):
+    result = subprocess.run(["readlink", "-f", linkPath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        logging.error(f"Error! readlink did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+        return None
+    return str(result.stdout, 'utf8')
+
+def runUnmountCommand(targetDirectory):
+    result = subprocess.run(["fusermount", "-u", targetDirectory], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        logging.error(f"Error! fusermount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+        return False
+    return True
+
+
+def mountTestingRunStorageDrive(applicationId):
+    bucketName, cacheBucketName = bucketNamesForApplication(applicationId)
+
+    configDir = tempfile.mkdtemp()
+    mainBucketDir = tempfile.mkdtemp()
     cacheDir = tempfile.mkdtemp()
 
-    result = subprocess.run(fuseCommandParameters + [cacheBucketName, cacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! gcsfuse did not return success for prepared samples mount. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
+    createMainStorageBucketIfNeeded(applicationId)
+    createCacheBucketIfNeeded(applicationId)
+
+    success = runMountStorageBucketCommand(bucketName, mainBucketDir)
+    if not success:
         return None
 
-    preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
-    executionTraceWeightFilesDir = os.path.join(configDir, "execution_trace_weight_files")
-
-    # Remove the symbolic links if they already exist.
-    result = subprocess.run(['rm', '-f', preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! rm -f did not return success for prepared samples link removal. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
+    success = runMountStorageBucketCommand(cacheBucketName, cacheDir)
+    if not success:
         return None
 
-    result = subprocess.run(['rm', '-f', executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! rm -f did not return success for execution traces link removal. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
-        return None
+    mainStorageFolders = [
+        "annotated_videos",
+        "bug_zip_files",
+        "bugs",
+        "chrome_cache",
+        "kwola.json",
+        "javascript",
+        "models",
+        "proxy_cache",
+        "testing_steps",
+        "videos"
+    ]
 
-    result = subprocess.run(['ln', '-s', cacheDir, preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! ln did not return success for prepared samples link. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
-        return None
+    cacheFolders = [
+        "prepared_samples",
+        "execution_trace_weight_files"
+    ]
 
-    result = subprocess.run(['ln', '-s', cacheDir, executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! ln did not return success for prepared trace weight dir link. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
-        return None
+    for folder in mainStorageFolders:
+        success = runMakeSymbolicLinkCommand(os.path.join(mainBucketDir, folder), os.path.join(configDir, folder))
+        if not success:
+            return None
+
+    for folder in cacheFolders:
+        success = runMakeSymbolicLinkCommand(os.path.join(cacheDir, folder), os.path.join(configDir, folder))
+        if not success:
+            return None
 
     return configDir
 
 
 def unmountTestingRunStorageDrive(configDir):
     preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
+    bugsDir = os.path.join(configDir, "bugs")
 
-    actualCacheDir = None
-    result = subprocess.run(["readlink", "-f", preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! readlink did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+    actualCacheDir = getLinkTargetDirectory(preparedSamplesCacheDir)
+    if actualCacheDir is None:
         return False
 
-    actualCacheDir=result.stdout
-
-    result = subprocess.run(["fusermount", "-u", actualCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! fusermount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+    actualMainStorageDir = getLinkTargetDirectory(bugsDir)
+    if actualCacheDir is None:
         return False
 
-    result = subprocess.run(["fusermount", "-u", configDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! fusermount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+    success = runUnmountCommand(actualCacheDir)
+    if not success:
         return False
 
-    os.rmdir(configDir)
+    success = runUnmountCommand(actualMainStorageDir)
+    if not success:
+        return False
+
+    shutil.rmtree(configDir)
     return True
 
 def verifyStripeSubscription(testingRun):
