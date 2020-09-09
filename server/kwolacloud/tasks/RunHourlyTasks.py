@@ -26,7 +26,7 @@ def runHourlyTasks():
         # Try to send these in the day time.
         if now.hour >= 11 and now.hour <= 16:
             sendSupportOfferEmailsOnApplications()
-            if config['enableSupportOfferEmailsOnUsers']:
+            if config['features']['enableSupportOfferEmailsOnUsers']:
                 sendSupportOfferEmailsOnUsers()
             sendFeedbackRequestEmails()
 
