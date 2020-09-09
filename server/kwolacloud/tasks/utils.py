@@ -116,7 +116,6 @@ def mountTestingRunStorageDrive(applicationId):
         "bugs",
         "chrome_cache",
         "execution_traces",
-        "kwola.json",
         "javascript",
         "models",
         "proxy_cache",
