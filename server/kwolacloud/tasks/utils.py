@@ -154,11 +154,11 @@ def unmountTestingRunStorageDrive(configDir):
     preparedSamplesCacheDir = os.path.join(configDir, "prepared_samples")
     bugsDir = os.path.join(configDir, "bugs")
 
-    actualCacheDir = getLinkTargetDirectory(preparedSamplesCacheDir)
+    actualCacheDir = "/".join(getLinkTargetDirectory(preparedSamplesCacheDir).split("/")[:-1])
     if actualCacheDir is None:
         return False
 
-    actualMainStorageDir = getLinkTargetDirectory(bugsDir)
+    actualMainStorageDir = "/".join(getLinkTargetDirectory(bugsDir).split("/")[:-1])
     if actualMainStorageDir is None:
         return False
 
