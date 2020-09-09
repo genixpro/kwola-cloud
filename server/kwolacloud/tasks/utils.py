@@ -151,7 +151,7 @@ def unmountTestingRunStorageDrive(configDir):
         return False
 
     actualMainStorageDir = getLinkTargetDirectory(bugsDir)
-    if actualCacheDir is None:
+    if actualMainStorageDir is None:
         return False
 
     success = runUnmountCommand(actualCacheDir)
