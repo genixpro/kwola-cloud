@@ -9,6 +9,7 @@ import google.cloud
 import google.cloud.logging
 from ..config.config import loadConfiguration
 from kwola.config.config import Configuration
+import traceback
 import stripe
 from pprint import pformat
 from kwola.config.logger import getLogger
@@ -61,45 +62,49 @@ def main():
         stripe.api_key = configData['stripe']['apiKey']
 
         for session in ExecutionSession.objects():
-            if len(session.executionTraces) == 0:
-                continue
+            try:
+                if len(session.executionTraces) == 0:
+                    continue
 
-            getLogger().info(f"Processing session {session.id}")
+                getLogger().info(f"Processing session {session.id}")
 
-            if session.applicationId is None:
-                continue
+                if session.applicationId is None:
+                    continue
 
-            configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
-            config = Configuration(configDir)
+                configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
+                config = Configuration(configDir)
 
-            if (not isinstance(config['data_serialization_method'], str)) and 'ExecutionTrace' in config['data_serialization_method']:
-                continue
+                if (not isinstance(config['data_serialization_method'], str)) and 'ExecutionTrace' in config['data_serialization_method']:
+                    continue
 
-            getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
+                getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
 
-            traces, hasNone = loadTraces(config, session)
+                traces, hasNone = loadTraces(config, session)
 
-            if hasNone:
-                getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
-                continue
+                if hasNone:
+                    getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
+                    continue
 
-            config['data_compress_level'] = {
-                "default": 0,
-                "ExecutionTrace": 9
-              }
+                config['data_compress_level'] = {
+                    "default": 0,
+                    "ExecutionTrace": 9
+                  }
 
-            config["data_serialization_method"] = {
-                "default": "mongo",
-                "ExecutionTrace": "json"
-            }
+                config["data_serialization_method"] = {
+                    "default": "mongo",
+                    "ExecutionTrace": "json"
+                }
 
-            for trace in traces:
-                getLogger().info(f"Saving trace object {trace.id}")
-                trace.saveToDisk(config)
+                for trace in traces:
+                    getLogger().info(f"Saving trace object {trace.id}")
+                    trace.saveToDisk(config)
 
-            config.saveConfig()
+                config.saveConfig()
 
-            unmountTestingRunStorageDrive(configDir)
+                unmountTestingRunStorageDrive(configDir)
 
-            tracesInDb = ExecutionTrace.objects(executionSessionId=session.id)
-            tracesInDb.delete()
+                tracesInDb = ExecutionTrace.objects(executionSessionId=session.id)
+                tracesInDb.delete()
+            except Exception as e:
+                getLogger().info(f"Received an error while processing {session.id}: {traceback.format_exc()}")
+
