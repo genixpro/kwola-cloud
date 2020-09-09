@@ -68,8 +68,15 @@ def mountTestingRunStorageDrive(applicationId):
     executionTraceWeightFilesDir = os.path.join(configDir, "execution_trace_weight_files")
 
     # Remove the symbolic links if they already exist.
-    subprocess.run(['rm', '-rf', preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run(['rm', '-rf', executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['rm', '-f', preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        logging.error(f"Error! rm -f did not return success for prepared samples link removal. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
+        return None
+
+    result = subprocess.run(['rm', '-f', executionTraceWeightFilesDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        logging.error(f"Error! rm -f did not return success for execution traces link removal. Code: {result.returncode}\n{result.stdout}\n{result.stderr}")
+        return None
 
     result = subprocess.run(['ln', '-s', cacheDir, preparedSamplesCacheDir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
