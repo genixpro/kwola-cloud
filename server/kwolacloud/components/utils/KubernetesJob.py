@@ -114,10 +114,10 @@ class KubernetesJob:
                                 }
                             }
                         ],
-                        "priorityClassName": f"{os.getenv('KWOLA_ENV')}-priority"
+                        "priorityClassName": f"{os.getenv('KWOLA_ENV')}-background-priority"
                     }
                 },
-                "backoffLimit": 4
+                "backoffLimit": 2
             }
         }
 

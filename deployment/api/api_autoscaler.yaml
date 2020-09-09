@@ -5,8 +5,8 @@ metadata:
     app: kwola-__KWOLA_ENV__-api
   name: kwola-__KWOLA_ENV__-api-hpa
 spec:
-  maxReplicas: 3
-  minReplicas: 1
+  maxReplicas: __MAXIMUM_REPLICATIONS__
+  minReplicas: __MINIMUM_REPLICATIONS__
   scaleTargetRef:
     apiVersion: apps/v1beta1
     kind: Deployment
