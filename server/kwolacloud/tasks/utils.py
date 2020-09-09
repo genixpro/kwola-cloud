@@ -123,6 +123,10 @@ def mountTestingRunStorageDrive(applicationId):
         "videos"
     ]
 
+    mainStorageFiles = [
+        "kwola.json"
+    ]
+
     cacheFolders = [
         "prepared_samples",
         "execution_trace_weight_files"
@@ -136,6 +140,14 @@ def mountTestingRunStorageDrive(applicationId):
         success = runMakeSymbolicLinkCommand(target, linkName)
         if not success:
             return None
+
+    for fileName in mainStorageFiles:
+        target = os.path.join(mainBucketDir, fileName)
+        linkName = os.path.join(configDir, fileName)
+        if os.path.exists(target):
+            success = runMakeSymbolicLinkCommand(target, linkName)
+            if not success:
+                return None
 
     for folder in cacheFolders:
         target = os.path.join(cacheDir, folder)

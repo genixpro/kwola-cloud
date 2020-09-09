@@ -30,6 +30,7 @@ from kwolacloud.helpers.slack import postToCustomerSlack
 from .utils import unmountTestingRunStorageDrive
 import zipfile
 import io
+from google.cloud import storage
 
 
 def runTesting(testingRunId):
@@ -94,6 +95,14 @@ def runTesting(testingRunId):
             kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
             kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
 
+            # We have to write directly to the google cloud storage bucket because of the way that the storage
+            # drives get mounted through fuse.
+            storageClient = storage.Client()
+            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + run.applicationId)
+            configFileBlob = storage.Blob("kwola.json", applicationStorageBucket)
+            configFileBlob.upload_from_string(json.dumps(kwolaConfigData))
+
+            # Also write a copy locally.
             with open(configFilePath, 'wt') as configFile:
                 json.dump(kwolaConfigData, configFile)
         else:
