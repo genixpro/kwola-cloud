@@ -30,4 +30,5 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
+      priorityClassName: __KWOLA_ENV__-priority
       terminationGracePeriodSeconds: 15

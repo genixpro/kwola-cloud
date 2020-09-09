@@ -30,6 +30,7 @@ spec:
         - name: dshm
           emptyDir:
             medium: Memory
+      priorityClassName: __KWOLA_ENV__-priority
 
   backoffLimit: 4
 

@@ -113,7 +113,8 @@ class KubernetesJob:
                                     "medium": "Memory"
                                 }
                             }
-                        ]
+                        ],
+                        "priorityClassName": f"{os.getenv('KWOLA_ENV')}-priority"
                     }
                 },
                 "backoffLimit": 4
