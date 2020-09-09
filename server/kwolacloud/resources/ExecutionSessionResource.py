@@ -19,6 +19,7 @@ from kwolacloud.config.config import loadConfiguration
 import os.path
 from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from ..auth import authenticate, isAdmin
+import concurrent.futures
 
 class ExecutionSessionGroup(Resource):
     def __init__(self):
@@ -150,9 +151,10 @@ class ExecutionSessionTraces(Resource):
 
         config = Configuration(configDir)
 
-        traces = [
-            ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True) for traceId in executionSession.executionTraces
-        ]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+            traces = executor.map(lambda traceId: ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True),
+                                  executionSession.executionTraces)
+
 
         return {"executionTraces": [json.loads(trace.to_json()) for trace in traces]}
 
