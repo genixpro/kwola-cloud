@@ -43,7 +43,7 @@ class ViewExecutionTrace extends Component {
         const { result } = this.state;
 
         return (
-            this.props.executionTrace ?
+            this.state.executionTrace ?
                 <LayoutWrapper>
                     <FullColumn>
                         <Row>
