@@ -32,6 +32,7 @@
     "enableGoogleCloudLogging": true,
     "enableSlackLogging": true,
     "enableRuns": true,
-    "localRuns": false
+    "localRuns": false,
+    "enableSupportOfferEmailsOnUsers": true
   }
 }
