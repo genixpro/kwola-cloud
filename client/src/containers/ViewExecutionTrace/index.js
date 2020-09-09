@@ -32,7 +32,7 @@ class ViewExecutionTrace extends Component {
 
     componentDidMount()
     {
-        axios.get(`/execution_sessions/${this.props.match.id}/traces/${this.props.match.traceId}`).then((response) =>
+        axios.get(`/execution_sessions/${this.props.match.params.id}/traces/${this.props.match.params.traceId}`).then((response) =>
         {
             this.setState({executionTrace: response.data.executionTrace})
         })
