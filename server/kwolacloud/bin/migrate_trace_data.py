@@ -74,8 +74,8 @@ def main():
                 configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
                 config = Configuration(configDir)
 
-                if (not isinstance(config['data_serialization_method'], str)) and 'ExecutionTrace' in config['data_serialization_method']:
-                    continue
+                config['data_compress_level'] = {"default": 0}
+                config["data_serialization_method"] = {"default": "mongo"}
 
                 getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
 
