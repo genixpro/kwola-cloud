@@ -7,7 +7,7 @@ source deployment/environments/$KWOLA_ENV.sh
 kubectl apply -f deployment/priorities/default.yaml
 kubectl apply -f deployment/priorities/$KWOLA_ENV.yaml
 
-sed "s/__REVISION_ID__/$REVISION_ID/g;s/__KWOLA_ENV__/$KWOLA_ENV/g" deployment/frontend/frontend_server_deployment.yaml > frontend_server_deployment_$KWOLA_ENV.yaml
+sed "s/__REVISION_ID__/$REVISION_ID/g;s/__KWOLA_ENV__/$KWOLA_ENV/g;s/__MAX_SURGE__/$MAX_SURGE/g;s/__MAX_UNAVAILABLE__/$MAX_UNAVAILABLE/g" deployment/frontend/frontend_server_deployment.yaml > frontend_server_deployment_$KWOLA_ENV.yaml
 kubectl apply -f frontend_server_deployment_$KWOLA_ENV.yaml
 
 

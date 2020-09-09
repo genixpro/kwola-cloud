@@ -11,8 +11,8 @@ spec:
       app: kwola-__KWOLA_ENV__-api
   strategy:
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: __MAX_SURGE__
+      maxUnavailable: __MAX_UNAVAILABLE__
     type: RollingUpdate
   template:
     metadata:
