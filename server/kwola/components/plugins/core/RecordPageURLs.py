@@ -18,7 +18,7 @@ class RecordPageURLs(WebEnvironmentPluginBase):
         executionTrace.finishURL = webDriver.current_url
 
         executionTrace.didURLChange = executionTrace.startURL != executionTrace.finishURL
-        executionTrace.isURLNew = executionTrace.finishURL not in self.allUrls
+        executionTrace.isURLNew = bool(executionTrace.finishURL not in self.allUrls[executionSession.id])
 
         self.allUrls[executionSession.id].add(executionTrace.finishURL)
 
