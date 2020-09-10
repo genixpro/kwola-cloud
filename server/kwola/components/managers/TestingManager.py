@@ -167,17 +167,18 @@ class TestingManager:
         envActionMaps = self.environment.getActionMaps()
         actionMapRetrievalTime = (datetime.now() - taskStartTime).total_seconds()
 
-        fileDescriptor, inferenceBatchFileName = tempfile.mkstemp()
+        # fileDescriptor, inferenceBatchFileName = tempfile.mkstemp()
 
-        with open(fileDescriptor, 'wb') as file:
-            pickle.dump((self.step, images, envActionMaps, self.executionSessionTraces), file)
+        # with open(fileDescriptor, 'wb') as file:
+
+        batchStr = pickle.dumps((self.step, images, envActionMaps, self.executionSessionTraces))
 
         del images, envActionMaps
 
         subProcessCommandQueue, subProcessResultQueue, subProcess = self.subProcesses[0]
 
         taskStartTime = datetime.now()
-        subProcessCommandQueue.put(inferenceBatchFileName)
+        subProcessCommandQueue.put(batchStr)
         resultFileName = subProcessResultQueue.get()
         actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
         with open(resultFileName, 'rb') as file:
@@ -264,12 +265,14 @@ class TestingManager:
             if message == "quit":
                 break
             else:
-                inferenceBatchFileName = message
+                batchStr = message
 
-            with open(inferenceBatchFileName, 'rb') as file:
-                step, images, envActionMaps, pastExecutionTraces = pickle.load(file)
+            # with open(inferenceBatchFileName, 'rb') as file:
+            #     step, images, envActionMaps, pastExecutionTraces = pickle.load(file)
 
-            os.unlink(inferenceBatchFileName)
+            step, images, envActionMaps, pastExecutionTraces = pickle.loads(batchStr)
+
+            # os.unlink(inferenceBatchFileName)
 
             actions = agent.nextBestActions(step, images, envActionMaps, pastExecutionTraces, shouldBeRandom=shouldBeRandom)
 
