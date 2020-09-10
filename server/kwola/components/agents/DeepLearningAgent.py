@@ -588,7 +588,7 @@ class DeepLearningAgent:
             # same action map.
             count = 0
             for recentAction in sampleRecentActions:
-                for recentActionMap in self.getActionMapsIntersectingWithAction(recentAction, recentAction.actionMapsAvailable):
+                for recentActionMap in recentAction.intersectingActionMaps:
                     if map.doesOverlapWith(recentActionMap, tolerancePixels=self.config['testing_repeat_action_pixel_overlap_tolerance']):
                         count += 1
                         break
@@ -755,7 +755,7 @@ class DeepLearningAgent:
                 action.source = "random"
                 action.predictedReward = None
                 action.wasRepeatOverride = False
-                action.actionMapsAvailable = sampleActionMaps
+                action.intersectingActionMaps = self.getActionMapsIntersectingWithAction(action, sampleActionMaps)
 
                 # Its probably important to recognize what is happening here. Since we are processing the samples bound for the neural network
                 # separately from the samples that we generate random actions for, we will need some way of reassembling all of the results
@@ -847,13 +847,11 @@ class DeepLearningAgent:
                     # time the algorithm discovers new code branches, e.g. new functionality so this helps ensure the algorithm
                     # stays exploring instead of getting stuck but can learn different behaviours with the same elements
                     for recentAction in sampleRecentActions:
-                        recentActionMaps = self.getActionMapsIntersectingWithAction(recentAction, recentAction.actionMapsAvailable)
-
                         if recentAction.type != potentialAction.type:
                             continue
 
                         allEqual = True
-                        for recentMap in recentActionMaps:
+                        for recentMap in recentAction.intersectingActionMaps:
                             found = False
                             for potentialMap in potentialActionMaps:
                                 if recentMap.doesOverlapWith(potentialMap, tolerancePixels=self.config['testing_repeat_action_pixel_overlap_tolerance']):
@@ -926,7 +924,7 @@ class DeepLearningAgent:
                 action = self.actions[self.actionsSorted[actionType]](actionX, actionY)
                 action.source = source
                 action.predictedReward = samplePredictedReward
-                action.actionMapsAvailable = sampleActionMaps
+                action.intersectingActionMaps = self.getActionMapsIntersectingWithAction(action, sampleActionMaps)
                 action.wasRepeatOverride = override
                 # Here we append both the action and the original sample index. The original sample index
                 # is later used to recover the original ordering of the actions list
@@ -1566,7 +1564,7 @@ class DeepLearningAgent:
 
                 # pixelActionMapAxes = mainFigure.add_subplot(numColumns, numRows, currentFig)
                 # currentFig += 1
-                pixelActionMap = self.createPixelActionMap(trace.actionPerformed.actionMapsAvailable, processedImage.shape[1], processedImage.shape[2])
+                pixelActionMap = self.createPixelActionMap(trace.actionMaps, processedImage.shape[1], processedImage.shape[2])
                 # actionPixelCount = numpy.count_nonzero(pixelActionMap)
                 # pixelActionMapAxes.imshow(numpy.swapaxes(numpy.swapaxes(pixelActionMap, 0, 1), 1, 2) * 255, interpolation="bilinear")
                 # pixelActionMapAxes.set_xticks([])

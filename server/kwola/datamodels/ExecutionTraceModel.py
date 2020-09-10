@@ -221,7 +221,8 @@ class ExecutionTrace(Document):
         self.cachedStartDecayingBranchTrace = None
         self.cachedEndCumulativeBranchTrace = None
         self.cachedEndDecayingBranchTrace = None
-        self.cachedDecayingFutureBranchTrace = None
+        self.cachedStartDecayingFutureBranchTrace = None
+        self.cachedEndDecayingFutureBranchTrace = None
         saveObjectToDisk(self, "execution_traces", config)
 
 
@@ -231,7 +232,6 @@ class ExecutionTrace(Document):
         if trace is not None:
             if omitLargeFields:
                 trace.branchExecutionTrace = []
-                trace.startDecayingExecutionTrace = []
-                trace.startCumulativeBranchExecutionTrace = []
+                trace.actionMaps = []
 
         return trace

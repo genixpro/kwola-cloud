@@ -217,6 +217,12 @@ class TestingManager:
             self.executionSessionTraces[sessionN].append(trace)
             self.executionSessions[sessionN].totalReward = float(numpy.sum(DeepLearningAgent.computePresentRewards(self.executionSessionTraces[sessionN], self.config)))
 
+            # After saving the trace object to disc, we clear the actionMaps field on the trace object. This is to reduce the amount of time
+            # it takes to pickle and unpickle this object. This is a bit of a HACK and depends on the fact that the DeepLearningAgent.nextBestActions
+            # function does not actually require this field at all. Without this, the pickling/unpickling can come to take up to 90% of the total time
+            # of each loop
+            trace.actionMaps = None
+
         for plugin in self.testingStepPlugins:
             plugin.afterActionsRun(self.testStep, self.executionSessions, traces)
 
