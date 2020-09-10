@@ -58,7 +58,7 @@ class BugsTable extends Component{
         if (!muted[bug._id] && !this.mutedErrorIds[bug._id])
         {
             const mutedErrorData = {
-                applicationId: this.props.match.id,
+                applicationId: this.props.match.params.id,
                 error: bug.error,
                 creationDate: new Date().toISOString(),
                 totalOccurrences: 1,

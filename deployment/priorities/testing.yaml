@@ -1,0 +1,7 @@
+apiVersion: scheduling.k8s.io/v1beta1
+kind: PriorityClass
+metadata:
+  name: testing-priority
+value: 100
+globalDefault: false
+description: "This is the priority class for testing pods - these are used for running kwola on itself. Low priority."

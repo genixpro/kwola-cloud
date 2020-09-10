@@ -33,12 +33,12 @@ class ViewExecutionSession extends Component {
 
     componentDidMount()
     {
-        axios.get(`/execution_sessions/${this.props.match.id}`).then((response) =>
+        axios.get(`/execution_sessions/${this.props.match.params.id}`).then((response) =>
         {
             this.setState({executionSession: response.data.executionSession})
         });
 
-        axios.get(`/execution_sessions/${this.props.match.id}/traces`).then((response) =>
+        axios.get(`/execution_sessions/${this.props.match.params.id}/traces`).then((response) =>
         {
             this.setState({executionTraces: response.data.executionTraces})
         });
@@ -96,7 +96,7 @@ class ViewExecutionSession extends Component {
                                         <TableBody>
                                             {(this.state.executionTraces || []).map(trace => {
                                                 return (
-                                                    <TableRow key={trace._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/execution_sessions/${this.props.match.id}/execution_traces/${trace._id}`)} >
+                                                    <TableRow key={trace._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/execution_sessions/${this.props.match.params.id}/execution_traces/${trace._id}`)} >
                                                         <TableCell>{trace.frameNumber}</TableCell>
                                                         <TableCell>{trace.actionPerformed.x.toString()}</TableCell>
                                                         <TableCell>{trace.actionPerformed.y.toString()}</TableCell>

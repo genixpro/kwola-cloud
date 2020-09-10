@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+export MINIMUM_REPLICATIONS=2
+export MAXIMUM_REPLICATIONS=4
+export MAX_SURGE=0
+export MAX_UNAVAILABLE=1

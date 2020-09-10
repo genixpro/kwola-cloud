@@ -13,18 +13,21 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from ..helpers.email import sendOfferSupportEmail, sendRequestFeedbackEmail
 from ..helpers.auth0 import loadAuth0Service, updateUserProfileMetadataValue
-
+from ..config.config import loadConfiguration
 
 def runHourlyTasks():
     try:
         now = datetime.now()
+
+        config = loadConfiguration()
 
         logging.info(f"Starting the hourly task job at {now.isoformat()}")
 
         # Try to send these in the day time.
         if now.hour >= 11 and now.hour <= 16:
             sendSupportOfferEmailsOnApplications()
-            sendSupportOfferEmailsOnUsers()
+            if config['features']['enableSupportOfferEmailsOnUsers']:
+                sendSupportOfferEmailsOnUsers()
             sendFeedbackRequestEmails()
 
         logging.info(f"Finished the hourly task job at {now.isoformat()}")

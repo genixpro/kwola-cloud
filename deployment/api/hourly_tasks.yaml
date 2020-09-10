@@ -19,7 +19,20 @@ spec:
             env:
               - name: KWOLA_ENV
                 value: __KWOLA_ENV__
+            volumeMounts:
+                - mountPath: /dev/shm
+                  name: dshm
+            securityContext:
+              privileged: true
+              capabilities:
+                add:
+                  - SYS_ADMIN
           restartPolicy: OnFailure
+          volumes:
+              - name: dshm
+                emptyDir:
+                  medium: Memory
+          priorityClassName: __KWOLA_ENV__-background-priority
       backoffLimit: 4
 
 

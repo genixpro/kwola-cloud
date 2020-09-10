@@ -94,6 +94,9 @@ class NewTestingRun extends Component {
         {
             this.setState({application: response.data})
         });
+
+        // Temporary: Prefill the promocode field
+        setTimeout(() => this.changePromoCode("BETATRIAL"), 1500);
     }
 
 

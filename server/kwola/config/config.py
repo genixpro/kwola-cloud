@@ -30,12 +30,14 @@ from pprint import pprint
 
 
 globalCachedPrebuiltConfigs = {}
+globalHasMongoConnected = False
 
 class Configuration:
     """
         This class represents the configuration for the Kwola model.
     """
     def __init__(self, configurationDirectory = None, configData = None):
+        global globalHasMongoConnected
         if configurationDirectory is not None:
             self.configFileName = os.path.join(configurationDirectory, "kwola.json")
             self.configurationDirectory = configurationDirectory
@@ -73,7 +75,7 @@ class Configuration:
         else:
             method = self.configData['data_serialization_method']
 
-        if method == "mongo" and 'mongo_uri' in self.configData and self.configData['mongo_uri']:
+        if method == "mongo" and 'mongo_uri' in self.configData and self.configData['mongo_uri'] and not globalHasMongoConnected:
             import mongoengine
             maxAttempts = 5
             for attempt in range(maxAttempts):
@@ -85,6 +87,7 @@ class Configuration:
                         raise
                     else:
                         time.sleep(2**attempt)
+            globalHasMongoConnected = True
 
 
 

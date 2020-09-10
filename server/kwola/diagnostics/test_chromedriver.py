@@ -45,18 +45,19 @@ def testChromedriver(verbose=True):
     driver = selenium.webdriver.Chrome(desired_capabilities=capabilities, chrome_options=chrome_options)
 
     loginElement = None
-
     for attempt in range(5):
         driver.get(targetURL)
         try:
             loginElement = WebDriverWait(driver, 10, 0.25).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "btn-success"))
             )
-        except selenium.common.exceptions.NoSuchElementException:
-            pass
-
-        if loginElement is not None:
             break
+        except selenium.common.exceptions.NoSuchElementException:
+            print(f"Diagnostic URL {targetURL} did not appear to load correctly. Received a no-such-element error. Waiting 10 seconds and then retrying.")
+            time.sleep(10)
+        except selenium.common.exceptions.TimeoutException:
+            print(f"Diagnostic URL {targetURL} did not appear to load correctly. Received a timeout error. Waiting 10 seconds and then retrying.")
+            time.sleep(10)
 
     driver.close()
 
