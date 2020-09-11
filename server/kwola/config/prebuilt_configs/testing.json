@@ -178,6 +178,7 @@
   "testing_sequences_in_parallel_per_training_step": 1,
   "testing_sequences_per_training_step": 1,
   "testing_subprocess_pool_size": 1,
+  "testing_trace_save_workers": 8,
   "training_action_prob_reward_square_size": 6,
   "training_background_trace_save_workers": 1,
   "training_batch_prep_subprocesses": 1,

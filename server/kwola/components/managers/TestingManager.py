@@ -42,6 +42,7 @@ import os
 import pickle
 import tempfile
 import traceback
+import concurrent.futures
 
 
 
@@ -90,6 +91,8 @@ class TestingManager:
             if isinstance(plugin, TestingStepPluginBase)
         ]
 
+        self.traceSaveExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=self.config['testing_trace_save_workers'])
+
 
     def createExecutionSessions(self):
         self.executionSessions = [
@@ -120,7 +123,8 @@ class TestingManager:
         for n in range(self.config['testing_subprocess_pool_size']):
             subProcessCommandQueue = multiprocessing.Queue()
             subProcessResultQueue = multiprocessing.Queue()
-            subProcess = multiprocessing.Process(target=TestingManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue))
+            preloadTraceFiles = [file for fileList in self.executionSessionTraceLocalPickleFiles for file in fileList]
+            subProcess = multiprocessing.Process(target=TestingManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
             subProcess.start()
             atexit.register(lambda: subProcess.terminate())
 
@@ -134,7 +138,8 @@ class TestingManager:
 
         subProcessCommandQueue = multiprocessing.Queue()
         subProcessResultQueue = multiprocessing.Queue()
-        subProcess = multiprocessing.Process(target=TestingManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue))
+        preloadTraceFiles = [file for fileList in self.executionSessionTraceLocalPickleFiles for file in fileList]
+        subProcess = multiprocessing.Process(target=TestingManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
         subProcess.start()
         atexit.register(lambda: subProcess.terminate())
 
@@ -215,31 +220,25 @@ class TestingManager:
             trace.timeForActionExecution = actionExecutionTime
             trace.timeForMiscellaneous = miscellaneousTime
 
-            taskStartTime = datetime.now()
-            trace.actionMaps = None
-            trace.saveToDisk(self.config)
-            traceSaveTime = (datetime.now() - taskStartTime).total_seconds()
-
-            getLogger().info(f"Trace save time: {traceSaveTime}")
-
             self.executionSessions[sessionN].executionTraces.append(str(trace.id))
             self.executionSessionTraces[sessionN].append(trace)
             self.executionSessions[sessionN].totalReward = float(numpy.sum(DeepLearningAgent.computePresentRewards(self.executionSessionTraces[sessionN], self.config)))
 
-            # After saving the trace object to disc, we clear the actionMaps field on the trace object. This is to reduce the amount of time
+            # We clear the actionMaps field on the trace object prior to saving the temporary pickle file. This is to reduce the amount of time
             # it takes to pickle and unpickle this object. This is a bit of a HACK and depends on the fact that the DeepLearningAgent.nextBestActions
             # function does not actually require this field at all. Without this, the pickling/unpickling can come to take up to 90% of the total time
             # of each loop
+            actionMaps = trace.actionMaps
             trace.actionMaps = None
-
-            taskStartTime = datetime.now()
             fileDescriptor, traceFileName = tempfile.mkstemp()
             with open(fileDescriptor, 'wb') as file:
                 pickle.dump(trace, file)
             self.executionSessionTraceLocalPickleFiles[sessionN].append(traceFileName)
+            trace.actionMaps = actionMaps
 
-            traceSaveTime = (datetime.now() - taskStartTime).total_seconds()
-            getLogger().info(f"Local temp trace save time: {traceSaveTime}")
+            # Submit a lambda to save this trace to disk. This is done in the background to avoid
+            # holding up the main loop. Saving the trace to disk can be time consuming.
+            self.traceSaveExecutor.submit(lambda: trace.saveToDisk(self.config))
 
         for plugin in self.testingStepPlugins:
             plugin.afterActionsRun(self.testStep, self.executionSessions, traces)
@@ -266,7 +265,7 @@ class TestingManager:
 
 
     @staticmethod
-    def predictedActionSubProcess(configDir, shouldBeRandom, subProcessCommandQueue, subProcessResultQueue):
+    def predictedActionSubProcess(configDir, shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles):
         setupLocalLogging()
 
         config = Configuration(configDir)
@@ -275,6 +274,11 @@ class TestingManager:
 
         agent.initialize(enableTraining=False)
         agent.load()
+
+        loadedPastExecutionTraces = {}
+        for fileName in preloadTraceFiles:
+            with open(fileName, 'rb') as file:
+                loadedPastExecutionTraces[fileName] = pickle.load(file)
 
         while True:
             message = subProcessCommandQueue.get()
@@ -290,8 +294,13 @@ class TestingManager:
             pastExecutionTraces = [[] for n in range(len(pastExecutionTraceLocalTempFiles))]
             for sessionN, traceFileNameList in enumerate(pastExecutionTraceLocalTempFiles):
                 for fileName in traceFileNameList:
-                    with open(fileName, 'rb') as file:
-                        pastExecutionTraces[sessionN].append(pickle.load(file))
+                    if fileName in loadedPastExecutionTraces:
+                        pastExecutionTraces[sessionN].append(loadedPastExecutionTraces[fileName])
+                    else:
+                        with open(fileName, 'rb') as file:
+                            trace = pickle.load(file)
+                            pastExecutionTraces[sessionN].append(trace)
+                            loadedPastExecutionTraces[fileName] = trace
 
 
             os.unlink(inferenceBatchFileName)
@@ -365,6 +374,9 @@ class TestingManager:
 
             for plugin in self.testingStepPlugins:
                 plugin.testingStepFinished(self.testStep, self.executionSessions)
+
+            # Ensure all the trace objects get saved to disc
+            self.traceSaveExecutor.shutdown()
 
             self.testStep.saveToDisk(self.config)
             resultValue['successfulExecutionSessions'] = len(self.testStep.executionSessions)
