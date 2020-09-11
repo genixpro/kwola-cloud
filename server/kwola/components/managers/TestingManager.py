@@ -238,7 +238,7 @@ class TestingManager:
 
             # Submit a lambda to save this trace to disk. This is done in the background to avoid
             # holding up the main loop. Saving the trace to disk can be time consuming.
-            self.traceSaveExecutor.submit(lambda: trace.saveToDisk(self.config))
+            self.traceSaveExecutor.submit(TestingManager.saveTrace, trace, self.config)
 
         for plugin in self.testingStepPlugins:
             plugin.afterActionsRun(self.testStep, self.executionSessions, traces)
@@ -312,6 +312,10 @@ class TestingManager:
                 pickle.dump(actions, file)
 
             subProcessResultQueue.put(resultFileName)
+
+    @staticmethod
+    def saveTrace(trace, config):
+        trace.saveToDisk(config)
 
     def runTesting(self):
         getLogger().info(f"[{os.getpid()}] Starting New Testing Sequence")
