@@ -62,6 +62,7 @@ class TestingManager:
 
         self.executionSessions = []
         self.executionSessionTraces = []
+        self.executionSessionTraceLocalPickleFiles = []
 
         self.step = 0
 
@@ -107,6 +108,7 @@ class TestingManager:
         ]
 
         self.executionSessionTraces = [[] for sessionN in range(self.config['web_session_parallel_execution_sessions'])]
+        self.executionSessionTraceLocalPickleFiles = [[] for sessionN in range(self.config['web_session_parallel_execution_sessions'])]
 
         for session in self.executionSessions:
             session.saveToDisk(self.config)
@@ -152,6 +154,7 @@ class TestingManager:
 
             del self.executionSessions[sessionToRemove]
             del self.executionSessionTraces[sessionToRemove]
+            del self.executionSessionTraceLocalPickleFiles[sessionToRemove]
 
             for plugin in self.plugins:
                 plugin.sessionFailed(self.testStep, session)
@@ -170,7 +173,7 @@ class TestingManager:
         fileDescriptor, inferenceBatchFileName = tempfile.mkstemp()
 
         with open(fileDescriptor, 'wb') as file:
-            pickle.dump((self.step, images, envActionMaps, self.executionSessionTraces), file)
+            pickle.dump((self.step, images, envActionMaps, self.executionSessionTraceLocalPickleFiles), file)
 
         del images, envActionMaps
 
@@ -223,6 +226,11 @@ class TestingManager:
             # of each loop
             trace.actionMaps = None
 
+            fileDescriptor, traceFileName = tempfile.mkstemp()
+            with open(fileDescriptor, 'wb') as file:
+                pickle.dump(trace, file)
+            self.executionSessionTraceLocalPickleFiles[sessionN].append(traceFileName)
+
         for plugin in self.testingStepPlugins:
             plugin.afterActionsRun(self.testStep, self.executionSessions, traces)
 
@@ -267,7 +275,14 @@ class TestingManager:
                 inferenceBatchFileName = message
 
             with open(inferenceBatchFileName, 'rb') as file:
-                step, images, envActionMaps, pastExecutionTraces = pickle.load(file)
+                step, images, envActionMaps, pastExecutionTraceLocalTempFiles = pickle.load(file)
+
+            pastExecutionTraces = [[] for n in range(len(pastExecutionTraceLocalTempFiles))]
+            for sessionN, traceFileNameList in enumerate(pastExecutionTraceLocalTempFiles):
+                for fileName in traceFileNameList:
+                    with open(fileName, 'rb') as file:
+                        pastExecutionTraces[sessionN].append(pickle.load(file))
+
 
             os.unlink(inferenceBatchFileName)
 
@@ -343,6 +358,10 @@ class TestingManager:
             self.testStep.saveToDisk(self.config)
             resultValue['successfulExecutionSessions'] = len(self.testStep.executionSessions)
             resultValue['success'] = True
+
+            for traceList in self.executionSessionTraceLocalPickleFiles:
+                for fileName in traceList:
+                    os.unlink(fileName)
 
         except Exception as e:
             getLogger().error(f"[{os.getpid()}] Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
