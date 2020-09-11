@@ -356,6 +356,9 @@ class TestingManager:
             self.killAndJoinTestingSubprocesses()
             self.removeBadSessions()
 
+            # Ensure all the trace objects get saved to disc
+            self.traceSaveExecutor.shutdown()
+
             self.environment.runSessionCompletedHooks()
 
             self.savePlainVideoFiles()
@@ -374,9 +377,6 @@ class TestingManager:
 
             for plugin in self.testingStepPlugins:
                 plugin.testingStepFinished(self.testStep, self.executionSessions)
-
-            # Ensure all the trace objects get saved to disc
-            self.traceSaveExecutor.shutdown()
 
             self.testStep.saveToDisk(self.config)
             resultValue['successfulExecutionSessions'] = len(self.testStep.executionSessions)
