@@ -214,7 +214,12 @@ class TestingManager:
             trace.timeForActionDecision = actionDecisionTime
             trace.timeForActionExecution = actionExecutionTime
             trace.timeForMiscellaneous = miscellaneousTime
+
+            taskStartTime = datetime.now()
             trace.saveToDisk(self.config)
+            traceSaveTime = (datetime.now() - taskStartTime).total_seconds()
+
+            getLogger().info(f"Trace save time: {traceSaveTime}")
 
             self.executionSessions[sessionN].executionTraces.append(str(trace.id))
             self.executionSessionTraces[sessionN].append(trace)
@@ -226,10 +231,14 @@ class TestingManager:
             # of each loop
             trace.actionMaps = None
 
+            taskStartTime = datetime.now()
             fileDescriptor, traceFileName = tempfile.mkstemp()
             with open(fileDescriptor, 'wb') as file:
                 pickle.dump(trace, file)
             self.executionSessionTraceLocalPickleFiles[sessionN].append(traceFileName)
+
+            traceSaveTime = (datetime.now() - taskStartTime).total_seconds()
+            getLogger().info(f"Local temp trace save time: {traceSaveTime}")
 
         for plugin in self.testingStepPlugins:
             plugin.afterActionsRun(self.testStep, self.executionSessions, traces)
