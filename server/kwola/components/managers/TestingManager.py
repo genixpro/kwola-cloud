@@ -216,6 +216,7 @@ class TestingManager:
             trace.timeForMiscellaneous = miscellaneousTime
 
             taskStartTime = datetime.now()
+            trace.actionMaps = None
             trace.saveToDisk(self.config)
             traceSaveTime = (datetime.now() - taskStartTime).total_seconds()
 
@@ -351,6 +352,7 @@ class TestingManager:
             self.savePlainVideoFiles()
 
             for session in self.executionSessions:
+                session.endTime = datetime.now()
                 session.saveToDisk(self.config)
 
             # We shutdown the environment before generating the annotated videos in order
