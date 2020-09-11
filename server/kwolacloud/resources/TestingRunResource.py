@@ -118,7 +118,6 @@ class TestingRunsGroup(Resource):
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
         data['predictedEndTime'] = data['startTime'] + relativedelta(hours=data['configuration']['hours'])
-        data['testingSessionsRemaining'] = data['configuration']['totalTestingSessions']
 
         if 'stripe' in data:
             del data['stripe']

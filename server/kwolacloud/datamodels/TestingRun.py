@@ -43,8 +43,6 @@ class TestingRun(Document):
 
     predictedEndTime = DateTimeField()
 
-    testingSessionsRemaining = IntField(default=0)
-
     testingSessionsCompleted = IntField(default=0)
 
     trainingStepsCompleted = IntField(default=0)
