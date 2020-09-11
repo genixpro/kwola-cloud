@@ -276,9 +276,15 @@ class TestingManager:
         agent.load()
 
         loadedPastExecutionTraces = {}
-        for fileName in preloadTraceFiles:
+
+        def preloadFile(fileName):
+            nonlocal loadedPastExecutionTraces
             with open(fileName, 'rb') as file:
                 loadedPastExecutionTraces[fileName] = pickle.load(file)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=config['testing_trace_load_workers']) as loadExecutor:
+            for fileName in preloadTraceFiles:
+                loadExecutor.submit(preloadFile, fileName)
 
         while True:
             message = subProcessCommandQueue.get()
