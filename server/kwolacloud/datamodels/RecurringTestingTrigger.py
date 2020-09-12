@@ -88,7 +88,7 @@ class RecurringTestingTrigger(Document):
 
     def launchTestingRun(self):
         logging.info(f"Launching a testing run for application {self.applicationId}")
-        
+
         newTestingRun = TestingRun(
             id=generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=self.owner),
             owner=self.owner,
@@ -154,7 +154,10 @@ class RecurringTestingTrigger(Document):
             os.chmod(keyFilePath, 600)
             gitEnv['GIT_SSH_COMMAND'] = f"ssh -i {keyFilePath}"
 
-        result = subprocess.run(gitArgs, env=gitEnv)
+        result = subprocess.run(gitArgs, env=gitEnv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        logging.info(result.stdout)
+        logging.info(result.stderr)
 
         if result.returncode == 128:
             shutil.rmtree(tempCloneDir)
