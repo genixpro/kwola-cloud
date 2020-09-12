@@ -249,7 +249,7 @@ class RecurringTestingTriggerOptions extends Component {
 
     render() {
         return <Papersheet
-                title={`Frequency`}
+                title={`Trigger Options`}
                 subtitle={``}
             >
             <Row>

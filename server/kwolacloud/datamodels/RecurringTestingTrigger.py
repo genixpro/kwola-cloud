@@ -21,6 +21,7 @@ import copy
 import sys
 import shutil
 import urllib.parse
+import logging
 
 
 class RecurringTestingTrigger(Document):
@@ -86,6 +87,8 @@ class RecurringTestingTrigger(Document):
 
 
     def launchTestingRun(self):
+        logging.info(f"Launching a testing run for application {self.applicationId}")
+        
         newTestingRun = TestingRun(
             id=generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=self.owner),
             owner=self.owner,
