@@ -99,8 +99,8 @@ class RecurringTestingTrigger(Document):
             startTime=datetime.now(),
             predictedEndTime=(datetime.now() + relativedelta(hours=(self.configuration.hours + 1))),
             recurringTestingTriggerId=self.id,
-            isRecurring=True
-
+            isRecurring=True,
+            configuration=self.configuration
         )
 
         newTestingRun.save()
