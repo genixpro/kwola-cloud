@@ -22,6 +22,7 @@ import sys
 import shutil
 import urllib.parse
 import logging
+import giturlparse
 
 
 class RecurringTestingTrigger(Document):
@@ -138,12 +139,12 @@ class RecurringTestingTrigger(Document):
         gitEnv = copy.deepcopy(os.environ)
         gitEnv['HOME'] = tempHome
 
-        gitURLParsed = urllib.parse.urlparse(self.repositoryURL)
+        gitURLParsed = giturlparse.parse(self.repositoryURL)
 
         if self.repositoryUsername:
             with open(os.path.join(tempHome, '.netrc'), 'wt') as netRCFile:
                 netRCFile.writelines([
-                    f'machine {gitURLParsed.hostname}\n',
+                    f'machine {gitURLParsed.host}\n',
                     f'login {self.repositoryUsername}\n',
                     f'password {self.repositoryPassword}\n'
                 ])
@@ -156,7 +157,7 @@ class RecurringTestingTrigger(Document):
             os.chmod(keyFilePath, 600)
 
             knownHostsFilePath = os.path.join(tempHome, ".ssh", "known_hosts")
-            result = subprocess.run(["ssh-keyscan", "-H", gitURLParsed.hostname], env=gitEnv, stdout=subprocess.PIPE)
+            result = subprocess.run(["ssh-keyscan", "-H", gitURLParsed.host], env=gitEnv, stdout=subprocess.PIPE)
             with open(knownHostsFilePath, 'wb') as knownHostsFile:
                 knownHostsFile.write(result.stdout)
             os.chmod(knownHostsFilePath, 600)
