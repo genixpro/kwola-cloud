@@ -5,15 +5,19 @@
 
 
 from ..datamodels.TestingRun import TestingRun
+from ..datamodels.RecurringTestingTrigger import RecurringTestingTrigger
 from ..datamodels.ApplicationModel import ApplicationModel
 import os.path
 import logging
 import traceback
+import dateutil
+import tempfile
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from ..helpers.email import sendOfferSupportEmail, sendRequestFeedbackEmail
 from ..helpers.auth0 import loadAuth0Service, updateUserProfileMetadataValue
 from ..config.config import loadConfiguration
+import subprocess
 
 def runHourlyTasks():
     try:
@@ -30,10 +34,13 @@ def runHourlyTasks():
                 sendSupportOfferEmailsOnUsers()
             sendFeedbackRequestEmails()
 
+        evaluateRecurringTestingTriggers()
+
         logging.info(f"Finished the hourly task job at {now.isoformat()}")
 
     except Exception as e:
         errorMessage = f"Error in the hourly tasks job:\n\n{traceback.format_exc()}"
+        print(errorMessage)
         logging.error(f"[{os.getpid()}] {errorMessage}")
         return {"success": False, "exception": errorMessage}
     finally:
@@ -84,6 +91,61 @@ def sendFeedbackRequestEmails():
 
         run.needsFeedbackRequestEmail = False
         run.save()
+
+
+
+def evaluateRecurringTestingTriggers():
+    triggers = RecurringTestingTrigger.objects()
+
+    logging.info(f"Processing {len(triggers)} recurring testing triggers that need a feedback request sent for them.")
+
+    for trigger in triggers:
+        if trigger.repeatTrigger == 'time':
+            dayOfWeek = datetime.now().strftime('%a')
+
+            nextExecutionTime = None
+            if trigger.repeatUnit == 'hours':
+                if trigger.lastTriggerTime is None:
+                    nextExecutionTime = datetime.now() + relativedelta(minutes=-1)
+                else:
+                    nextExecutionTime = (trigger.lastTriggerTime + relativedelta(hours=trigger.repeatFrequency, minutes=-1))
+            elif trigger.repeatUnit == 'days':
+                if trigger.lastTriggerTime is None:
+                    nextExecutionTime = datetime.now() + relativedelta(minutes=-1, hour=trigger.hourOfDay)
+                else:
+                    nextExecutionTime = (trigger.lastTriggerTime + relativedelta(days=trigger.repeatFrequency, hour=trigger.hourOfDay, minutes=-1))
+            elif trigger.repeatUnit == 'weeks':
+                if trigger.daysOfWeekEnabled[dayOfWeek]:
+                    if trigger.lastTriggerTime is None:
+                        nextExecutionTime = (datetime.now() + relativedelta(minutes=-1))
+                    else:
+                        nextExecutionTime = (trigger.lastTriggerTimesByDayOfWeek[dayOfWeek] + relativedelta(weeks=trigger.repeatFrequency, minutes=-1))
+                else:
+                    nextExecutionTime = None
+            elif trigger.repeatUnit == 'months':
+                firstDayOfMonth = datetime.now() + relativedelta(day=1)
+                weekOfMonth = str(int(datetime.now().strftime('%U')) - int(firstDayOfMonth.strftime('%U')))
+
+                if trigger.daysOfMonthEnabled[weekOfMonth][dayOfWeek]:
+                    if trigger.lastTriggerTime is None:
+                        nextExecutionTime = (datetime.now() + relativedelta(minutes=-1))
+                    else:
+                        nextExecutionTime = (trigger.lastTriggerTimesByDayOfMonth[weekOfMonth][dayOfWeek] + relativedelta(months=trigger.repeatFrequency, minutes=-1))
+                else:
+                    nextExecutionTime = None
+
+            if nextExecutionTime is not None:
+                if datetime.now() > nextExecutionTime:
+                    trigger.launchTestingRun()
+        elif trigger.repeatTrigger == "commit":
+            if trigger.lastRepositoryCommitHash is None:
+                trigger.launchTestingRun()
+            else:
+                newCommitHash = trigger.getLatestCommitHash()
+                if newCommitHash != trigger.lastRepositoryCommitHash:
+                    trigger.launchTestingRun()
+
+
 
 
 

@@ -50,6 +50,10 @@ class TestingRunsGroup(Resource):
         if applicationId is not None:
             queryParams["applicationId"] = applicationId
 
+        recurringTestingTriggerId = flask.request.args.get('recurringTestingTriggerId')
+        if recurringTestingTriggerId is not None:
+            queryParams["recurringTestingTriggerId"] = recurringTestingTriggerId
+
         testingRuns = TestingRun.objects(**queryParams).no_dereference().order_by("-startTime").limit(10).to_json()
 
         return {"testingRuns": json.loads(testingRuns)}
@@ -85,17 +89,10 @@ class TestingRunsGroup(Resource):
         if not allowFreeRuns and coupon is None:
             customer = stripe.Customer.retrieve(stripeCustomerId)
 
-            if customer is None:
-                customer = stripe.Customer.create(
-                    payment_method=data['payment_method'],
-                    email=claims['email'],
-                    name=claims['name']
-                )
-            else:
-                stripe.PaymentMethod.attach(
-                  data['payment_method'],
-                  customer=stripeCustomerId,
-                )
+            stripe.PaymentMethod.attach(
+              data['payment_method'],
+              customer=stripeCustomerId,
+            )
 
             # Update this to the new product with price attached
             subscription = stripe.Subscription.create(
@@ -117,7 +114,8 @@ class TestingRunsGroup(Resource):
         data['owner'] = application.owner
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
-        data['predictedEndTime'] = data['startTime'] + relativedelta(hours=data['configuration']['hours'])
+        data['predictedEndTime'] = data['startTime'] + relativedelta(hours=(data['configuration']['hours'] + 1))
+        data['isRecurring'] = False
 
         if 'stripe' in data:
             del data['stripe']

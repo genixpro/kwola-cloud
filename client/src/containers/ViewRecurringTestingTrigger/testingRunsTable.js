@@ -5,7 +5,7 @@ import {TableBody, TableCell, TableHead, TableRow, TablePagination} from "../../
 import moment from 'moment';
 import MaterialTable from 'material-table'
 
-class SessionTable extends Component{
+class TestingRunsTable extends Component{
 	state = {
         newPage:0,
         setPage:0,
@@ -14,16 +14,16 @@ class SessionTable extends Component{
 
     handleRowClick = (event, rowData)=>
 	{
-    	this.props.history.push(`/app/dashboard/execution_sessions/${rowData._id}`)
+    	this.props.history.push(`/app/dashboard/testing_runs/${rowData._id}`)
     }
 
-    processData = (data) =>
+    processData(data)
 	{
     	let rdata = []
     	if(data){
-    		data.map(session=>{
-	    		let sTime = session.startTime ? moment(new Date(session.startTime.$date)).format('HH:mm MMM Do') : null
-	    		rdata.push({_id:session._id,startTime:sTime, totalReward:session.totalReward.toFixed(2)})
+    		data.map(testingRun=>{
+	    		testingRun.startTimeFormatted = testingRun.startTime ? moment(new Date(testingRun.startTime.$date)).format('HH:mm MMM Do') : null
+	    		rdata.push(testingRun)
 	    	})
     	}
     	return rdata;
@@ -35,13 +35,14 @@ class SessionTable extends Component{
         const setRowsPerPage = 10;
         const page = this.state.newPage
         let setPage = this.state.setPage
-        let tableData = this.processData(this.props.data)
+        let tableData = this.processData(this.props.data);
 	 	return(
 	 		<div>
 		     	<MaterialTable
 		          columns={[
-		            { title: 'Browser Start', field: 'startTime' },
-		            { title: 'Total Reward', field: 'totalReward' },
+		            { title: 'Start Time', field: 'startTimeFormatted' },
+		            { title: 'Status', field: 'status' },
+		            { title: 'Bugs Found', field: 'bugsFound' },
 		            { title: 'id', field: '_id', hidden:true },
 		          ]}
 		          data={tableData}
@@ -60,5 +61,5 @@ class SessionTable extends Component{
 	    )
 	}
 }
-const mapStateToProps = (state) => {return { ...state.SessionTable} };
-export default connect(mapStateToProps)(SessionTable);
+const mapStateToProps = (state) => {return { ...state.TestingRunsTable} };
+export default connect(mapStateToProps)(TestingRunsTable);

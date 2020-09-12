@@ -8,6 +8,7 @@ import {
     FormControlLabel,
 } from '../../components/uielements/form';
 import {Button} from "../UiElements/Button/button.style";
+import Papersheet from "../../components/utility/papersheet";
 
 
 class AutologinCredentials extends Component {
@@ -19,6 +20,11 @@ class AutologinCredentials extends Component {
 
     updateParent()
     {
+        if (!this.props.onChange)
+        {
+            return null;
+        }
+
         this.props.onChange({
             autologin: this.state.autologin,
             email: this.state.email,
@@ -72,7 +78,10 @@ class AutologinCredentials extends Component {
     }
 
     render() {
-        return <div>
+        return <Papersheet
+                title={`Credentials`}
+                subtitle={``}
+            >
             <Row>
                 <Column xs={this.props.hideHelp ? 12 : 9}>
                     <FormGroup row>
@@ -121,7 +130,7 @@ class AutologinCredentials extends Component {
                         </Column> : null
                 }
             </Row>
-        </div>;
+        </Papersheet>;
     }
 }
 

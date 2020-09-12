@@ -12,22 +12,23 @@ import AutologinCredentials from "../NewTestingRun/AutologinCredentials";
 import ErrorsConfiguration from "../NewTestingRun/ErrorsConfiguration";
 import PathWhitelistConfiguration from "../NewTestingRun/PathWhitelistConfiguration";
 import SizeOfRun from "../NewTestingRun/SizeOfRun";
+import RecurringTestingTriggerOptions from "../NewRecurringTestingTrigger/RecurringTestingTriggerOptions";
 
 
 /**
  * TODO: More of the code in this class should be shared with the NewTestingRun class, since they are both meant to look
  * the same.
  */
-class ViewTestingRunConfiguration extends Component {
+class ViewRecurringTestingTriggerConfiguration extends Component {
     state = {
 
     };
 
     componentDidMount()
     {
-        axios.get(`/testing_runs/${this.props.match.params.id}`).then((response) =>
+        axios.get(`/recurring_testing_trigger/${this.props.match.params.id}`).then((response) =>
         {
-            this.setState({testingRun: response.data.testingRun})
+            this.setState({recurringTestingTrigger: response.data.recurringTestingTrigger});
         });
     }
 
@@ -35,7 +36,7 @@ class ViewTestingRunConfiguration extends Component {
     render() {
         const { result } = this.state;
 
-        if (!this.state.testingRun)
+        if (!this.state.recurringTestingTrigger)
         {
             return <LayoutWrapper />;
         }
@@ -46,9 +47,16 @@ class ViewTestingRunConfiguration extends Component {
                     <Row>
                         <TwoThirdColumn>
                             <div>
+                                <RecurringTestingTriggerOptions
+                                    recurringTestingTrigger={this.state.recurringTestingTrigger}
+                                    disabled={true}
+                                    hideHelp={true}
+                                />
+                                <br/>
+                                <br/>
+                                <br/>
                                 <SizeOfRun
-                                    defaultRunConfiguration={this.state.testingRun.configuration}
-                                    onChange={(data) => this.setState(data)}
+                                    defaultRunConfiguration={this.state.recurringTestingTrigger.configuration}
                                     disabled={true}
                                     hideHelp={true}
                                 />
@@ -56,8 +64,7 @@ class ViewTestingRunConfiguration extends Component {
                                 <br/>
                                 <br/>
                                 <AutologinCredentials
-                                    defaultRunConfiguration={this.state.testingRun.configuration}
-                                    onChange={(data) => this.setState(data)}
+                                    defaultRunConfiguration={this.state.recurringTestingTrigger.configuration}
                                     disabled={true}
                                     hideHelp={true}
                                 />
@@ -65,8 +72,7 @@ class ViewTestingRunConfiguration extends Component {
                                 <br/>
                                 <br/>
                                 <ActionsConfiguration
-                                    defaultRunConfiguration={this.state.testingRun.configuration}
-                                    onChange={(data) => this.setState(data)}
+                                    defaultRunConfiguration={this.state.recurringTestingTrigger.configuration}
                                     disabled={true}
                                     hideHelp={true}
                                 />
@@ -74,8 +80,7 @@ class ViewTestingRunConfiguration extends Component {
                                 <br/>
                                 <br/>
                                 <PathWhitelistConfiguration
-                                    defaultRunConfiguration={this.state.testingRun.configuration}
-                                    onChange={(data) => this.setState(data)} application={this.state.application}
+                                    defaultRunConfiguration={this.state.recurringTestingTrigger.configuration}
                                     disabled={true}
                                     hideHelp={true}
                                 />
@@ -83,8 +88,7 @@ class ViewTestingRunConfiguration extends Component {
                                 <br/>
                                 <br/>
                                 <ErrorsConfiguration
-                                    defaultRunConfiguration={this.state.testingRun.configuration}
-                                    onChange={(data) => this.setState(data)}
+                                    defaultRunConfiguration={this.state.recurringTestingTrigger.configuration}
                                     disabled={true}
                                     hideHelp={true}
                                 />
@@ -98,6 +102,6 @@ class ViewTestingRunConfiguration extends Component {
     }
 }
 
-const mapStateToProps = (state) => {return { ...state.ViewTestingRunConfiguration} };
-export default connect(mapStateToProps)(ViewTestingRunConfiguration);
+const mapStateToProps = (state) => {return { ...state.ViewRecurringTestingTriggerConfiguration} };
+export default connect(mapStateToProps)(ViewRecurringTestingTriggerConfiguration);
 

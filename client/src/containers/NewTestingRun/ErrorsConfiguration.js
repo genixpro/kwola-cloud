@@ -6,6 +6,7 @@ import {
     FormGroup,
     FormControlLabel,
 } from '../../components/uielements/form';
+import Papersheet from "../../components/utility/papersheet";
 
 
 
@@ -42,6 +43,11 @@ class ErrorsConfiguration extends Component
 
     updateParent()
     {
+        if (!this.props.onChange)
+        {
+            return null;
+        }
+
         this.props.onChange({
             enable5xxError: this.state.enable5xxError,
             enable400Error: this.state.enable400Error,
@@ -67,7 +73,10 @@ class ErrorsConfiguration extends Component
 
 
     render() {
-        return <div>
+        return <Papersheet
+                title={`Errors`}
+                subtitle={``}
+            >
             <Row>
                 <Column xs={this.props.hideHelp ? 12 : 9}>
                     <FormGroup>
@@ -184,7 +193,7 @@ class ErrorsConfiguration extends Component
                         </Column> : null
                 }
             </Row>
-        </div>;
+        </Papersheet>;
     }
 }
 

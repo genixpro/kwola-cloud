@@ -9,6 +9,7 @@ import {
     FormGroup,
     FormControlLabel,
 } from '../../components/uielements/form';
+import Papersheet from "../../components/utility/papersheet";
 
 
 class ActionsConfiguration extends Component {
@@ -52,6 +53,11 @@ class ActionsConfiguration extends Component {
 
     updateParent()
     {
+        if (!this.props.onChange)
+        {
+            return null;
+        }
+
         this.props.onChange({
             enableDoubleClick: this.state.enableDoubleClick,
             enableRightClick: this.state.enableRightClick,
@@ -124,7 +130,10 @@ class ActionsConfiguration extends Component {
 
 
     render() {
-        return <div>
+        return <Papersheet
+                title={`Actions`}
+                subtitle={``}
+            >
             <Row>
                 <Column xs={this.props.hideHelp ? 12 : 9}>
                     <FormGroup>
@@ -324,7 +333,7 @@ class ActionsConfiguration extends Component {
                         </Column> : null
                 }
             </Row>
-        </div>;
+        </Papersheet>;
     }
 }
 

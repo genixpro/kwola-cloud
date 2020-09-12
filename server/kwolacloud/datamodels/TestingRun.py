@@ -19,6 +19,7 @@ class TestingRun(Document):
         'indexes': [
             ('owner',),
             ('owner', 'applicationId'),
+            ('owner', 'recurringTestingTriggerId'),
             ('needsFeedbackRequestEmail', 'endTime'),
         ]
     }
@@ -28,6 +29,8 @@ class TestingRun(Document):
     owner = StringField()
 
     applicationId = StringField()
+
+    recurringTestingTriggerId = StringField()
 
     stripeSubscriptionId = StringField()
 
@@ -59,6 +62,8 @@ class TestingRun(Document):
     averageTimePerStep = FloatField(default=0)
 
     needsFeedbackRequestEmail = BooleanField(default=False)
+
+    isRecurring = BooleanField(default=False)
 
     def saveToDisk(self, config):
         self.save()

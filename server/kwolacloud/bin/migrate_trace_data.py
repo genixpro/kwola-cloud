@@ -17,6 +17,7 @@ from ..db import connectToMongoWithRetries
 from kwolacloud.tasks.RunHourlyTasks import runHourlyTasks
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
+from ..helpers.slack import SlackLogHandler
 
 # Do not remove the following unused imports, as they are actually required
 # For the migration script to function correctly.
@@ -49,13 +50,20 @@ def loadTraces(config, session):
 def main():
         configData = loadConfiguration()
 
-        # Setup logging with google cloud
-        client = google.cloud.logging.Client()
-        client.get_default_handler()
-        client.setup_logging()
 
-        logger = getLogger()
-        logger.handlers = logger.handlers[0:1]
+        if configData['features']['enableGoogleCloudLogging']:
+                # Setup logging with google cloud
+                client = google.cloud.logging.Client()
+                client.get_default_handler()
+                client.setup_logging()
+
+                logger = getLogger()
+                logger.handlers = logger.handlers[0:1]
+
+        if configData['features']['enableSlackLogging']:
+            logger = getLogger()
+            logger.addHandler(SlackLogHandler())
+
 
         connectToMongoWithRetries()
 

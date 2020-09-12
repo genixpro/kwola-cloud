@@ -32,6 +32,14 @@ const routes = [
     component: lazy(() => import('../ConfigureIntegrations')),
   },
   {
+    path: 'applications/:id/triggers',
+    component: lazy(() => import('../ListRecurringTestingTriggers')),
+  },
+  {
+    path: 'applications/:id/new_trigger',
+    component: lazy(() => import('../NewRecurringTestingTrigger')),
+  },
+  {
     path: 'applications',
     component: lazy(() => import('../ListApplications')),
   },
@@ -70,6 +78,14 @@ const routes = [
   {
     path: 'bugs/:id',
     component: lazy(() => import('../ViewBug')),
+  },
+  {
+    path: 'triggers/:id',
+    component: lazy(() => import('../ViewRecurringTestingTrigger')),
+  },
+  {
+    path: 'triggers/:id/configuration',
+    component: lazy(() => import('../ViewRecurringTestingTriggerConfiguration')),
   }
 ];
 
