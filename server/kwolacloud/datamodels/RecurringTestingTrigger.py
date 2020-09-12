@@ -138,8 +138,9 @@ class RecurringTestingTrigger(Document):
         gitEnv = copy.deepcopy(os.environ)
         gitEnv['HOME'] = tempHome
 
+        gitURLParsed = urllib.parse.urlparse(self.repositoryURL)
+
         if self.repositoryUsername:
-            gitURLParsed = urllib.parse.urlparse(self.repositoryURL)
             with open(os.path.join(tempHome, '.netrc'), 'wt') as netRCFile:
                 netRCFile.writelines([
                     f'machine {gitURLParsed.hostname}\n',
@@ -148,10 +149,18 @@ class RecurringTestingTrigger(Document):
                 ])
 
         if self.repositorySSHPrivateKey:
+            os.mkdir(os.path.join(tempHome, ".ssh"))
             keyFilePath = os.path.join(tempHome, "key_file")
             with open(keyFilePath, 'wt') as keyFile:
                 keyFile.write(self.repositorySSHPrivateKey)
             os.chmod(keyFilePath, 600)
+
+            knownHostsFilePath = os.path.join(tempHome, ".ssh", "known_hosts")
+            result = subprocess.run(["ssh-keyscan", "-H", gitURLParsed.hostname], env=gitEnv, stdout=subprocess.PIPE)
+            with open(knownHostsFilePath, 'wb') as knownHostsFile:
+                knownHostsFile.write(result.stdout)
+            os.chmod(knownHostsFilePath, 600)
+
             gitEnv['GIT_SSH_COMMAND'] = f"ssh -i {keyFilePath}"
 
         result = subprocess.run(gitArgs, env=gitEnv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

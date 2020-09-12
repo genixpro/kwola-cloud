@@ -531,6 +531,7 @@ class RecurringTestingTriggerOptions extends Component {
                                 <TextField
                                     id="repositorySSHPrivateKey"
                                     label="SSH Private Key"
+                                    multiline
                                     value={this.state.repositorySSHPrivateKey}
                                     onChange={(event) => this.changeRepositoryField('repositorySSHPrivateKey', event.target.value)}
                                     margin="normal"
