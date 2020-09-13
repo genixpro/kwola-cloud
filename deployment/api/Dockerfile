@@ -150,6 +150,10 @@ ENV CLOUDSDK_CONTAINER_CLUSTER=testing-workers
 ENV NODE_OPTIONS=--max-old-space-size=8192
 RUN gcloud container clusters get-credentials testing-workers
 
+RUN mkdir /home/kwola/.ssh
+RUN echo "Host *\nStrictHostKeyChecking no" >> /home/kwola/.ssh/config
+RUN chmod 400 /home/kwola/.ssh/config
+
 ENV HOME=/home/kwola
 ENV KUBECONFIG=/home/kwola/kube_config
 RUN chown -R kwola:kwola /kwola && \
