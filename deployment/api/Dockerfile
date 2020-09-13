@@ -152,8 +152,8 @@ RUN gcloud container clusters get-credentials testing-workers
 
 RUN mkdir /home/kwola/.ssh && \
     echo "Host *\nStrictHostKeyChecking no" >> /home/kwola/.ssh/config && \
-    chmod 600 /home/kwola/.ssh/config && \
-    chmod 600 /home/kwola/.ssh && \
+    chmod +rw-rw-rw /home/kwola/.ssh/config && \
+    chmod +rw-rw-rw /home/kwola/.ssh && \
     chown -R kwola:kwola /home/kwola/.ssh
 
 ENV HOME=/home/kwola
