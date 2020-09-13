@@ -149,9 +149,6 @@ class RecurringTestingTrigger(Document):
                     f'password {self.repositoryPassword}\n'
                 ])
 
-        subprocess.run(['ls', '-alh', '/home/kwola'])
-        subprocess.run(['ls', '-alh', '/home/kwola/.ssh'])
-
         if self.repositorySSHPrivateKey:
             if not os.path.exists(os.path.join(homeDir, ".ssh")):
                 os.mkdir(os.path.join(homeDir, ".ssh"))
@@ -161,22 +158,6 @@ class RecurringTestingTrigger(Document):
                 keyFile.write(self.repositorySSHPrivateKey)
             os.chmod(keyFilePath, stat.S_IRUSR | stat.S_IWUSR)
 
-            # sshConfigFilePath = os.path.join(homeDir, ".ssh", "config")
-            # with open(sshConfigFilePath, 'wt') as sshConfigFile:
-            #     sshConfigFile.writelines([
-            #         f'Host gitserv\n',
-            #         f'    Hostname {gitURLParsed.host}\n',
-            #         f'    IdentityFile {keyFilePath}\n'
-            #         f'    StrictHostKeyChecking no\n'
-            #         f'    IdentitiesOnly yes\n'
-            #     ])
-            # os.chmod(sshConfigFilePath, 600)
-
-            # knownHostsFilePath = os.path.join(homeDir, ".ssh", "known_hosts")
-            # result = subprocess.run(["ssh-keyscan", "-H", gitURLParsed.host], env=gitEnv, stdout=subprocess.PIPE)
-            # with open(knownHostsFilePath, 'wb') as knownHostsFile:
-            #     knownHostsFile.write(result.stdout)
-            # os.chmod(knownHostsFilePath, 600)
 
         result = subprocess.run(gitArgs, env=gitEnv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
