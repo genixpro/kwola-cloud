@@ -160,16 +160,16 @@ class RecurringTestingTrigger(Document):
                 keyFile.write(self.repositorySSHPrivateKey)
             os.chmod(keyFilePath, 600)
 
-            sshConfigFilePath = os.path.join(homeDir, ".ssh", "config")
-            with open(sshConfigFilePath, 'wt') as sshConfigFile:
-                sshConfigFile.writelines([
-                    f'Host gitserv\n',
-                    f'    Hostname {gitURLParsed.host}\n',
-                    f'    IdentityFile {keyFilePath}\n'
-                    f'    StrictHostKeyChecking no\n'
-                    f'    IdentitiesOnly yes\n'
-                ])
-            os.chmod(sshConfigFilePath, 600)
+            # sshConfigFilePath = os.path.join(homeDir, ".ssh", "config")
+            # with open(sshConfigFilePath, 'wt') as sshConfigFile:
+            #     sshConfigFile.writelines([
+            #         f'Host gitserv\n',
+            #         f'    Hostname {gitURLParsed.host}\n',
+            #         f'    IdentityFile {keyFilePath}\n'
+            #         f'    StrictHostKeyChecking no\n'
+            #         f'    IdentitiesOnly yes\n'
+            #     ])
+            # os.chmod(sshConfigFilePath, 600)
 
             knownHostsFilePath = os.path.join(homeDir, ".ssh", "known_hosts")
             result = subprocess.run(["ssh-keyscan", "-H", gitURLParsed.host], env=gitEnv, stdout=subprocess.PIPE)
