@@ -154,6 +154,7 @@ RUN mkdir /home/kwola/.ssh
 RUN echo "Host *\nStrictHostKeyChecking no" >> /home/kwola/.ssh/config
 RUN chmod 600 /home/kwola/.ssh/config
 RUN chmod 600 /home/kwola/.ssh
+RUN chown -R kwola:kwola /home/kwola/.ssh
 
 ENV HOME=/home/kwola
 ENV KUBECONFIG=/home/kwola/kube_config
