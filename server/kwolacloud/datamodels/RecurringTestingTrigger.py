@@ -158,7 +158,7 @@ class RecurringTestingTrigger(Document):
             keyFilePath = os.path.join(homeDir, ".ssh", "id_rsa")
             with open(keyFilePath, 'wt') as keyFile:
                 keyFile.write(self.repositorySSHPrivateKey)
-            os.chmod(keyFilePath, 600)
+            # os.chmod(keyFilePath, 600)
 
             # sshConfigFilePath = os.path.join(homeDir, ".ssh", "config")
             # with open(sshConfigFilePath, 'wt') as sshConfigFile:
@@ -171,11 +171,11 @@ class RecurringTestingTrigger(Document):
             #     ])
             # os.chmod(sshConfigFilePath, 600)
 
-            knownHostsFilePath = os.path.join(homeDir, ".ssh", "known_hosts")
-            result = subprocess.run(["ssh-keyscan", "-H", gitURLParsed.host], env=gitEnv, stdout=subprocess.PIPE)
-            with open(knownHostsFilePath, 'wb') as knownHostsFile:
-                knownHostsFile.write(result.stdout)
-            os.chmod(knownHostsFilePath, 600)
+            # knownHostsFilePath = os.path.join(homeDir, ".ssh", "known_hosts")
+            # result = subprocess.run(["ssh-keyscan", "-H", gitURLParsed.host], env=gitEnv, stdout=subprocess.PIPE)
+            # with open(knownHostsFilePath, 'wb') as knownHostsFile:
+            #     knownHostsFile.write(result.stdout)
+            # os.chmod(knownHostsFilePath, 600)
 
         result = subprocess.run(gitArgs, env=gitEnv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
