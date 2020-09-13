@@ -152,16 +152,16 @@ RUN gcloud container clusters get-credentials testing-workers
 
 RUN mkdir /home/kwola/.ssh && \
     echo "Host *\nStrictHostKeyChecking no" >> /home/kwola/.ssh/config && \
-    chmod +rw-rw-rw /home/kwola/.ssh/config && \
-    chmod +rw-rw-rw /home/kwola/.ssh && \
-    chown -R kwola:kwola /home/kwola/.ssh
+    chown -R kwola:kwola /home/kwola/.ssh && \
+    chmod u+rw,og-rw /home/kwola/.ssh/config && \
+    chmod u+rw,og-rw /home/kwola/.ssh
 
 ENV HOME=/home/kwola
 ENV KUBECONFIG=/home/kwola/kube_config
 RUN chown -R kwola:kwola /kwola && \
     chown -R kwola:kwola /home/kwola && \
     chown -R kwola:kwola /home/kwola/.ssh && \
-    chmod +r+r+r -R /usr/lib/python3 && \
+    chmod ugo+r -R /usr/lib/python3 && \
     su kwola -c "gcloud container clusters get-credentials testing-workers" && \
     su kwola -c "kubectl cluster-info" && \
     su kwola -c "kwola_install_proxy_cert 1" && \
@@ -173,7 +173,7 @@ RUN chown -R kwola:kwola /kwola && \
 RUN rm -rf /usr/include/*
 
 WORKDIR /home/kwola
-RUN chmod +r+r+r -R /usr/lib/python3 && su kwola -c "kwola_test_installation"
+RUN chmod ugo+r -R /usr/lib/python3 && su kwola -c "kwola_test_installation"
 WORKDIR /kwola/server
 
 # Output all the disk usage for various folders on the system.
