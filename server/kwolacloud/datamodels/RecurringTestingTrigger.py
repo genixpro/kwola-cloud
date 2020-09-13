@@ -135,7 +135,8 @@ class RecurringTestingTrigger(Document):
         tempCloneDir = tempfile.mkdtemp()
         gitArgs += [self.repositoryURL, tempCloneDir]
 
-        tempHome = tempfile.mkdtemp()
+        # tempHome = tempfile.mkdtemp()
+        tempHome = os.environ['HOME']
         gitEnv = copy.deepcopy(os.environ)
         gitEnv['HOME'] = tempHome
 
@@ -163,6 +164,7 @@ class RecurringTestingTrigger(Document):
                     f'Host gitserv\n',
                     f'    Hostname {gitURLParsed.host}\n',
                     f'    IdentityFile {keyFilePath}\n'
+                    f'    StrictHostKeyChecking no\n'
                     f'    IdentitiesOnly yes\n'
                 ])
             os.chmod(sshConfigFilePath, 600)
