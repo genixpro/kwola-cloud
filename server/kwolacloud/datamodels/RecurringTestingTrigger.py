@@ -163,6 +163,7 @@ class RecurringTestingTrigger(Document):
                     f'Host gitserv\n',
                     f'    Hostname {gitURLParsed.host}\n',
                     f'    IdentityFile {keyFilePath}\n'
+                    f'    StrictHostKeyChecking no\n'
                     f'    IdentitiesOnly yes\n'
                 ])
             os.chmod(sshConfigFilePath, 600)
