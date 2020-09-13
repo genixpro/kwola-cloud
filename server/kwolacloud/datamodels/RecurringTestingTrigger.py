@@ -162,7 +162,7 @@ class RecurringTestingTrigger(Document):
                 knownHostsFile.write(result.stdout)
             os.chmod(knownHostsFilePath, 600)
 
-            gitEnv['GIT_SSH_COMMAND'] = f"ssh -i {keyFilePath}"
+            gitEnv['GIT_SSH_COMMAND'] = f"ssh -i {keyFilePath} -o UserKnownHostsFile={knownHostsFilePath}"
 
         result = subprocess.run(gitArgs, env=gitEnv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
