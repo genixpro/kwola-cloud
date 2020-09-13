@@ -10,7 +10,7 @@ class SizeOfRun extends Component {
     state = {
         chosenPackage: null,
         length: 100,
-        sessions: 250,
+        sessions: 400,
         hours: 12
     }
 

@@ -45,3 +45,17 @@ class RunConfiguration(EmbeddedDocument):
     totalTestingSessions = IntField()
 
     hours = IntField()
+
+    enable5xxError = BooleanField(default=True)
+
+    enable400Error = BooleanField(default=True)
+
+    enable401Error = BooleanField(default=False)
+
+    enable403Error = BooleanField(default=False)
+
+    enable404Error = BooleanField(default=True)
+
+    enableJavascriptConsoleError = BooleanField(default=True)
+
+    enableUnhandledExceptionError = BooleanField(default=True)

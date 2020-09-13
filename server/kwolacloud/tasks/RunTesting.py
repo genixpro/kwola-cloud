@@ -100,6 +100,13 @@ def runTesting(testingRunId):
         kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
         kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
         kwolaConfigData['custom_typing_action_strings'] = runConfiguration.customTypingActionStrings
+        kwolaConfigData['enable_5xx_error'] = runConfiguration.enable5xxError
+        kwolaConfigData['enable_400_error'] = runConfiguration.enable400Error
+        kwolaConfigData['enable_401_error'] = runConfiguration.enable401Error
+        kwolaConfigData['enable_403_error'] = runConfiguration.enable403Error
+        kwolaConfigData['enable_404_error'] = runConfiguration.enable404Error
+        kwolaConfigData['enable_javascript_console_error'] = runConfiguration.enableJavascriptConsoleError
+        kwolaConfigData['enable_unhandled_exception_error'] = runConfiguration.enableUnhandledExceptionError
 
         if not configData['features']['localRuns']:
             # We have to write directly to the google cloud storage bucket because of the way that the storage

@@ -14,13 +14,12 @@ import AddIcon from '@material-ui/icons/Add';
 
 class ActionsConfiguration extends Component {
     state = {
-        enableDoubleClick: false,
-        enableRightClick: false,
-        enableRandomLetters: false,
-        enableRandomBrackets: false,
-        enableRandomMathSymbols: false,
-        enableRandomOtherSymbols: false,
-        enableRandomNumbers: false,
+        enableDoubleClickCommand: false,
+        enableRightClickCommand: false,
+        enableRandomBracketCommand: false,
+        enableRandomMathCommand: false,
+        enableRandomOtherSymbolCommand: false,
+        enableRandomNumberCommand: false,
         enableScrolling: false,
         enableDragging: false,
         enableTypeEmail: false,
@@ -34,13 +33,12 @@ class ActionsConfiguration extends Component {
         {
             const config = this.props.defaultRunConfiguration;
             this.setState({
-                enableDoubleClick: config.enableDoubleClick,
-                enableRightClick: config.enableRightClick,
-                enableRandomLetters: config.enableRandomLetters,
-                enableRandomBrackets: config.enableRandomBrackets,
-                enableRandomMathSymbols: config.enableRandomMathSymbols,
-                enableRandomOtherSymbols: config.enableRandomOtherSymbols,
-                enableRandomNumbers: config.enableRandomNumbers,
+                enableDoubleClickCommand: config.enableDoubleClickCommand,
+                enableRightClickCommand: config.enableRightClickCommand,
+                enableRandomBracketCommand: config.enableRandomBracketCommand,
+                enableRandomMathCommand: config.enableRandomMathCommand,
+                enableRandomOtherSymbolCommand: config.enableRandomOtherSymbolCommand,
+                enableRandomNumberCommand: config.enableRandomNumberCommand,
                 enableScrolling: config.enableScrolling,
                 enableDragging: config.enableDragging,
                 enableTypeEmail: config.enableTypeEmail,
@@ -59,13 +57,12 @@ class ActionsConfiguration extends Component {
         }
 
         this.props.onChange({
-            enableDoubleClick: this.state.enableDoubleClick,
-            enableRightClick: this.state.enableRightClick,
-            enableRandomLetters: this.state.enableRandomLetters,
-            enableRandomBrackets: this.state.enableRandomBrackets,
-            enableRandomMathSymbols: this.state.enableRandomMathSymbols,
-            enableRandomOtherSymbols: this.state.enableRandomOtherSymbols,
-            enableRandomNumbers: this.state.enableRandomNumbers,
+            enableDoubleClickCommand: this.state.enableDoubleClickCommand,
+            enableRightClickCommand: this.state.enableRightClickCommand,
+            enableRandomBracketCommand: this.state.enableRandomBracketCommand,
+            enableRandomMathCommand: this.state.enableRandomMathCommand,
+            enableRandomOtherSymbolCommand: this.state.enableRandomOtherSymbolCommand,
+            enableRandomNumberCommand: this.state.enableRandomNumberCommand,
             enableScrolling: this.state.enableScrolling,
             enableDragging: this.state.enableDragging,
             enableTypeEmail: this.state.enableTypeEmail,
@@ -153,9 +150,9 @@ class ActionsConfiguration extends Component {
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    checked={this.state.enableDoubleClick}
-                                    onChange={() => this.toggle('enableDoubleClick')}
-                                    value="enableDoubleClick"
+                                    checked={this.state.enableDoubleClickCommand}
+                                    onChange={() => this.toggle('enableDoubleClickCommand')}
+                                    value="enableDoubleClickCommand"
                                     style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
@@ -166,9 +163,9 @@ class ActionsConfiguration extends Component {
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    checked={this.state.enableRightClick}
-                                    onChange={() => this.toggle('enableRightClick')}
-                                    value="enableRightClick"
+                                    checked={this.state.enableRightClickCommand}
+                                    onChange={() => this.toggle('enableRightClickCommand')}
+                                    value="enableRightClickCommand"
                                     style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
@@ -231,22 +228,9 @@ class ActionsConfiguration extends Component {
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    checked={this.state.enableRandomLetters}
-                                    onChange={() => this.toggle('enableRandomLetters')}
-                                    value="enableRandomLetters"
-                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
-                                />
-                            }
-                            label="Enable type random letters action?"
-                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
-                        />
-                        <br/>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={this.state.enableRandomBrackets}
-                                    onChange={() => this.toggle('enableRandomBrackets')}
-                                    value="enableRandomBrackets"
+                                    checked={this.state.enableRandomBracketCommand}
+                                    onChange={() => this.toggle('enableRandomBracketCommand')}
+                                    value="enableRandomBracketCommand"
                                     style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
@@ -257,9 +241,9 @@ class ActionsConfiguration extends Component {
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    checked={this.state.enableRandomMathSymbols}
-                                    onChange={() => this.toggle('enableRandomMathSymbols')}
-                                    value="enableRandomMathSymbols"
+                                    checked={this.state.enableRandomMathCommand}
+                                    onChange={() => this.toggle('enableRandomMathCommand')}
+                                    value="enableRandomMathCommand"
                                 />
                             }
                             label="Enable type random math symbols action?"
@@ -269,9 +253,9 @@ class ActionsConfiguration extends Component {
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    checked={this.state.enableRandomOtherSymbols}
-                                    onChange={() => this.toggle('enableRandomOtherSymbols')}
-                                    value="enableRandomOtherSymbols"
+                                    checked={this.state.enableRandomOtherSymbolCommand}
+                                    onChange={() => this.toggle('enableRandomOtherSymbolCommand')}
+                                    value="enableRandomOtherSymbolCommand"
                                     style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
@@ -282,9 +266,9 @@ class ActionsConfiguration extends Component {
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    checked={this.state.enableRandomNumbers}
-                                    onChange={() => this.toggle('enableRandomNumbers')}
-                                    value="enableRandomNumbers"
+                                    checked={this.state.enableRandomNumberCommand}
+                                    onChange={() => this.toggle('enableRandomNumberCommand')}
+                                    value="enableRandomNumberCommand"
                                     style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }

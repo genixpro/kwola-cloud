@@ -64,6 +64,24 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                                                                      self.newErrorsThisTestingStep[testingStep.id],
                                                                      self.newErrorOriginalExecutionSessionIds[testingStep.id],
                                                                      self.newErrorOriginalStepNumbers[testingStep.id]):
+            if error.type == "http":
+                if error.statusCode == 400 and not self.config['enable_400_error']:
+                    continue # Skip this error
+                if error.statusCode == 401 and not self.config['enable_401_error']:
+                    continue # Skip this error
+                if error.statusCode == 403 and not self.config['enable_403_error']:
+                    continue # Skip this error
+                if error.statusCode == 404 and not self.config['enable_404_error']:
+                    continue # Skip this error
+                if error.statusCode >= 500 and not self.config['enable_5xx_error']:
+                    continue # Skip this error
+            elif error.type == "log":
+                if not self.config['enable_javascript_console_error']:
+                    continue # Skip this error
+            elif error.type == "exception":
+                if not self.config['enable_unhandled_exception_error']:
+                    continue # Skip this error
+
             bug = BugModel()
             bug.id = CustomIDField.generateNewUUID(BugModel, self.config)
             bug.owner = testingStep.owner
