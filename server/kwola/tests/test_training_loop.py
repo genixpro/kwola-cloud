@@ -7,7 +7,7 @@ import shutil
 class TestTrainingLoop(unittest.TestCase):
     def test_restaurant_click_only(self):
         configDir = KwolaCoreConfiguration.createNewLocalKwolaConfigDir("testing",
-                                                                        url="http://demo.kwolatesting.com/",
+                                                                        url="http://kros1.kwola.io/",
                                                                         email="",
                                                                         password="",
                                                                         name="",
@@ -17,7 +17,8 @@ class TestTrainingLoop(unittest.TestCase):
                                                                         enableRandomMathCommand=False,
                                                                         enableRandomOtherSymbolCommand=False,
                                                                         enableDoubleClickCommand=False,
-                                                                        enableRightClickCommand=False
+                                                                        enableRightClickCommand=False,
+                                                                        custom_typing_action_strings=[]
                                                                         )
         try:
             TrainAgentLoop.trainAgent(configDir, exitOnFail=True)
@@ -26,7 +27,7 @@ class TestTrainingLoop(unittest.TestCase):
 
     def test_restaurant_all_actions(self):
         configDir = KwolaCoreConfiguration.createNewLocalKwolaConfigDir("testing",
-                                                                        url="http://demo.kwolatesting.com/",
+                                                                        url="http://kros1.kwola.io/",
                                                                         email="test1@test.com",
                                                                         password="test1",
                                                                         name="Kwola",
@@ -36,7 +37,11 @@ class TestTrainingLoop(unittest.TestCase):
                                                                         enableRandomMathCommand=True,
                                                                         enableRandomOtherSymbolCommand=True,
                                                                         enableDoubleClickCommand=True,
-                                                                        enableRightClickCommand=True
+                                                                        enableRightClickCommand=True,
+                                                                        custom_typing_action_strings=[
+                                                                            'action_a',
+                                                                            'b_action'
+                                                                        ]
                                                                         )
         try:
             TrainAgentLoop.trainAgent(configDir, exitOnFail=True)

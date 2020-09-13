@@ -10,6 +10,10 @@
   "advantage_convolution_stride": 1,
   "batch_size": 4,
   "batches_per_iteration": 8,
+  "custom_typing_action_strings": [
+    "action_a",
+    "b_action"
+  ],
   "data_compress_level": {
     "default": 1
   },
@@ -132,6 +136,7 @@
   "random_initialization_testing_sequence_timeout": 600,
   "random_weight_clear": 0.5,
   "random_weight_click": 1.0,
+  "random_weight_custom_type_action": 0.5,
   "random_weight_double_click": 0.2,
   "random_weight_right_click": 0.2,
   "random_weight_type_brackets": 0.3,
@@ -179,6 +184,7 @@
   "testing_sequences_per_training_step": 1,
   "testing_subprocess_pool_size": 2,
   "testing_trace_save_workers": 8,
+  "testing_trace_load_workers": 8,
   "training_action_prob_reward_square_size": 6,
   "training_background_trace_save_workers": 1,
   "training_batch_prep_subprocesses": 1,

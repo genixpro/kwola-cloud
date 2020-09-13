@@ -32,6 +32,8 @@ class RunConfiguration(EmbeddedDocument):
 
     enableRightClickCommand = BooleanField()
 
+    customTypingActionStrings = ListField(StringField())
+
     autologin = BooleanField()
 
     preventOffsiteLinks = BooleanField()

@@ -82,25 +82,26 @@ def runTesting(testingRunId):
 
         runConfiguration = run.configuration
 
-        if not os.path.exists(configFilePath):
-            kwolaConfigData = getKwolaConfigurationData()
+        kwolaConfigData = getKwolaConfigurationData()
 
-            kwolaConfigData['url'] = runConfiguration.url
-            kwolaConfigData['email'] = runConfiguration.email
-            kwolaConfigData['password'] = runConfiguration.password
-            kwolaConfigData['name'] = runConfiguration.name
-            kwolaConfigData['paragraph'] = runConfiguration.paragraph
-            kwolaConfigData['enableRandomNumberCommand'] = runConfiguration.enableRandomNumberCommand
-            kwolaConfigData['enableRandomBracketCommand'] = runConfiguration.enableRandomBracketCommand
-            kwolaConfigData['enableRandomMathCommand'] = runConfiguration.enableRandomMathCommand
-            kwolaConfigData['enableRandomOtherSymbolCommand'] = runConfiguration.enableRandomOtherSymbolCommand
-            kwolaConfigData['enableDoubleClickCommand'] = runConfiguration.enableDoubleClickCommand
-            kwolaConfigData['enableRightClickCommand'] = runConfiguration.enableRightClickCommand
-            kwolaConfigData['autologin'] = runConfiguration.autologin
-            kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
-            kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
-            kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
+        kwolaConfigData['url'] = runConfiguration.url
+        kwolaConfigData['email'] = runConfiguration.email
+        kwolaConfigData['password'] = runConfiguration.password
+        kwolaConfigData['name'] = runConfiguration.name
+        kwolaConfigData['paragraph'] = runConfiguration.paragraph
+        kwolaConfigData['enableRandomNumberCommand'] = runConfiguration.enableRandomNumberCommand
+        kwolaConfigData['enableRandomBracketCommand'] = runConfiguration.enableRandomBracketCommand
+        kwolaConfigData['enableRandomMathCommand'] = runConfiguration.enableRandomMathCommand
+        kwolaConfigData['enableRandomOtherSymbolCommand'] = runConfiguration.enableRandomOtherSymbolCommand
+        kwolaConfigData['enableDoubleClickCommand'] = runConfiguration.enableDoubleClickCommand
+        kwolaConfigData['enableRightClickCommand'] = runConfiguration.enableRightClickCommand
+        kwolaConfigData['autologin'] = runConfiguration.autologin
+        kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
+        kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
+        kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
+        kwolaConfigData['custom_typing_action_strings'] = runConfiguration.customTypingActionStrings
 
+        if not configData['features']['localRuns']:
             # We have to write directly to the google cloud storage bucket because of the way that the storage
             # drives get mounted through fuse.
             storageClient = storage.Client()
@@ -108,12 +109,9 @@ def runTesting(testingRunId):
             configFileBlob = storage.Blob("kwola.json", applicationStorageBucket)
             configFileBlob.upload_from_string(json.dumps(kwolaConfigData))
 
-            # Also write a copy locally.
-            with open(configFilePath, 'wt') as configFile:
-                json.dump(kwolaConfigData, configFile)
-        else:
-            with open(configFilePath, 'rt') as configFile:
-                kwolaConfigData = json.load(configFile)
+        # Also write a copy locally.
+        with open(configFilePath, 'wt') as configFile:
+            json.dump(kwolaConfigData, configFile)
 
         logging.info(f"Testing Run starting with configuration: \n{pformat(kwolaConfigData)}")
 

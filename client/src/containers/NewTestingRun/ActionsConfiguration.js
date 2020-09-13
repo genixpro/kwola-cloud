@@ -10,7 +10,7 @@ import {
     FormControlLabel,
 } from '../../components/uielements/form';
 import Papersheet from "../../components/utility/papersheet";
-
+import AddIcon from '@material-ui/icons/Add';
 
 class ActionsConfiguration extends Component {
     state = {
@@ -25,7 +25,7 @@ class ActionsConfiguration extends Component {
         enableDragging: false,
         enableTypeEmail: false,
         enableTypePassword: false,
-        customTypeStrings: []
+        customTypingActionStrings: []
     }
 
     componentDidMount()
@@ -45,7 +45,7 @@ class ActionsConfiguration extends Component {
                 enableDragging: config.enableDragging,
                 enableTypeEmail: config.enableTypeEmail,
                 enableTypePassword: config.enableTypePassword,
-                customTypeStrings: config.customTypeStrings || []
+                customTypingActionStrings: config.customTypingActionStrings || []
             });
         }
 
@@ -70,7 +70,7 @@ class ActionsConfiguration extends Component {
             enableDragging: this.state.enableDragging,
             enableTypeEmail: this.state.enableTypeEmail,
             enableTypePassword: this.state.enableTypePassword,
-            customTypeStrings: this.state.customTypeStrings
+            customTypingActionStrings: this.state.customTypingActionStrings
         })
     }
 
@@ -93,11 +93,11 @@ class ActionsConfiguration extends Component {
             return;
         }
 
-        const customTypeStrings = this.state.customTypeStrings;
+        const customTypingActionStrings = this.state.customTypingActionStrings;
 
-        customTypeStrings.push("")
+        customTypingActionStrings.push("")
 
-        this.setState({customTypeStrings}, () => this.updateParent())
+        this.setState({customTypingActionStrings}, () => this.updateParent())
     }
 
     changeCustomString(index, newValue)
@@ -107,11 +107,11 @@ class ActionsConfiguration extends Component {
             return;
         }
 
-        const customTypeStrings = this.state.customTypeStrings;
+        const customTypingActionStrings = this.state.customTypingActionStrings;
 
-        customTypeStrings[index] = newValue;
+        customTypingActionStrings[index] = newValue;
 
-        this.setState({customTypeStrings}, () => this.updateParent())
+        this.setState({customTypingActionStrings}, () => this.updateParent())
     }
 
     removeCustomString(index)
@@ -121,11 +121,11 @@ class ActionsConfiguration extends Component {
             return;
         }
 
-        const customTypeStrings = this.state.customTypeStrings;
+        const customTypingActionStrings = this.state.customTypingActionStrings;
 
-        customTypeStrings.splice(index, 1)
+        customTypingActionStrings.splice(index, 1)
 
-        this.setState({customTypeStrings}, () => this.updateParent())
+        this.setState({customTypingActionStrings}, () => this.updateParent())
     }
 
 
@@ -297,16 +297,16 @@ class ActionsConfiguration extends Component {
                     <br/>
                     <br/>
 
-                    {/*{*/}
-                    {/*    <Button variant="extended" color={"primary"} onClick={() => this.addNewCustomString()} */}
-                    {/*            style={{"cursor": this.props.disabled ? "default" : "pointer"}}>*/}
-                    {/*        Add a Custom Typing Action*/}
-                    {/*        <AddIcon className="rightIcon"></AddIcon>*/}
-                    {/*    </Button>*/}
-                    {/*}*/}
+                    {
+                        <Button variant="extended" color={"primary"} onClick={() => this.addNewCustomString()}
+                                style={{"cursor": this.props.disabled ? "default" : "pointer"}}>
+                            Add a Custom Typing Action
+                            <AddIcon className="rightIcon" />
+                        </Button>
+                    }
 
                     {
-                        this.state.customTypeStrings.map((typeActionString, typeActionIndex) =>
+                        this.state.customTypingActionStrings.map((typeActionString, typeActionIndex) =>
                         {
                             return <div key={typeActionIndex}>
                                 <TextField
@@ -316,6 +316,7 @@ class ActionsConfiguration extends Component {
                                     value={typeActionString}
                                     onChange={(event) => this.changeCustomString(typeActionIndex, event.target.value)}
                                     margin="normal"
+                                    style={{"width": "70%"}}
                                 />
 
                                 <Button variant="extended" color={"secondary"} onClick={() => this.removeCustomString(typeActionIndex)}>

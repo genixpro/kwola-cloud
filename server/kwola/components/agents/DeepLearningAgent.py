@@ -187,6 +187,13 @@ class DeepLearningAgent:
             self.actionProbabilityBoostKeywords.append(["pass"])
             hasTypingAction = True
 
+        for customTypingActionIndex, customTypingActionString in enumerate(config['custom_typing_action_strings']):
+            actionName = f'typeCustom{customTypingActionIndex}'
+            self.actions[actionName] = lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=customTypingActionString)
+            self.actionBaseWeights.append(config['random_weight_custom_type_action'])
+            self.actionProbabilityBoostKeywords.append([])
+            hasTypingAction = True
+
         # Only add in the random number action if the user configured it
         if config['enableRandomNumberCommand']:
             self.actions['typeNumber'] = lambda x, y: TypeAction(type="typeNumber", x=x, y=y, label="number", text=self.randomString('-.0123456789$%', random.randint(1, 5)))
@@ -497,22 +504,10 @@ class DeepLearningAgent:
 
             # If the element is an input box, then we have to enable all of the typing actions
             if element['canType']:
-                if "typeEmail" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeEmail"))
-                if "typePassword" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typePassword"))
-                if "typeName" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeName"))
-                if "typeNumber" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeNumber"))
-                if "typeBrackets" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeBrackets"))
-                if "typeMath" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeMath"))
-                if "typeOtherSymbol" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeOtherSymbol"))
-                if "typeParagraph" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeParagraph"))
+                for actionName in self.actionsSorted:
+                    if actionName.startswith("type"):
+                        actionTypes.append(self.actionsSorted.index(actionName))
+
                 if "clear" in self.actionsSorted:
                     actionTypes.append(self.actionsSorted.index("clear"))
 

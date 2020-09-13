@@ -10,6 +10,7 @@
   "advantage_convolution_stride": 1,
   "batch_size": 8,
   "batches_per_iteration": 16,
+  "custom_typing_action_strings": [],
   "data_compress_level": {
     "default": 0
   },
@@ -132,6 +133,7 @@
   "random_initialization_testing_sequence_timeout": 3600,
   "random_weight_clear": 0.5,
   "random_weight_click": 1.0,
+  "random_weight_custom_type_action": 0.5,
   "random_weight_double_click": 0.2,
   "random_weight_right_click": 0.2,
   "random_weight_type_brackets": 0.3,
