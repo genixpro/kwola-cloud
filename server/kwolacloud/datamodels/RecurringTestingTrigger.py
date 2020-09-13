@@ -135,15 +135,13 @@ class RecurringTestingTrigger(Document):
         tempCloneDir = tempfile.mkdtemp()
         gitArgs += [self.repositoryURL, tempCloneDir]
 
-        tempHome = tempfile.mkdtemp()
-        # tempHome = os.environ['HOME']
+        homeDir = os.environ['HOME']
         gitEnv = copy.deepcopy(os.environ)
-        gitEnv['HOME'] = tempHome
 
         gitURLParsed = giturlparse.parse(self.repositoryURL)
 
         if self.repositoryUsername:
-            with open(os.path.join(tempHome, '.netrc'), 'wt') as netRCFile:
+            with open(os.path.join(homeDir, '.netrc'), 'wt') as netRCFile:
                 netRCFile.writelines([
                     f'machine {gitURLParsed.host}\n',
                     f'login {self.repositoryUsername}\n',
@@ -151,31 +149,29 @@ class RecurringTestingTrigger(Document):
                 ])
 
         if self.repositorySSHPrivateKey:
-            os.mkdir(os.path.join(tempHome, ".ssh"))
+            if not os.path.exists(os.path.join(homeDir, ".ssh")):
+                os.mkdir(os.path.join(homeDir, ".ssh"))
 
-            keyFilePath = os.path.join(tempHome, ".ssh", "id_rsa")
+            keyFilePath = os.path.join(homeDir, ".ssh", "id_rsa")
             with open(keyFilePath, 'wt') as keyFile:
                 keyFile.write(self.repositorySSHPrivateKey)
             os.chmod(keyFilePath, 600)
 
-            sshConfigFilePath = os.path.join(tempHome, ".ssh", "config")
+            sshConfigFilePath = os.path.join(homeDir, ".ssh", "config")
             with open(sshConfigFilePath, 'wt') as sshConfigFile:
                 sshConfigFile.writelines([
                     f'Host gitserv\n',
                     f'    Hostname {gitURLParsed.host}\n',
                     f'    IdentityFile {keyFilePath}\n'
-                    f'    StrictHostKeyChecking no\n'
                     f'    IdentitiesOnly yes\n'
                 ])
             os.chmod(sshConfigFilePath, 600)
 
-            knownHostsFilePath = os.path.join(tempHome, ".ssh", "known_hosts")
+            knownHostsFilePath = os.path.join(homeDir, ".ssh", "known_hosts")
             result = subprocess.run(["ssh-keyscan", "-H", gitURLParsed.host], env=gitEnv, stdout=subprocess.PIPE)
             with open(knownHostsFilePath, 'wb') as knownHostsFile:
                 knownHostsFile.write(result.stdout)
             os.chmod(knownHostsFilePath, 600)
-
-            gitEnv['GIT_SSH_COMMAND'] = f"ssh -i {keyFilePath} -o UserKnownHostsFile={knownHostsFilePath}"
 
         result = subprocess.run(gitArgs, env=gitEnv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -184,17 +180,14 @@ class RecurringTestingTrigger(Document):
 
         if result.returncode == 128:
             shutil.rmtree(tempCloneDir)
-            shutil.rmtree(tempHome)
             return self.lastRepositoryCommitHash
         else:
             result = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=tempCloneDir, stdout=subprocess.PIPE, env=gitEnv)
             if result.returncode == 128:
                 shutil.rmtree(tempCloneDir)
-                shutil.rmtree(tempHome)
                 return self.lastRepositoryCommitHash
             else:
                 shutil.rmtree(tempCloneDir)
-                shutil.rmtree(tempHome)
                 return str(result.stdout, 'utf8')
 
 
