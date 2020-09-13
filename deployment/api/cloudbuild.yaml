@@ -4,7 +4,7 @@ steps:
   args:
     - "--destination=gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-api"
     - "--cache=true"
-    - "--cache-ttl=720h"
+    - "--cache-ttl=1m"
     - "--snapshotMode=time"
     - "--build-arg"
     - "KWOLA_ENV=$_KWOLA_ENV"
