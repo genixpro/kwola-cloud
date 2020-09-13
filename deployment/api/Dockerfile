@@ -152,12 +152,14 @@ RUN gcloud container clusters get-credentials testing-workers
 
 RUN mkdir /home/kwola/.ssh
 RUN echo "Host *\nStrictHostKeyChecking no" >> /home/kwola/.ssh/config
-RUN chmod 400 /home/kwola/.ssh/config
+RUN chmod 600 /home/kwola/.ssh/config
+RUN chmod 600 /home/kwola/.ssh
 
 ENV HOME=/home/kwola
 ENV KUBECONFIG=/home/kwola/kube_config
 RUN chown -R kwola:kwola /kwola && \
     chown -R kwola:kwola /home/kwola && \
+    chown -R kwola:kwola /home/kwola/.ssh && \
     chmod +r+r+r -R /usr/lib/python3 && \
     su kwola -c "gcloud container clusters get-credentials testing-workers" && \
     su kwola -c "kubectl cluster-info" && \
@@ -177,7 +179,8 @@ WORKDIR /kwola/server
 # This helps us to further optimize the container
 # RUN du -h -d 5 -t 10M /; exit 0
 
-USER kwola
+USER kwola:kwola
+
 
 # Setup and configure systemd
 ENTRYPOINT ["bash", "-c", "gunicorn -t 600 -w 4 -b 0.0.0.0:3000 kwolacloud.app"]
