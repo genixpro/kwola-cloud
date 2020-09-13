@@ -8,7 +8,7 @@ import google
 import google.cloud
 import google.cloud.logging
 from ..config.config import loadConfiguration
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 import traceback
 import stripe
 from pprint import pformat
@@ -80,7 +80,7 @@ def main():
                     continue
 
                 configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
-                config = Configuration(configDir)
+                config = KwolaCoreConfiguration(configDir)
 
                 config['data_compress_level'] = {"default": 0}
                 config["data_serialization_method"] = {"default": "mongo"}

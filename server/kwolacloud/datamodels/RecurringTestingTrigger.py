@@ -161,9 +161,6 @@ class RecurringTestingTrigger(Document):
 
         result = subprocess.run(gitArgs, env=gitEnv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        logging.info(result.stdout)
-        logging.info(result.stderr)
-
         if result.returncode == 128:
             shutil.rmtree(tempCloneDir)
             return self.lastRepositoryCommitHash

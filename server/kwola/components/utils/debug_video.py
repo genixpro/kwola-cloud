@@ -21,7 +21,7 @@
 
 
 from ...components.agents.DeepLearningAgent import DeepLearningAgent
-from ...config.config import Configuration
+from ...config.config import KwolaCoreConfiguration
 from ...config.logger import getLogger, setupLocalLogging
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 import os
@@ -32,7 +32,7 @@ def createDebugVideoSubProcess(configDir, executionSessionId, name="", includeNe
 
     getLogger().info(f"Creating debug video for session {executionSessionId} with options includeNeuralNetworkCharts={includeNeuralNetworkCharts}, includeNetPresentRewardChart={includeNetPresentRewardChart}, hilightStepNumber={hilightStepNumber}, cutoffStepNumber={cutoffStepNumber}")
 
-    config = Configuration(configDir)
+    config = KwolaCoreConfiguration(configDir)
 
     agent = DeepLearningAgent(config, whichGpu=None)
     agent.initialize(enableTraining=False)

@@ -21,7 +21,7 @@
 
 from ...components.agents.DeepLearningAgent import DeepLearningAgent
 from ...components.environments.WebEnvironment import WebEnvironment
-from ...config.config import Configuration
+from ...config.config import KwolaCoreConfiguration
 from ...config.logger import getLogger, setupLocalLogging
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.TestingStepModel import TestingStep
@@ -53,7 +53,7 @@ class TestingManager:
         self.generateDebugVideo = generateDebugVideo
         self.shouldBeRandom = shouldBeRandom
         self.configDir = configDir
-        self.config = Configuration(configDir)
+        self.config = KwolaCoreConfiguration(configDir)
 
         self.environment = None
 
@@ -268,7 +268,7 @@ class TestingManager:
     def predictedActionSubProcess(configDir, shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles):
         setupLocalLogging()
 
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         agent = DeepLearningAgent(config, whichGpu=None)
 

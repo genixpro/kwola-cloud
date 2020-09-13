@@ -19,7 +19,7 @@
 #
 
 
-from ...config.config import Configuration
+from ...config.config import KwolaCoreConfiguration
 from ...config.logger import getLogger
 from ...datamodels.actions.ClickTapAction import ClickTapAction
 from ...datamodels.actions.ClearFieldAction import ClearFieldAction

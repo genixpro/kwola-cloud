@@ -11,7 +11,7 @@ import json
 from ..config.config import getKwolaConfigurationData
 import time
 import datetime
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 import logging
 from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
 from kwolacloud.components.utils.KubernetesJob import KubernetesJob
@@ -20,6 +20,7 @@ from ..config.config import loadConfiguration, getKwolaConfiguration
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 import traceback
+from kwolacloud.helpers.webhook import sendCustomerWebhook
 from pprint import pformat
 from ..helpers.slack import postToKwolaSlack
 from ..helpers.email import sendFinishTestingRunEmail
@@ -69,7 +70,12 @@ def runTesting(testingRunId):
     run.save()
 
     # Make sure that this application has recorded that at least one testing run has launched
-    ApplicationModel.objects(id=run.applicationId).update_one(hasFirstTestingRunLaunched=True)
+    application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
+    application.hasFirstTestingRunLaunched = True
+    application.save()
+
+    if application.testingRunStartedWebhookURL:
+        sendCustomerWebhook(application, "testingRunStartedWebhookURL", json.loads(run.to_json()))
 
     try:
         configFilePath = os.path.join(configDir, "kwola.json")
@@ -112,7 +118,7 @@ def runTesting(testingRunId):
         logging.info(f"Testing Run starting with configuration: \n{pformat(kwolaConfigData)}")
 
         # We load up a single web session just to ensure we can access the target url
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
         environment = WebEnvironment(config, sessionLimit=1)
         environment.shutdown()
         del environment
@@ -283,6 +289,7 @@ def runTesting(testingRunId):
         run.status = "completed"
         run.endTime = datetime.datetime.now()
 
+        # Fetch application a second time down here, just in case any of the fields have changed
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
         application.hasFirstTestingRunCompleted = True
 
@@ -325,6 +332,9 @@ def runTesting(testingRunId):
 
         if application.enableSlackTestingRunCompletedNotifications:
             postToCustomerSlack(f"A testing run has completed and found {bugCount} errors. View the results here: {configData['frontend']['url']}app/dashboard/testing_runs/{run.id}", application)
+
+        if application.testingRunFinishedWebhookURL:
+            sendCustomerWebhook(application, "testingRunFinishedWebhookURL", json.loads(run.to_json()))
 
     except Exception as e:
         errorMessage = f"Error in the primary RunTesting job for the testing run with id {testingRunId}:\n\n{traceback.format_exc()}"

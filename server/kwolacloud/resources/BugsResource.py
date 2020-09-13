@@ -15,7 +15,7 @@ import bson
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration, loadConfiguration
 import flask
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 import os.path
 from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from ..auth import authenticate, isAdmin
@@ -130,7 +130,7 @@ class BugVideo(Resource):
         else:
             configDir = os.path.join("data", bug.applicationId)
 
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), f'{str(bug_id)}_bug_{str(bug.executionSessionId)}.mp4')
 

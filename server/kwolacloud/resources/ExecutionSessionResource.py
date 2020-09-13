@@ -14,7 +14,7 @@ from kwola.tasks.RunTestingStep import runTestingStep
 import json
 import os
 import flask
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 from kwolacloud.config.config import loadConfiguration
 import os.path
 from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
@@ -109,7 +109,7 @@ class ExecutionSessionVideo(Resource):
         else:
             configDir = os.path.join("data", executionSession.applicationId)
 
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("annotated_videos"), f'{str(execution_session_id)}.mp4')
 
@@ -149,7 +149,7 @@ class ExecutionSessionTraces(Resource):
         else:
             configDir = os.path.join("data", executionSession.applicationId)
 
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
             traces = executor.map(lambda traceId: ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True),
@@ -184,7 +184,7 @@ class ExecutionSessionSingleTrace(Resource):
         else:
             configDir = os.path.join("data", executionSession.applicationId)
 
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         trace = ExecutionTrace.loadFromDisk(execution_trace_id, config)
 

@@ -32,6 +32,10 @@ const routes = [
     component: lazy(() => import('../ConfigureIntegrations')),
   },
   {
+    path: 'applications/:id/webhooks',
+    component: lazy(() => import('../ConfigureWebhooks')),
+  },
+  {
     path: 'applications/:id/triggers',
     component: lazy(() => import('../ListRecurringTestingTriggers')),
   },

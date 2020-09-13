@@ -4,20 +4,28 @@
 #
 
 
-from ..datamodels.TestingRun import TestingRun
-from kwola.config.config import Configuration
-from kwola.datamodels.TestingStepModel import TestingStep
-from kwola.datamodels.BugModel import BugModel
-from kwolacloud.datamodels.ApplicationModel import ApplicationModel
-from ..datamodels.id_utility import generateKwolaId
-from kwola.tasks import RunTestingStep
 from ..config.config import loadConfiguration
-import logging
-from ..helpers.slack import postToCustomerSlack
+from ..datamodels.id_utility import generateKwolaId
+from ..datamodels.TestingRun import TestingRun
 from ..helpers.jira import postBugToCustomerJIRA
-import os
+from ..helpers.slack import postToCustomerSlack
 from .utils import mountTestingRunStorageDrive, verifyStripeSubscription, attachUsageBilling
+from kwola.components.plugins.core.CreateLocalBugObjects import CreateLocalBugObjects
+from kwola.components.plugins.core.GenerateAnnotatedVideos import GenerateAnnotatedVideos
+from kwola.components.plugins.core.LogSessionActionExecutionTimes import LogSessionActionExecutionTimes
+from kwola.components.plugins.core.LogSessionRewards import LogSessionRewards
+from kwola.components.plugins.core.PrecomputeSessionsForSampleCache import PrecomputeSessionsForSampleCache
+from kwolacloud.components.plugins.SendExecutionSessionWebhooks import SendExecutionSessionWebhooks
+from kwola.config.config import KwolaCoreConfiguration
+from kwola.datamodels.BugModel import BugModel
+from kwola.datamodels.TestingStepModel import TestingStep
+from kwola.tasks import RunTestingStep
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
+from kwolacloud.datamodels.ApplicationModel import ApplicationModel
+from kwolacloud.helpers.webhook import sendCustomerWebhook
+import logging
+import json
+import os
 import traceback
 
 
@@ -47,7 +55,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         configDir = os.path.join("data", run.applicationId)
 
     try:
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         shouldBeRandom = False
         if testingStepsCompleted < (config['training_random_initialization_sequences']):
@@ -57,7 +65,18 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId)
         testingStep.saveToDisk(config)
 
-        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
+        application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
+
+        plugins = [
+            CreateLocalBugObjects(config),
+            LogSessionRewards(config),
+            LogSessionActionExecutionTimes(config),
+            PrecomputeSessionsForSampleCache(config),
+            GenerateAnnotatedVideos(config),
+            SendExecutionSessionWebhooks(config, application)
+        ]
+
+        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom, plugins)
 
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
         bugs = BugModel.objects(owner=run.owner, testingStepId=newID, isMuted=False)
@@ -75,6 +94,9 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
 
             if application.enablePushBugsToJIRA:
                 postBugToCustomerJIRA(bug, application)
+
+            if application.bugFoundWebhookURL:
+                sendCustomerWebhook(application, "bugFoundWebhookURL", json.loads(bug.to_json()))
 
         if result['success'] and 'successfulExecutionSessions' in result:
             attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])

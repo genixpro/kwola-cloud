@@ -1,7 +1,7 @@
 import logging
 import requests
 from ..config.config import loadConfiguration, getKwolaConfiguration
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 import os.path
 from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
@@ -54,7 +54,7 @@ def postBugToCustomerJIRA(bug, application):
         else:
             configDir = os.path.join("data", bug.applicationId)
 
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"),
                                      f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')

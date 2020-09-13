@@ -32,7 +32,7 @@ from pprint import pprint
 globalCachedPrebuiltConfigs = {}
 globalHasMongoConnected = False
 
-class Configuration:
+class KwolaCoreConfiguration:
     """
         This class represents the configuration for the Kwola model.
     """
@@ -58,7 +58,7 @@ class Configuration:
             # those keys with the default values taken from the prebuilt config.
             # This allows people to continue running existing runs even if we add
             # new configuration keys in subsequent releases.
-            prebuiltConfigData = Configuration.getPrebuiltConfigData(data['profile'])
+            prebuiltConfigData = KwolaCoreConfiguration.getPrebuiltConfigData(data['profile'])
             for key, value in prebuiltConfigData.items():
                 if key not in data:
                     data[key] = value
@@ -149,7 +149,7 @@ class Configuration:
         found = []
         subFilesFolders = os.listdir(currentDir)
         for subDir in subFilesFolders:
-            if Configuration.checkDirectoryContainsKwolaConfig(subDir):
+            if KwolaCoreConfiguration.checkDirectoryContainsKwolaConfig(subDir):
                 found.append(subDir)
 
         found = sorted(found, reverse=True)
@@ -165,7 +165,7 @@ class Configuration:
                 os.mkdir(dirname)
 
                 with open(os.path.join(dirname, "kwola.json"), "wt") as configFile:
-                    prebuildConfigData = Configuration.getPrebuiltConfigData(prebuild)
+                    prebuildConfigData = KwolaCoreConfiguration.getPrebuiltConfigData(prebuild)
                     for key, value in configArgs.items():
                         prebuildConfigData[key] = value
                     configFile.write(json.dumps(prebuildConfigData, indent=4))

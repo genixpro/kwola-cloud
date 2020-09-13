@@ -16,6 +16,7 @@ import requests
 import logging
 from google.cloud import storage
 import numpy
+import secrets
 
 
 class ApplicationModel(Document):
@@ -75,6 +76,18 @@ class ApplicationModel(Document):
 
     defaultRunConfiguration = EmbeddedDocumentField(RunConfiguration)
 
+    testingRunStartedWebhookURL = StringField(default="")
+
+    testingRunFinishedWebhookURL = StringField(default="")
+
+    browserSessionWillStartWebhookURL = StringField(default="")
+
+    browserSessionFinishedWebhookURL = StringField(default="")
+
+    bugFoundWebhookURL = StringField(default="")
+
+    webhookSignatureSecret = StringField(default="")
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
 
@@ -132,3 +145,6 @@ class ApplicationModel(Document):
         else:
             self.jiraAccessToken = response.json()['access_token']
             return True
+
+    def generateWebhookSignatureSecret(self):
+        self.webhookSignatureSecret = secrets.token_urlsafe(32)

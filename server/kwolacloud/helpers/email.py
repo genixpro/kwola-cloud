@@ -5,7 +5,7 @@ from ..config.config import loadConfiguration
 import logging
 import os.path
 from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 from ..helpers.auth0 import getUserProfileFromId
 
 
@@ -62,7 +62,7 @@ def sendBugFoundNotification(application, bug):
     else:
         configDir = os.path.join("data", bug.applicationId)
 
-    config = Configuration(configDir)
+    config = KwolaCoreConfiguration(configDir)
 
     videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
 

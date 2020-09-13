@@ -134,6 +134,7 @@ class ViewApplication extends Component {
                                                     <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/muted_errors`} style={{"color":"black", "textDecoration": "none"}}>View Muted Errors</Link></MenuItem>
                                                     <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/notifications`} style={{"color":"black", "textDecoration": "none"}}>Configure Notifications</Link></MenuItem>
                                                     <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/integrations`} style={{"color":"black", "textDecoration": "none"}}>Configure Integrations</Link></MenuItem>
+                                                    <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/webhooks`} style={{"color":"black", "textDecoration": "none"}}>Configure Webhooks</Link></MenuItem>
                                                     <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/triggers`} style={{"color":"black", "textDecoration": "none"}}>View Recurring Testing Triggers</Link></MenuItem>
                                                 </Menus>
 

@@ -61,11 +61,11 @@ class ViewRecurringTestingTrigger extends Component {
                 <LayoutWrapper>
                     <FullColumn>
                         <Row>
-                            <HalfColumn>
-                                <SingleCard src={`${process.env.REACT_APP_BACKEND_API_URL}application/${this.state.recurringTestingTrigger.applicationId}/image?token=${Auth.getQueryParameterToken()}`} grid/>
-                            </HalfColumn>
+                            {/*<HalfColumn>*/}
+                            {/*    <SingleCard src={`${process.env.REACT_APP_BACKEND_API_URL}application/${this.state.recurringTestingTrigger.applicationId}/image?token=${Auth.getQueryParameterToken()}`} grid/>*/}
+                            {/*</HalfColumn>*/}
 
-                            <HalfColumn>
+                            <FullColumn>
                                 <Papersheet
                                     title={<div>Recurring Testing Trigger</div>}
                                     button={
@@ -135,7 +135,7 @@ class ViewRecurringTestingTrigger extends Component {
                                         </Papersheet>
                                         : null
                                 }
-                            </HalfColumn>
+                            </FullColumn>
                         </Row>
 
                         <Row>
