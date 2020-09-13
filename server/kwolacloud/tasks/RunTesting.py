@@ -312,16 +312,10 @@ def runTesting(testingRunId):
         bugsZip = zipfile.ZipFile(file=bugsZipFileOnDisk, mode='w')
 
         for bugIndex, bug in enumerate(bugs):
-            bugJsonFilePath = os.path.join(configDir, "bugs", bug.id + ".json")
-            bugTextFilePath = os.path.join(configDir, "bugs", bug.id + ".txt")
             bugRawVideoFilePath = os.path.join(configDir, "bugs", f'{str(bug.id)}.mp4')
             bugAnnotatedVideoFilePath = os.path.join(configDir, "bugs", f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
 
-            with open(bugJsonFilePath, 'rb') as f:
-                bugsZip.writestr(f"bug_{bugIndex+1}.json", f.read())
-
-            with open(bugTextFilePath, 'rb') as f:
-                bugsZip.writestr(f"bug_{bugIndex+1}.txt", f.read())
+            bugsZip.writestr(f"bug_{bugIndex+1}.json", bytes(bug.to_json(), 'utf8'))
 
             with open(bugRawVideoFilePath, 'rb') as f:
                 bugsZip.writestr(f"bug_{bugIndex+1}_raw.mp4", f.read())

@@ -1,8 +1,10 @@
 from kwola.config.logger import getLogger
+from kwolacloud.datamodels.MutedError import MutedError
 from kwola.datamodels.BugModel import BugModel
 from kwola.datamodels.CustomIDField import CustomIDField
-from ...utils.debug_video import createDebugVideoSubProcess
-from ..base.TestingStepPluginBase import TestingStepPluginBase
+from kwola.components.utils.debug_video import createDebugVideoSubProcess
+from kwola.components.plugins.base.TestingStepPluginBase import TestingStepPluginBase
+from kwolacloud.datamodels.id_utility import generateKwolaId
 from datetime import datetime
 import atexit
 import concurrent.futures
@@ -10,11 +12,9 @@ import multiprocessing
 import os
 
 
-
-
-class CreateLocalBugObjects(TestingStepPluginBase):
+class CreateCloudBugObjects(TestingStepPluginBase):
     """
-        This plugin creates bug objects for all of the errors discovered during this testing step
+        This plugin creates bug objects for the bugs created in kwola cloud,
     """
     def __init__(self, config):
         self.config = config
@@ -56,6 +56,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
         kwolaVideoDirectory = self.config.getKwolaUserDataDirectory("videos")
 
         existingBugs = self.loadAllBugs(testingStep)
+        mutedErrors = self.loadAllMutedErrors(testingStep)
 
         bugObjects = []
 
@@ -82,7 +83,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                     continue # Skip this error
 
             bug = BugModel()
-            bug.id = CustomIDField.generateNewUUID(BugModel, self.config)
+            bug.id = generateKwolaId(BugModel, testingStep.owner, self.config)
             bug.owner = testingStep.owner
             bug.applicationId = testingStep.applicationId
             bug.testingStepId = testingStep.id
@@ -98,13 +99,16 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                     duplicate = True
                     break
 
-            if not duplicate:
-                bug.saveToDisk(self.config, overrideSaveFormat="json", overrideCompression=0)
-                bug.saveToDisk(self.config)
+            for mutedError in mutedErrors:
+                if bug.isDuplicateOf(mutedError):
+                    bug.isMuted = True
+                    bug.mutedErrorId = mutedError.id
+                    mutedError.totalOccurrences += 1
+                    mutedError.mostRecentOccurrence = datetime.now()
+                    mutedError.saveToDisk(self.config)
 
-                bugTextFile = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".txt")
-                with open(bugTextFile, "wb") as file:
-                    file.write(bytes(bug.generateBugText(), "utf8"))
+            if not duplicate:
+                bug.save()
 
                 bugVideoFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".mp4")
                 with open(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), "rb") as origFile:
@@ -142,23 +146,13 @@ class CreateLocalBugObjects(TestingStepPluginBase):
             self.allKnownErrorHashes[testingStep.id].add(hash)
 
     def loadAllBugs(self, testingStep):
-        bugsDir = self.config.getKwolaUserDataDirectory("bugs")
-
-        bugs = []
-
-        for fileName in os.listdir(bugsDir):
-            if ".lock" not in fileName and ".txt" not in fileName and ".mp4" not in fileName:
-                bugId = fileName
-                bugId = bugId.replace(".json", "")
-                bugId = bugId.replace(".gz", "")
-                bugId = bugId.replace(".pickle", "")
-
-                bug = BugModel.loadFromDisk(bugId, self.config)
-
-                if bug is not None:
-                    bugs.append(bug)
+        bugs = BugModel.objects(testingRunId=testingStep.testingRunId)
 
         return bugs
+
+    def loadAllMutedErrors(self, testingStep):
+        mutedErrors = MutedError.objects(applicationId=testingStep.applicationId)
+        return list(mutedErrors)
 
     def generateVideoFilesForBugs(self, testingStep, bugObjects):
         debugVideoSubprocesses = []
@@ -173,7 +167,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['video_generation_processes']) as executor:
             futures = []
             for debugVideoSubprocess in debugVideoSubprocesses:
-                futures.append(executor.submit(CreateLocalBugObjects.runAndJoinSubprocess, debugVideoSubprocess))
+                futures.append(executor.submit(CreateCloudBugObjects.runAndJoinSubprocess, debugVideoSubprocess))
             for future in futures:
                 future.result()
 

@@ -23,6 +23,7 @@ from kwola.tasks import RunTestingStep
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 from kwolacloud.helpers.webhook import sendCustomerWebhook
+from  kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
 import logging
 import json
 import os
@@ -68,7 +69,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
 
         plugins = [
-            CreateLocalBugObjects(config),
+            CreateCloudBugObjects(config),
             LogSessionRewards(config),
             LogSessionActionExecutionTimes(config),
             PrecomputeSessionsForSampleCache(config),
