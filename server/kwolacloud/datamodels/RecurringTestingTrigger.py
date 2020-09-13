@@ -22,6 +22,7 @@ import sys
 import shutil
 import urllib.parse
 import logging
+import stat
 import giturlparse
 
 
@@ -158,7 +159,7 @@ class RecurringTestingTrigger(Document):
             keyFilePath = os.path.join(homeDir, ".ssh", "id_rsa")
             with open(keyFilePath, 'wt') as keyFile:
                 keyFile.write(self.repositorySSHPrivateKey)
-            os.chmod(keyFilePath, 660)
+            os.chmod(keyFilePath, stat.S_IRUSR | stat.S_IWUSR)
 
             # sshConfigFilePath = os.path.join(homeDir, ".ssh", "config")
             # with open(sshConfigFilePath, 'wt') as sshConfigFile:
