@@ -148,6 +148,9 @@ class RecurringTestingTrigger(Document):
                     f'password {self.repositoryPassword}\n'
                 ])
 
+        subprocess.run(['ls', '-alh', '/home/kwola'])
+        subprocess.run(['ls', '-alh', '/home/kwola/.ssh'])
+
         if self.repositorySSHPrivateKey:
             if not os.path.exists(os.path.join(homeDir, ".ssh")):
                 os.mkdir(os.path.join(homeDir, ".ssh"))
