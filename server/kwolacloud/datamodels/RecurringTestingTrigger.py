@@ -158,7 +158,7 @@ class RecurringTestingTrigger(Document):
             keyFilePath = os.path.join(homeDir, ".ssh", "id_rsa")
             with open(keyFilePath, 'wt') as keyFile:
                 keyFile.write(self.repositorySSHPrivateKey)
-            # os.chmod(keyFilePath, 600)
+            os.chmod(keyFilePath, 660)
 
             # sshConfigFilePath = os.path.join(homeDir, ".ssh", "config")
             # with open(sshConfigFilePath, 'wt') as sshConfigFile:
