@@ -151,10 +151,21 @@ class RecurringTestingTrigger(Document):
 
         if self.repositorySSHPrivateKey:
             os.mkdir(os.path.join(tempHome, ".ssh"))
-            keyFilePath = os.path.join(tempHome, "key_file")
+
+            keyFilePath = os.path.join(tempHome, ".ssh", "id_rsa")
             with open(keyFilePath, 'wt') as keyFile:
                 keyFile.write(self.repositorySSHPrivateKey)
             os.chmod(keyFilePath, 600)
+
+            sshConfigFilePath = os.path.join(tempHome, ".ssh", "config")
+            with open(sshConfigFilePath, 'wt') as sshConfigFile:
+                sshConfigFile.writelines([
+                    f'Host gitserv\n',
+                    f'    Hostname {gitURLParsed.host}\n',
+                    f'    IdentityFile {keyFilePath}\n'
+                    f'    IdentitiesOnly yes\n'
+                ])
+            os.chmod(sshConfigFilePath, 600)
 
             knownHostsFilePath = os.path.join(tempHome, ".ssh", "known_hosts")
             result = subprocess.run(["ssh-keyscan", "-H", gitURLParsed.host], env=gitEnv, stdout=subprocess.PIPE)
