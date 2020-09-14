@@ -104,11 +104,9 @@ def processSession(sessionId):
 
         logging.info(f"Starting trace saving for session {session.id}")
 
-        for trace in traces:
-            saveTrace(trace, config)
-        # with ThreadPoolExecutor(max_workers=8) as executor:
-        #     for trace in traces:
-        #         executor.submit(saveTrace, trace, config)
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            for trace in traces:
+                executor.submit(saveTrace, trace, config)
 
         logging.info(f"Finished trace saving for session {session.id}")
 
