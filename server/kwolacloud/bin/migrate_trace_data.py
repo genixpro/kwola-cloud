@@ -43,7 +43,7 @@ def loadTraces(config, session):
     hasNone = False
     traces = []
     for traceId in session.executionTraces:
-        # logging.info(f"Loading trace object {traceId}")
+        logging.info(f"Loading trace object {traceId}")
 
         trace = ExecutionTrace.loadFromDisk(traceId, config)
         if trace is None:
@@ -124,7 +124,7 @@ def main():
 
         ctx = multiprocessing.get_context('spawn')
 
-        pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess)
+        pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess, maxtasksperchild=25)
 
         resultObjects = []
         for session in ExecutionSession.objects():
