@@ -54,9 +54,11 @@ def saveTrace(trace, config):
     # getLogger().info(f"Saving trace object {trace.id}")
     trace.saveToDisk(config)
 
-def processSession(session):
+def processSession(sessionId):
     try:
-        getLogger().info(f"Processing session {session.id}")
+        getLogger().info(f"Processing session {sessionId}")
+
+        session = ExecutionSession.objects(id=sessionId).first()
 
         if len(session.executionTraces) == 0:
             getLogger().info(f"Skipping session {session.id} because it has no execution traces")
@@ -72,7 +74,7 @@ def processSession(session):
         config['data_compress_level'] = {"default": 0}
         config["data_serialization_method"] = {"default": "mongo"}
 
-        getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
+        getLogger().info(f"Starting trace loading for session {session.id}")
 
         traces, hasNone = loadTraces(config, session)
 
@@ -136,5 +138,5 @@ def main():
 
         with ProcessPoolExecutor(max_workers=8) as executor:
             for session in ExecutionSession.objects():
-                executor.submit(processSession, session)
+                executor.submit(processSession, session.id)
 
