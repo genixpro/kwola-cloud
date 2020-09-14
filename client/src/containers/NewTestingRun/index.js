@@ -80,7 +80,13 @@ class NewTestingRun extends Component {
     {
         axios.get(`/application/${this.props.match.params.id}`).then((response) =>
         {
-            this.setState({application: response.data, runConfiguration: response.data.defaultRunConfiguration})
+            const stateUpdate = {application: response.data};
+            if (response.data.defaultRunConfiguration)
+            {
+                stateUpdate.runConfiguration = response.data.defaultRunConfiguration;
+            }
+            
+            this.setState(stateUpdate);
         });
     }
 
