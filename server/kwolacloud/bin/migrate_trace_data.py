@@ -116,9 +116,12 @@ def processSession(sessionId):
 
 
 def main():
+        try:
+            multiprocessing.set_start_method('spawn')
+        except RuntimeError:
+            pass
+            
         configData = loadConfiguration()
-
-        multiprocessing.set_start_method('spawn')
 
         if configData['features']['enableGoogleCloudLogging']:
                 # Setup logging with google cloud
