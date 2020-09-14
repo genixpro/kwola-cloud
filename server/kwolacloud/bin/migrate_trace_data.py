@@ -78,6 +78,7 @@ def processSession(session):
 
         if hasNone:
             getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
+            unmountTestingRunStorageDrive(configDir)
             return
 
         config['data_compress_level'] = {
