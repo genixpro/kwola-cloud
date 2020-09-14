@@ -21,6 +21,7 @@ from ..helpers.slack import SlackLogHandler
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from google.cloud import storage
 import json
+import multiprocessing
 
 # Do not remove the following unused imports, as they are actually required
 # For the migration script to function correctly.
@@ -117,6 +118,7 @@ def processSession(sessionId):
 def main():
         configData = loadConfiguration()
 
+        multiprocessing.set_start_method('spawn')
 
         if configData['features']['enableGoogleCloudLogging']:
                 # Setup logging with google cloud
