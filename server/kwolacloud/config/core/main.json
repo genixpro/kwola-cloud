@@ -19,6 +19,7 @@
     "default": "mongo",
     "ExecutionTrace": "json"
   },
+  "data_enable_local_file_locking": false,
   "debug_video_action_prediction_circle_1_radius":10,
   "debug_video_action_prediction_circle_2_radius":5,
   "debug_video_action_prediction_circle_color_b":255,

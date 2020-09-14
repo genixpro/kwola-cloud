@@ -78,6 +78,7 @@ def processSession(sessionId):
 
         config['data_compress_level'] = {"default": 0}
         config["data_serialization_method"] = {"default": "mongo"}
+        config["data_enable_local_file_locking"] = False
 
         logging.info(f"Starting trace loading for session {session.id}")
 
@@ -99,6 +100,7 @@ def processSession(sessionId):
             "default": "mongo",
             "ExecutionTrace": "json"
         }
+        config["data_enable_local_file_locking"] = False
 
         logging.info(f"Starting trace saving for session {session.id}")
 
