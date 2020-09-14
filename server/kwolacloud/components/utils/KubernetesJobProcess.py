@@ -31,6 +31,7 @@ import stripe
 from kwola.config.logger import getLogger
 from kwolacloud.db import connectToMongoWithRetries
 from ...helpers.slack import SlackLogHandler
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
 class KubernetesJobProcess:
     """
@@ -45,24 +46,7 @@ class KubernetesJobProcess:
     def __init__(self, targetFunc):
         self.targetFunc = targetFunc
 
-        configData = loadConfiguration()
-
-        if configData['features']['enableGoogleCloudLogging']:
-            # Setup logging with google cloud
-            client = google.cloud.logging.Client()
-            client.get_default_handler()
-            client.setup_logging()
-
-            logger = getLogger()
-            logger.handlers = logger.handlers[0:1]
-
-        if configData['features']['enableSlackLogging']:
-            logger = getLogger()
-            logger.addHandler(SlackLogHandler())
-
-        connectToMongoWithRetries()
-
-        stripe.api_key = configData['stripe']['apiKey']
+        initializeKwolaCloudProcess()
 
     def run(self):
         logging.info(f"[{os.getpid()}] KubernetesJobProcess: Waiting for input from stdin")

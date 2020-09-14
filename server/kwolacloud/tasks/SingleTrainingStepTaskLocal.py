@@ -6,21 +6,10 @@
 
 from .SingleTrainingStepTask import runOneTrainingStepForRun
 from kwola.tasks.TaskProcess import TaskProcess
-import google.cloud.logging
-from ..config.config import loadConfiguration
-from mongoengine import connect
-import stripe
-from kwola.config.logger import getLogger, setupLocalLogging
-from ..db import connectToMongoWithRetries
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
 if __name__ == "__main__":
-    configData = loadConfiguration()
-
-    setupLocalLogging()
-
-    connectToMongoWithRetries()
-
-    stripe.api_key = configData['stripe']['apiKey']
+    initializeKwolaCloudProcess()
 
     task = TaskProcess(runOneTrainingStepForRun)
     task.run()

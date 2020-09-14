@@ -14,12 +14,9 @@ from flask_caching import Cache
 import google.cloud.logging
 from .helpers.slack import SlackLogHandler
 from kwola.config.logger import getLogger, setupLocalLogging
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
-configData = loadConfiguration()
-
-stripe.api_key = configData['stripe']['apiKey']
-
-connectToMongoWithRetries()
+initializeKwolaCloudProcess()
 
 cacheConfig = {
     "CACHE_TYPE": "simple",
@@ -31,19 +28,6 @@ flaskApplication.config.from_mapping(cacheConfig)
 api = Api(flaskApplication)
 CORS(flaskApplication)
 cache = Cache(flaskApplication)
-
-if configData['features']['enableGoogleCloudLogging']:
-    # Setup logging with google cloud
-    loggingClient = google.cloud.logging.Client()
-    loggingClient.get_default_handler()
-    loggingClient.setup_logging()
-
-    logger = getLogger()
-    logger.handlers = logger.handlers[0:1]
-
-if configData['features']['enableSlackLogging']:
-    logger = getLogger()
-    logger.addHandler(SlackLogHandler())
 
 # Technically for gunicorn to find the flask application object, it must have the variable
 # name "application". However we prefer the more explicit flaskApplication, this being the

@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from google.cloud import storage
 import json
 import multiprocessing
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
 # Do not remove the following unused imports, as they are actually required
 # For the migration script to function correctly.
@@ -112,36 +113,15 @@ def processSession(sessionId):
         tracesInDb.delete()
         getLogger().info(f"Finished processing session {session.id}.")
     except Exception as e:
-        getLogger().info(f"Received an error while processing {session.id}: {traceback.format_exc()}")
-
+        getLogger().info(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
 
 def main():
-        try:
-            multiprocessing.set_start_method('spawn')
-        except RuntimeError:
-            pass
-            
-        configData = loadConfiguration()
+    initializeKwolaCloudProcess()
 
-        if configData['features']['enableGoogleCloudLogging']:
-                # Setup logging with google cloud
-                client = google.cloud.logging.Client()
-                client.get_default_handler()
-                client.setup_logging()
+    pool = multiprocessing.Pool(processes=8, initializer=initializeKwolaCloudProcess, maxtasksperchild=10)
 
-                logger = getLogger()
-                logger.handlers = logger.handlers[0:1]
+    for session in ExecutionSession.objects():
+        pool.apply_async(processSession, session.id)
 
-        if configData['features']['enableSlackLogging']:
-            logger = getLogger()
-            logger.addHandler(SlackLogHandler())
-
-
-        connectToMongoWithRetries()
-
-        stripe.api_key = configData['stripe']['apiKey']
-
-        with ProcessPoolExecutor(max_workers=8) as executor:
-            for session in ExecutionSession.objects():
-                executor.submit(processSession, session.id)
-
+    pool.close()
+    pool.join()
