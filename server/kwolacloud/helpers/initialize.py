@@ -12,7 +12,7 @@ import os
 import stripe
 
 
-def initializeKwolaCloudProcess(localLogging=False):
+def initializeKwolaCloudProcess():
     try:
         multiprocessing.set_start_method('spawn')
     except RuntimeError:
@@ -20,7 +20,7 @@ def initializeKwolaCloudProcess(localLogging=False):
 
     configData = loadConfiguration()
 
-    if configData['features']['enableGoogleCloudLogging'] and not localLogging:
+    if configData['features']['enableGoogleCloudLogging']:
         # Setup logging with google cloud
         client = google.cloud.logging.Client()
         client.setup_logging()

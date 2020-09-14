@@ -124,7 +124,7 @@ def main():
 
         ctx = multiprocessing.get_context('spawn')
 
-        pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess, initargs=[False])
+        pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess)
 
         resultObjects = []
         for session in ExecutionSession.objects():
