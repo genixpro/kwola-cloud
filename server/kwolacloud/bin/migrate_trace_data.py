@@ -13,6 +13,7 @@ import traceback
 import stripe
 from pprint import pformat
 from kwola.config.logger import getLogger
+import logging
 from ..db import connectToMongoWithRetries
 from kwolacloud.tasks.RunHourlyTasks import runHourlyTasks
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
@@ -42,7 +43,7 @@ def loadTraces(config, session):
     hasNone = False
     traces = []
     for traceId in session.executionTraces:
-        # getLogger().info(f"Loading trace object {traceId}")
+        # logging.info(f"Loading trace object {traceId}")
 
         trace = ExecutionTrace.loadFromDisk(traceId, config)
         if trace is None:
@@ -53,21 +54,21 @@ def loadTraces(config, session):
     return traces, hasNone
 
 def saveTrace(trace, config):
-    # getLogger().info(f"Saving trace object {trace.id}")
+    # logging.info(f"Saving trace object {trace.id}")
     trace.saveToDisk(config)
 
 def processSession(sessionId):
     try:
-        getLogger().info(f"Processing session {sessionId}")
+        logging.info(f"Processing session {sessionId}")
 
         session = ExecutionSession.objects(id=sessionId).first()
 
         if len(session.executionTraces) == 0:
-            getLogger().info(f"Skipping session {session.id} because it has no execution traces")
+            logging.info(f"Skipping session {session.id} because it has no execution traces")
             return
 
         if session.applicationId is None:
-            getLogger().info(f"Skipping session {session.id} because its applicationId is None")
+            logging.info(f"Skipping session {session.id} because its applicationId is None")
             return
 
         configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
@@ -76,12 +77,12 @@ def processSession(sessionId):
         config['data_compress_level'] = {"default": 0}
         config["data_serialization_method"] = {"default": "mongo"}
 
-        getLogger().info(f"Starting trace loading for session {session.id}")
+        logging.info(f"Starting trace loading for session {session.id}")
 
         traces, hasNone = loadTraces(config, session)
 
         if hasNone:
-            getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
+            logging.info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
             unmountTestingRunStorageDrive(configDir)
             return
 
@@ -108,12 +109,12 @@ def processSession(sessionId):
 
         unmountTestingRunStorageDrive(configDir)
 
-        getLogger().info(f"Deleting old trace objects for session {session.id}.")
+        logging.info(f"Deleting old trace objects for session {session.id}.")
         tracesInDb = ExecutionTrace.objects(executionSessionId=session.id)
         tracesInDb.delete()
-        getLogger().info(f"Finished processing session {session.id}.")
+        logging.info(f"Finished processing session {session.id}.")
     except Exception as e:
-        getLogger().info(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
+        logging.info(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
 
 def main():
     try:
@@ -129,4 +130,4 @@ def main():
         pool.close()
         pool.join()
     except Exception as e:
-        getLogger().info(f"Received an error while running the migration task: {traceback.format_exc()}")
+        logging.info(f"Received an error while running the migration task: {traceback.format_exc()}")
