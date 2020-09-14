@@ -18,6 +18,7 @@ from kwolacloud.tasks.RunHourlyTasks import runHourlyTasks
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from ..helpers.slack import SlackLogHandler
+from concurrent.futures import ThreadPoolExecutor
 
 # Do not remove the following unused imports, as they are actually required
 # For the migration script to function correctly.
@@ -46,6 +47,10 @@ def loadTraces(config, session):
 
         traces.append(trace)
     return traces, hasNone
+
+def saveTrace(trace, config):
+    getLogger().info(f"Saving trace object {trace.id}")
+    trace.saveToDisk(config)
 
 def main():
         configData = loadConfiguration()
@@ -103,9 +108,9 @@ def main():
                     "ExecutionTrace": "json"
                 }
 
-                for trace in traces:
-                    getLogger().info(f"Saving trace object {trace.id}")
-                    trace.saveToDisk(config)
+                with ThreadPoolExecutor(max_workers=32) as executor:
+                    for trace in traces:
+                        executor.submit(saveTrace, trace, config)
 
                 config.saveConfig()
 
