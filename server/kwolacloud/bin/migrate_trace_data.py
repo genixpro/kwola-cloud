@@ -124,8 +124,14 @@ def main():
 
         pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess, initargs=[False])
 
+        resultObjects = []
         for session in ExecutionSession.objects():
-            pool.apply_async(processSession, session.id)
+            logging.info(f"Queueing session for {session.id}.")
+            result = pool.apply_async(processSession, session.id)
+            resultObjects.append(result)
+
+        for result in resultObjects:
+            result.wait()
 
         pool.close()
         pool.join()
