@@ -18,7 +18,7 @@ from kwolacloud.tasks.RunHourlyTasks import runHourlyTasks
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from ..helpers.slack import SlackLogHandler
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 # Do not remove the following unused imports, as they are actually required
 # For the migration script to function correctly.
@@ -52,6 +52,56 @@ def saveTrace(trace, config):
     getLogger().info(f"Saving trace object {trace.id}")
     trace.saveToDisk(config)
 
+def processSession(session):
+    try:
+        getLogger().info(f"Processing session {session.id}")
+
+        if len(session.executionTraces) == 0:
+            getLogger().info(f"Skipping session {session.id} because it has no execution traces")
+            return
+
+        if session.applicationId is None:
+            getLogger().info(f"Skipping session {session.id} because its applicationId is None")
+            return
+
+        configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
+        config = KwolaCoreConfiguration(configDir)
+
+        config['data_compress_level'] = {"default": 0}
+        config["data_serialization_method"] = {"default": "mongo"}
+
+        getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
+
+        traces, hasNone = loadTraces(config, session)
+
+        if hasNone:
+            getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
+            return
+
+        config['data_compress_level'] = {
+            "default": 0,
+            "ExecutionTrace": 9
+        }
+
+        config["data_serialization_method"] = {
+            "default": "mongo",
+            "ExecutionTrace": "json"
+        }
+
+        with ThreadPoolExecutor(max_workers=32) as executor:
+            for trace in traces:
+                executor.submit(saveTrace, trace, config)
+
+        config.saveConfig()
+
+        unmountTestingRunStorageDrive(configDir)
+
+        tracesInDb = ExecutionTrace.objects(executionSessionId=session.id)
+        tracesInDb.delete()
+    except Exception as e:
+        getLogger().info(f"Received an error while processing {session.id}: {traceback.format_exc()}")
+
+
 def main():
         configData = loadConfiguration()
 
@@ -74,50 +124,7 @@ def main():
 
         stripe.api_key = configData['stripe']['apiKey']
 
-        for session in ExecutionSession.objects():
-            try:
-                if len(session.executionTraces) == 0:
-                    continue
-
-                getLogger().info(f"Processing session {session.id}")
-
-                if session.applicationId is None:
-                    continue
-
-                configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
-                config = KwolaCoreConfiguration(configDir)
-
-                config['data_compress_level'] = {"default": 0}
-                config["data_serialization_method"] = {"default": "mongo"}
-
-                getLogger().info(f"Current serialization method: {pformat(config['data_serialization_method'])}")
-
-                traces, hasNone = loadTraces(config, session)
-
-                if hasNone:
-                    getLogger().info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
-                    continue
-
-                config['data_compress_level'] = {
-                    "default": 0,
-                    "ExecutionTrace": 9
-                  }
-
-                config["data_serialization_method"] = {
-                    "default": "mongo",
-                    "ExecutionTrace": "json"
-                }
-
-                with ThreadPoolExecutor(max_workers=32) as executor:
-                    for trace in traces:
-                        executor.submit(saveTrace, trace, config)
-
-                config.saveConfig()
-
-                unmountTestingRunStorageDrive(configDir)
-
-                tracesInDb = ExecutionTrace.objects(executionSessionId=session.id)
-                tracesInDb.delete()
-            except Exception as e:
-                getLogger().info(f"Received an error while processing {session.id}: {traceback.format_exc()}")
+        with ProcessPoolExecutor(max_workers=16) as executor:
+            for session in ExecutionSession.objects():
+                executor.submit(processSession, session)
 
