@@ -90,7 +90,7 @@ def processSession(session):
             "ExecutionTrace": "json"
         }
 
-        with ThreadPoolExecutor(max_workers=32) as executor:
+        with ThreadPoolExecutor(max_workers=8) as executor:
             for trace in traces:
                 executor.submit(saveTrace, trace, config)
 
@@ -133,7 +133,7 @@ def main():
 
         stripe.api_key = configData['stripe']['apiKey']
 
-        with ProcessPoolExecutor(max_workers=16) as executor:
+        with ProcessPoolExecutor(max_workers=8) as executor:
             for session in ExecutionSession.objects():
                 executor.submit(processSession, session)
 
