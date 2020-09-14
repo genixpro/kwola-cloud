@@ -118,7 +118,9 @@ def processSession(sessionId):
 def main():
     initializeKwolaCloudProcess()
 
-    pool = multiprocessing.Pool(processes=8, initializer=initializeKwolaCloudProcess, maxtasksperchild=10)
+    ctx = multiprocessing.get_context('spawn')
+
+    pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess, maxtasksperchild=10)
 
     for session in ExecutionSession.objects():
         pool.apply_async(processSession, session.id)
