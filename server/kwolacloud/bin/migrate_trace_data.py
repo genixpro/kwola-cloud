@@ -61,6 +61,8 @@ def processSession(sessionId):
     try:
         logging.info(f"Processing session {sessionId}")
 
+        connectToMongoWithRetries()
+
         session = ExecutionSession.objects(id=sessionId).first()
 
         if len(session.executionTraces) == 0:
