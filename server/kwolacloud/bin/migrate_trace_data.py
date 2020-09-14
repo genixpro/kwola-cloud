@@ -40,7 +40,7 @@ def loadTraces(config, session):
     hasNone = False
     traces = []
     for traceId in session.executionTraces:
-        getLogger().info(f"Loading trace object {traceId}")
+        # getLogger().info(f"Loading trace object {traceId}")
 
         trace = ExecutionTrace.loadFromDisk(traceId, config)
         if trace is None:
@@ -51,7 +51,7 @@ def loadTraces(config, session):
     return traces, hasNone
 
 def saveTrace(trace, config):
-    getLogger().info(f"Saving trace object {trace.id}")
+    # getLogger().info(f"Saving trace object {trace.id}")
     trace.saveToDisk(config)
 
 def processSession(session):
