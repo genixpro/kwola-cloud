@@ -19,6 +19,8 @@ from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from ..helpers.slack import SlackLogHandler
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from google.cloud import storage
+import json
 
 # Do not remove the following unused imports, as they are actually required
 # For the migration script to function correctly.
@@ -92,7 +94,12 @@ def processSession(session):
             for trace in traces:
                 executor.submit(saveTrace, trace, config)
 
-        config.saveConfig()
+        storageClient = storage.Client()
+        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + session.applicationId)
+        configFileBlob = storage.Blob("kwola.json", applicationStorageBucket)
+        configFileBlob.upload_from_string(json.dumps(config.configData))
+
+        # config.saveConfig()
 
         unmountTestingRunStorageDrive(configDir)
 
