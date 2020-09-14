@@ -96,8 +96,10 @@ def processSession(session):
 
         unmountTestingRunStorageDrive(configDir)
 
+        getLogger().info(f"Deleting old trace objects for session {session.id}.")
         tracesInDb = ExecutionTrace.objects(executionSessionId=session.id)
         tracesInDb.delete()
+        getLogger().info(f"Finished processing session {session.id}.")
     except Exception as e:
         getLogger().info(f"Received an error while processing {session.id}: {traceback.format_exc()}")
 
