@@ -54,7 +54,7 @@ def loadTraces(config, session):
     return traces, hasNone
 
 def saveTrace(trace, config):
-    logging.info(f"Saving trace object {trace.id}")
+    # logging.info(f"Saving trace object {trace.id}")
     trace.saveToDisk(config)
 
 def processSession(sessionId):
@@ -100,14 +100,22 @@ def processSession(sessionId):
             "ExecutionTrace": "json"
         }
 
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            for trace in traces:
-                executor.submit(saveTrace, trace, config)
+        logging.info(f"Starting trace saving for session {session.id}")
+
+        for trace in traces:
+            saveTrace(trace, config)
+        # with ThreadPoolExecutor(max_workers=8) as executor:
+        #     for trace in traces:
+        #         executor.submit(saveTrace, trace, config)
+
+        logging.info(f"Finished trace saving for session {session.id}")
 
         storageClient = storage.Client()
         applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + session.applicationId)
         configFileBlob = storage.Blob("kwola.json", applicationStorageBucket)
         configFileBlob.upload_from_string(json.dumps(config.configData))
+
+        logging.info(f"Saved the config object {session.id}. Unmounting storage drive")
 
         # config.saveConfig()
 
