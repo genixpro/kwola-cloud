@@ -43,7 +43,7 @@ def loadTraces(config, session):
     hasNone = False
     traces = []
     for traceId in session.executionTraces:
-        logging.info(f"Loading trace object {traceId}")
+        # logging.info(f"Loading trace object {traceId}")
 
         trace = ExecutionTrace.loadFromDisk(traceId, config)
         if trace is None:
@@ -54,7 +54,7 @@ def loadTraces(config, session):
     return traces, hasNone
 
 def saveTrace(trace, config):
-    # logging.info(f"Saving trace object {trace.id}")
+    logging.info(f"Saving trace object {trace.id}")
     trace.saveToDisk(config)
 
 def processSession(sessionId):
@@ -82,6 +82,8 @@ def processSession(sessionId):
         logging.info(f"Starting trace loading for session {session.id}")
 
         traces, hasNone = loadTraces(config, session)
+
+        logging.info(f"Finished trace loading for session {session.id}")
 
         if hasNone:
             logging.info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
