@@ -65,11 +65,11 @@ def processSession(sessionId):
 
         if len(session.executionTraces) == 0:
             logging.info(f"Skipping session {session.id} because it has no execution traces")
-            return
+            return "skip_no_trace"
 
         if session.applicationId is None:
             logging.info(f"Skipping session {session.id} because its applicationId is None")
-            return
+            return "skip_no_app_id"
 
         configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
         config = KwolaCoreConfiguration(configDir)
@@ -84,7 +84,7 @@ def processSession(sessionId):
         if hasNone:
             logging.info(f"Skipping session {session.id} because I was not able to load all of the execution traces.")
             unmountTestingRunStorageDrive(configDir)
-            return
+            return "skip_no_traces"
 
         config['data_compress_level'] = {
             "default": 0,
@@ -113,8 +113,10 @@ def processSession(sessionId):
         tracesInDb = ExecutionTrace.objects(executionSessionId=session.id)
         tracesInDb.delete()
         logging.info(f"Finished processing session {session.id}.")
+        return "success"
     except Exception as e:
         logging.info(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
+        return traceback.format_exc()
 
 def main():
     try:
@@ -127,11 +129,13 @@ def main():
         resultObjects = []
         for session in ExecutionSession.objects():
             logging.info(f"Queueing session for {session.id}.")
-            result = pool.apply_async(processSession, session.id)
-            resultObjects.append(result)
+            asyncResult = pool.apply_async(processSession, session.id)
+            resultObjects.append((session.id, asyncResult))
 
-        for result in resultObjects:
-            result.wait()
+        for sessionId, asyncResult in resultObjects:
+            asyncResult.wait()
+            result = asyncResult.get()
+            logging.info(f"Result for session {sessionId}: {result}")
 
         pool.close()
         pool.join()
