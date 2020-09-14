@@ -6,6 +6,7 @@ kwolaLoggingFormatString = '%(asctime)s %(levelname)s %(filename)s:%(lineno)d [%
 kwolaDateFormatString = "%b%d %H:%M:%S"
 
 def setupLocalLogging():
+    global logger
     logging.basicConfig(format=kwolaLoggingFormatString, datefmt=kwolaDateFormatString)
     logger.setLevel(logging.INFO)
 
