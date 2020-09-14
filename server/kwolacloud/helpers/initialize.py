@@ -37,3 +37,4 @@ def initializeKwolaCloudProcess():
 
     stripe.api_key = configData['stripe']['apiKey']
 
+    getLogger().info("Finished initialization routine for kwola cloud process.")
