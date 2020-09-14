@@ -116,14 +116,17 @@ def processSession(sessionId):
         getLogger().info(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
 
 def main():
-    initializeKwolaCloudProcess()
+    try:
+        initializeKwolaCloudProcess()
 
-    ctx = multiprocessing.get_context('spawn')
+        ctx = multiprocessing.get_context('spawn')
 
-    pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess, initargs=[True])
+        pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess, initargs=[True])
 
-    for session in ExecutionSession.objects():
-        pool.apply_async(processSession, session.id)
+        for session in ExecutionSession.objects():
+            pool.apply_async(processSession, session.id)
 
-    pool.close()
-    pool.join()
+        pool.close()
+        pool.join()
+    except Exception as e:
+        getLogger().info(f"Received an error while running the migration task: {traceback.format_exc()}")

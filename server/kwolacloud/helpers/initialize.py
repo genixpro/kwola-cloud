@@ -1,13 +1,15 @@
+from ..config.config import loadConfiguration
+from ..db import connectToMongoWithRetries
+from ..helpers.slack import SlackLogHandler
+from kwola.config.logger import getLogger
+from kwola.config.logger import getLogger, setupLocalLogging, kwolaLoggingFormatString, kwolaDateFormatString
 import google
 import google.cloud
 import google.cloud.logging
-from ..config.config import loadConfiguration
-from kwola.config.logger import getLogger
-from ..db import connectToMongoWithRetries
-from ..helpers.slack import SlackLogHandler
+import logging
 import multiprocessing
+import os
 import stripe
-from kwola.config.logger import getLogger, setupLocalLogging
 
 
 def initializeKwolaCloudProcess(localLogging=False):
@@ -21,8 +23,9 @@ def initializeKwolaCloudProcess(localLogging=False):
     if configData['features']['enableGoogleCloudLogging'] and not localLogging:
         # Setup logging with google cloud
         client = google.cloud.logging.Client()
-        client.get_default_handler()
         client.setup_logging()
+        handler = client.get_default_handler()
+        handler.setFormatter(logging.Formatter(kwolaLoggingFormatString, kwolaDateFormatString))
 
         logger = getLogger()
         logger.handlers = logger.handlers[0:1]
@@ -37,4 +40,4 @@ def initializeKwolaCloudProcess(localLogging=False):
 
     stripe.api_key = configData['stripe']['apiKey']
 
-    getLogger().info("Finished initialization routine for kwola cloud process.")
+    getLogger().info(f"Finished initialization routine for kwola cloud process with pid {os.getpid()}.")
