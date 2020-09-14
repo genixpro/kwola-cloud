@@ -128,14 +128,14 @@ def main():
 
         resultObjects = []
         for session in ExecutionSession.objects():
-            logging.info(f"Queueing session for {session.id}.")
-            asyncResult = pool.apply_async(processSession, session.id)
+            # logging.info(f"Queueing session for {session.id}.")
+            asyncResult = pool.apply_async(processSession, args=[session.id])
             resultObjects.append((session.id, asyncResult))
 
         for sessionId, asyncResult in resultObjects:
             asyncResult.wait()
             result = asyncResult.get()
-            logging.info(f"Result for session {sessionId}: {result}")
+            # logging.info(f"Result for session {sessionId}: {result}")
 
         pool.close()
         pool.join()
