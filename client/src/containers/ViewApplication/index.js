@@ -56,10 +56,7 @@ class ViewApplication extends Component {
     {
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            var _hsq = window._hsq = window._hsq || [];
-            mixpanel.track("clicked-new-testing-run");
-            _hsq.push(["trackEvent", {id: "Clicked New Testing Run"}]);
-            window.ga('send', 'event', "new-testing-run", "click");
+            window.dataLayer.push({'event': 'clicked-new-testing-run'});
         }
 
         this.props.history.push(`/app/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
@@ -68,6 +65,11 @@ class ViewApplication extends Component {
 
     setupRecurringTesting()
     {
+        if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
+        {
+            window.dataLayer.push({'event': 'clicked-setup-recurring-trigger'});
+        }
+
         axios.get(`/recurring_testing_trigger`, {params: {applicationId: this.props.match.params.id}}).then((response) =>
         {
             if (response.data.recurringTestingTriggers.length > 0)

@@ -98,22 +98,8 @@ class AppRouter extends Component {
     this.lastUrl = null;
   }
 
-  render() {
-    if (window.location.href !== this.lastUrl)
-    {
-      if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
-      {
-        var _hsq = window._hsq = window._hsq || [];
-        _hsq.push(['setPath', window.location.pathname]);
-        _hsq.push(['trackPageView']);
-
-        window.ga('set', 'page', window.location.href);
-        window.ga('send', 'pageview');
-      }
-
-      this.lastUrl = window.location.href;
-    }
-
+  render()
+  {
     const { url, style } = this.props;
     return (
       <Suspense fallback={<Loader />}>

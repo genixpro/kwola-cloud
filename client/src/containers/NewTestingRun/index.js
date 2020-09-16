@@ -123,32 +123,17 @@ class NewTestingRun extends Component {
 
     trackOrderSuccess(testingRunId, price)
     {
-
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            var _hsq = window._hsq = window._hsq || [];
-            mixpanel.track("complete-order-success", {testingRunId: testingRunId, price: price});
-            mixpanel.people.track_charge(price)
-            _hsq.push(["trackEvent", {
-                id: "Completed Order",
-                value: price
-            }]);
-            
-            window.ga('send', 'event', "order-testing-run", "success", "", price);
+            window.dataLayer.push({'event': 'complete-order-success', 'conversionValue': price});
         }
-
     }
 
     trackOrderFailure(price)
     {
-
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            var _hsq = window._hsq = window._hsq || [];
-            mixpanel.track("complete-order-error", {price: price});
-            _hsq.push(["trackEvent", {id: "Failed Order"}]);
-            this.setState({snackbar:true,snackbarText:'Order failed.'})
-            window.ga('send', 'event', "order-testing-run", "failed", "", price);
+            window.dataLayer.push({'event': 'complete-order-error', 'conversionValue': price});
         }
 
     }
@@ -157,10 +142,7 @@ class NewTestingRun extends Component {
     {
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            mixpanel.track("clicked-launch-testing-run");
-            var _hsq = window._hsq = window._hsq || [];
-            _hsq.push(["trackEvent", {id: "Clicked Launch Testing Run"}]);
-            window.ga('send', 'event', "launch-testing-run", "click");
+            window.dataLayer.push({'event': 'clicked-launch-testing-run'});
         }
 
 

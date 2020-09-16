@@ -131,10 +131,7 @@ class NewRecurringTestingTrigger extends Component {
     {
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            mixpanel.track("clicked-create-trigger");
-            var _hsq = window._hsq = window._hsq || [];
-            _hsq.push(["trackEvent", {id: "Clicked Create Trigger"}]);
-            window.ga('send', 'event', "create-trigger", "click");
+            window.dataLayer.push({'event': 'clicked-create-trigger'});
         }
 
 
@@ -236,34 +233,18 @@ class NewRecurringTestingTrigger extends Component {
 
     trackTriggerCreateSuccess(recurringTestingTriggerId, price)
     {
-
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            var _hsq = window._hsq = window._hsq || [];
-            mixpanel.track("create-trigger-success", {recurringTestingTriggerId: recurringTestingTriggerId, price: price});
-            mixpanel.people.track_charge(price)
-            _hsq.push(["trackEvent", {
-                id: "Trigger Created",
-                value: price
-            }]);
-
-            window.ga('send', 'event', "create-trigger", "success", "", price);
+            window.dataLayer.push({'event': 'setup-recurring-trigger-success', 'conversionValue': price});
         }
-
     }
 
     trackTriggerCreateFailure(price)
     {
-
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            var _hsq = window._hsq = window._hsq || [];
-            mixpanel.track("create-trigger-error", {price: price});
-            _hsq.push(["trackEvent", {id: "Failed Trigger"}]);
-            this.setState({snackbar:true,snackbarText:'Trigger failed.'})
-            window.ga('send', 'event', "create-trigger", "failed", "", price);
+            window.dataLayer.push({'event': 'setup-recurring-trigger-failure', 'conversionValue': price});
         }
-
     }
 
 
