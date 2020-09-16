@@ -227,7 +227,7 @@ class NewRecurringTestingTrigger extends Component {
         }
         if (this.state.mode === 'payment')
         {
-            return this.completeOrderClicked(elements)
+            return this.completeOrder(elements)
         }
     }
 
