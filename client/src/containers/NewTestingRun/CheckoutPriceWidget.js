@@ -38,6 +38,19 @@ class CheckoutPriceWidget extends Component {
         });
     }
 
+    updateParent()
+    {
+        if (!this.props.onChange)
+        {
+            return null;
+        }
+
+        this.props.onChange({
+            promoCode: this.state.promoCode
+        })
+    }
+
+
     componentDidMount()
     {
         // Temporary: Prefill the promocode field
@@ -79,15 +92,15 @@ class CheckoutPriceWidget extends Component {
         {
             if (response.data['promoCodes'].length > 0)
             {
-                this.setState({discountApplied: response.data['promoCodes'][0].coupon.percent_off / 100.0})
+                this.setState({discountApplied: response.data['promoCodes'][0].coupon.percent_off / 100.0}, () => this.updateParent())
             }
             else
             {
-                this.setState({discountApplied: 0})
+                this.setState({discountApplied: 0}, () => this.updateParent())
             }
         }, (error) =>
         {
-            this.setState({discountApplied: 0})
+            this.setState({discountApplied: 0}, () => this.updateParent())
         });
     }, 500)
 

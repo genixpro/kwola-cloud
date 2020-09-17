@@ -315,6 +315,7 @@ class NewTestingRun extends Component {
                                             objRef={(elem) => this.checkoutWidget = elem}
                                             runConfiguration={this.state.runConfiguration}
                                             onCheckoutButtonClicked={() => this.checkoutButtonClicked(elements)}
+                                            onChange={(data) => this.setState(data)}
                                             checkoutButtonText={this.state.mode === 'details' ? 'Launch Testing Run' : 'Complete Order'}
                                         />
                                     </Papersheet>

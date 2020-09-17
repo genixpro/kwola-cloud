@@ -310,7 +310,8 @@ class NewRecurringTestingTrigger extends Component {
                                 {
                                     this.state.mode === "payment" ?
                                         <TwoThirdColumn>
-                                            <PaymentDetailsSection onChange={(data) => this.setState(data)} />
+                                            <PaymentDetailsSection
+                                                onChange={(data) => this.setState(data)} />
                                         </TwoThirdColumn> : null
                                 }
 
@@ -324,6 +325,7 @@ class NewRecurringTestingTrigger extends Component {
                                                 objRef={(elem) => this.checkoutWidget = elem}
                                                 runConfiguration={this.state.runConfiguration}
                                                 onCheckoutButtonClicked={() => this.checkoutButtonClicked(elements)}
+                                                onChange={(data) => this.setState(data)}
                                                 checkoutButtonText={this.state.mode === 'details' ? 'Create Trigger' : 'Complete Order'}
                                             />
                                         </Papersheet>
