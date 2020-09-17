@@ -47,7 +47,7 @@ def loadTraces(config, session):
 
         trace = ExecutionTrace.loadFromDisk(traceId, config)
         if trace is None:
-            hasNone = True
+            # hasNone = True
             break
 
         traces.append(trace)
@@ -106,7 +106,8 @@ def processSession(sessionId):
 
         with ThreadPoolExecutor(max_workers=8) as executor:
             for trace in traces:
-                executor.submit(saveTrace, trace, config)
+                if trace is not None:
+                    executor.submit(saveTrace, trace, config)
 
         logging.info(f"Finished trace saving for session {session.id}")
 
