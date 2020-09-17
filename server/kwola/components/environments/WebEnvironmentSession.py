@@ -112,6 +112,8 @@ class WebEnvironmentSession:
 
         self.waitUntilNoNetworkActivity()
 
+        time.sleep(3)
+
         if self.config.autologin:
             self.runAutoLogin()
 
@@ -236,6 +238,22 @@ class WebEnvironmentSession:
             if len(emailInputs) == 0 or len(passwordInputs) == 0 or len(loginButtons) == 0:
                 getLogger().warning(f"[{os.getpid()}] Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.")
                 return
+
+            if len(emailInputs) == 1:
+                # Find the login button that is closest to the email input while being below it
+                loginButtons = sorted(
+                    filter(lambda button: bool(button.top > emailInputs[0].bottom), loginButtons),
+                    key=lambda button: abs(emailInputs[0].top - button.top)
+                )
+            elif len(passwordInputs) == 1:
+                # Find the login button that is closest to the password input while being below it
+                loginButtons = sorted(
+                    filter(lambda button: bool(button.top > passwordInputs[0].bottom), loginButtons),
+                    key=lambda button: abs(passwordInputs[0].top - button.top)
+                )
+            else:
+                # Find the login button that is lowest down on the page
+                loginButtons = sorted(loginButtons, key=lambda button: button.top, reverse=True)
 
             startURL = self.driver.current_url
 

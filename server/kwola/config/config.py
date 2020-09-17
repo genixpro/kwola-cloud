@@ -70,6 +70,9 @@ class KwolaCoreConfiguration:
 
         self.configData = data
 
+        self.connectToMongoIfNeeded()
+
+    def connectToMongoIfNeeded(self):
         if isinstance(self.configData['data_serialization_method'], dict):
             method = self.configData['data_serialization_method']['default']
         else:
@@ -86,8 +89,6 @@ class KwolaCoreConfiguration:
                         raise
                     else:
                         time.sleep(2**attempt)
-
-
 
 
     def getKwolaUserDataDirectory(self, subDirName, ensureExists=True):

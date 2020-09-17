@@ -434,6 +434,7 @@ class TrainingManager:
     @staticmethod
     def addExecutionSessionToSampleCache(executionSessionId, config):
         getLogger().info(f"Adding {executionSessionId} to the sample cache.")
+        config.connectToMongoIfNeeded()
         maxAttempts = 10
         for attempt in range(maxAttempts):
             try:
