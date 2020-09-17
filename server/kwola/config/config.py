@@ -26,18 +26,18 @@ import pkg_resources
 import re
 import time
 import pymongo.errors
+import mongoengine
+import mongoengine.connection
 from pprint import pprint
 
 
 globalCachedPrebuiltConfigs = {}
-globalHasMongoConnected = False
 
 class KwolaCoreConfiguration:
     """
         This class represents the configuration for the Kwola model.
     """
     def __init__(self, configurationDirectory = None, configData = None):
-        global globalHasMongoConnected
         if configurationDirectory is not None:
             self.configFileName = os.path.join(configurationDirectory, "kwola.json")
             self.configurationDirectory = configurationDirectory
@@ -75,8 +75,7 @@ class KwolaCoreConfiguration:
         else:
             method = self.configData['data_serialization_method']
 
-        if method == "mongo" and 'mongo_uri' in self.configData and self.configData['mongo_uri'] and not globalHasMongoConnected:
-            import mongoengine
+        if method == "mongo" and 'mongo_uri' in self.configData and self.configData['mongo_uri'] and len(mongoengine.connection._connections) == 0:
             maxAttempts = 5
             for attempt in range(maxAttempts):
                 try:
@@ -87,7 +86,6 @@ class KwolaCoreConfiguration:
                         raise
                     else:
                         time.sleep(2**attempt)
-            globalHasMongoConnected = True
 
 
 
