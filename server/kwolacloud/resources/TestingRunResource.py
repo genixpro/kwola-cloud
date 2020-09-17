@@ -74,6 +74,10 @@ class TestingRunsGroup(Resource):
         coupon = None
         if 'promoCode' in data:
             promoCode = data['promoCode']
+        else:
+            # Temporarily just autofill with a promocode
+            promoCode = "BETATRIAL"
+
         if promoCode:
             codes = stripe.PromotionCode.list(active=True, code=promoCode, limit=1).data
             if len(codes) > 0:
