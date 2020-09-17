@@ -28,9 +28,9 @@ export default class SingleCard extends Component {
           {/*  {moment(this.props.timestamp).format('MMM Do, YYYY')}*/}
           {/*</span>*/}
         {/*</div>*/}
-        <button className="deleteBtn" onClick={this.props.clickHandler}>
-          <DeleteIcon>clear</DeleteIcon>
-        </button>
+        {/*<button className="deleteBtn" onClick={this.props.clickHandler}>*/}
+        {/*  <DeleteIcon>clear</DeleteIcon>*/}
+        {/*</button>*/}
       </SingleCardWrapper>
     );
   }
