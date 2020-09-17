@@ -72,7 +72,7 @@ class TestingRunsGroup(Resource):
 
         promoCode = None
         coupon = None
-        if 'promoCode' in data:
+        if 'promoCode' in data and data['promoCode']:
             promoCode = data['promoCode']
         else:
             # Temporarily just autofill with a promocode
