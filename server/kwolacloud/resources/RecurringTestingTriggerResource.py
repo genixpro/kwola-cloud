@@ -63,8 +63,12 @@ class RecurringTestingTriggerGroup(Resource):
 
         promoCode = None
         coupon = None
-        if 'promoCode' in data:
+        if 'promoCode' in data and data['promoCode']:
             promoCode = data['promoCode']
+        else:
+            # Temporarily just autofill with a promocode
+            promoCode = "BETATRIAL"
+
         if promoCode:
             codes = stripe.PromotionCode.list(active=True, code=promoCode, limit=1).data
             if len(codes) > 0:
