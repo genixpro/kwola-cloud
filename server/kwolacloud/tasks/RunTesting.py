@@ -117,8 +117,11 @@ def runTesting(testingRunId):
             configFileBlob.upload_from_string(json.dumps(kwolaConfigData))
 
         # Also write a copy locally.
-        with open(configFilePath, 'wt') as configFile:
-            json.dump(kwolaConfigData, configFile)
+        try:
+            with open(configFilePath, 'wt') as configFile:
+                json.dump(kwolaConfigData, configFile)
+        except OSError:
+            pass
 
         logging.info(f"Testing Run starting with configuration: \n{pformat(kwolaConfigData)}")
 
