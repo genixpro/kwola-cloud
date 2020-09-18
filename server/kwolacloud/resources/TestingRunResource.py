@@ -121,7 +121,7 @@ class TestingRunsGroup(Resource):
         data['owner'] = application.owner
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()
-        data['predictedEndTime'] = data['startTime'] + relativedelta(hours=(data['configuration']['hours'] + 1))
+        data['predictedEndTime'] = data['startTime'] + relativedelta(hours=(data['configuration']['hours'] + 1), minute=30, second=0, microsecond=0)
         data['isRecurring'] = False
 
         if 'stripe' in data:
