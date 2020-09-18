@@ -144,11 +144,18 @@ def main():
 
         pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess, maxtasksperchild=25)
 
-        resultObjects = []
-        for session in ExecutionSession.objects():
+        sessionIdsToProcess = set()
+        for trace in ExecutionTrace.objects():
+            sessionIdsToProcess.add(trace.executionSessionId)
             # logging.info(f"Queueing session for {session.id}.")
-            asyncResult = pool.apply_async(processSession, args=[session.id])
-            resultObjects.append((session.id, asyncResult))
+            # asyncResult = pool.apply_async(processSession, args=[session.id])
+            # resultObjects.append((session.id, asyncResult))
+
+        resultObjects = []
+        for sessionId in sessionIdsToProcess:
+            # logging.info(f"Queueing session for {session.id}.")
+            asyncResult = pool.apply_async(processSession, args=[sessionId])
+            resultObjects.append((sessionId, asyncResult))
 
         for sessionId, asyncResult in resultObjects:
             asyncResult.wait()
