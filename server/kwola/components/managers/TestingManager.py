@@ -204,9 +204,15 @@ class TestingManager:
 
         miscellaneousTime = totalLoopTime - (screenshotTime + actionMapRetrievalTime + actionDecisionTime + actionExecutionTime)
 
+        validTraces = []
+        validTracePairedExecutionSessions = []
+
         for sessionN, executionSession, trace in zip(range(len(traces)), self.executionSessions, traces):
             if trace is None:
                 continue
+
+            validTraces.append(trace)
+            validTracePairedExecutionSessions.append(executionSession)
 
             trace.executionSessionId = str(executionSession.id)
             trace.testingStepId = str(self.testStep.id)
@@ -240,8 +246,9 @@ class TestingManager:
             # holding up the main loop. Saving the trace to disk can be time consuming.
             self.traceSaveExecutor.submit(TestingManager.saveTrace, trace, self.config)
 
-        for plugin in self.testingStepPlugins:
-            plugin.afterActionsRun(self.testStep, self.executionSessions, traces)
+        if len(validTraces) > 0:
+            for plugin in self.testingStepPlugins:
+                plugin.afterActionsRun(self.testStep, validTracePairedExecutionSessions, validTraces)
 
         del traces
 
