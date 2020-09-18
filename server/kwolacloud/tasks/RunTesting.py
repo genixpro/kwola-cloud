@@ -222,7 +222,7 @@ def runTesting(testingRunId):
                            shouldExit = True
                            break
 
-            if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None:
+            if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None and len(testingStepCompletedJobs) > 1:
                 logging.info(f"Starting a training step for run {testingRunId}")
                 if configData['features']['localRuns']:
                     currentTrainingStepJob = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTaskLocal"], {
@@ -258,7 +258,7 @@ def runTesting(testingRunId):
                     if result['success']:
                         pastTrainingStepJob.cleanup()
                     else:
-                        errorMessage = f"A testing step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}."
+                        errorMessage = f"A training step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}."
                         if 'exception' in result:
                             errorMessage += "\n\n" + result['exception']
 
