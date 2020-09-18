@@ -67,10 +67,10 @@ class NewTestingRun extends Component {
     {
         super();
 
-        window.ga('event', 'optimize.callback', {
-            name: 'qvH9plMMQYqYS5d_13VXcA',
-            callback: (value) => this.setState({variant: value})
-        });
+        // window.ga('event', 'optimize.callback', {
+        //     name: 'qvH9plMMQYqYS5d_13VXcA',
+        //     callback: (value) => this.setState({variant: value})
+        // });
 
         this.checkoutWidget = null;
     }
