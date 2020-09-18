@@ -85,6 +85,9 @@ class TestingRunsGroup(Resource):
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
+        if application is None:
+            return abort(400)
+
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
 
         allowFreeRuns = claims['https://kwola.io/freeRuns']
