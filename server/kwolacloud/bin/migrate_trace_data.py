@@ -75,7 +75,7 @@ def processSession(sessionId):
 
         configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
     except Exception as e:
-        logging.error(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
+        logging.info(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
         return traceback.format_exc()
 
     try:
@@ -133,7 +133,7 @@ def processSession(sessionId):
         return "success"
     except Exception as e:
         unmountTestingRunStorageDrive(configDir)
-        logging.error(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
+        logging.info(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
         return traceback.format_exc()
 
 def main():
