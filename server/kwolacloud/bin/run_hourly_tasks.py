@@ -12,22 +12,12 @@ import stripe
 from kwola.config.logger import getLogger
 from ..db import connectToMongoWithRetries
 from kwolacloud.tasks.RunHourlyTasks import runHourlyTasks
+from ..helpers.slack import SlackLogHandler
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
 
 def main():
-        configData = loadConfiguration()
-
-        # Setup logging with google cloud
-        client = google.cloud.logging.Client()
-        client.get_default_handler()
-        client.setup_logging()
-
-        logger = getLogger()
-        logger.handlers = logger.handlers[0:1]
-
-        connectToMongoWithRetries()
-
-        stripe.api_key = configData['stripe']['apiKey']
+        initializeKwolaCloudProcess()
 
         runHourlyTasks()
 

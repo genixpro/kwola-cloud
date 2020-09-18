@@ -38,6 +38,7 @@ setup(
             'config/prebuilt_configs/*.json'
         ],
         'kwolacloud': [
+            "config/core/*.json",
             "config/environments/*.json"
         ]
     },

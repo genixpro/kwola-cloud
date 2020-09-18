@@ -50,10 +50,7 @@ class SignIn extends Component {
   handleLogin = () => {
     if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
     {
-      var _hsq = window._hsq = window._hsq || [];
-      mixpanel.track("login");
-      _hsq.push(["trackEvent", {id: "Login"}]);
-      window.ga('send', 'event', "auth", "login");
+      window.dataLayer.push({'event': 'login'});
     }
 
     this.props.history.push('/app/dashboard/');

@@ -4,12 +4,13 @@ import TextField from '../../components/uielements/textfield';
 import { Button } from "../UiElements/Button/button.style";
 import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, OneFourthColumn, Row, Column} from '../../components/utility/rowColumn';
 import {connect, Provider} from 'react-redux';
+import Papersheet from "../../components/utility/papersheet";
 
 class SizeOfRun extends Component {
     state = {
         chosenPackage: null,
         length: 100,
-        sessions: 250,
+        sessions: 400,
         hours: 12
     }
 
@@ -93,6 +94,11 @@ class SizeOfRun extends Component {
 
     updateParent()
     {
+        if (!this.props.onChange)
+        {
+            return null;
+        }
+
         this.props.onChange({
                 testingSequenceLength: this.state.length,
                 totalTestingSessions: this.state.sessions,
@@ -103,6 +109,12 @@ class SizeOfRun extends Component {
 
     lengthChanged(newValue)
     {
+        if (this.props.disabled)
+        {
+            // Do nothing
+            return;
+        }
+
         this.setState({length: newValue}, () => this.updateParent());
     }
 
@@ -138,10 +150,13 @@ class SizeOfRun extends Component {
     }
 
     render() {
-        return <div>
+        return<Papersheet
+                title={`Size`}
+                subtitle={``}
+            >
             <Row>
                 <Column xs={this.props.hideHelp ? 12 : 9}>
-                    <p>Size of testing run</p>
+                    {/*<p>Size of testing run</p>*/}
                     <RunTypes>
                         <Button size="medium"
                                 variant="extended"
@@ -244,7 +259,7 @@ class SizeOfRun extends Component {
                         }
                     </Row>: null
             }
-        </div>;
+        </Papersheet>;
     }
 }
 

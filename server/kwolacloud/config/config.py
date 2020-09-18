@@ -6,7 +6,7 @@
 import pkg_resources
 import os
 import json
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 
 def determineEnvironment():
     environment = os.getenv("KWOLA_ENV")
@@ -50,7 +50,7 @@ def getKwolaConfigurationData():
 def getKwolaConfiguration():
     data = getKwolaConfigurationData()
 
-    config = Configuration(configData=data)
+    config = KwolaCoreConfiguration(configData=data)
 
     return config
 

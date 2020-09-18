@@ -38,3 +38,4 @@ stripe
 testtools
 torch
 wheel
+giturlparse

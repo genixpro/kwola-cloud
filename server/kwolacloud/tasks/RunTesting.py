@@ -11,7 +11,7 @@ import json
 from ..config.config import getKwolaConfigurationData
 import time
 import datetime
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 import logging
 from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
 from kwolacloud.components.utils.KubernetesJob import KubernetesJob
@@ -20,6 +20,7 @@ from ..config.config import loadConfiguration, getKwolaConfiguration
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 import traceback
+from kwolacloud.helpers.webhook import sendCustomerWebhook
 from pprint import pformat
 from ..helpers.slack import postToKwolaSlack
 from ..helpers.email import sendFinishTestingRunEmail
@@ -63,38 +64,53 @@ def runTesting(testingRunId):
         run.startTime = datetime.datetime.now()
 
     if run.predictedEndTime is None:
-        run.predictedEndTime = run.startTime + relativedelta(hours=run.configuration.hours + 1, minute=0, second=0)
+        run.predictedEndTime = run.startTime + relativedelta(hours=run.configuration.hours + 1, minute=30, second=0, microsecond=0)
 
     run.status = "running"
     run.save()
 
     # Make sure that this application has recorded that at least one testing run has launched
-    ApplicationModel.objects(id=run.applicationId).update_one(hasFirstTestingRunLaunched=True)
+    application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
+    application.hasFirstTestingRunLaunched = True
+    application.save()
+
+    if application.testingRunStartedWebhookURL:
+        sendCustomerWebhook(application, "testingRunStartedWebhookURL", json.loads(run.to_json()))
 
     try:
         configFilePath = os.path.join(configDir, "kwola.json")
 
         runConfiguration = run.configuration
 
-        if not os.path.exists(configFilePath):
-            kwolaConfigData = getKwolaConfigurationData()
+        kwolaConfigData = getKwolaConfigurationData()
 
-            kwolaConfigData['url'] = runConfiguration.url
-            kwolaConfigData['email'] = runConfiguration.email
-            kwolaConfigData['password'] = runConfiguration.password
-            kwolaConfigData['name'] = runConfiguration.name
-            kwolaConfigData['paragraph'] = runConfiguration.paragraph
-            kwolaConfigData['enableRandomNumberCommand'] = runConfiguration.enableRandomNumberCommand
-            kwolaConfigData['enableRandomBracketCommand'] = runConfiguration.enableRandomBracketCommand
-            kwolaConfigData['enableRandomMathCommand'] = runConfiguration.enableRandomMathCommand
-            kwolaConfigData['enableRandomOtherSymbolCommand'] = runConfiguration.enableRandomOtherSymbolCommand
-            kwolaConfigData['enableDoubleClickCommand'] = runConfiguration.enableDoubleClickCommand
-            kwolaConfigData['enableRightClickCommand'] = runConfiguration.enableRightClickCommand
-            kwolaConfigData['autologin'] = runConfiguration.autologin
-            kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
-            kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
-            kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
+        kwolaConfigData['url'] = runConfiguration.url
+        kwolaConfigData['email'] = runConfiguration.email
+        kwolaConfigData['password'] = runConfiguration.password
+        kwolaConfigData['name'] = runConfiguration.name
+        kwolaConfigData['paragraph'] = runConfiguration.paragraph
+        kwolaConfigData['enableRandomNumberCommand'] = runConfiguration.enableRandomNumberCommand
+        kwolaConfigData['enableRandomBracketCommand'] = runConfiguration.enableRandomBracketCommand
+        kwolaConfigData['enableRandomMathCommand'] = runConfiguration.enableRandomMathCommand
+        kwolaConfigData['enableRandomOtherSymbolCommand'] = runConfiguration.enableRandomOtherSymbolCommand
+        kwolaConfigData['enableDoubleClickCommand'] = runConfiguration.enableDoubleClickCommand
+        kwolaConfigData['enableRightClickCommand'] = runConfiguration.enableRightClickCommand
+        kwolaConfigData['enableTypeEmail'] = runConfiguration.enableTypeEmail
+        kwolaConfigData['enableTypePassword'] = runConfiguration.enableTypePassword
+        kwolaConfigData['autologin'] = runConfiguration.autologin
+        kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
+        kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
+        kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
+        kwolaConfigData['custom_typing_action_strings'] = runConfiguration.customTypingActionStrings
+        kwolaConfigData['enable_5xx_error'] = runConfiguration.enable5xxError
+        kwolaConfigData['enable_400_error'] = runConfiguration.enable400Error
+        kwolaConfigData['enable_401_error'] = runConfiguration.enable401Error
+        kwolaConfigData['enable_403_error'] = runConfiguration.enable403Error
+        kwolaConfigData['enable_404_error'] = runConfiguration.enable404Error
+        kwolaConfigData['enable_javascript_console_error'] = runConfiguration.enableJavascriptConsoleError
+        kwolaConfigData['enable_unhandled_exception_error'] = runConfiguration.enableUnhandledExceptionError
 
+        if not configData['features']['localRuns']:
             # We have to write directly to the google cloud storage bucket because of the way that the storage
             # drives get mounted through fuse.
             storageClient = storage.Client()
@@ -102,17 +118,17 @@ def runTesting(testingRunId):
             configFileBlob = storage.Blob("kwola.json", applicationStorageBucket)
             configFileBlob.upload_from_string(json.dumps(kwolaConfigData))
 
-            # Also write a copy locally.
+        # Also write a copy locally.
+        try:
             with open(configFilePath, 'wt') as configFile:
                 json.dump(kwolaConfigData, configFile)
-        else:
-            with open(configFilePath, 'rt') as configFile:
-                kwolaConfigData = json.load(configFile)
+        except OSError:
+            pass
 
         logging.info(f"Testing Run starting with configuration: \n{pformat(kwolaConfigData)}")
 
         # We load up a single web session just to ensure we can access the target url
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
         environment = WebEnvironment(config, sessionLimit=1)
         environment.shutdown()
         del environment
@@ -208,7 +224,7 @@ def runTesting(testingRunId):
                            shouldExit = True
                            break
 
-            if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None:
+            if countTrainingIterationsCompleted < countTrainingIterationsNeeded and currentTrainingStepJob is None and len(testingStepCompletedJobs) > 1:
                 logging.info(f"Starting a training step for run {testingRunId}")
                 if configData['features']['localRuns']:
                     currentTrainingStepJob = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTrainingStepTaskLocal"], {
@@ -244,7 +260,7 @@ def runTesting(testingRunId):
                     if result['success']:
                         pastTrainingStepJob.cleanup()
                     else:
-                        errorMessage = f"A testing step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}."
+                        errorMessage = f"A training step appears to have failed on testing run {testingRunId} with job id {pastTrainingStepJob.referenceId}."
                         if 'exception' in result:
                             errorMessage += "\n\n" + result['exception']
 
@@ -283,6 +299,7 @@ def runTesting(testingRunId):
         run.status = "completed"
         run.endTime = datetime.datetime.now()
 
+        # Fetch application a second time down here, just in case any of the fields have changed
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
         application.hasFirstTestingRunCompleted = True
 
@@ -300,16 +317,10 @@ def runTesting(testingRunId):
         bugsZip = zipfile.ZipFile(file=bugsZipFileOnDisk, mode='w')
 
         for bugIndex, bug in enumerate(bugs):
-            bugJsonFilePath = os.path.join(configDir, "bugs", bug.id + ".json")
-            bugTextFilePath = os.path.join(configDir, "bugs", bug.id + ".txt")
             bugRawVideoFilePath = os.path.join(configDir, "bugs", f'{str(bug.id)}.mp4')
             bugAnnotatedVideoFilePath = os.path.join(configDir, "bugs", f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
 
-            with open(bugJsonFilePath, 'rb') as f:
-                bugsZip.writestr(f"bug_{bugIndex+1}.json", f.read())
-
-            with open(bugTextFilePath, 'rb') as f:
-                bugsZip.writestr(f"bug_{bugIndex+1}.txt", f.read())
+            bugsZip.writestr(f"bug_{bugIndex+1}.json", bytes(bug.to_json(), 'utf8'))
 
             with open(bugRawVideoFilePath, 'rb') as f:
                 bugsZip.writestr(f"bug_{bugIndex+1}_raw.mp4", f.read())
@@ -325,6 +336,9 @@ def runTesting(testingRunId):
 
         if application.enableSlackTestingRunCompletedNotifications:
             postToCustomerSlack(f"A testing run has completed and found {bugCount} errors. View the results here: {configData['frontend']['url']}app/dashboard/testing_runs/{run.id}", application)
+
+        if application.testingRunFinishedWebhookURL:
+            sendCustomerWebhook(application, "testingRunFinishedWebhookURL", json.loads(run.to_json()))
 
     except Exception as e:
         errorMessage = f"Error in the primary RunTesting job for the testing run with id {testingRunId}:\n\n{traceback.format_exc()}"

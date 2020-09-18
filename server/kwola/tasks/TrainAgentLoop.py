@@ -23,7 +23,7 @@ from ..config.logger import getLogger, setupLocalLogging
 from ..components.agents.DeepLearningAgent import DeepLearningAgent
 from ..components.environments.WebEnvironment import WebEnvironment
 from ..tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
-from ..config.config import Configuration
+from ..config.config import KwolaCoreConfiguration
 from ..datamodels.CustomIDField import CustomIDField
 from ..datamodels.TestingStepModel import TestingStep
 from ..datamodels.TrainingSequenceModel import TrainingSequence
@@ -264,7 +264,7 @@ def trainAgent(configDir, exitOnFail=False):
     except RuntimeError:
         pass
 
-    config = Configuration(configDir)
+    config = KwolaCoreConfiguration(configDir)
 
     # Create the bugs directory. This is just temporary
     config.getKwolaUserDataDirectory("bugs")

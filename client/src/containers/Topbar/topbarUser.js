@@ -38,10 +38,7 @@ class TopbarUser extends Component {
     {
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            var _hsq = window._hsq = window._hsq || [];
-            mixpanel.track("open-billing");
-            _hsq.push(["trackEvent", {id: "Open Billing"}]);
-            window.ga('send', 'event', "billing", "view");
+            window.dataLayer.push({'event': 'open-billing'});
         }
 
         this.setState({ visible: false });

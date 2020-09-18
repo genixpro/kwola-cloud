@@ -19,7 +19,7 @@
 #
 
 
-from ...config.config import Configuration
+from ...config.config import KwolaCoreConfiguration
 from ...config.logger import getLogger
 from ...datamodels.actions.ClickTapAction import ClickTapAction
 from ...datamodels.actions.ClearFieldAction import ClearFieldAction
@@ -160,14 +160,14 @@ class DeepLearningAgent:
         hasTypingAction = False
 
         # Only add in the email action if the user configured it
-        if config['email']:
+        if config['email'] and config['enableTypeEmail']:
             self.actions['typeEmail'] = lambda x, y: TypeAction(type="typeEmail", x=x, y=y, label="email", text=config['email'])
             self.actionBaseWeights.append(config['random_weight_type_email'])
             self.actionProbabilityBoostKeywords.append(["email", "user"])
             hasTypingAction = True
 
         # Only add in the password action if the user configured it
-        if config['password']:
+        if config['password'] and config['enableTypePassword']:
             self.actions['typePassword'] = lambda x, y: TypeAction(type="typePassword", x=x, y=y, label="password", text=config['password'])
             self.actionBaseWeights.append(config['random_weight_type_password'])
             self.actionProbabilityBoostKeywords.append(["pass"])
@@ -185,6 +185,13 @@ class DeepLearningAgent:
             self.actions['typeParagraph'] = lambda x, y: TypeAction(type="typeParagraph", x=x, y=y, label="paragraph", text=config['paragraph'])
             self.actionBaseWeights.append(config['random_weight_type_paragraph'])
             self.actionProbabilityBoostKeywords.append(["pass"])
+            hasTypingAction = True
+
+        for customTypingActionIndex, customTypingActionString in enumerate(config['custom_typing_action_strings']):
+            actionName = f'typeCustom{customTypingActionIndex}'
+            self.actions[actionName] = lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=customTypingActionString)
+            self.actionBaseWeights.append(config['random_weight_custom_type_action'])
+            self.actionProbabilityBoostKeywords.append([])
             hasTypingAction = True
 
         # Only add in the random number action if the user configured it
@@ -497,22 +504,10 @@ class DeepLearningAgent:
 
             # If the element is an input box, then we have to enable all of the typing actions
             if element['canType']:
-                if "typeEmail" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeEmail"))
-                if "typePassword" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typePassword"))
-                if "typeName" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeName"))
-                if "typeNumber" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeNumber"))
-                if "typeBrackets" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeBrackets"))
-                if "typeMath" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeMath"))
-                if "typeOtherSymbol" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeOtherSymbol"))
-                if "typeParagraph" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("typeParagraph"))
+                for actionName in self.actionsSorted:
+                    if actionName.startswith("type"):
+                        actionTypes.append(self.actionsSorted.index(actionName))
+
                 if "clear" in self.actionsSorted:
                     actionTypes.append(self.actionsSorted.index("clear"))
 
@@ -1231,9 +1226,9 @@ class DeepLearningAgent:
         # this case in several places throughout the code.
         executionTracesFiltered = [trace for trace in executionTraces if trace is not None]
 
-        self.computeCachedCumulativeBranchTraces(executionTraces)
-        self.computeCachedDecayingBranchTrace(executionTraces)
-        self.computeCachedDecayingFutureBranchTrace(executionTraces)
+        self.computeCachedCumulativeBranchTraces(executionTracesFiltered)
+        self.computeCachedDecayingBranchTrace(executionTracesFiltered)
+        self.computeCachedDecayingFutureBranchTrace(executionTracesFiltered)
 
         presentRewards = DeepLearningAgent.computePresentRewards(executionTracesFiltered, self.config)
 
@@ -1249,14 +1244,14 @@ class DeepLearningAgent:
         mpl.rcParams['figure.max_open_warning'] = 1000
 
         if cutoffStepNumber is not None:
-            executionTraces = executionTraces[:cutoffStepNumber]
+            executionTracesFiltered = executionTracesFiltered[:cutoffStepNumber]
             rawImages = rawImages[:cutoffStepNumber]
 
         # Max workers set to 1 here temporarily due to a threading bug in the latest version of matplotlib
         # with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             futures = []
-            for trace, rawImage in zip(executionTraces, rawImages):
+            for trace, rawImage in zip(executionTracesFiltered, rawImages):
                 if trace is not None:
                     hilight = 0
                     if hilightStepNumber is not None:

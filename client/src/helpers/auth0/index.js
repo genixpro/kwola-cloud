@@ -167,7 +167,7 @@ class Auth0Helper {
     const userData = this.getUserInfo();
     if (userData)
     {
-      window.ga('set', 'userId', userData.email);
+      // window.ga('set', 'userId', userData.email);
     }
   }
 

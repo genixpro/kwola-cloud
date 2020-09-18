@@ -3,6 +3,7 @@ import TextField from '../../components/uielements/textfield';
 import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, OneFourthColumn, Row, Column} from '../../components/utility/rowColumn';
 import {connect, Provider} from 'react-redux';
 import {PaymentRequestButtonElement, CardElement, useStripe, useElements, ElementsConsumer} from "@stripe/react-stripe-js";
+import Papersheet from "../../components/utility/papersheet";
 
 
 class PaymentDetailsSection extends Component {
@@ -14,6 +15,11 @@ class PaymentDetailsSection extends Component {
 
     updateParent()
     {
+        if (!this.props.onChange)
+        {
+            return null;
+        }
+
         this.props.onChange({
             name: this.state.name,
             address: this.state.address,
@@ -56,7 +62,10 @@ class PaymentDetailsSection extends Component {
     }
 
     render() {
-        return <div>
+        return <Papersheet
+                title={`Payment Details`}
+                subtitle={``}
+            >
             <Row>
                 <Column xs={9}>
                     <CardElement
@@ -94,7 +103,7 @@ class PaymentDetailsSection extends Component {
                     <p>Please provide your payment details</p>
                 </Column>
             </Row>
-        </div>;
+        </Papersheet>;
     }
 }
 

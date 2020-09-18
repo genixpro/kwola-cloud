@@ -21,7 +21,7 @@
 
 from ...components.agents.DeepLearningAgent import DeepLearningAgent
 from ...components.environments.WebEnvironment import WebEnvironment
-from ...config.config import Configuration
+from ...config.config import KwolaCoreConfiguration
 from ...config.logger import getLogger, setupLocalLogging
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.TestingStepModel import TestingStep
@@ -53,7 +53,7 @@ class TestingManager:
         self.generateDebugVideo = generateDebugVideo
         self.shouldBeRandom = shouldBeRandom
         self.configDir = configDir
-        self.config = Configuration(configDir)
+        self.config = KwolaCoreConfiguration(configDir)
 
         self.environment = None
 
@@ -204,9 +204,15 @@ class TestingManager:
 
         miscellaneousTime = totalLoopTime - (screenshotTime + actionMapRetrievalTime + actionDecisionTime + actionExecutionTime)
 
+        validTraces = []
+        validTracePairedExecutionSessions = []
+
         for sessionN, executionSession, trace in zip(range(len(traces)), self.executionSessions, traces):
             if trace is None:
                 continue
+
+            validTraces.append(trace)
+            validTracePairedExecutionSessions.append(executionSession)
 
             trace.executionSessionId = str(executionSession.id)
             trace.testingStepId = str(self.testStep.id)
@@ -240,8 +246,9 @@ class TestingManager:
             # holding up the main loop. Saving the trace to disk can be time consuming.
             self.traceSaveExecutor.submit(TestingManager.saveTrace, trace, self.config)
 
-        for plugin in self.testingStepPlugins:
-            plugin.afterActionsRun(self.testStep, self.executionSessions, traces)
+        if len(validTraces) > 0:
+            for plugin in self.testingStepPlugins:
+                plugin.afterActionsRun(self.testStep, validTracePairedExecutionSessions, validTraces)
 
         del traces
 
@@ -268,7 +275,7 @@ class TestingManager:
     def predictedActionSubProcess(configDir, shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles):
         setupLocalLogging()
 
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         agent = DeepLearningAgent(config, whichGpu=None)
 

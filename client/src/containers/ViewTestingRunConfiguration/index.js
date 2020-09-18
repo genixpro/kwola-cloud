@@ -20,7 +20,7 @@ import SizeOfRun from "../NewTestingRun/SizeOfRun";
  */
 class ViewTestingRunConfiguration extends Component {
     state = {
-        tab: 0
+
     };
 
     componentDidMount()
@@ -45,177 +45,50 @@ class ViewTestingRunConfiguration extends Component {
                 <FullColumn>
                     <Row>
                         <TwoThirdColumn>
-                            <AppBar position="static" color="default">
-                                <Tabs
-                                    value={this.state.tab}
-                                    onChange={(changeEvent, newTab) => this.setState({tab: newTab})}
-                                    variant="scrollable"
-                                    scrollButtons="on"
-                                    indicatorColor="primary"
-                                    textColor="primary"
-                                >
-                                    {/*<Tab label="Recurring Testing" icon={<ScheduleIcon />} />*/}
-                                    <Tab label="One-Time Run" icon={<SkipNextIcon />} />
-                                </Tabs>
-                            </AppBar>
-                            {this.state.tab === 0 ?
-                                <div>
-                                    {/*<Papersheet*/}
-                                    {/*    title={``}*/}
-                                    {/*    subtitle={``}*/}
-                                    {/*>*/}
-                                    {/*    <RecurringOptions
-                                            defaultRunConfiguration={this.state.testingRun.configuration}
-                                             onChange={(data) => this.setState(data)}
-                                      />*/}
-                                    {/*</Papersheet>*/}
-                                    {/*<br/>*/}
-                                    {/*<br/>*/}
-                                    {/*<br/>*/}
-                                    <Papersheet
-                                        // title={`Size of Testing Run`}
-                                        title={``}
-                                        subtitle={``}
-                                    >
-                                        <SizeOfRun
-                                            defaultRunConfiguration={this.state.testingRun.configuration}
-                                            onChange={(data) => this.setState(data)}
-                                            disabled={true}
-                                            hideHelp={true}
-                                        />
-                                    </Papersheet>
-                                    <br/>
-                                    <br/>
-                                    <br/>
-                                    <Papersheet
-                                        title={`Credentials`}
-                                        subtitle={``}
-                                    >
-                                        <AutologinCredentials
-                                            defaultRunConfiguration={this.state.testingRun.configuration}
-                                            onChange={(data) => this.setState(data)}
-                                            disabled={true}
-                                            hideHelp={true}
-                                        />
-                                    </Papersheet>
-                                    <br/>
-                                    <br/>
-                                    <br/>
-                                    <Papersheet
-                                        title={`Actions`}
-                                        subtitle={``}
-                                    >
-                                        <ActionsConfiguration
-                                            defaultRunConfiguration={this.state.testingRun.configuration}
-                                            onChange={(data) => this.setState(data)}
-                                            disabled={true}
-                                            hideHelp={true}
-                                        />
-                                    </Papersheet>
-                                    <br/>
-                                    <br/>
-                                    <br/>
-                                    <Papersheet
-                                        title={`Path Restriction`}
-                                        subtitle={``}
-                                    >
-                                        <PathWhitelistConfiguration
-                                            defaultRunConfiguration={this.state.testingRun.configuration}
-                                            onChange={(data) => this.setState(data)} application={this.state.application}
-                                            disabled={true}
-                                            hideHelp={true}
-                                        />
-                                    </Papersheet>
-                                    <br/>
-                                    <br/>
-                                    <br/>
-                                    <Papersheet
-                                        title={`Errors`}
-                                        subtitle={``}
-                                    >
-                                        <ErrorsConfiguration
-                                            defaultRunConfiguration={this.state.testingRun.configuration}
-                                            onChange={(data) => this.setState(data)}
-                                            disabled={true}
-                                            hideHelp={true}
-                                        />
-                                    </Papersheet>
-                                </div>
-                                : null
-                            }
-                            {
-                                this.state.tab === 1 ?
-                                    <div>
-                                        <Papersheet
-                                            title={`Size of Testing Run`}
-                                            subtitle={``}
-                                        >
-                                            <SizeOfRun
-                                                defaultRunConfiguration={this.state.testingRun.configuration}
-                                                onChange={(data) => this.setState(data)}
-                                                disabled={true}
-                                                hideHelp={true}
-                                            />
-                                        </Papersheet>
-                                        <br/>
-                                        <br/>
-                                        <br/>
-                                        <Papersheet
-                                            title={`Credentials`}
-                                            subtitle={``}
-                                        >
-                                            <AutologinCredentials
-                                                defaultRunConfiguration={this.state.testingRun.configuration}
-                                                onChange={(data) => this.setState(data)}
-                                                disabled={true}
-                                                hideHelp={true}
-                                            />
-                                        </Papersheet>
-                                        <br/>
-                                        <br/>
-                                        <br/>
-                                        <Papersheet
-                                            title={`Actions`}
-                                            subtitle={``}
-                                        >
-                                            <ActionsConfiguration
-                                                defaultRunConfiguration={this.state.testingRun.configuration}
-                                                onChange={(data) => this.setState(data)}
-                                                disabled={true}
-                                                hideHelp={true}
-                                            />
-                                        </Papersheet>
-                                        <br/>
-                                        <br/>
-                                        <br/>
-                                        <Papersheet
-                                            title={`Path Restriction`}
-                                            subtitle={``}
-                                        >
-                                            <PathWhitelistConfiguration
-                                                defaultRunConfiguration={this.state.testingRun.configuration}
-                                                onChange={(data) => this.setState(data)} application={this.state.application}
-                                                disabled={true}
-                                                hideHelp={true}
-                                            />
-                                        </Papersheet>
-                                        <br/>
-                                        <br/>
-                                        <br/>
-                                        <Papersheet
-                                            title={`Errors`}
-                                            subtitle={``}
-                                        >
-                                            <ErrorsConfiguration
-                                                defaultRunConfiguration={this.state.testingRun.configuration}
-                                                onChange={(data) => this.setState(data)}
-                                                disabled={true}
-                                                hideHelp={true}
-                                            />
-                                        </Papersheet>
-                                    </div>
-                                    : null
-                            }
+                            <div>
+                                <SizeOfRun
+                                    defaultRunConfiguration={this.state.testingRun.configuration}
+                                    onChange={(data) => this.setState(data)}
+                                    disabled={true}
+                                    hideHelp={true}
+                                />
+                                <br/>
+                                <br/>
+                                <br/>
+                                <AutologinCredentials
+                                    defaultRunConfiguration={this.state.testingRun.configuration}
+                                    onChange={(data) => this.setState(data)}
+                                    disabled={true}
+                                    hideHelp={true}
+                                />
+                                <br/>
+                                <br/>
+                                <br/>
+                                <ActionsConfiguration
+                                    defaultRunConfiguration={this.state.testingRun.configuration}
+                                    onChange={(data) => this.setState(data)}
+                                    disabled={true}
+                                    hideHelp={true}
+                                />
+                                <br/>
+                                <br/>
+                                <br/>
+                                <PathWhitelistConfiguration
+                                    defaultRunConfiguration={this.state.testingRun.configuration}
+                                    onChange={(data) => this.setState(data)} application={this.state.application}
+                                    disabled={true}
+                                    hideHelp={true}
+                                />
+                                <br/>
+                                <br/>
+                                <br/>
+                                <ErrorsConfiguration
+                                    defaultRunConfiguration={this.state.testingRun.configuration}
+                                    onChange={(data) => this.setState(data)}
+                                    disabled={true}
+                                    hideHelp={true}
+                                />
+                            </div>
                         </TwoThirdColumn>
                     </Row>
                 </FullColumn>

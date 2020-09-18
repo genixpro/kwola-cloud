@@ -26,25 +26,34 @@ import pkg_resources
 import re
 import time
 import pymongo.errors
+import mongoengine
+import mongoengine.connection
 from pprint import pprint
 
 
 globalCachedPrebuiltConfigs = {}
-globalHasMongoConnected = False
 
-class Configuration:
+class KwolaCoreConfiguration:
     """
         This class represents the configuration for the Kwola model.
     """
     def __init__(self, configurationDirectory = None, configData = None):
-        global globalHasMongoConnected
         if configurationDirectory is not None:
             self.configFileName = os.path.join(configurationDirectory, "kwola.json")
             self.configurationDirectory = configurationDirectory
             self.configData = {}
 
-            with open(self.configFileName, "rt") as f:
-                data = json.load(f)
+            maxAttempts = 5
+            for attempt in range(maxAttempts):
+                try:
+                    with open(self.configFileName, "rt") as f:
+                        data = json.load(f)
+                        break
+                except OSError:
+                    if attempt == (maxAttempts - 1):
+                        raise
+                    else:
+                        time.sleep(2**attempt)
         else:
             data = configData
 
@@ -58,7 +67,7 @@ class Configuration:
             # those keys with the default values taken from the prebuilt config.
             # This allows people to continue running existing runs even if we add
             # new configuration keys in subsequent releases.
-            prebuiltConfigData = Configuration.getPrebuiltConfigData(data['profile'])
+            prebuiltConfigData = KwolaCoreConfiguration.getPrebuiltConfigData(data['profile'])
             for key, value in prebuiltConfigData.items():
                 if key not in data:
                     data[key] = value
@@ -70,13 +79,15 @@ class Configuration:
 
         self.configData = data
 
+        self.connectToMongoIfNeeded()
+
+    def connectToMongoIfNeeded(self):
         if isinstance(self.configData['data_serialization_method'], dict):
             method = self.configData['data_serialization_method']['default']
         else:
             method = self.configData['data_serialization_method']
 
-        if method == "mongo" and 'mongo_uri' in self.configData and self.configData['mongo_uri'] and not globalHasMongoConnected:
-            import mongoengine
+        if method == "mongo" and 'mongo_uri' in self.configData and self.configData['mongo_uri'] and len(mongoengine.connection._connections) == 0:
             maxAttempts = 5
             for attempt in range(maxAttempts):
                 try:
@@ -87,9 +98,6 @@ class Configuration:
                         raise
                     else:
                         time.sleep(2**attempt)
-            globalHasMongoConnected = True
-
-
 
 
     def getKwolaUserDataDirectory(self, subDirName, ensureExists=True):
@@ -149,7 +157,7 @@ class Configuration:
         found = []
         subFilesFolders = os.listdir(currentDir)
         for subDir in subFilesFolders:
-            if Configuration.checkDirectoryContainsKwolaConfig(subDir):
+            if KwolaCoreConfiguration.checkDirectoryContainsKwolaConfig(subDir):
                 found.append(subDir)
 
         found = sorted(found, reverse=True)
@@ -165,7 +173,7 @@ class Configuration:
                 os.mkdir(dirname)
 
                 with open(os.path.join(dirname, "kwola.json"), "wt") as configFile:
-                    prebuildConfigData = Configuration.getPrebuiltConfigData(prebuild)
+                    prebuildConfigData = KwolaCoreConfiguration.getPrebuiltConfigData(prebuild)
                     for key, value in configArgs.items():
                         prebuildConfigData[key] = value
                     configFile.write(json.dumps(prebuildConfigData, indent=4))

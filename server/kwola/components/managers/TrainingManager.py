@@ -23,7 +23,7 @@ from ...config.logger import getLogger, setupLocalLogging
 from ...components.agents.DeepLearningAgent import DeepLearningAgent
 from ...components.environments.WebEnvironment import WebEnvironment
 from ...tasks.TaskProcess import TaskProcess
-from ...config.config import Configuration
+from ...config.config import KwolaCoreConfiguration
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
 from ...datamodels.TestingStepModel import TestingStep
@@ -59,7 +59,7 @@ def isNumpyArray(obj):
 
 class TrainingManager:
     def __init__(self, configDir, trainingSequenceId, trainingStepIndex, gpu=None, coordinatorTempFileName="kwola_distributed_coordinator", testingRunId=None, applicationId=None, gpuWorldSize=torch.cuda.device_count(), plugins=None):
-        self.config = Configuration(configDir)
+        self.config = KwolaCoreConfiguration(configDir)
         self.configDir = configDir
 
         self.gpu = gpu
@@ -402,7 +402,7 @@ class TrainingManager:
 
     @staticmethod
     def saveExecutionTraceWeightData(traceWeightData, configDir):
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceWeightData['id'] + "-weight.json")
 
@@ -434,6 +434,7 @@ class TrainingManager:
     @staticmethod
     def addExecutionSessionToSampleCache(executionSessionId, config):
         getLogger().info(f"Adding {executionSessionId} to the sample cache.")
+        config.connectToMongoIfNeeded()
         maxAttempts = 10
         for attempt in range(maxAttempts):
             try:
@@ -463,7 +464,7 @@ class TrainingManager:
     @staticmethod
     def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory, applicationId):
         try:
-            config = Configuration(configDir)
+            config = KwolaCoreConfiguration(configDir)
 
             agent = DeepLearningAgent(config, whichGpu=None)
 
@@ -657,7 +658,7 @@ class TrainingManager:
 
     @staticmethod
     def updateTraceRewardLoss(traceId, sampleRewardLoss, configDir):
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
         trace = ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=False)
         trace.lastTrainingRewardLoss = sampleRewardLoss
         trace.saveToDisk(config)
@@ -667,7 +668,7 @@ class TrainingManager:
         try:
             setupLocalLogging()
 
-            config = Configuration(configDir)
+            config = KwolaCoreConfiguration(configDir)
 
             getLogger().info(f"[{os.getpid()}] Starting initialization for batch preparation sub process.")
 
@@ -891,14 +892,14 @@ class TrainingManager:
 
     @staticmethod
     def loadExecutionTrace(traceId, configDir):
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
         trace = ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True)
         return pickle.dumps(trace)
 
     @staticmethod
     def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationId):
         try:
-            config = Configuration(configDir)
+            config = KwolaCoreConfiguration(configDir)
 
             weightFile = os.path.join(config.getKwolaUserDataDirectory("execution_trace_weight_files"), traceId + "-weight.json")
 

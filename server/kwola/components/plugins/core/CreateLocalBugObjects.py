@@ -56,7 +56,6 @@ class CreateLocalBugObjects(TestingStepPluginBase):
         kwolaVideoDirectory = self.config.getKwolaUserDataDirectory("videos")
 
         existingBugs = self.loadAllBugs(testingStep)
-        mutedErrors = self.loadAllMutedErrors(testingStep)
 
         bugObjects = []
 
@@ -64,6 +63,24 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                                                                      self.newErrorsThisTestingStep[testingStep.id],
                                                                      self.newErrorOriginalExecutionSessionIds[testingStep.id],
                                                                      self.newErrorOriginalStepNumbers[testingStep.id]):
+            if error.type == "http":
+                if error.statusCode == 400 and not self.config['enable_400_error']:
+                    continue # Skip this error
+                if error.statusCode == 401 and not self.config['enable_401_error']:
+                    continue # Skip this error
+                if error.statusCode == 403 and not self.config['enable_403_error']:
+                    continue # Skip this error
+                if error.statusCode == 404 and not self.config['enable_404_error']:
+                    continue # Skip this error
+                if error.statusCode >= 500 and not self.config['enable_5xx_error']:
+                    continue # Skip this error
+            elif error.type == "log":
+                if not self.config['enable_javascript_console_error']:
+                    continue # Skip this error
+            elif error.type == "exception":
+                if not self.config['enable_unhandled_exception_error']:
+                    continue # Skip this error
+
             bug = BugModel()
             bug.id = CustomIDField.generateNewUUID(BugModel, self.config)
             bug.owner = testingStep.owner
@@ -80,14 +97,6 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                 if bug.isDuplicateOf(existingBug):
                     duplicate = True
                     break
-
-            for mutedError in mutedErrors:
-                if bug.isDuplicateOf(mutedError):
-                    bug.isMuted = True
-                    bug.mutedErrorId = mutedError.id
-                    mutedError.totalOccurrences += 1
-                    mutedError.mostRecentOccurrence = datetime.now()
-                    mutedError.saveToDisk(self.config)
 
             if not duplicate:
                 bug.saveToDisk(self.config, overrideSaveFormat="json", overrideCompression=0)
@@ -150,14 +159,6 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                     bugs.append(bug)
 
         return bugs
-
-    def loadAllMutedErrors(self, testingStep):
-        if self.config['data_serialization_method'] == 'mongo':
-            from kwolacloud.datamodels.MutedError import MutedError
-            mutedErrors = MutedError.objects(applicationId=testingStep.applicationId)
-            return list(mutedErrors)
-        else:
-            return []
 
     def generateVideoFilesForBugs(self, testingStep, bugObjects):
         debugVideoSubprocesses = []

@@ -6,6 +6,7 @@ import {
     FormGroup,
     FormControlLabel,
 } from '../../components/uielements/form';
+import Papersheet from "../../components/utility/papersheet";
 
 
 
@@ -17,8 +18,8 @@ class ErrorsConfiguration extends Component
         enable401Error: false,
         enable403Error: false,
         enable404Error: true,
-        javascriptConsoleError: true,
-        unhandledExceptionError: true,
+        enableJavascriptConsoleError: true,
+        enableUnhandledExceptionError: true,
         browserFreezingError: true
     }
 
@@ -33,24 +34,29 @@ class ErrorsConfiguration extends Component
                 enable401Error: config.enable401Error,
                 enable403Error: config.enable403Error,
                 enable404Error: config.enable404Error,
-                javascriptConsoleError: config.javascriptConsoleError,
-                unhandledExceptionError: config.unhandledExceptionError,
-                browserFreezingError: config.browserFreezingError
+                enableJavascriptConsoleError: config.enableJavascriptConsoleError,
+                enableUnhandledExceptionError: config.enableUnhandledExceptionError,
+                // browserFreezingError: config.browserFreezingError
             });
         }
     }
 
     updateParent()
     {
+        if (!this.props.onChange)
+        {
+            return null;
+        }
+
         this.props.onChange({
             enable5xxError: this.state.enable5xxError,
             enable400Error: this.state.enable400Error,
             enable401Error: this.state.enable401Error,
             enable403Error: this.state.enable403Error,
             enable404Error: this.state.enable404Error,
-            javascriptConsoleError: this.state.javascriptConsoleError,
-            unhandledExceptionError: this.state.unhandledExceptionError,
-            browserFreezingError: this.state.browserFreezingError
+            enableJavascriptConsoleError: this.state.enableJavascriptConsoleError,
+            enableUnhandledExceptionError: this.state.enableUnhandledExceptionError,
+            // browserFreezingError: this.state.browserFreezingError
         })
     }
 
@@ -67,7 +73,10 @@ class ErrorsConfiguration extends Component
 
 
     render() {
-        return <div>
+        return <Papersheet
+                title={`Errors`}
+                subtitle={``}
+            >
             <Row>
                 <Column xs={this.props.hideHelp ? 12 : 9}>
                     <FormGroup>
@@ -139,9 +148,9 @@ class ErrorsConfiguration extends Component
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    checked={this.state.javascriptConsoleError}
-                                    onChange={() => this.toggle('javascriptConsoleError')}
-                                    value="javascriptConsoleError"
+                                    checked={this.state.enableJavascriptConsoleError}
+                                    onChange={() => this.toggle('enableJavascriptConsoleError')}
+                                    value="enableJavascriptConsoleError"
                                     style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
@@ -152,9 +161,9 @@ class ErrorsConfiguration extends Component
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    checked={this.state.unhandledExceptionError}
-                                    onChange={() => this.toggle('unhandledExceptionError')}
-                                    value="unhandledExceptionError"
+                                    checked={this.state.enableUnhandledExceptionError}
+                                    onChange={() => this.toggle('enableUnhandledExceptionError')}
+                                    value="enableUnhandledExceptionError"
                                     style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                                 />
                             }
@@ -162,19 +171,19 @@ class ErrorsConfiguration extends Component
                             style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={this.state.browserFreezingError}
-                                    onChange={() => this.toggle('browserFreezingError')}
-                                    value="browserFreezingError"
-                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
-                                />
-                            }
-                            label="Treat browser freezing (greater then 1 second) as an error?"
-                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
-                        />
-                        <br/>
+                        {/*<FormControlLabel*/}
+                        {/*    control={*/}
+                        {/*        <Checkbox*/}
+                        {/*            checked={this.state.browserFreezingError}*/}
+                        {/*            onChange={() => this.toggle('browserFreezingError')}*/}
+                        {/*            value="browserFreezingError"*/}
+                        {/*            style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
+                        {/*        />*/}
+                        {/*    }*/}
+                        {/*    label="Treat browser freezing (greater then 1 second) as an error?"*/}
+                        {/*    style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
+                        {/*/>*/}
+                        {/*<br/>*/}
                     </FormGroup>
                 </Column>
                 {
@@ -184,7 +193,7 @@ class ErrorsConfiguration extends Component
                         </Column> : null
                 }
             </Row>
-        </div>;
+        </Papersheet>;
     }
 }
 

@@ -8,6 +8,7 @@ import subprocess
 import json
 import os
 import stripe
+import stripe.error
 from ..auth import authenticate, isAdmin
 from ..config.config import loadConfiguration
 
@@ -22,7 +23,11 @@ class BillingURLResource(Resource):
 
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
 
-        session = stripe.billing_portal.Session.create(customer=stripeCustomerId)
+        try:
+            session = stripe.billing_portal.Session.create(customer=stripeCustomerId)
+        except stripe.error.InvalidRequestError:
+            # Customer doesn't exist. Return 400
+            return abort(400)
 
         return {"url": str(session.url)}
 

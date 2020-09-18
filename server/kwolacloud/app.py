@@ -14,12 +14,9 @@ from flask_caching import Cache
 import google.cloud.logging
 from .helpers.slack import SlackLogHandler
 from kwola.config.logger import getLogger, setupLocalLogging
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
-configData = loadConfiguration()
-
-stripe.api_key = configData['stripe']['apiKey']
-
-connectToMongoWithRetries()
+initializeKwolaCloudProcess()
 
 cacheConfig = {
     "CACHE_TYPE": "simple",
@@ -32,26 +29,13 @@ api = Api(flaskApplication)
 CORS(flaskApplication)
 cache = Cache(flaskApplication)
 
-if configData['features']['enableGoogleCloudLogging']:
-    # Setup logging with google cloud
-    loggingClient = google.cloud.logging.Client()
-    loggingClient.get_default_handler()
-    loggingClient.setup_logging()
-
-    logger = getLogger()
-    logger.handlers = logger.handlers[0:1]
-
-if configData['features']['enableSlackLogging']:
-    logger = getLogger()
-    logger.addHandler(SlackLogHandler())
-
 # Technically for gunicorn to find the flask application object, it must have the variable
 # name "application". However we prefer the more explicit flaskApplication, this being the
 # exception
 application = flaskApplication
 
 # import models
-from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage, ApplicationSubscribeToSlack, ApplicationTestSlack, ApplicationIntegrateWithJIRA
+from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage, ApplicationSubscribeToSlack, ApplicationTestSlack, ApplicationIntegrateWithJIRA, ApplicationTestWebhook
 from .resources.TestingStepResource import TestingStepsGroup, TestingStepsSingle
 from .resources.ExecutionSessionResource import ExecutionSessionGroup, ExecutionSessionSingle, ExecutionSessionVideo, ExecutionSessionTraces, ExecutionSessionSingleTrace
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
@@ -64,6 +48,7 @@ from .resources.PromoCodes import PromoCodes
 from .resources.HomeResource import Home
 from .resources.MutedErrorResource import MutedErrorsGroup, MutedErrorsSingle
 from .resources.FeedbackSubmissionResource import FeedbackSubmissionsGroup, FeedbackSubmissionSingle
+from .resources.RecurringTestingTriggerResource import RecurringTestingTriggerGroup, RecurringTestingTriggerSingle
 
 api.add_resource(ApplicationGroup, '/api/application')
 api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
@@ -71,6 +56,7 @@ api.add_resource(ApplicationImage, '/api/application/<string:application_id>/ima
 api.add_resource(ApplicationTestSlack, '/api/application/<string:application_id>/slack/test')
 api.add_resource(ApplicationSubscribeToSlack, '/api/application/<string:application_id>/slack')
 api.add_resource(ApplicationIntegrateWithJIRA, '/api/application/<string:application_id>/jira')
+api.add_resource(ApplicationTestWebhook, '/api/application/<string:application_id>/webhook/<string:webhook_field>/test')
 
 
 api.add_resource(TestingStepsGroup, '/api/testing_sequences')
@@ -115,6 +101,10 @@ api.add_resource(Home, '/api/home')
 
 api.add_resource(FeedbackSubmissionsGroup, '/api/feedback_submission')
 api.add_resource(FeedbackSubmissionSingle, '/api/feedback_submission/<string:feedback_submission_id>')
+
+
+api.add_resource(RecurringTestingTriggerGroup, '/api/recurring_testing_trigger')
+api.add_resource(RecurringTestingTriggerSingle, '/api/recurring_testing_trigger/<string:recurring_testing_trigger_id>')
 
 # api.add_resource(resources.TokenRefresh, '/refresh')
 # api.add_resource(resources.SecretResource, '/api/secret/test')

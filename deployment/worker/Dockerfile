@@ -65,7 +65,7 @@ ENV NVIDIA_REQUIRE_CUDA "cuda>=10.1 brand=tesla,driver>=384,driver<385 brand=tes
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
-    chromium-browser=84* \
+    chromium-browser=85* \
     ffmpeg \
     freetype* \
     fuse \
@@ -114,7 +114,7 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s 
     kubectl version --client
 
 # Download and install Chromedriver
-RUN wget https://chromedriver.storage.googleapis.com/84.0.4147.30/chromedriver_linux64.zip && \
+RUN wget https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip && \
     unzip chromedriver_linux64.zip && \
     cp chromedriver /usr/bin/ && \
     chmod 644 /usr/bin/chromedriver && \
@@ -227,7 +227,7 @@ RUN chmod +r+r+r -R /usr/lib/python3 && su kwola -c "kwola_test_installation"
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
-RUN du -h -d 5 -t 10M /; exit 0
+# RUN du -h -d 5 -t 10M /; exit 0
 
 USER kwola
 

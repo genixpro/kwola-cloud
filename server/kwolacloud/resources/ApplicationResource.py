@@ -3,32 +3,22 @@
 #     All Rights Reserved.
 #
 
-from flask_restful import Resource, reqparse, abort
-from flask_jwt_extended import (create_access_token, create_refresh_token,
-                                jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 from ..app import cache
-
-from ..datamodels.ApplicationModel import ApplicationModel
-from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
-from kwola.datamodels.ExecutionSessionModel import ExecutionSession
-from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
-from kwola.datamodels.TestingStepModel import TestingStep
-from kwola.datamodels.TrainingStepModel import TrainingStep
-from kwola.datamodels.BugModel import BugModel
-from ..datamodels.TestingRun import TestingRun
-from ..config.config import getKwolaConfiguration, loadConfiguration
-from ..helpers.auth0 import updateUserProfileMetadataValue
-
-import json
-import flask
-from ..datamodels.id_utility import generateKwolaId
-from ..config.config import getKwolaConfiguration
 from ..auth import authenticate, isAdmin
+from ..config.config import getKwolaConfiguration
+from ..datamodels.ApplicationModel import ApplicationModel
+from ..datamodels.id_utility import generateKwolaId
+from ..helpers.auth0 import updateUserProfileMetadataValue
 from ..helpers.slack import postToKwolaSlack, postToCustomerSlack
-import requests
-from pprint import pprint
-import logging
+from ..helpers.webhook import sendCustomerWebhook
 from datetime import datetime
+from flask_restful import Resource, reqparse, abort
+from pprint import pprint
+import flask
+import json
+import logging
+import requests
+
 
 class ApplicationGroup(Resource):
     def __init__(self):
@@ -64,6 +54,8 @@ class ApplicationGroup(Resource):
             id=generateKwolaId(modelClass=ApplicationModel, kwolaConfig=getKwolaConfiguration(), owner=user),
             creationDate=datetime.now()
         )
+
+        newApplication.generateWebhookSignatureSecret()
 
         updateUserProfileMetadataValue(user, "hasCreatedFirstApplication", True)
 
@@ -132,8 +124,12 @@ class ApplicationSingle(Resource):
                 'jiraCloudId',
                 'jiraProject',
                 'jiraIssueType',
-                'enablePushBugsToJIRA'
-
+                'enablePushBugsToJIRA',
+                'testingRunStartedWebhookURL',
+                'testingRunFinishedWebhookURL',
+                'browserSessionWillStartWebhookURL',
+                'browserSessionFinishedWebhookURL',
+                'bugFoundWebhookURL'
             ]
             for key, value in data.items():
                 if key in allowedEditFields:
@@ -381,3 +377,40 @@ class ApplicationIntegrateWithJIRA(Resource):
             return ""
         else:
             abort(404)
+
+
+
+class ApplicationTestWebhook(Resource):
+    def post(self, application_id, webhook_field):
+        user = authenticate()
+        if user is None:
+            abort(401)
+
+        query = {"id": application_id}
+        if not isAdmin():
+            query['owner'] = user
+
+        application = ApplicationModel.objects(**query).limit(1).first()
+
+        validWebhooksFields = [
+            'testingRunStartedWebhookURL',
+            'testingRunFinishedWebhookURL',
+            'browserSessionWillStartWebhookURL',
+            'browserSessionFinishedWebhookURL',
+            'bugFoundWebhookURL'
+        ]
+
+        if webhook_field not in validWebhooksFields:
+            return abort(400)
+
+        if application is not None:
+            success = sendCustomerWebhook(application, webhook_field, {
+                "applicationId": application.id,
+                "info": "This is not meant to be reflective of what the actual webhook objects will look like when Kwola runs. Please provide a status code 200"
+                        "for the response, and remember to always validate the hash signature using the SHA256 variant of HMAC."
+            }, isTestCall=True)
+
+            return {"success": success}
+        else:
+            return abort(404)
+

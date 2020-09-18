@@ -13,6 +13,7 @@ import stripe
 import logging
 import json
 import shutil
+import time
 import google.api_core.exceptions
 
 
@@ -85,11 +86,17 @@ def getLinkTargetDirectory(linkPath):
     return str(result.stdout, 'utf8')
 
 def runUnmountCommand(targetDirectory):
-    result = subprocess.run(["fusermount", "-u", targetDirectory], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        logging.error(f"Error! fusermount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
-        return False
-    return True
+    maxAttempts = 5
+    for attempt in range(maxAttempts):
+        result = subprocess.run(["fusermount", "-u", targetDirectory], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            if b'Device or resource busy' not in result.stderr or attempt == maxAttempts - 1:
+                logging.error(f"Error! fusermount did not return success f{result.returncode}\n{result.stdout}\n{result.stderr}")
+                return False
+            else:
+                time.sleep(2**attempt)
+        return True
+    return False
 
 
 def mountTestingRunStorageDrive(applicationId):

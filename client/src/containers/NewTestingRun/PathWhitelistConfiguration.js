@@ -13,6 +13,7 @@ import {
     FormGroup,
     FormControlLabel,
 } from '../../components/uielements/form';
+import Papersheet from "../../components/utility/papersheet";
 
 
 class PathWhitelistConfiguration extends Component {
@@ -25,6 +26,11 @@ class PathWhitelistConfiguration extends Component {
 
     updateParent()
     {
+        if (!this.props.onChange)
+        {
+            return null;
+        }
+
         if (this.state.enablePathWhitelist)
         {
             this.props.onChange({
@@ -210,7 +216,10 @@ class PathWhitelistConfiguration extends Component {
     }
 
     render() {
-        return <div>
+        return <Papersheet
+            title={`Path Restriction`}
+            subtitle={``}
+        >
             <Row>
                 <Column xs={this.props.hideHelp ? 12 : 9}>
                     <FormGroup row>
@@ -329,7 +338,7 @@ class PathWhitelistConfiguration extends Component {
                         </Column> : null
                 }
             </Row>
-        </div>;
+        </Papersheet>;
     }
 }
 
