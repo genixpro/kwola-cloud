@@ -74,12 +74,12 @@ def processSession(sessionId):
             return "skip_no_app_id"
 
         configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
-        config = KwolaCoreConfiguration(configDir)
     except Exception as e:
         logging.error(f"Received an error while processing {sessionId}: {traceback.format_exc()}")
         return traceback.format_exc()
 
     try:
+        config = KwolaCoreConfiguration(configDir)
         config['data_compress_level'] = {"default": 0}
         config["data_serialization_method"] = {"default": "mongo"}
         config["data_enable_local_file_locking"] = False
