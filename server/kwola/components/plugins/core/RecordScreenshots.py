@@ -81,6 +81,9 @@ class RecordScreenshots(WebEnvironmentPluginBase):
         return screenshotHash
 
     def cleanup(self, webDriver, proxy, executionSession):
+        if executionSession.id not in self.screenshotPaths:
+            return
+
         # Cleanup the screenshot files
         for filePath in self.screenshotPaths[executionSession.id]:
             if os.path.exists(filePath):
