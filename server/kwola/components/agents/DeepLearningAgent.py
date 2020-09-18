@@ -1226,9 +1226,9 @@ class DeepLearningAgent:
         # this case in several places throughout the code.
         executionTracesFiltered = [trace for trace in executionTraces if trace is not None]
 
-        self.computeCachedCumulativeBranchTraces(executionTraces)
-        self.computeCachedDecayingBranchTrace(executionTraces)
-        self.computeCachedDecayingFutureBranchTrace(executionTraces)
+        self.computeCachedCumulativeBranchTraces(executionTracesFiltered)
+        self.computeCachedDecayingBranchTrace(executionTracesFiltered)
+        self.computeCachedDecayingFutureBranchTrace(executionTracesFiltered)
 
         presentRewards = DeepLearningAgent.computePresentRewards(executionTracesFiltered, self.config)
 
@@ -1244,14 +1244,14 @@ class DeepLearningAgent:
         mpl.rcParams['figure.max_open_warning'] = 1000
 
         if cutoffStepNumber is not None:
-            executionTraces = executionTraces[:cutoffStepNumber]
+            executionTracesFiltered = executionTracesFiltered[:cutoffStepNumber]
             rawImages = rawImages[:cutoffStepNumber]
 
         # Max workers set to 1 here temporarily due to a threading bug in the latest version of matplotlib
         # with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             futures = []
-            for trace, rawImage in zip(executionTraces, rawImages):
+            for trace, rawImage in zip(executionTracesFiltered, rawImages):
                 if trace is not None:
                     hilight = 0
                     if hilightStepNumber is not None:
