@@ -67,10 +67,14 @@ def processSession(sessionId):
 
         if len(session.executionTraces) == 0:
             logging.info(f"Skipping session {session.id} because it has no execution traces")
+            ExecutionTrace.objects(executionSessionId=sessionId).delete()
+            session.delete()
             return "skip_no_trace"
 
         if session.applicationId is None:
             logging.info(f"Skipping session {session.id} because its applicationId is None")
+            ExecutionTrace.objects(executionSessionId=sessionId).delete()
+            session.delete()
             return "skip_no_app_id"
 
         configDir = mountTestingRunStorageDrive(applicationId=session.applicationId)
