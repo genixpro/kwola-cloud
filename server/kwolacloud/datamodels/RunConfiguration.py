@@ -32,6 +32,14 @@ class RunConfiguration(EmbeddedDocument):
 
     enableRightClickCommand = BooleanField()
 
+    enableTypeEmail = BooleanField()
+
+    enableTypePassword = BooleanField()
+
+    enableScrolling = BooleanField()
+
+    enableDragging = BooleanField()
+
     customTypingActionStrings = ListField(StringField())
 
     autologin = BooleanField()

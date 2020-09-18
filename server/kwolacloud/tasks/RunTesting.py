@@ -95,6 +95,8 @@ def runTesting(testingRunId):
         kwolaConfigData['enableRandomOtherSymbolCommand'] = runConfiguration.enableRandomOtherSymbolCommand
         kwolaConfigData['enableDoubleClickCommand'] = runConfiguration.enableDoubleClickCommand
         kwolaConfigData['enableRightClickCommand'] = runConfiguration.enableRightClickCommand
+        kwolaConfigData['enableTypeEmail'] = runConfiguration.enableTypeEmail
+        kwolaConfigData['enableTypePassword'] = runConfiguration.enableTypePassword
         kwolaConfigData['autologin'] = runConfiguration.autologin
         kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
         kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
