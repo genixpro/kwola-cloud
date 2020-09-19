@@ -23,8 +23,6 @@
   "debug_video_action_prediction_circle_color_b":255,
   "debug_video_action_prediction_circle_color_g":0,
   "debug_video_action_prediction_circle_color_r":0,
-  "debug_video_advantage_max_value": 1.5,
-  "debug_video_advantage_min_value": -0.2,
   "debug_video_bottom_reward_chart_bottom_margin": 50,
   "debug_video_bottom_reward_chart_current_frame_line_width": 2,
   "debug_video_bottom_reward_chart_frames": 40,
