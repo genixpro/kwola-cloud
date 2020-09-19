@@ -1954,9 +1954,11 @@ class DeepLearningAgent:
                         rewardPixelMask += skimage.segmentation.flood(numpy.array(processedImage[0], dtype=numpy.float32), (int(localY), int(localX)))
 
         rewardPixelMask = numpy.where(rewardPixelMask >= 1.00, numpy.ones_like(rewardPixelMask), numpy.zeros_like(rewardPixelMask))
-
         rewardPixelMask = skimage.filters.gaussian(rewardPixelMask, sigma=3)
-        rewardPixelMask = numpy.where(rewardPixelMask > 0.05, numpy.ones_like(rewardPixelMask), numpy.zeros_like(rewardPixelMask))
+        rewardPixelMask = numpy.where(rewardPixelMask > 0.10, numpy.ones_like(rewardPixelMask), numpy.zeros_like(rewardPixelMask))
+
+        intersectingPixelActionMap = numpy.minimum(numpy.sum(self.createPixelActionMap(action.intersectingActionMaps, height, width), axis=0), 1)
+        rewardPixelMask *= intersectingPixelActionMap
 
         return rewardPixelMask
 
