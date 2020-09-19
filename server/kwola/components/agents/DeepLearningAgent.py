@@ -336,11 +336,7 @@ class DeepLearningAgent:
             # This is a fresh network, initialize it.
             self.model.initialize()
 
-        # We also need to load the symbol map - this is the mapping between symbol strings
-        # and their index values within the embedding structure
-        if os.path.exists(self.symbolMapPath):
-            with open(self.symbolMapPath, 'rb') as f:
-                (self.symbolMap, self.knownFiles, self.nextSymbolIndex) = pickle.load(f)
+        self.loadSymbolMap()
 
     def save(self, saveName=""):
         """
@@ -356,6 +352,16 @@ class DeepLearningAgent:
 
         torch.save(self.model.state_dict(), self.modelPath + saveName)
 
+        self.saveSymbolMap()
+
+    def loadSymbolMap(self):
+        # We also need to load the symbol map - this is the mapping between symbol strings
+        # and their index values within the embedding structure
+        if os.path.exists(self.symbolMapPath):
+            with open(self.symbolMapPath, 'rb') as f:
+                (self.symbolMap, self.knownFiles, self.nextSymbolIndex) = pickle.load(f)
+
+    def saveSymbolMap(self):
         with open(self.symbolMapPath, 'wb') as f:
             pickle.dump((self.symbolMap, self.knownFiles, self.nextSymbolIndex), f)
 
@@ -803,9 +809,11 @@ class DeepLearningAgent:
                 advantageValues = outputs['advantage'].cpu()
 
             # Now we iterate over all of the data and results for each of the sub environments
-            for sampleIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues, sampleRecentActions, sampleActionMaps, sampleActionRecentActionCounts, samplePixelActionMap in zip(batchSampleIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
-                                                                                                                                                                  recentActionsBatch, actionMapsBatch, recentActionsCountsBatch,
-                                                                                                                                                                  pixelActionMapsBatch):
+            for sampleIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues,\
+                sampleRecentActions, sampleActionMaps, sampleActionRecentActionCounts,\
+                samplePixelActionMap in zip(batchSampleIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
+                                                                  recentActionsBatch, actionMapsBatch, recentActionsCountsBatch,
+                                                                  pixelActionMapsBatch):
                 # Here is where we determine whether the algorithm will use the predicted best action from the neural network,
                 # or do a weighted random selection using the outputs
                 weighted = bool(random.random() < sampleEpsilon)
@@ -872,13 +880,13 @@ class DeepLearningAgent:
 
                     try:
                         # Compute the minimum after removing all the impossible actions
-                        minAdvantage = numpy.min(reshaped[reshaped != self.config['reward_impossible_action']])
+                        minAdvantage = numpy.min(reshaped[reshaped > self.config['reward_impossible_action_threshold']])
                     except ValueError:
                         minAdvantage = 0
 
                     # Ensure all of the values are positive by shifting it so the minimum value is 0
                     reshapedAdjusted = reshaped - minAdvantage
-                    reshapedAdjusted[reshaped == self.config['reward_impossible_action']] = 0
+                    reshapedAdjusted[reshaped <= self.config['reward_impossible_action_threshold']] = 0
 
                     # Here we resize the array so that it adds up to 1.
                     reshapedSum = numpy.sum(reshapedAdjusted)
@@ -1293,57 +1301,70 @@ class DeepLearningAgent:
             stateValue = numpy.array((output['stateValues'][0]).data)
             stamp = numpy.array((output['stamp']).data)
 
-            presentRewardPredictions = presentRewardPredictions[presentRewardPredictions != self.config['reward_impossible_action']]
-            discountedRewardPredictions = discountedRewardPredictions[discountedRewardPredictions != self.config['reward_impossible_action']]
-            totalRewardPredictions = totalRewardPredictions[totalRewardPredictions != (self.config['reward_impossible_action']*2)]
-            advantagePredictions = advantagePredictions[advantagePredictions != self.config['reward_impossible_action']]
+            presentRewardPredictions = presentRewardPredictions[presentRewardPredictions > self.config['reward_impossible_action_threshold']]
+            discountedRewardPredictions = discountedRewardPredictions[discountedRewardPredictions > self.config['reward_impossible_action_threshold']]
+            totalRewardPredictions = totalRewardPredictions[totalRewardPredictions > (self.config['reward_impossible_action_threshold']*2)]
+            advantagePredictions = advantagePredictions[advantagePredictions > self.config['reward_impossible_action_threshold']]
 
             if minAdvantage is None:
-                minAdvantage = numpy.min(advantagePredictions)
-                maxAdvantage = numpy.max(advantagePredictions)
-                minPresentReward = numpy.min(presentRewardPredictions)
-                maxPresentReward = numpy.max(presentRewardPredictions)
-                minDiscountedReward = numpy.min(discountedRewardPredictions)
-                maxDiscountedReward = numpy.max(discountedRewardPredictions)
-                minTotalReward = numpy.min(totalRewardPredictions)
-                maxTotalReward = numpy.max(totalRewardPredictions)
+                if len(advantagePredictions):
+                    minAdvantage = numpy.min(advantagePredictions)
+                    maxAdvantage = numpy.max(advantagePredictions)
+                if len(presentRewardPredictions):
+                    minPresentReward = numpy.min(presentRewardPredictions)
+                    maxPresentReward = numpy.max(presentRewardPredictions)
+                if len(discountedRewardPredictions):
+                    minDiscountedReward = numpy.min(discountedRewardPredictions)
+                    maxDiscountedReward = numpy.max(discountedRewardPredictions)
+                if len(totalRewardPredictions):
+                    minTotalReward = numpy.min(totalRewardPredictions)
+                    maxTotalReward = numpy.max(totalRewardPredictions)
                 minMemoryValue = numpy.min(stamp)
                 maxMemoryValue = numpy.max(stamp)
                 minStateValue = stateValue
                 maxStateValue = stateValue
             else:
-                minAdvantage = min(numpy.min(advantagePredictions), minAdvantage)
-                maxAdvantage = max(numpy.max(advantagePredictions), maxAdvantage)
-                minPresentReward = min(numpy.min(presentRewardPredictions), minPresentReward)
-                maxPresentReward = max(numpy.max(presentRewardPredictions), maxPresentReward)
-                minDiscountedReward = min(numpy.min(presentRewardPredictions), minDiscountedReward)
-                maxDiscountedReward = max(numpy.max(presentRewardPredictions), maxDiscountedReward)
-                minTotalReward = min(numpy.min(totalRewardPredictions), minTotalReward)
-                maxTotalReward = max(numpy.max(totalRewardPredictions), maxTotalReward)
+                if len(advantagePredictions):
+                    minAdvantage = min(numpy.min(advantagePredictions), minAdvantage)
+                    maxAdvantage = max(numpy.max(advantagePredictions), maxAdvantage)
+                if len(presentRewardPredictions):
+                    minPresentReward = min(numpy.min(presentRewardPredictions), minPresentReward)
+                    maxPresentReward = max(numpy.max(presentRewardPredictions), maxPresentReward)
+                if len(discountedRewardPredictions):
+                    minDiscountedReward = min(numpy.min(discountedRewardPredictions), minDiscountedReward)
+                    maxDiscountedReward = max(numpy.max(discountedRewardPredictions), maxDiscountedReward)
+                if len(totalRewardPredictions):
+                    minTotalReward = min(numpy.min(totalRewardPredictions), minTotalReward)
+                    maxTotalReward = max(numpy.max(totalRewardPredictions), maxTotalReward)
+                minMemoryValue = min(numpy.min(stamp), minMemoryValue)
+                maxMemoryValue = max(numpy.max(stamp), maxMemoryValue)
                 minStateValue = min(stateValue, minStateValue)
                 maxStateValue = max(stateValue, maxStateValue)
 
             for action in output['uniqueActions']:
                 uniqueActions.add(action)
 
-        advantageRange = maxAdvantage - minAdvantage
-        presentRange = maxPresentReward - minPresentReward
-        discountedRange = maxDiscountedReward - minDiscountedReward
-        totalRewardRange = maxTotalReward - minTotalReward
+        if minAdvantage is not None:
+            advantageRange = maxAdvantage - minAdvantage
+            presentRange = maxPresentReward - minPresentReward
+            discountedRange = maxDiscountedReward - minDiscountedReward
+            totalRewardRange = maxTotalReward - minTotalReward
 
-        rewardBounds = (minAdvantage - max(advantageRange * 0.1, 0.2),
-                        maxAdvantage,
-                        minPresentReward - max(presentRange * 0.1, 0.1),
-                        maxPresentReward,
-                        minDiscountedReward - max(discountedRange * 0.1, 0.2),
-                        maxDiscountedReward,
-                        minTotalReward - max(totalRewardRange * 0.1, 0.1),
-                        maxTotalReward,
-                        minMemoryValue,
-                        maxMemoryValue,
-                        minStateValue,
-                        maxStateValue
-                        )
+            rewardBounds = (minAdvantage - max(advantageRange * 0.1, 0.2),
+                            maxAdvantage,
+                            minPresentReward - max(presentRange * 0.1, 0.1),
+                            maxPresentReward,
+                            minDiscountedReward - max(discountedRange * 0.1, 0.2),
+                            maxDiscountedReward,
+                            minTotalReward - max(totalRewardRange * 0.1, 0.1),
+                            maxTotalReward,
+                            minMemoryValue,
+                            maxMemoryValue,
+                            minStateValue,
+                            maxStateValue
+                            )
+        else:
+            rewardBounds = None
 
         uniqueActionColors = {
             action: skimage.color.hsv2rgb((float(index) / len(uniqueActions), 1, 1))
@@ -2247,7 +2268,7 @@ class DeepLearningAgent:
             executionFeatureLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, [self.config['loss_execution_feature_weight']])
             executionTraceLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, [self.config['loss_execution_trace_weight']])
             cursorPredictionLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, [self.config['loss_cursor_prediction_weight']])
-            rewardImpossibleAction = self.variableWrapperFunc(torch.FloatTensor, [self.config['reward_impossible_action']])
+            rewardImpossibleAction = self.variableWrapperFunc(torch.FloatTensor, [self.config['reward_impossible_action_threshold']])
             widthTensor = self.variableWrapperFunc(torch.IntTensor, [batch["processedImages"].shape[3]])
             heightTensor = self.variableWrapperFunc(torch.IntTensor, [batch["processedImages"].shape[2]])
             presentRewardsTensor = self.variableWrapperFunc(torch.FloatTensor, batch["presentRewards"])
@@ -2380,7 +2401,7 @@ class DeepLearningAgent:
                 # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
                 # the action we took in this sequence, could lead to in the future.
                 nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage + nextStateDiscountedFutureRewardImage)
-                isNextStateValid = torch.ne(nextStateBestPossibleTotalReward, rewardImpossibleAction * 2)
+                isNextStateValid = torch.ge(nextStateBestPossibleTotalReward, rewardImpossibleAction * 2)
                 discountedFutureReward = nextStateBestPossibleTotalReward * discountRate * isNextStateValid
 
                 # Here we are basically calculating the target images. E.g., this is what we want the neural network to be predicting as outputs.
@@ -2833,7 +2854,7 @@ class DeepLearningAgent:
         for fileName in executionTrace.cachedStartDecayingBranchTrace:
             for branchIndex in range(len(executionTrace.cachedStartDecayingBranchTrace[fileName])):
                 if executionTrace.cachedStartDecayingBranchTrace[fileName][branchIndex] > self.config['decaying_branch_trace_minimum_weight_for_symbol_inclusion']:
-                    symbol = DeepLearningAgent.branchCoveredSymbol(fileName, branchIndex)
+                    symbol = DeepLearningAgent.branchRecentlyExecutedSymbol(fileName, branchIndex)
                     symbolIndex = self.symbolMap.get(symbol, -1)
                     if symbolIndex > 0:
                         symbols.append(symbolIndex)
@@ -2847,7 +2868,7 @@ class DeepLearningAgent:
         for fileName in executionTrace.cachedEndDecayingFutureBranchTrace:
             for branchIndex in range(len(executionTrace.cachedEndDecayingFutureBranchTrace[fileName])):
                 if executionTrace.cachedEndDecayingFutureBranchTrace[fileName][branchIndex] > self.config['decaying_branch_trace_minimum_weight_for_symbol_inclusion']:
-                    symbol = DeepLearningAgent.branchCoveredSymbol(fileName, branchIndex)
+                    symbol = DeepLearningAgent.branchRecentlyExecutedSymbol(fileName, branchIndex)
                     symbolIndex = self.symbolMap.get(symbol, -1)
                     if symbolIndex > 0:
                         symbols.append(symbolIndex)
