@@ -144,7 +144,12 @@ def mountTestingRunStorageDrive(applicationId):
         target = os.path.join(mainBucketDir, folder)
         linkName = os.path.join(configDir, folder)
         if not os.path.exists(target):
-            os.mkdir(target)
+            # Try-catch statement exists here in the rare circumstance that two different servers attempt to create
+            # the same directory at the same time, which occasionally happens.
+            try:
+                os.mkdir(target)
+            except FileExistsError:
+                pass
         success = runMakeSymbolicLinkCommand(target, linkName)
         if not success:
             return None
@@ -161,7 +166,12 @@ def mountTestingRunStorageDrive(applicationId):
         target = os.path.join(cacheDir, folder)
         linkName = os.path.join(configDir, folder)
         if not os.path.exists(target):
-            os.mkdir(target)
+            # Try-catch statement exists here in the rare circumstance that two different servers attempt to create
+            # the same directory at the same time, which occasionally happens.
+            try:
+                os.mkdir(target)
+            except FileExistsError:
+                pass
         success = runMakeSymbolicLinkCommand(target, linkName)
         if not success:
             return None
