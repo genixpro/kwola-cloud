@@ -1242,7 +1242,7 @@ class DeepLearningAgent:
         # this case in several places throughout the code.
         executionTracesFiltered = [trace for trace in executionTraces if trace is not None]
 
-        if len(executionTracesFiltered) != len(rawImages):
+        if len(executionTracesFiltered) != (len(rawImages) - 1):
             getLogger().error(f"Warning while generating a debug video for execution session {executionSession.id}. Some of the traces failed to load from disk, resulting in the execution traces not lining up correctly with the frames in the video sequence. This likely means that an ExecutionTrace object failed to save correctly and was ignored by the system.")
 
         self.computeCachedCumulativeBranchTraces(executionTracesFiltered)
@@ -1398,7 +1398,12 @@ class DeepLearningAgent:
 
                         hilight = 1 / ((dist/3)+1)
 
-                    future = executor.submit(self.createDebugImagesForExecutionTrace, str(executionSession.id), traceIndex, pickle.dumps(trace), rawImage, lastRawImage, networkOutput, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight, rewardBounds, uniqueActionColors)
+                    future = executor.submit(self.createDebugImagesForExecutionTrace,
+                                             str(executionSession.id), traceIndex, pickle.dumps(trace),
+                                             rawImage, lastRawImage, networkOutput,
+                                             presentRewards, discountedFutureRewards, tempScreenshotDirectory,
+                                             includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight,
+                                             rewardBounds, uniqueActionColors)
                     imageGenerationFutures.append(future)
 
                     lastRawImage = rawImage
@@ -1465,7 +1470,11 @@ class DeepLearningAgent:
 
 
 
-    def createDebugImagesForExecutionTrace(self, executionSessionId, traceIndex, trace, rawImage, lastRawImage, networkOutput, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilight=0, rewardBounds=None, uniqueActionColors=None):
+    def createDebugImagesForExecutionTrace(self, executionSessionId, traceIndex, trace,
+                                           rawImage, lastRawImage, networkOutput,
+                                           presentRewards, discountedFutureRewards, tempScreenshotDirectory,
+                                           includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilight=0,
+                                           rewardBounds=None, uniqueActionColors=None):
         """
             This method is used to generate a single debug image for a single execution trace. Technically this method actually
             generates two debug images. The first shows what action is being performed, and the second shows what happened after

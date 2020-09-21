@@ -77,7 +77,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
             SendExecutionSessionWebhooks(config, application)
         ]
 
-        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom, plugins)
+        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins)
 
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
         bugs = BugModel.objects(owner=run.owner, testingStepId=newID, isMuted=False)
