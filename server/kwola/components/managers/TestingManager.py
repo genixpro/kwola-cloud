@@ -162,7 +162,7 @@ class TestingManager:
             del self.executionSessionTraces[sessionToRemove]
             del self.executionSessionTraceLocalPickleFiles[sessionToRemove]
 
-            for plugin in self.plugins:
+            for plugin in self.testingStepPlugins:
                 plugin.sessionFailed(self.testStep, session)
 
             sessionToRemove = self.environment.removeBadSessionIfNeeded()
