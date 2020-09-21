@@ -43,6 +43,7 @@ import pickle
 import tempfile
 import traceback
 import concurrent.futures
+from kwola.components.utils.retry import autoretry
 
 
 
@@ -252,6 +253,7 @@ class TestingManager:
 
         del traces
 
+    @autoretry
     def savePlainVideoFiles(self):
         getLogger().info(f"[{os.getpid()}] Creating movies for the execution sessions of this testing sequence.")
 
