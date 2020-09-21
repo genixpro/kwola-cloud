@@ -1289,57 +1289,77 @@ class DeepLearningAgent:
         maxStateValue = None
         uniqueActions = set()
         for output in networkOutputs:
-            presentRewardPredictions = numpy.array(output['presentRewards'].data)
-            discountedRewardPredictions = numpy.array(output['discountFutureRewards'].data)
-            totalRewardPredictions = numpy.array((output['presentRewards'] + output['discountFutureRewards']).data)
-            advantagePredictions = numpy.array((output['advantage']).data)
-            stateValue = numpy.array((output['stateValues'][0]).data)
-            stamp = numpy.array((output['stamp']).data)
+            if output is not None:
+                presentRewardPredictions = numpy.array(output['presentRewards'].data)
+                discountedRewardPredictions = numpy.array(output['discountFutureRewards'].data)
+                totalRewardPredictions = numpy.array((output['presentRewards'] + output['discountFutureRewards']).data)
+                advantagePredictions = numpy.array((output['advantage']).data)
+                stateValue = numpy.array((output['stateValues'][0]).data)
+                stamp = numpy.array((output['stamp']).data)
 
-            presentRewardPredictions = presentRewardPredictions[presentRewardPredictions > self.config['reward_impossible_action_threshold']]
-            discountedRewardPredictions = discountedRewardPredictions[discountedRewardPredictions > self.config['reward_impossible_action_threshold']]
-            totalRewardPredictions = totalRewardPredictions[totalRewardPredictions > (self.config['reward_impossible_action_threshold']*2)]
-            advantagePredictions = advantagePredictions[advantagePredictions > self.config['reward_impossible_action_threshold']]
+                presentRewardPredictions = presentRewardPredictions[presentRewardPredictions > self.config['reward_impossible_action_threshold']]
+                discountedRewardPredictions = discountedRewardPredictions[discountedRewardPredictions > self.config['reward_impossible_action_threshold']]
+                totalRewardPredictions = totalRewardPredictions[totalRewardPredictions > (self.config['reward_impossible_action_threshold']*2)]
+                advantagePredictions = advantagePredictions[advantagePredictions > self.config['reward_impossible_action_threshold']]
 
-            if minAdvantage is None:
-                if len(advantagePredictions):
-                    minAdvantage = numpy.min(advantagePredictions)
-                    maxAdvantage = numpy.max(advantagePredictions)
-                if len(presentRewardPredictions):
-                    minPresentReward = numpy.min(presentRewardPredictions)
-                    maxPresentReward = numpy.max(presentRewardPredictions)
-                if len(discountedRewardPredictions):
-                    minDiscountedReward = numpy.min(discountedRewardPredictions)
-                    maxDiscountedReward = numpy.max(discountedRewardPredictions)
-                if len(totalRewardPredictions):
-                    minTotalReward = numpy.min(totalRewardPredictions)
-                    maxTotalReward = numpy.max(totalRewardPredictions)
-                minMemoryValue = numpy.min(stamp)
-                maxMemoryValue = numpy.max(stamp)
-                minStateValue = stateValue
-                maxStateValue = stateValue
-            else:
-                if len(advantagePredictions):
-                    minAdvantage = min(numpy.min(advantagePredictions), minAdvantage)
-                    maxAdvantage = max(numpy.max(advantagePredictions), maxAdvantage)
-                if len(presentRewardPredictions):
-                    minPresentReward = min(numpy.min(presentRewardPredictions), minPresentReward)
-                    maxPresentReward = max(numpy.max(presentRewardPredictions), maxPresentReward)
-                if len(discountedRewardPredictions):
-                    minDiscountedReward = min(numpy.min(discountedRewardPredictions), minDiscountedReward)
-                    maxDiscountedReward = max(numpy.max(discountedRewardPredictions), maxDiscountedReward)
-                if len(totalRewardPredictions):
-                    minTotalReward = min(numpy.min(totalRewardPredictions), minTotalReward)
-                    maxTotalReward = max(numpy.max(totalRewardPredictions), maxTotalReward)
-                minMemoryValue = min(numpy.min(stamp), minMemoryValue)
-                maxMemoryValue = max(numpy.max(stamp), maxMemoryValue)
-                minStateValue = min(stateValue, minStateValue)
-                maxStateValue = max(stateValue, maxStateValue)
+                if minAdvantage is None:
+                    if len(advantagePredictions):
+                        minAdvantage = numpy.min(advantagePredictions)
+                        maxAdvantage = numpy.max(advantagePredictions)
+                    if len(presentRewardPredictions):
+                        minPresentReward = numpy.min(presentRewardPredictions)
+                        maxPresentReward = numpy.max(presentRewardPredictions)
+                    if len(discountedRewardPredictions):
+                        minDiscountedReward = numpy.min(discountedRewardPredictions)
+                        maxDiscountedReward = numpy.max(discountedRewardPredictions)
+                    if len(totalRewardPredictions):
+                        minTotalReward = numpy.min(totalRewardPredictions)
+                        maxTotalReward = numpy.max(totalRewardPredictions)
+                    minMemoryValue = numpy.min(stamp)
+                    maxMemoryValue = numpy.max(stamp)
+                    minStateValue = stateValue
+                    maxStateValue = stateValue
+                else:
+                    if len(advantagePredictions):
+                        minAdvantage = min(numpy.min(advantagePredictions), minAdvantage)
+                        maxAdvantage = max(numpy.max(advantagePredictions), maxAdvantage)
+                    if len(presentRewardPredictions):
+                        minPresentReward = min(numpy.min(presentRewardPredictions), minPresentReward)
+                        maxPresentReward = max(numpy.max(presentRewardPredictions), maxPresentReward)
+                    if len(discountedRewardPredictions):
+                        minDiscountedReward = min(numpy.min(discountedRewardPredictions), minDiscountedReward)
+                        maxDiscountedReward = max(numpy.max(discountedRewardPredictions), maxDiscountedReward)
+                    if len(totalRewardPredictions):
+                        minTotalReward = min(numpy.min(totalRewardPredictions), minTotalReward)
+                        maxTotalReward = max(numpy.max(totalRewardPredictions), maxTotalReward)
+                    minMemoryValue = min(numpy.min(stamp), minMemoryValue)
+                    maxMemoryValue = max(numpy.max(stamp), maxMemoryValue)
+                    minStateValue = min(stateValue, minStateValue)
+                    maxStateValue = max(stateValue, maxStateValue)
 
             for action in output['uniqueActions']:
                 uniqueActions.add(action)
 
-        if minAdvantage is not None:
+        if includeNeuralNetworkCharts:
+            if minAdvantage is None:
+                minAdvantage = 0
+                maxAdvantage = 1
+            if minPresentReward is None:
+                minPresentReward = 0
+                maxPresentReward = 1
+            if minDiscountedReward is None:
+                minDiscountedReward = 0
+                maxDiscountedReward = 1
+            if minTotalReward is None:
+                minTotalReward = 0
+                maxTotalReward = 1
+            if minMemoryValue is None:
+                minMemoryValue = 0
+                maxMemoryValue = 1
+            if minStateValue is None:
+                minStateValue = 0
+                maxStateValue = 1
+
             advantageRange = maxAdvantage - minAdvantage
             presentRange = maxPresentReward - minPresentReward
             discountedRange = maxDiscountedReward - minDiscountedReward
