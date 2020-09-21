@@ -96,6 +96,12 @@ class RecordScreenshots(WebEnvironmentPluginBase):
         if os.path.exists(self.screenshotDirectory[executionSession.id]):
             os.rmdir(self.screenshotDirectory[executionSession.id])
 
+        del self.screenshotDirectory[executionSession.id]
+        del self.screenshotPaths[executionSession.id]
+        del self.screenshotHashes[executionSession.id]
+        del self.frameNumber[executionSession.id]
+        del self.lastScreenshotHash[executionSession.id]
+
 
     def movieFilePath(self, executionSession):
         return os.path.join(self.screenshotDirectory[executionSession.id], self.movieFileName(executionSession))
