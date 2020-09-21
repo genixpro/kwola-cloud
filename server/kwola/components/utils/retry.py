@@ -20,7 +20,8 @@
 
 
 import time
-
+import traceback
+from ...config.logger import getLogger
 
 def autoretry(targetFunc):
     def retryFunction(*args, **kwargs):
@@ -33,5 +34,6 @@ def autoretry(targetFunc):
                     raise
                 else:
                     time.sleep(1.5 ** attempt)
+                    getLogger().info(f"Had to autoretry the function {targetFunc.__name__} due to the following exception: {traceback.format_exc()}")
 
     return retryFunction
