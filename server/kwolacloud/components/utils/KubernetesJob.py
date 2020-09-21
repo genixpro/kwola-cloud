@@ -7,6 +7,7 @@ import time
 import logging
 import base64
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
+from kwola.components.utils.retry import autoretry
 
 class KubernetesJob:
     def __init__(self, module, data, referenceId, image="worker", cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi", gpu=False):
@@ -21,6 +22,7 @@ class KubernetesJob:
         self.gpu = gpu
         self.maxKubectlRetries = 10
 
+    @autoretry
     def cleanup(self):
         if self.successful():
             for attempt in range(self.maxKubectlRetries):
@@ -124,6 +126,7 @@ class KubernetesJob:
         return yamlStr
 
 
+    @autoretry
     def start(self):
         process = None
         for attempt in range(self.maxKubectlRetries):
@@ -141,7 +144,7 @@ class KubernetesJob:
         raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
 
-
+    @autoretry
     def getJobStatus(self):
         process = None
         for attempt in range(self.maxKubectlRetries):
@@ -158,13 +161,13 @@ class KubernetesJob:
                 logging.error(f"Error decoding json {process.stdout}")
                 raise
 
-            if "active" in jsonData['status'] and jsonData['status']['active'] == 1:
+            if "active" in jsonData['status'] and jsonData['status']['active'] >= 1:
                 return "Running"
 
-            if "failed" in jsonData['status'] and jsonData['status']['failed'] == 1:
+            if "failed" in jsonData['status'] and jsonData['status']['failed'] >= 1:
                 return "Failed"
 
-            if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] == 1:
+            if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] >= 1:
                 return "Success"
 
         raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
@@ -191,6 +194,7 @@ class KubernetesJob:
         while not self.ready():
             time.sleep(10)
 
+    @autoretry
     def getLogs(self):
         process = None
         for attempt in range(self.maxKubectlRetries):

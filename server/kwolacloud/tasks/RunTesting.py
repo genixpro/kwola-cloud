@@ -313,7 +313,7 @@ def runTesting(testingRunId):
         bugs = list(BugModel.objects(owner=application.owner, testingRunId=run.id, isMuted=False))
         bugCount = len(bugs)
 
-        bugsZipFileOnDisk = open(os.path.join(config.getKwolaUserDataDirectory("bug_zip_files"), testingRunId.id + ".zip"), 'wb')
+        bugsZipFileOnDisk = open(os.path.join(config.getKwolaUserDataDirectory("bug_zip_files"), run.id + ".zip"), 'wb')
         bugsZip = zipfile.ZipFile(file=bugsZipFileOnDisk, mode='w')
 
         for bugIndex, bug in enumerate(bugs):

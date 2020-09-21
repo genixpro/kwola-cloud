@@ -48,6 +48,7 @@ import skimage
 import skimage.color
 import skimage.draw
 import skimage.io
+import skimage.filters
 import skimage.measure
 import skimage.segmentation
 import skimage.transform
@@ -335,11 +336,7 @@ class DeepLearningAgent:
             # This is a fresh network, initialize it.
             self.model.initialize()
 
-        # We also need to load the symbol map - this is the mapping between symbol strings
-        # and their index values within the embedding structure
-        if os.path.exists(self.symbolMapPath):
-            with open(self.symbolMapPath, 'rb') as f:
-                (self.symbolMap, self.knownFiles, self.nextSymbolIndex) = pickle.load(f)
+        self.loadSymbolMap()
 
     def save(self, saveName=""):
         """
@@ -355,6 +352,16 @@ class DeepLearningAgent:
 
         torch.save(self.model.state_dict(), self.modelPath + saveName)
 
+        self.saveSymbolMap()
+
+    def loadSymbolMap(self):
+        # We also need to load the symbol map - this is the mapping between symbol strings
+        # and their index values within the embedding structure
+        if os.path.exists(self.symbolMapPath):
+            with open(self.symbolMapPath, 'rb') as f:
+                (self.symbolMap, self.knownFiles, self.nextSymbolIndex) = pickle.load(f)
+
+    def saveSymbolMap(self):
         with open(self.symbolMapPath, 'wb') as f:
             pickle.dump((self.symbolMap, self.knownFiles, self.nextSymbolIndex), f)
 
@@ -802,9 +809,11 @@ class DeepLearningAgent:
                 advantageValues = outputs['advantage'].cpu()
 
             # Now we iterate over all of the data and results for each of the sub environments
-            for sampleIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues, sampleRecentActions, sampleActionMaps, sampleActionRecentActionCounts, samplePixelActionMap in zip(batchSampleIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
-                                                                                                                                                                  recentActionsBatch, actionMapsBatch, recentActionsCountsBatch,
-                                                                                                                                                                  pixelActionMapsBatch):
+            for sampleIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues,\
+                sampleRecentActions, sampleActionMaps, sampleActionRecentActionCounts,\
+                samplePixelActionMap in zip(batchSampleIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
+                                                                  recentActionsBatch, actionMapsBatch, recentActionsCountsBatch,
+                                                                  pixelActionMapsBatch):
                 # Here is where we determine whether the algorithm will use the predicted best action from the neural network,
                 # or do a weighted random selection using the outputs
                 weighted = bool(random.random() < sampleEpsilon)
@@ -871,13 +880,13 @@ class DeepLearningAgent:
 
                     try:
                         # Compute the minimum after removing all the impossible actions
-                        minAdvantage = numpy.min(reshaped[reshaped != self.config['reward_impossible_action']])
+                        minAdvantage = numpy.min(reshaped[reshaped > self.config['reward_impossible_action_threshold']])
                     except ValueError:
                         minAdvantage = 0
 
                     # Ensure all of the values are positive by shifting it so the minimum value is 0
                     reshapedAdjusted = reshaped - minAdvantage
-                    reshapedAdjusted[reshaped == self.config['reward_impossible_action']] = 0
+                    reshapedAdjusted[reshaped <= self.config['reward_impossible_action_threshold']] = 0
 
                     # Here we resize the array so that it adds up to 1.
                     reshapedSum = numpy.sum(reshapedAdjusted)
@@ -1036,6 +1045,19 @@ class DeepLearningAgent:
             actionType = random.choice(range(len(self.actionsSorted)))
 
         return int(actionX / self.config['model_image_downscale_ratio']), int(actionY / self.config['model_image_downscale_ratio']), actionType
+
+    def boundingBoxForActionMaps(self, actionMaps):
+        left = numpy.min([actionMap.left for actionMap in actionMaps])
+        right = numpy.max([actionMap.right for actionMap in actionMaps])
+        top = numpy.min([actionMap.top for actionMap in actionMaps])
+        bottom = numpy.max([actionMap.bottom for actionMap in actionMaps])
+
+        return {
+            "left": left,
+            "right": right,
+            "top": top,
+            "bottom": bottom
+        }
 
     @staticmethod
     def computePresentRewards(executionTraces, config):
@@ -1227,7 +1249,7 @@ class DeepLearningAgent:
         executionTracesFiltered = [trace for trace in executionTraces if trace is not None]
 
         if len(executionTracesFiltered) != len(rawImages):
-            getLogger().warning(f"Warning while generating a debug video for execution session {executionSession.id}. Some of the traces failed to load from disk, resulting in the execution traces not lining up correctly with the frames in the video sequence. This likely means that an ExecutionTrace object failed to save correctly and was ignored by the system.")
+            getLogger().error(f"Warning while generating a debug video for execution session {executionSession.id}. Some of the traces failed to load from disk, resulting in the execution traces not lining up correctly with the frames in the video sequence. This likely means that an ExecutionTrace object failed to save correctly and was ignored by the system.")
 
         self.computeCachedCumulativeBranchTraces(executionTracesFiltered)
         self.computeCachedDecayingBranchTrace(executionTracesFiltered)
@@ -1248,11 +1270,113 @@ class DeepLearningAgent:
             executionTracesFiltered = executionTracesFiltered[:cutoffStepNumber]
             rawImages = rawImages[:cutoffStepNumber]
 
+        if includeNeuralNetworkCharts:
+            neuralNetworkFutures = []
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                for trace, rawImage in zip(executionTracesFiltered, rawImages):
+                    future = executor.submit(self.processDebugTraceThroughNeuralNetwork, trace, rawImage)
+                    neuralNetworkFutures.append(future)
+            networkOutputs = [future.result() for future in neuralNetworkFutures]
+        else:
+            networkOutputs = [None] * len(executionTracesFiltered)
+
+        # Find the high and low points for various images
+        minAdvantage = None
+        maxAdvantage = None
+        minPresentReward = None
+        maxPresentReward = None
+        minDiscountedReward = None
+        maxDiscountedReward = None
+        minTotalReward = None
+        maxTotalReward = None
+        minMemoryValue = None
+        maxMemoryValue = None
+        minStateValue = None
+        maxStateValue = None
+        uniqueActions = set()
+        for output in networkOutputs:
+            presentRewardPredictions = numpy.array(output['presentRewards'].data)
+            discountedRewardPredictions = numpy.array(output['discountFutureRewards'].data)
+            totalRewardPredictions = numpy.array((output['presentRewards'] + output['discountFutureRewards']).data)
+            advantagePredictions = numpy.array((output['advantage']).data)
+            stateValue = numpy.array((output['stateValues'][0]).data)
+            stamp = numpy.array((output['stamp']).data)
+
+            presentRewardPredictions = presentRewardPredictions[presentRewardPredictions > self.config['reward_impossible_action_threshold']]
+            discountedRewardPredictions = discountedRewardPredictions[discountedRewardPredictions > self.config['reward_impossible_action_threshold']]
+            totalRewardPredictions = totalRewardPredictions[totalRewardPredictions > (self.config['reward_impossible_action_threshold']*2)]
+            advantagePredictions = advantagePredictions[advantagePredictions > self.config['reward_impossible_action_threshold']]
+
+            if minAdvantage is None:
+                if len(advantagePredictions):
+                    minAdvantage = numpy.min(advantagePredictions)
+                    maxAdvantage = numpy.max(advantagePredictions)
+                if len(presentRewardPredictions):
+                    minPresentReward = numpy.min(presentRewardPredictions)
+                    maxPresentReward = numpy.max(presentRewardPredictions)
+                if len(discountedRewardPredictions):
+                    minDiscountedReward = numpy.min(discountedRewardPredictions)
+                    maxDiscountedReward = numpy.max(discountedRewardPredictions)
+                if len(totalRewardPredictions):
+                    minTotalReward = numpy.min(totalRewardPredictions)
+                    maxTotalReward = numpy.max(totalRewardPredictions)
+                minMemoryValue = numpy.min(stamp)
+                maxMemoryValue = numpy.max(stamp)
+                minStateValue = stateValue
+                maxStateValue = stateValue
+            else:
+                if len(advantagePredictions):
+                    minAdvantage = min(numpy.min(advantagePredictions), minAdvantage)
+                    maxAdvantage = max(numpy.max(advantagePredictions), maxAdvantage)
+                if len(presentRewardPredictions):
+                    minPresentReward = min(numpy.min(presentRewardPredictions), minPresentReward)
+                    maxPresentReward = max(numpy.max(presentRewardPredictions), maxPresentReward)
+                if len(discountedRewardPredictions):
+                    minDiscountedReward = min(numpy.min(discountedRewardPredictions), minDiscountedReward)
+                    maxDiscountedReward = max(numpy.max(discountedRewardPredictions), maxDiscountedReward)
+                if len(totalRewardPredictions):
+                    minTotalReward = min(numpy.min(totalRewardPredictions), minTotalReward)
+                    maxTotalReward = max(numpy.max(totalRewardPredictions), maxTotalReward)
+                minMemoryValue = min(numpy.min(stamp), minMemoryValue)
+                maxMemoryValue = max(numpy.max(stamp), maxMemoryValue)
+                minStateValue = min(stateValue, minStateValue)
+                maxStateValue = max(stateValue, maxStateValue)
+
+            for action in output['uniqueActions']:
+                uniqueActions.add(action)
+
+        if minAdvantage is not None:
+            advantageRange = maxAdvantage - minAdvantage
+            presentRange = maxPresentReward - minPresentReward
+            discountedRange = maxDiscountedReward - minDiscountedReward
+            totalRewardRange = maxTotalReward - minTotalReward
+
+            rewardBounds = (minAdvantage - max(advantageRange * 0.1, 0.2),
+                            maxAdvantage,
+                            minPresentReward - max(presentRange * 0.1, 0.1),
+                            maxPresentReward,
+                            minDiscountedReward - max(discountedRange * 0.1, 0.2),
+                            maxDiscountedReward,
+                            minTotalReward - max(totalRewardRange * 0.1, 0.1),
+                            maxTotalReward,
+                            minMemoryValue,
+                            maxMemoryValue,
+                            minStateValue,
+                            maxStateValue
+                            )
+        else:
+            rewardBounds = None
+
+        uniqueActionColors = {
+            action: skimage.color.hsv2rgb((float(index) / len(uniqueActions), 1, 1))
+            for index, action in enumerate(uniqueActions)
+        }
+
         # Max workers set to 1 here temporarily due to a threading bug in the latest version of matplotlib
         # with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            futures = []
-            for trace, traceIndex, rawImage in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImages):
+            imageGenerationFutures = []
+            for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImages, networkOutputs):
                 if trace is not None:
                     hilight = 0
                     if hilightStepNumber is not None:
@@ -1260,12 +1384,12 @@ class DeepLearningAgent:
 
                         hilight = 1 / ((dist/3)+1)
 
-                    future = executor.submit(self.createDebugImagesForExecutionTrace, str(executionSession.id), traceIndex, pickle.dumps(trace), rawImage, lastRawImage, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight)
-                    futures.append(future)
+                    future = executor.submit(self.createDebugImagesForExecutionTrace, str(executionSession.id), traceIndex, pickle.dumps(trace), rawImage, lastRawImage, networkOutput, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight, rewardBounds, uniqueActionColors)
+                    imageGenerationFutures.append(future)
 
                     lastRawImage = rawImage
 
-            concurrent.futures.wait(futures)
+            concurrent.futures.wait(imageGenerationFutures)
 
         result = subprocess.run(['ffmpeg', '-f', 'image2', "-r", "2", '-i', 'kwola-screenshot-%05d.png', '-vcodec', chooseBestFfmpegVideoCodec(), '-pix_fmt', 'yuv420p', '-crf', '25', '-preset', 'veryslow', "debug.mp4"], cwd=tempScreenshotDirectory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode != 0:
@@ -1283,7 +1407,50 @@ class DeepLearningAgent:
 
         return videoData
 
-    def createDebugImagesForExecutionTrace(self, executionSessionId, traceIndex, trace, rawImage, lastRawImage, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilight=0):
+    def processDebugTraceThroughNeuralNetwork(self, trace, rawImage):
+        processedImage = DeepLearningAgent.processRawImageParallel(rawImage, self.config)
+
+        pixelActionMap = self.createPixelActionMap(trace.actionMaps, processedImage.shape[1], processedImage.shape[2])
+
+        uniqueActions = set([tuple(data) for data in numpy.reshape(numpy.transpose(pixelActionMap), newshape=[-1, len(self.actionsSorted)])])
+
+        symbols, weights = self.computeAllSymbolsForTrace(trace)
+
+        symbolListBatch = symbols
+        symbolWeightBatch = weights
+        symbolListOffsets = [0]
+
+        with torch.no_grad():
+            self.model.eval()
+
+            symbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(symbolListBatch))
+            symbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(symbolListOffsets))
+            symbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(symbolWeightBatch))
+
+            outputs = \
+                self.modelParallel({"image": self.variableWrapperFunc(torch.FloatTensor, numpy.array([processedImage])),
+                                    "symbolIndexes": symbolIndexesTensor,
+                                    "symbolOffsets": symbolListOffsetsTensor,
+                                    "symbolWeights": symbolWeightsTensor,
+                                    "pixelActionMaps": self.variableWrapperFunc(torch.FloatTensor,
+                                                                                numpy.array([pixelActionMap])),
+                                    "stepNumber": self.variableWrapperFunc(torch.FloatTensor,
+                                                                           numpy.array([trace.frameNumber - 1])),
+                                    "outputStamp": True,
+                                    "outputFutureSymbolEmbedding": False,
+                                    "computeExtras": False,
+                                    "computeRewards": True,
+                                    "computeActionProbabilities": True,
+                                    "computeStateValues": True,
+                                    "computeAdvantageValues": True
+                                    })
+
+        outputs['uniqueActions'] = uniqueActions
+        return outputs
+
+
+
+    def createDebugImagesForExecutionTrace(self, executionSessionId, traceIndex, trace, rawImage, lastRawImage, networkOutput, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilight=0, rewardBounds=None, uniqueActionColors=None):
         """
             This method is used to generate a single debug image for a single execution trace. Technically this method actually
             generates two debug images. The first shows what action is being performed, and the second shows what happened after
@@ -1294,12 +1461,15 @@ class DeepLearningAgent:
             :param trace: The kwola.datamodels.ExecutionTrace object that this debug image will be generated for. It should be serialized into a string using pickle.dumps prior to input.
             :param rawImage: A numpy array containing the raw image data for the result image on this trace
             :param lastRawImage: A numpy array containing the raw image data for the input image on this trace, e.g. the image from before the action was performed.
+            :param networkOutput: The output from the neural network for this debug image, as returned by the method processDebugTraceThroughNeuralNetwork
             :param presentRewards: A list containing all of the calculated present reward values for the sequence
             :param discountedFutureRewards: A list containing all of the calculated discounted future reward values for the sequence
             :param tempScreenshotDirectory: A string containing the path of the directory where the images will be saved
             :param includeNeuralNetworkCharts: A boolean indicating whether to include charts showing the neural network predictions in the debug video
             :param includeNetPresentRewardChart: A boolean indicating whether to include the net present reward chart at the bottom of the debug video
             :param hilight: A float from 0 to 1 indicating how much hilighting to apply to this frame, 0 being no hilight and 1 being full hilight. Hilighting a frame will change the background color
+            :param rewardBounds: A tuple containing the bounds to be used for generating images
+            :param uniqueActionColors: A dictionary mapping pixel action map values to various colors
 
             :return: None
         """
@@ -1513,15 +1683,35 @@ class DeepLearningAgent:
 
                 currentFig = 1
 
+                minAdvantage, maxAdvantage, minPresentReward, \
+                    maxPresentReward, minDiscountedReward, \
+                    maxDiscountedReward, minTotalReward, maxTotalReward, \
+                    minMemoryValue, maxMemoryValue, minStateValue, \
+                    maxStateValue = rewardBounds
+
                 mainFigure = plt.figure(
                     figsize=((rightSize) / chartDPI, (imageHeight + bottomSize + topSize - chartTopMargin) / chartDPI), dpi=chartDPI)
 
-                rewardPredictionAxes = [
+                presentRewardPredictionAxes = [
                     mainFigure.add_subplot(numColumns, numRows, actionIndex + currentFig)
                     for actionIndex, action in enumerate(self.actionsSorted)
                 ]
+                currentFig += len(presentRewardPredictionAxes)
 
-                currentFig += len(rewardPredictionAxes)
+
+                discountedRewardPredictionAxes = [
+                    mainFigure.add_subplot(numColumns, numRows, actionIndex + currentFig)
+                    for actionIndex, action in enumerate(self.actionsSorted)
+                ]
+                currentFig += len(discountedRewardPredictionAxes)
+
+
+                totalRewardPredictionAxes = [
+                    mainFigure.add_subplot(numColumns, numRows, actionIndex + currentFig)
+                    for actionIndex, action in enumerate(self.actionsSorted)
+                ]
+                currentFig += len(totalRewardPredictionAxes)
+
 
                 advantagePredictionAxes = [
                     mainFigure.add_subplot(numColumns, numRows, actionIndex + currentFig)
@@ -1548,8 +1738,7 @@ class DeepLearningAgent:
                 rewardPixelMaskAxes = mainFigure.add_subplot(numColumns, numRows, currentFig)
                 currentFig += 1
                 rewardPixelMask = self.createRewardPixelMask(processedImage,
-                                                             int(trace.actionPerformed.x * self.config['model_image_downscale_ratio']),
-                                                             int(trace.actionPerformed.y * self.config['model_image_downscale_ratio'])
+                                                             trace.actionPerformed
                                                              )
                 rewardPixelCount = numpy.count_nonzero(rewardPixelMask)
                 rewardPixelMaskAxes.imshow(rewardPixelMask, vmin=0, vmax=1, cmap=plt.get_cmap("gray"), interpolation="bilinear")
@@ -1557,49 +1746,28 @@ class DeepLearningAgent:
                 rewardPixelMaskAxes.set_yticks([])
                 rewardPixelMaskAxes.set_title(f"{rewardPixelCount} target pixels")
 
-                # pixelActionMapAxes = mainFigure.add_subplot(numColumns, numRows, currentFig)
-                # currentFig += 1
+                pixelActionMapAxes = mainFigure.add_subplot(numColumns, numRows, currentFig)
+                currentFig += 1
                 pixelActionMap = self.createPixelActionMap(trace.actionMaps, processedImage.shape[1], processedImage.shape[2])
-                # actionPixelCount = numpy.count_nonzero(pixelActionMap)
-                # pixelActionMapAxes.imshow(numpy.swapaxes(numpy.swapaxes(pixelActionMap, 0, 1), 1, 2) * 255, interpolation="bilinear")
-                # pixelActionMapAxes.set_xticks([])
-                # pixelActionMapAxes.set_yticks([])
-                # pixelActionMapAxes.set_title(f"{actionPixelCount} action pixels")
+                transposedPixelActionMap = numpy.transpose(pixelActionMap)
+                actionPixelCount = numpy.count_nonzero(pixelActionMap)
+                actionMapImage = numpy.zeros(shape=(processedImage.shape[1], processedImage.shape[2], 3))
+                for y in range(processedImage.shape[1]):
+                    for x in range(processedImage.shape[2]):
+                        actionMapImage[y][x] = uniqueActionColors[tuple(transposedPixelActionMap[x, y])]
 
-                symbols, weights = self.computeAllSymbolsForTrace(trace)
+                pixelActionMapAxes.imshow(actionMapImage, interpolation="bilinear")
+                pixelActionMapAxes.set_xticks([])
+                pixelActionMapAxes.set_yticks([])
+                pixelActionMapAxes.set_title(f"{actionPixelCount} action pixels")
 
-                symbolListBatch = symbols
-                symbolWeightBatch = weights
-                symbolListOffsets = [0]
-
-                with torch.no_grad():
-                    self.model.eval()
-
-                    symbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(symbolListBatch))
-                    symbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(symbolListOffsets))
-                    symbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(symbolWeightBatch))
-
-                    outputs = \
-                        self.modelParallel({"image": self.variableWrapperFunc(torch.FloatTensor, numpy.array([processedImage])),
-                                            "symbolIndexes": symbolIndexesTensor,
-                                            "symbolOffsets": symbolListOffsetsTensor,
-                                            "symbolWeights": symbolWeightsTensor,
-                                            "pixelActionMaps": self.variableWrapperFunc(torch.FloatTensor, numpy.array([pixelActionMap])),
-                                            "stepNumber": self.variableWrapperFunc(torch.FloatTensor, numpy.array([trace.frameNumber - 1])),
-                                            "outputStamp": True,
-                                            "outputFutureSymbolEmbedding": False,
-                                            "computeExtras": False,
-                                            "computeRewards": True,
-                                            "computeActionProbabilities": True,
-                                            "computeStateValues": True,
-                                            "computeAdvantageValues": True
-                                            })
-
-                    totalRewardPredictions = numpy.array((outputs['presentRewards'] + outputs['discountFutureRewards']).data)
-                    advantagePredictions = numpy.array((outputs['advantage']).data)
-                    actionProbabilities = numpy.array((outputs['actionProbabilities']).data)
-                    stateValue = numpy.array((outputs['stateValues'][0]).data)
-                    stamp = outputs['stamp']
+                presentRewardPredictions = numpy.array(networkOutput['presentRewards'].data)
+                discountedRewardPredictions = numpy.array(networkOutput['discountFutureRewards'].data)
+                totalRewardPredictions = numpy.array((networkOutput['presentRewards'] + networkOutput['discountFutureRewards']).data)
+                advantagePredictions = numpy.array((networkOutput['advantage']).data)
+                actionProbabilities = numpy.array((networkOutput['actionProbabilities']).data)
+                stateValue = numpy.array((networkOutput['stateValues'][0]).data)
+                stamp = networkOutput['stamp']
 
                 for actionIndex, action in enumerate(self.actionsSorted):
                     actionY = actionProbabilities[0][actionIndex].max(axis=1).argmax(axis=0)
@@ -1625,16 +1793,40 @@ class DeepLearningAgent:
                                                              self.config.debug_video_action_prediction_circle_color_b]
 
                 for actionIndex, action in enumerate(self.actionsSorted):
+                    maxValue = numpy.max(numpy.array(presentRewardPredictions[0][actionIndex]))
+
+                    presentRewardPredictionAxes[actionIndex].set_xticks([])
+                    presentRewardPredictionAxes[actionIndex].set_yticks([])
+
+                    rewardPredictionsShrunk = skimage.measure.block_reduce(presentRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
+
+                    im = presentRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minPresentReward, vmax=maxPresentReward)
+                    presentRewardPredictionAxes[actionIndex].set_title(f"{action} {maxValue:.2f} present reward")
+                    mainFigure.colorbar(im, ax=presentRewardPredictionAxes[actionIndex], orientation='vertical')
+
+                for actionIndex, action in enumerate(self.actionsSorted):
+                    maxValue = numpy.max(numpy.array(discountedRewardPredictions[0][actionIndex]))
+
+                    discountedRewardPredictionAxes[actionIndex].set_xticks([])
+                    discountedRewardPredictionAxes[actionIndex].set_yticks([])
+
+                    rewardPredictionsShrunk = skimage.measure.block_reduce(discountedRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
+
+                    im = discountedRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minDiscountedReward, vmax=maxDiscountedReward)
+                    discountedRewardPredictionAxes[actionIndex].set_title(f"{action} {maxValue:.2f} discounted reward")
+                    mainFigure.colorbar(im, ax=discountedRewardPredictionAxes[actionIndex], orientation='vertical')
+
+                for actionIndex, action in enumerate(self.actionsSorted):
                     maxValue = numpy.max(numpy.array(totalRewardPredictions[0][actionIndex]))
 
-                    rewardPredictionAxes[actionIndex].set_xticks([])
-                    rewardPredictionAxes[actionIndex].set_yticks([])
+                    totalRewardPredictionAxes[actionIndex].set_xticks([])
+                    totalRewardPredictionAxes[actionIndex].set_yticks([])
 
                     rewardPredictionsShrunk = skimage.measure.block_reduce(totalRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
-                    im = rewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=self.config.debug_video_reward_min_value, vmax=self.config.debug_video_reward_max_value)
-                    rewardPredictionAxes[actionIndex].set_title(f"{action} {maxValue:.2f} reward")
-                    mainFigure.colorbar(im, ax=rewardPredictionAxes[actionIndex], orientation='vertical')
+                    im = totalRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minTotalReward, vmax=maxTotalReward)
+                    totalRewardPredictionAxes[actionIndex].set_title(f"{action} {maxValue:.2f} total reward")
+                    mainFigure.colorbar(im, ax=totalRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
                     maxValue = numpy.max(numpy.array(advantagePredictions[0][actionIndex]))
@@ -1644,7 +1836,7 @@ class DeepLearningAgent:
 
                     advanagePredictionsShrunk = skimage.measure.block_reduce(advantagePredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
-                    im = advantagePredictionAxes[actionIndex].imshow(advanagePredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=self.config.debug_video_advantage_min_value, vmax=self.config.debug_video_advantage_max_value)
+                    im = advantagePredictionAxes[actionIndex].imshow(advanagePredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minAdvantage, vmax=maxAdvantage)
                     advantagePredictionAxes[actionIndex].set_title(f"{action} {maxValue:.2f} advantage")
                     mainFigure.colorbar(im, ax=advantagePredictionAxes[actionIndex], orientation='vertical')
 
@@ -1665,13 +1857,13 @@ class DeepLearningAgent:
                 stampImageWidth = self.config['additional_features_stamp_edge_size'] * self.config['additional_features_stamp_edge_size']
                 stampImageHeight = self.config['additional_features_stamp_depth_size']
 
-                stampIm = stampAxes.imshow(numpy.array(stamp.data[0]).reshape([stampImageWidth, stampImageHeight]), cmap=greyColorMap, interpolation="nearest", vmin=-2.5, vmax=2.5)
+                stampIm = stampAxes.imshow(numpy.array(stamp.data[0]).reshape([stampImageWidth, stampImageHeight]), cmap=greyColorMap, interpolation="nearest", vmin=minMemoryValue, vmax=maxMemoryValue)
                 mainFigure.colorbar(stampIm, ax=stampAxes, orientation='vertical')
                 stampAxes.set_title("Memory Stamp")
 
                 stateValueAxes.set_xticks([])
                 stateValueAxes.set_yticks([])
-                stateValueIm = stateValueAxes.imshow([stateValue], cmap=mainColorMap, interpolation="nearest", vmin=self.config.debug_video_reward_min_value, vmax=self.config.debug_video_reward_max_value)
+                stateValueIm = stateValueAxes.imshow([stateValue], cmap=mainColorMap, interpolation="nearest", vmin=minStateValue, vmax=maxStateValue)
                 mainFigure.colorbar(stateValueIm, ax=stateValueAxes, orientation='vertical')
                 stateValueAxes.set_title(f"State Value {float(stateValue[0]):.3f}")
 
@@ -1729,7 +1921,7 @@ class DeepLearningAgent:
         except Exception:
             getLogger().error(f"[{os.getpid()}] Failed to create debug image!\n{traceback.format_exc()}")
 
-    def createRewardPixelMask(self, processedImage, x, y):
+    def createRewardPixelMask(self, processedImage, action):
         """
             This method takes a processed image, and returns a new mask array the same size of the image.
             This new array will show all of the pixels that should be rewarded for an action performed
@@ -1743,21 +1935,51 @@ class DeepLearningAgent:
             algo train a ton faster.
 
             :param processedImage: This is the processed image object, as returned by processRawImageParallel
-            :param x: The x coordinate of the action to be performed.
-            :param y: The y coordinate of the action to be performed.
+            :param action: The action object of the action that was performed
             :return: A numpy array, in the shape of [height, width] with 1's for all of the pixels that are
                      included in this reward mask, and 0's everywhere else.
         """
         width = processedImage.shape[2]
         height = processedImage.shape[1]
 
-        x = min(width - 1, x)
-        y = min(height - 1, y)
+        if len(action.intersectingActionMaps) > 0:
+            box = self.boundingBoxForActionMaps(action.intersectingActionMaps)
+
+            localLeft = int(box['left'] * self.config['model_image_downscale_ratio'])
+            localRight = int(box['right'] * self.config['model_image_downscale_ratio'])
+            localTop = int(box['top'] * self.config['model_image_downscale_ratio'])
+            localBottom = int(box['bottom'] * self.config['model_image_downscale_ratio'])
+        else:
+            localLeft = int(action.x * self.config['model_image_downscale_ratio'])
+            localRight = int(action.x * self.config['model_image_downscale_ratio'])
+            localTop = int(action.y * self.config['model_image_downscale_ratio'])
+            localBottom = int(action.y * self.config['model_image_downscale_ratio'])
+
+        x = min(width - 1, int(action.x * self.config['model_image_downscale_ratio']))
+        y = min(height - 1, int(action.y * self.config['model_image_downscale_ratio']))
+
+        localLeft = max(localLeft, x - 2)
+        localRight = min(localRight, x + 2)
+        localTop = max(localTop, y - 2)
+        localBottom = min(localBottom, y + 2)
+
+        rewardPixelMask = numpy.zeros_like(processedImage[0])
 
         # We use flood-segmentation on the original image to select which pixels we will update reward values for.
         # This works great on UIs because the elements always have big areas of solid-color which respond in the same
         # way.
-        rewardPixelMask = skimage.segmentation.flood(numpy.array(processedImage[0], dtype=numpy.float32), (int(y), int(x)))
+        for localX in range(localLeft, localRight + 1):
+            if localX < width:
+                for localY in range(localTop, localBottom + 1):
+                    if localY < height:
+                        rewardPixelMask += skimage.segmentation.flood(numpy.array(processedImage[0], dtype=numpy.float32), (int(localY), int(localX)))
+
+        rewardPixelMask = numpy.where(rewardPixelMask >= 1.00, numpy.ones_like(rewardPixelMask), numpy.zeros_like(rewardPixelMask))
+        rewardPixelMask = skimage.filters.gaussian(rewardPixelMask, sigma=3)
+        rewardPixelMask = numpy.where(rewardPixelMask > 0.10, numpy.ones_like(rewardPixelMask), numpy.zeros_like(rewardPixelMask))
+
+        intersectingPixelActionMap = numpy.minimum(numpy.sum(self.createPixelActionMap(action.intersectingActionMaps, height, width), axis=0), 1)
+        rewardPixelMask *= intersectingPixelActionMap
 
         return rewardPixelMask
 
@@ -1912,8 +2134,7 @@ class DeepLearningAgent:
 
             # We compute the reward pixel mask based on where the action was performed.
             rewardPixelMask = self.createRewardPixelMask(processedImage,
-                                                         int(trace.actionPerformed.x * self.config['model_image_downscale_ratio']),
-                                                         int(trace.actionPerformed.y * self.config['model_image_downscale_ratio'])
+                                                         trace.actionPerformed
                                                          )
 
             # We down-sample some of the data points in the batch to be more compact.
@@ -2047,7 +2268,7 @@ class DeepLearningAgent:
             executionFeatureLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, [self.config['loss_execution_feature_weight']])
             executionTraceLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, [self.config['loss_execution_trace_weight']])
             cursorPredictionLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, [self.config['loss_cursor_prediction_weight']])
-            rewardImpossibleAction = self.variableWrapperFunc(torch.FloatTensor, [self.config['reward_impossible_action']])
+            rewardImpossibleAction = self.variableWrapperFunc(torch.FloatTensor, [self.config['reward_impossible_action_threshold']])
             widthTensor = self.variableWrapperFunc(torch.IntTensor, [batch["processedImages"].shape[3]])
             heightTensor = self.variableWrapperFunc(torch.IntTensor, [batch["processedImages"].shape[2]])
             presentRewardsTensor = self.variableWrapperFunc(torch.FloatTensor, batch["presentRewards"])
@@ -2180,7 +2401,7 @@ class DeepLearningAgent:
                 # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
                 # the action we took in this sequence, could lead to in the future.
                 nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage + nextStateDiscountedFutureRewardImage)
-                isNextStateValid = torch.ne(nextStateBestPossibleTotalReward, rewardImpossibleAction * 2)
+                isNextStateValid = torch.ge(nextStateBestPossibleTotalReward, rewardImpossibleAction * 2)
                 discountedFutureReward = nextStateBestPossibleTotalReward * discountRate * isNextStateValid
 
                 # Here we are basically calculating the target images. E.g., this is what we want the neural network to be predicting as outputs.
@@ -2633,7 +2854,7 @@ class DeepLearningAgent:
         for fileName in executionTrace.cachedStartDecayingBranchTrace:
             for branchIndex in range(len(executionTrace.cachedStartDecayingBranchTrace[fileName])):
                 if executionTrace.cachedStartDecayingBranchTrace[fileName][branchIndex] > self.config['decaying_branch_trace_minimum_weight_for_symbol_inclusion']:
-                    symbol = DeepLearningAgent.branchCoveredSymbol(fileName, branchIndex)
+                    symbol = DeepLearningAgent.branchRecentlyExecutedSymbol(fileName, branchIndex)
                     symbolIndex = self.symbolMap.get(symbol, -1)
                     if symbolIndex > 0:
                         symbols.append(symbolIndex)
@@ -2647,7 +2868,7 @@ class DeepLearningAgent:
         for fileName in executionTrace.cachedEndDecayingFutureBranchTrace:
             for branchIndex in range(len(executionTrace.cachedEndDecayingFutureBranchTrace[fileName])):
                 if executionTrace.cachedEndDecayingFutureBranchTrace[fileName][branchIndex] > self.config['decaying_branch_trace_minimum_weight_for_symbol_inclusion']:
-                    symbol = DeepLearningAgent.branchCoveredSymbol(fileName, branchIndex)
+                    symbol = DeepLearningAgent.branchRecentlyExecutedSymbol(fileName, branchIndex)
                     symbolIndex = self.symbolMap.get(symbol, -1)
                     if symbolIndex > 0:
                         symbols.append(symbolIndex)

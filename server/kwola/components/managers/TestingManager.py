@@ -73,7 +73,7 @@ class TestingManager:
                 LogSessionRewards(self.config),
                 LogSessionActionExecutionTimes(self.config),
                 PrecomputeSessionsForSampleCache(self.config),
-                GenerateAnnotatedVideos(self.config)
+                # GenerateAnnotatedVideos(self.config)
             ]
 
             if not shouldBeRandom and generateDebugVideo:
