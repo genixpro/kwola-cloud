@@ -152,7 +152,7 @@ class WebEnvironmentSession:
         return hostRoot
 
     def shutdown(self):
-        if hasattr(self, 'plugins'):
+        if hasattr(self, 'plugins') and hasattr(self, "driver"):
             for plugin in self.plugins:
                 if self.executionSession is not None:
                     plugin.cleanup(self.driver, self.proxy, self.executionSession)
@@ -161,7 +161,7 @@ class WebEnvironmentSession:
             if self.driver:
                 self.driver.quit()
 
-        self.driver = None
+            self.driver = None
 
     def waitUntilNoNetworkActivity(self):
         startTime = datetime.now()
