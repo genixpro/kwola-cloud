@@ -1,6 +1,7 @@
 from slack_webhook import Slack
 import logging
 import requests
+import json
 from ..config.config import loadConfiguration, getKwolaConfiguration
 
 slack = Slack(url='https://hooks.slack.com/services/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')
@@ -34,7 +35,7 @@ def postToCustomerSlack(message, application, attachmentText=None):
         data = {
             "channel": application.slackChannel,
             "text": message,
-            "blocks": blocks
+            "blocks": json.dumps(blocks)
         }
 
         headers = {
@@ -44,6 +45,6 @@ def postToCustomerSlack(message, application, attachmentText=None):
         response = requests.post("https://slack.com/api/chat.postMessage", data, headers=headers)
 
         if response.status_code != 200:
-            raise RuntimeError(f"Unable to post a message to slack: {str(response.json())}")
+            raise RuntimeError(f"Unable to post a message to slack. Request {json.dumps(data)} \n Response: {str(response.json())}")
         elif not response.json()['ok']:
-            raise RuntimeError(f"Unable to post a message to slack: {str(response.json())}")
+            raise RuntimeError(f"Unable to post a message to slack. Request {json.dumps(data)} \n Response: {str(response.json())}")
