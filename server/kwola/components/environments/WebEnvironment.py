@@ -33,6 +33,7 @@ import numpy as np
 import socket
 import time
 import os
+from ..utils.retry import autoretry
 from ..plugins.core.RecordAllPaths import RecordAllPaths
 from ..plugins.core.RecordBranchTrace import RecordBranchTrace
 from ..plugins.core.RecordCursorAtAction import RecordCursorAtAction
@@ -69,14 +70,9 @@ class WebEnvironment:
         else:
             self.plugins = defaultPlugins + plugins
 
+        @autoretry
         def createSession(number):
-            maxAttempts = 10
-            for attempt in range(maxAttempts):
-                try:
-                    return WebEnvironmentSession(config, number, self.plugins, self.executionSessions[number])
-                except Exception as e:
-                    if attempt == (maxAttempts - 1):
-                        raise
+            return WebEnvironmentSession(config, number, self.plugins, self.executionSessions[number])
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['web_session_max_startup_workers']) as executor:
             sessionCount = config['web_session_parallel_execution_sessions']

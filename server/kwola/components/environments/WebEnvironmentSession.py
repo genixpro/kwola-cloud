@@ -37,6 +37,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from ..proxy.ProxyProcess import ProxyProcess
+from ..utils.retry import autoretry
 import cv2
 import hashlib
 import numpy
@@ -68,19 +69,40 @@ class WebEnvironmentSession:
             self.plugins = plugins
 
 
-        proxyPlugins = [plugin for plugin in self.plugins if isinstance(plugin, ProxyPluginBase)]
+        self.proxyPlugins = [plugin for plugin in self.plugins if isinstance(plugin, ProxyPluginBase)]
         self.plugins = [plugin for plugin in self.plugins if isinstance(plugin, WebEnvironmentPluginBase)]
 
         self.executionSession = executionSession
 
         self.targetHostRoot = self.getHostRoot(self.targetURL)
 
-        self.proxy = ProxyProcess(config, plugins=proxyPlugins)
         self.urlWhitelistRegexes = [re.compile(pattern) for pattern in self.config['web_session_restrict_url_to_regexes']]
 
+        self.initializeProxy()
+        self.initializeWebBrowser()
+        self.fetchTargetWebpage()
+
+        if self.config.autologin:
+            self.runAutoLogin()
+
+        self.tabNumber = tabNumber
+        self.traceNumber = 0
+
+        for plugin in self.plugins:
+            if self.executionSession is not None:
+                plugin.browserSessionStarted(self.driver, self.proxy, self.executionSession)
+
+    def __del__(self):
+        self.shutdown()
+
+    def initializeProxy(self):
+        self.proxy = ProxyProcess(self.config, plugins=self.proxyPlugins)
+
+
+    def initializeWebBrowser(self):
         chrome_options = Options()
-        chrome_options.headless = config['web_session_headless']
-        if config['web_session_enable_shared_chrome_cache']:
+        chrome_options.headless = self.config['web_session_headless']
+        if self.config['web_session_enable_shared_chrome_cache']:
             chrome_options.add_argument(f"--disk-cache-dir={self.config.getKwolaUserDataDirectory('chrome_cache')}")
             chrome_options.add_argument(f"--disk-cache-size={1024*1024*1024}")
 
@@ -103,6 +125,9 @@ class WebEnvironmentSession:
               window.outerHeight - window.innerHeight + arguments[1]];
             """, self.config['web_session_width'], self.config['web_session_height'])
         self.driver.set_window_size(*window_size)
+
+
+    def fetchTargetWebpage(self):
         try:
             self.driver.get(self.targetURL)
         except selenium.common.exceptions.TimeoutException:
@@ -113,19 +138,6 @@ class WebEnvironmentSession:
         self.waitUntilNoNetworkActivity()
 
         time.sleep(3)
-
-        if self.config.autologin:
-            self.runAutoLogin()
-
-        self.tabNumber = tabNumber
-        self.traceNumber = 0
-
-        for plugin in self.plugins:
-            if self.executionSession is not None:
-                plugin.browserSessionStarted(self.driver, self.proxy, self.executionSession)
-
-    def __del__(self):
-        self.shutdown()
 
     def getHostRoot(self, url):
         host = str(urllib.parse.urlparse(url).hostname)
