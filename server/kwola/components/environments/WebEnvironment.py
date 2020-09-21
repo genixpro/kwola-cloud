@@ -86,9 +86,13 @@ class WebEnvironment:
 
             getLogger().info(f"[{os.getpid()}] Starting up {sessionCount} parallel browser sessions.")
 
-            sessionFutures = [
-                executor.submit(createSession, sessionNumber) for sessionNumber in range(sessionCount)
-            ]
+            sessionFutures = []
+            for sessionNumber in range(sessionCount):
+                future = executor.submit(createSession, sessionNumber)
+                sessionFutures.append(future)
+                # Added a sleep here just as a precautionary measure against any collisions in the underlying session objects, in
+                # particular collisions when selecting a port.
+                time.sleep(0.1)
 
             self.sessions = [
                 future.result() for future in sessionFutures
