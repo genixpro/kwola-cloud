@@ -355,7 +355,7 @@ class TestingManager:
             for plugin in self.testingStepPlugins:
                 plugin.testingStepStarted(self.testStep, self.executionSessions)
 
-            self.environment = WebEnvironment(config=self.config, executionSessions=self.executionSessions)
+            self.environment = WebEnvironment(config=self.config, executionSessions=self.executionSessions, plugins=self.webEnvironmentPlugins)
 
             self.loopTime = datetime.now()
             while self.stepsRemaining > 0:
@@ -394,8 +394,9 @@ class TestingManager:
             self.testStep.endTime = datetime.now()
             self.testStep.executionSessions = [session.id for session in self.executionSessions]
 
-            for plugin in self.testingStepPlugins:
-                plugin.testingStepFinished(self.testStep, self.executionSessions)
+            if len(self.executionSessions) > 0:
+                for plugin in self.testingStepPlugins:
+                    plugin.testingStepFinished(self.testStep, self.executionSessions)
 
             self.testStep.saveToDisk(self.config)
             resultValue['successfulExecutionSessions'] = len(self.testStep.executionSessions)
