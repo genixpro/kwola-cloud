@@ -61,6 +61,7 @@ import torch.optim as optim
 import traceback
 import pickle
 import copy
+from ..utils.retry import autoretry
 
 
 class DeepLearningAgent:
@@ -303,25 +304,20 @@ class DeepLearningAgent:
             base += str(random.choice(chars))
         return base
 
+    @autoretry
     def load(self):
         """
             Loads the agent from db / disk. The agent will be loaded from the Kwola configuration
             directory.
         """
+        self.loadSymbolMap()
 
         # Only load the model if we actually see the file on disk.
         if os.path.exists(self.modelPath):
             # Depending on whether GPU is turned on, we try load the state dict
             # directly into GPU / CUDA memory.
             device = self.getTorchDevices()[0]
-            maxAttempts = 10
-            for attempts in range(maxAttempts):
-                try:
-                    stateDict = torch.load(self.modelPath, map_location=device)
-                    break
-                except RuntimeError:
-                    if attempts == maxAttempts - 1:
-                        raise
+            stateDict = torch.load(self.modelPath, map_location=device)
 
             # Load the state dictionary into the model itself.
             self.model.load_state_dict(stateDict)
@@ -335,8 +331,6 @@ class DeepLearningAgent:
         else:
             # This is a fresh network, initialize it.
             self.model.initialize()
-
-        self.loadSymbolMap()
 
     def save(self, saveName=""):
         """
