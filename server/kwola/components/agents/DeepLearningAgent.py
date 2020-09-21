@@ -1405,14 +1405,15 @@ class DeepLearningAgent:
 
             concurrent.futures.wait(imageGenerationFutures)
 
+        moviePath = os.path.join(tempScreenshotDirectory, "debug.mp4")
+
         result = subprocess.run(['ffmpeg', '-f', 'image2', "-r", "2", '-i', 'kwola-screenshot-%05d.png', '-vcodec', chooseBestFfmpegVideoCodec(), '-pix_fmt', 'yuv420p', '-crf', '25', '-preset', 'veryslow', "debug.mp4"], cwd=tempScreenshotDirectory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode != 0:
+        if result.returncode != 0 or not os.path.exists(moviePath):
             errorMsg = f"Error! Attempted to create a movie using ffmpeg and the process exited with exit-code {result.returncode}. The following output was observed:\n"
             errorMsg += str(result.stdout, 'utf8') + "\n"
             errorMsg += str(result.stderr, 'utf8') + "\n"
             getLogger().error(errorMsg)
-
-        moviePath = os.path.join(tempScreenshotDirectory, "debug.mp4")
+            raise RuntimeError(errorMsg)
 
         with open(moviePath, "rb") as file:
             videoData = file.read()
