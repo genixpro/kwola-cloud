@@ -1337,8 +1337,8 @@ class DeepLearningAgent:
                     minStateValue = min(stateValue, minStateValue)
                     maxStateValue = max(stateValue, maxStateValue)
 
-            for action in output['uniqueActions']:
-                uniqueActions.add(action)
+                for action in output['uniqueActions']:
+                    uniqueActions.add(action)
 
         if includeNeuralNetworkCharts:
             if minAdvantage is None:
