@@ -1226,6 +1226,9 @@ class DeepLearningAgent:
         # this case in several places throughout the code.
         executionTracesFiltered = [trace for trace in executionTraces if trace is not None]
 
+        if len(executionTracesFiltered) != len(rawImages):
+            getLogger().warning(f"Warning while generating a debug video for execution session {executionSession.id}. Some of the traces failed to load from disk, resulting in the execution traces not lining up correctly with the frames in the video sequence. This likely means that an ExecutionTrace object failed to save correctly and was ignored by the system.")
+
         self.computeCachedCumulativeBranchTraces(executionTracesFiltered)
         self.computeCachedDecayingBranchTrace(executionTracesFiltered)
         self.computeCachedDecayingFutureBranchTrace(executionTracesFiltered)
@@ -1235,8 +1238,6 @@ class DeepLearningAgent:
         discountedFutureRewards = DeepLearningAgent.computeDiscountedFutureRewards(executionTracesFiltered, self.config)
 
         tempScreenshotDirectory = tempfile.mkdtemp()
-
-        debugImageIndex = 0
 
         lastRawImage = rawImages.pop(0)
 
@@ -1251,7 +1252,7 @@ class DeepLearningAgent:
         # with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             futures = []
-            for trace, rawImage in zip(executionTracesFiltered, rawImages):
+            for trace, traceIndex, rawImage in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImages):
                 if trace is not None:
                     hilight = 0
                     if hilightStepNumber is not None:
@@ -1259,10 +1260,9 @@ class DeepLearningAgent:
 
                         hilight = 1 / ((dist/3)+1)
 
-                    future = executor.submit(self.createDebugImagesForExecutionTrace, str(executionSession.id), debugImageIndex, pickle.dumps(trace), rawImage, lastRawImage, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight)
+                    future = executor.submit(self.createDebugImagesForExecutionTrace, str(executionSession.id), traceIndex, pickle.dumps(trace), rawImage, lastRawImage, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight)
                     futures.append(future)
 
-                    debugImageIndex += 2
                     lastRawImage = rawImage
 
             concurrent.futures.wait(futures)
@@ -1283,14 +1283,14 @@ class DeepLearningAgent:
 
         return videoData
 
-    def createDebugImagesForExecutionTrace(self, executionSessionId, debugImageIndex, trace, rawImage, lastRawImage, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilight=0):
+    def createDebugImagesForExecutionTrace(self, executionSessionId, traceIndex, trace, rawImage, lastRawImage, presentRewards, discountedFutureRewards, tempScreenshotDirectory, includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilight=0):
         """
             This method is used to generate a single debug image for a single execution trace. Technically this method actually
             generates two debug images. The first shows what action is being performed, and the second shows what happened after
             that action. Its designed so they can all be strung together into a movie.
 
             :param executionSessionId: A string containing the ID of the execution session
-            :param debugImageIndex: The index of this debug image within the movie
+            :param traceIndex: The index of this debug image within the movie
             :param trace: The kwola.datamodels.ExecutionTrace object that this debug image will be generated for. It should be serialized into a string using pickle.dumps prior to input.
             :param rawImage: A numpy array containing the raw image data for the result image on this trace
             :param lastRawImage: A numpy array containing the raw image data for the input image on this trace, e.g. the image from before the action was performed.
@@ -1330,8 +1330,8 @@ class DeepLearningAgent:
             imageHeight = rawImage.shape[0]
             imageWidth = rawImage.shape[1]
 
-            presentReward = presentRewards[trace.frameNumber - 1]
-            discountedFutureReward = discountedFutureRewards[trace.frameNumber - 1]
+            presentReward = presentRewards[traceIndex]
+            discountedFutureReward = discountedFutureRewards[traceIndex]
 
             def addDebugCircleToImage(image, trace):
                 targetCircleCoords1 = skimage.draw.circle_perimeter(int(topSize + trace.actionPerformed.y),
@@ -1477,8 +1477,8 @@ class DeepLearningAgent:
 
                 rewardChartHalfFrames = int(self.config['debug_video_bottom_reward_chart_frames'] / 2)
 
-                rewardChartAxes.set_xlim(xmin=trace.frameNumber - rewardChartHalfFrames, xmax=trace.frameNumber + rewardChartHalfFrames)
-                vline = rewardChartAxes.axvline(trace.frameNumber - 1, color='black', linewidth=self.config.debug_video_bottom_reward_chart_current_frame_line_width)
+                rewardChartAxes.set_xlim(xmin=traceIndex - rewardChartHalfFrames, xmax=traceIndex + rewardChartHalfFrames)
+                vline = rewardChartAxes.axvline(traceIndex, color='black', linewidth=self.config.debug_video_bottom_reward_chart_current_frame_line_width)
                 hline = rewardChartAxes.axhline(0, color='grey', linewidth=1)
 
                 # If we haven't already shown or saved the plot, then we need to
@@ -1703,7 +1703,7 @@ class DeepLearningAgent:
             if includeNeuralNetworkCharts:
                 addRightSideDebugCharts(newImage, lastRawImage, trace)
 
-            fileName = f"kwola-screenshot-{debugImageIndex:05d}.png"
+            fileName = f"kwola-screenshot-{traceIndex*2:05d}.png"
             filePath = os.path.join(tempScreenshotDirectory, fileName)
             skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
 
@@ -1721,7 +1721,7 @@ class DeepLearningAgent:
             if includeNeuralNetworkCharts:
                 addRightSideDebugCharts(newImage, lastRawImage, trace)
 
-            fileName = f"kwola-screenshot-{debugImageIndex + 1:05d}.png"
+            fileName = f"kwola-screenshot-{traceIndex*2 + 1:05d}.png"
             filePath = os.path.join(tempScreenshotDirectory, fileName)
             skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
             if includeNeuralNetworkCharts:
