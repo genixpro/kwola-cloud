@@ -148,7 +148,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
     def loadAllBugs(self, testingStep):
         bugs = BugModel.objects(testingRunId=testingStep.testingRunId)
 
-        return bugs
+        return list(bugs)
 
     def loadAllMutedErrors(self, testingStep):
         mutedErrors = MutedError.objects(applicationId=testingStep.applicationId)
