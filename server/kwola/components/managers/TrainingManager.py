@@ -440,6 +440,8 @@ class TrainingManager:
             try:
                 agent = DeepLearningAgent(config, whichGpu=None)
 
+                agent.loadSymbolMap()
+
                 sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples")
 
                 executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
