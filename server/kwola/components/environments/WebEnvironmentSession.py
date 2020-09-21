@@ -112,11 +112,11 @@ class WebEnvironmentSession:
 
         capabilities = webdriver.DesiredCapabilities.CHROME
         capabilities['loggingPrefs'] = {'browser': 'ALL'}
-        proxyConfig = Proxy()
-        proxyConfig.proxy_type = ProxyType.MANUAL
-        proxyConfig.http_proxy = f"localhost:{self.proxy.port}"
-        proxyConfig.ssl_proxy = f"localhost:{self.proxy.port}"
-        proxyConfig.add_to_capabilities(capabilities)
+        # proxyConfig = Proxy()
+        # proxyConfig.proxy_type = ProxyType.MANUAL
+        # proxyConfig.http_proxy = f"localhost:{self.proxy.port}"
+        # proxyConfig.ssl_proxy = f"localhost:{self.proxy.port}"
+        # proxyConfig.add_to_capabilities(capabilities)
 
         self.driver = webdriver.Chrome(desired_capabilities=capabilities, chrome_options=chrome_options)
 
