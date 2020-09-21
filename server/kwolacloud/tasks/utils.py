@@ -15,6 +15,7 @@ import json
 import shutil
 import time
 import google.api_core.exceptions
+from kwola.components.utils.retry import autoretry
 
 
 def bucketNamesForApplication(applicationId):
@@ -23,7 +24,7 @@ def bucketNamesForApplication(applicationId):
     return bucketName, cacheBucketName
 
 
-
+@autoretry
 def createMainStorageBucketIfNeeded(applicationId):
     bucketName, cacheBucketName = bucketNamesForApplication(applicationId)
 
@@ -40,7 +41,7 @@ def createMainStorageBucketIfNeeded(applicationId):
             # created.
             pass
 
-
+@autoretry
 def createCacheBucketIfNeeded(applicationId):
     bucketName, cacheBucketName = bucketNamesForApplication(applicationId)
 
