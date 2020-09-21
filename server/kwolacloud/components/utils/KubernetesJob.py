@@ -158,13 +158,13 @@ class KubernetesJob:
                 logging.error(f"Error decoding json {process.stdout}")
                 raise
 
-            if "active" in jsonData['status'] and jsonData['status']['active'] == 1:
+            if "active" in jsonData['status'] and jsonData['status']['active'] >= 1:
                 return "Running"
 
-            if "failed" in jsonData['status'] and jsonData['status']['failed'] == 1:
+            if "failed" in jsonData['status'] and jsonData['status']['failed'] >= 1:
                 return "Failed"
 
-            if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] == 1:
+            if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] >= 1:
                 return "Success"
 
         raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
