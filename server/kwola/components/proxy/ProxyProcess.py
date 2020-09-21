@@ -33,6 +33,8 @@ import asyncio
 import billiard as multiprocessing
 import socket
 import time
+import traceback
+from ...config.logger import getLogger
 
 
 class ProxyProcess:
@@ -135,7 +137,7 @@ class ProxyProcess:
             try:
                 ProxyProcess.runProxyServerOnce(codeRewriter, pathTracer, networkErrorTracer, resultQueue)
             except Exception:
-                pass
+                getLogger().warning(f"Had to restart the mitmproxy due to an exception: {traceback.format_exc()}")
 
     @staticmethod
     def runProxyServerOnce(codeRewriter, pathTracer, networkErrorTracer, resultQueue):
@@ -158,7 +160,7 @@ class ProxyProcess:
                 m.addons.add(networkErrorTracer)
                 break
             except mitmproxy.exceptions.ServerException:
-                pass
+                getLogger().warning(f"Had to restart the mitmproxy due to an exception: {traceback.format_exc()}")
 
         resultQueue.put(port)
         m.run()
