@@ -28,7 +28,7 @@ def autoretry(targetFunc):
         maxAttempts = 5
         for attempt in range(maxAttempts):
             try:
-                targetFunc(*args, **kwargs)
+                return targetFunc(*args, **kwargs)
             except Exception as e:
                 if attempt == maxAttempts - 1:
                     raise
