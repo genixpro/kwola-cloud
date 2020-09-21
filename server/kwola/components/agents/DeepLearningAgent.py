@@ -1966,7 +1966,10 @@ class DeepLearningAgent:
             if localX < width:
                 for localY in range(localTop, localBottom + 1):
                     if localY < height:
-                        rewardPixelMask += skimage.segmentation.flood(numpy.array(processedImage[0], dtype=numpy.float32), (int(localY), int(localX)))
+                        try:
+                            rewardPixelMask += skimage.segmentation.flood(numpy.array(processedImage[0], dtype=numpy.float32), (int(localY), int(localX)))
+                        except ValueError:
+                            getLogger().error(f"Error! skimage.segmentation.flood failed. Image size: {width, height}. Coordinates: {localX},{localY}. Error: {traceback.format_exc()}")
 
         rewardPixelMask = numpy.where(rewardPixelMask >= 1.00, numpy.ones_like(rewardPixelMask), numpy.zeros_like(rewardPixelMask))
         rewardPixelMask = skimage.filters.gaussian(rewardPixelMask, sigma=3)
