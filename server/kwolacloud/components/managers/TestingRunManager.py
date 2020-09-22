@@ -386,7 +386,7 @@ class TestingRunManager:
             self.updateKwolaConfigJSONFile()
             self.config = KwolaCoreConfiguration(self.configDir)
 
-            logging.info(f"Testing Run starting with configuration: \n{pformat(self.config.cloudConfigData)}")
+            logging.info(f"Testing Run starting with configuration: \n{pformat(self.config.configData)}")
 
             self.doInitialBrowserSession()
 
