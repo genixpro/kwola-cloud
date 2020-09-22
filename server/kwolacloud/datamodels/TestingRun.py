@@ -71,7 +71,7 @@ class TestingRun(Document):
 
     runningTestingStepJobIds = ListField(StringField())
 
-    runningTestingStepStartTimes = ListField(StringField())
+    runningTestingStepStartTimes = ListField(DateTimeField())
 
     runningTrainingStepJobId = StringField()
 
