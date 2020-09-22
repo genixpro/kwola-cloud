@@ -47,7 +47,7 @@ from kwola.components.utils.retry import autoretry
 
 
 
-class TestingManager:
+class TestingStepManager:
     def __init__(self, configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False, plugins=None):
         getLogger().info(f"[{os.getpid()}] Starting New Testing Sequence")
 
@@ -125,7 +125,7 @@ class TestingManager:
             subProcessCommandQueue = multiprocessing.Queue()
             subProcessResultQueue = multiprocessing.Queue()
             preloadTraceFiles = [file for fileList in self.executionSessionTraceLocalPickleFiles for file in fileList]
-            subProcess = multiprocessing.Process(target=TestingManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
+            subProcess = multiprocessing.Process(target=TestingStepManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
             subProcess.start()
             atexit.register(lambda: subProcess.terminate())
 
@@ -140,7 +140,7 @@ class TestingManager:
         subProcessCommandQueue = multiprocessing.Queue()
         subProcessResultQueue = multiprocessing.Queue()
         preloadTraceFiles = [file for fileList in self.executionSessionTraceLocalPickleFiles for file in fileList]
-        subProcess = multiprocessing.Process(target=TestingManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
+        subProcess = multiprocessing.Process(target=TestingStepManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
         subProcess.start()
         atexit.register(lambda: subProcess.terminate())
 
@@ -245,7 +245,7 @@ class TestingManager:
 
             # Submit a lambda to save this trace to disk. This is done in the background to avoid
             # holding up the main loop. Saving the trace to disk can be time consuming.
-            self.traceSaveExecutor.submit(TestingManager.saveTrace, trace, self.config)
+            self.traceSaveExecutor.submit(TestingStepManager.saveTrace, trace, self.config)
 
         if len(validTraces) > 0:
             for plugin in self.testingStepPlugins:
