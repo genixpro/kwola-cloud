@@ -208,19 +208,34 @@ class TestingRunManager:
         job.start()
 
         self.run.runningTestingStepJobIds.append(jobId)
+        self.run.runningTestingStepStartTimes.append(datetime.datetime.now())
         self.run.save()
 
     def reviewRunningTestingSteps(self):
         trainingIterationsNeededPerSession = (self.config['iterations_per_sample'] * self.run.configuration.testingSequenceLength) / (self.config['batch_size'] * self.config['batches_per_iteration'])
 
+        # This is only temporary, to be compatible with data that did not have runningTestingStepStartTimes.
+        if len(self.run.runningTestingStepStartTimes) == 0 and len(self.run.runningTestingStepJobIds) > 0:
+            self.run.runningTestingStepStartTimes = [datetime.datetime.now()] * len(self.run.runningTestingStepJobIds)
+            self.run.save()
+
         toRemove = []
-        for jobId in self.run.runningTestingStepJobIds:
+        toKill = []
+        for jobId, startTime in zip(self.run.runningTestingStepJobIds, self.run.runningTestingStepStartTimes):
             job = self.createTestingStepKubeJob(jobId)
             if job.ready():
                 logging.info("Ready job has been found!")
                 toRemove.append((jobId, job))
 
+            timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
+            if timeElapsed > self.config['testing_step_timeout']:
+                logging.error(f"A testing step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}")
+                toKill.append((jobId, job))
+
+
         for (jobId, job) in toRemove:
+            jobIndex = self.run.runningTestingStepJobIds.index(jobId)
+            del self.run.runningTestingStepStartTimes[jobIndex]
             self.run.runningTestingStepJobIds.remove(jobId)
 
             # We only count this testing step if it actually completed successfully, because
@@ -244,6 +259,11 @@ class TestingRunManager:
                         self.shouldExit = True
                         break
 
+        for (jobId, job) in toKill:
+            jobIndex = self.run.runningTestingStepJobIds.index(jobId)
+            del self.run.runningTestingStepStartTimes[jobIndex]
+            self.run.runningTestingStepJobIds.remove(jobId)
+            job.cleanup()
 
     def createTrainingStepKubeJob(self, referenceId):
         job = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",

@@ -184,6 +184,7 @@
   "testing_sequence_length": 100,
   "testing_sequences_in_parallel_per_training_step": 3,
   "testing_sequences_per_training_step": 3,
+  "testing_step_timeout": 10800,
   "testing_subprocess_pool_size": 3,
   "testing_trace_load_workers": 8,
   "testing_trace_save_workers": 8,

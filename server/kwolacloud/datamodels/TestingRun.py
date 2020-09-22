@@ -71,6 +71,8 @@ class TestingRun(Document):
 
     runningTestingStepJobIds = ListField(StringField())
 
+    runningTestingStepStartTimes = ListField(StringField())
+
     runningTrainingStepJobId = StringField()
 
     def saveToDisk(self, config):
