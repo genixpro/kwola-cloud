@@ -136,7 +136,7 @@ class KwolaCoreConfiguration:
             return self.configData[name]
         else:
             # Default behaviour
-            raise AttributeError
+            raise AttributeError()
 
     def saveConfig(self):
         with open(self.configFileName, "wt") as f:
