@@ -419,6 +419,9 @@ class TestingRunManager:
                 self.launchTrainingStepIfNeeded()
                 self.reviewRunningTrainingSteps()
 
+                # save on every step - just in case it was changed.
+                self.run.save()
+
                 time.sleep(60)
 
             # self.waitForTrainingJobCompletion()
