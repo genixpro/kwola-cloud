@@ -12,7 +12,7 @@ from kwolacloud.components.managers.TestingRunManager import TestingRunManager
 @autoretry()
 def runTesting(testingRunId):
     manager = TestingRunManager(testingRunId)
-    manager.runTesting()
+    return manager.runTesting()
 
 
 if __name__ == "__main__":

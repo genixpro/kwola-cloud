@@ -247,7 +247,7 @@ class TestingRunManager:
                     job.cleanup()
 
                     self.run.trainingIterationsNeeded += trainingIterationsNeededPerSession * self.config['web_session_parallel_execution_sessions']
-                    self.run.testingSessionsCompleted += self.config['web_session_parallel_execution_sessions']
+                    self.run.testingSessionsCompleted += result['successfulExecutionSessions']
                     self.run.testingSteps.append(result['testingStepId'])
                     self.run.save()
                 else:
