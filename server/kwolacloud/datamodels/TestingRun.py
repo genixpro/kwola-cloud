@@ -53,6 +53,10 @@ class TestingRun(Document):
 
     trainingStepsCompleted = IntField(default=0)
 
+    trainingIterationsCompleted = IntField(default=0)
+
+    trainingIterationsNeeded = IntField(default=0)
+
     initializationTestingSteps = ListField(StringField())
 
     testingSteps = ListField(StringField())
@@ -64,6 +68,10 @@ class TestingRun(Document):
     needsFeedbackRequestEmail = BooleanField(default=False)
 
     isRecurring = BooleanField(default=False)
+
+    runningTestingStepJobIds = ListField(StringField())
+
+    runningTrainingStepJobId = StringField()
 
     def saveToDisk(self, config):
         self.save()

@@ -118,7 +118,7 @@ class KubernetesJob:
                         ]
                     }
                 },
-                "backoffLimit": 2
+                "backoffLimit": 5
             }
         }
 
