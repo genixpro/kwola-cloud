@@ -388,6 +388,8 @@ class TestingRunManager:
 
             logging.info(f"Testing Run starting with configuration: \n{pformat(self.config.cloudConfigData)}")
 
+            self.doInitialBrowserSession()
+
             self.shouldExit = False
 
             while self.run.testingSessionsCompleted < self.run.configuration.totalTestingSessions and not self.shouldExit:
