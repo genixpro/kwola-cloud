@@ -376,10 +376,10 @@ class TestingRunManager:
 
 
     def runTesting(self):
+        self.loadTestingRun()
         self.mountStorageDrive()
         self.updateApplicationObjectForStart()
 
-        self.loadTestingRun()
         self.doTestingRunInitializationIfNeeded()
 
         try:
