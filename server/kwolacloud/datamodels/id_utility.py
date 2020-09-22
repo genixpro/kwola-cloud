@@ -10,17 +10,17 @@ from ..config.config import loadConfiguration
 def generateKwolaId(modelClass, owner, kwolaConfig, groupIndex=None):
     serverConfig = loadConfiguration()
 
-    prefix = generateModelNameShorthand(modelClass) + "_" + \
+    prefix = generateModelNameShorthand(modelClass) + "-" + \
              generateRandomLowercaseLetter() + \
              generateRandomLowercaseLetter() + \
              generateRandomLowercaseLetter() + \
-             generateRandomLowercaseLetter() + "_" + \
+             generateRandomLowercaseLetter() + "-" + \
              generateHourCode() + \
              generateDayCode() + \
              generateMonthCode() + \
-             generateYearCode() + "_" + \
+             generateYearCode() + "-" + \
              generateEnvironmentShorthand(serverConfig) + \
-             generateUserCode(owner, serverConfig) + "_" + \
+             generateUserCode(owner, serverConfig) + "-" + \
              generateObjectCounterValueCode(modelClass, owner, length=4, groupIndex=groupIndex)
 
     currentLength = 0
