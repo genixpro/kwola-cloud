@@ -23,7 +23,7 @@ class PrecomputeSessionsForSampleCache(TestingStepPluginBase):
     def afterActionsRun(self, testingStep, executionSessions, traces):
         pass
 
-    @autoretry
+    @autoretry()
     def testingStepFinished(self, testingStep, executionSessions):
         with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
             futures = []

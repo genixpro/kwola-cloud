@@ -253,7 +253,7 @@ class TestingManager:
 
         del traces
 
-    @autoretry
+    @autoretry()
     def savePlainVideoFiles(self):
         getLogger().info(f"[{os.getpid()}] Creating movies for the execution sessions of this testing sequence.")
 

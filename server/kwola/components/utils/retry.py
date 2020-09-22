@@ -24,17 +24,20 @@ import traceback
 from ...config.logger import getLogger
 import random
 
-def autoretry(targetFunc):
-    def retryFunction(*args, **kwargs):
-        maxAttempts = 5
-        for attempt in range(maxAttempts):
-            try:
-                return targetFunc(*args, **kwargs)
-            except Exception as e:
-                if attempt == maxAttempts - 1:
-                    raise
-                else:
-                    time.sleep(1.5 ** attempt + random.uniform(-0.5, 0.5))
-                    getLogger().info(f"Had to autoretry the function {targetFunc.__name__} due to the following exception: {traceback.format_exc()}")
-
-    return retryFunction
+def autoretry(onFailure=None, maxAttempts=5, ignoreFailure=False):
+    def internalAutoretry(targetFunc):
+        def retryFunction(*args, **kwargs):
+            for attempt in range(maxAttempts):
+                try:
+                    return targetFunc(*args, **kwargs)
+                except Exception as e:
+                    if attempt == maxAttempts - 1:
+                        if not ignoreFailure:
+                            raise
+                    else:
+                        time.sleep(1.5 ** attempt + random.uniform(-0.5, 0.5))
+                        getLogger().info(f"Had to autoretry the function {targetFunc.__name__} due to the following exception: {traceback.format_exc()}")
+                        if onFailure is not None:
+                            onFailure(*args, **kwargs)
+        return retryFunction
+    return internalAutoretry

@@ -22,21 +22,11 @@ class KubernetesJob:
         self.gpu = gpu
         self.maxKubectlRetries = 10
 
-    @autoretry
+    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10, ignoreFailure=True)
     def cleanup(self):
-        if self.successful():
-            for attempt in range(self.maxKubectlRetries):
-                self.refreshCredentials()
-
-                process = subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
-                if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
-                    time.sleep(1.5 ** attempt)
-                    continue
-
-                break
-
-
-
+        process = subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
+            raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
     def refreshCredentials(self):
         subprocess.run(["gcloud", "auth", "activate-service-account", "kwola-288@kwola-cloud.iam.gserviceaccount.com", f"--key-file={os.getenv('GOOGLE_APPLICATION_CREDENTIALS')}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -126,51 +116,38 @@ class KubernetesJob:
         return yamlStr
 
 
-    @autoretry
+    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
     def start(self):
-        process = None
-        for attempt in range(self.maxKubectlRetries):
-            self.refreshCredentials()
+        yamlStr = self.generateJobSpec()
 
-            yamlStr = self.generateJobSpec()
+        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
+            raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
-            process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
-                time.sleep(1.5 ** attempt)
-                continue
-
-            return
-
-        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
+        return
 
 
-    @autoretry
+    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
     def getJobStatus(self):
-        process = None
-        for attempt in range(self.maxKubectlRetries):
-            self.refreshCredentials()
+        process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
+            raise RuntimeError(
+                f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
-            process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
-                time.sleep(1.5 ** attempt)
-                continue
+        try:
+            jsonData = json.loads(process.stdout)
+        except json.JSONDecodeError:
+            logging.error(f"Error decoding json {process.stdout}")
+            raise
 
-            try:
-                jsonData = json.loads(process.stdout)
-            except json.JSONDecodeError:
-                logging.error(f"Error decoding json {process.stdout}")
-                raise
+        if "active" in jsonData['status'] and jsonData['status']['active'] >= 1:
+            return "Running"
 
-            if "active" in jsonData['status'] and jsonData['status']['active'] >= 1:
-                return "Running"
+        if "failed" in jsonData['status'] and jsonData['status']['failed'] >= 1:
+            return "Failed"
 
-            if "failed" in jsonData['status'] and jsonData['status']['failed'] >= 1:
-                return "Failed"
-
-            if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] >= 1:
-                return "Success"
-
-        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
+        if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] >= 1:
+            return "Success"
 
     def ready(self):
         status = self.getJobStatus()
@@ -194,20 +171,14 @@ class KubernetesJob:
         while not self.ready():
             time.sleep(10)
 
-    @autoretry
+    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
     def getLogs(self):
-        process = None
-        for attempt in range(self.maxKubectlRetries):
-            self.refreshCredentials()
+        process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
+            raise RuntimeError(
+                f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
-            process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
-                time.sleep(1.5 ** attempt)
-                continue
-
-            return str(process.stdout, 'utf8')
-
-        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
+        return str(process.stdout, 'utf8')
 
     def extractResultFromLogs(self):
         logs = self.getLogs()

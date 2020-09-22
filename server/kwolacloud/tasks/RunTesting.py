@@ -9,7 +9,7 @@ from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProces
 from kwola.components.utils.retry import autoretry
 from kwolacloud.components.managers.TestingRunManager import TestingRunManager
 
-@autoretry
+@autoretry()
 def runTesting(testingRunId):
     manager = TestingRunManager(testingRunId)
     manager.runTesting()

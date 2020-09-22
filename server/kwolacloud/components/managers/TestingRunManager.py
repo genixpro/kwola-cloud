@@ -324,7 +324,7 @@ class TestingRunManager:
             job = self.createTestingStepKubeJob(jobId)
             job.wait()
 
-    @autoretry
+    @autoretry()
     def createBugsZipFile(self):
         bugs = list(BugModel.objects(owner=self.application.owner, testingRunId=self.run.id, isMuted=False))
 

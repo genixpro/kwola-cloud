@@ -304,7 +304,7 @@ class DeepLearningAgent:
             base += str(random.choice(chars))
         return base
 
-    @autoretry
+    @autoretry()
     def load(self):
         """
             Loads the agent from db / disk. The agent will be loaded from the Kwola configuration

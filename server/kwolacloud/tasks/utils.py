@@ -24,7 +24,7 @@ def bucketNamesForApplication(applicationId):
     return bucketName, cacheBucketName
 
 
-@autoretry
+@autoretry()
 def createMainStorageBucketIfNeeded(applicationId):
     bucketName, cacheBucketName = bucketNamesForApplication(applicationId)
 
@@ -41,7 +41,7 @@ def createMainStorageBucketIfNeeded(applicationId):
             # created.
             pass
 
-@autoretry
+@autoretry()
 def createCacheBucketIfNeeded(applicationId):
     bucketName, cacheBucketName = bucketNamesForApplication(applicationId)
 
