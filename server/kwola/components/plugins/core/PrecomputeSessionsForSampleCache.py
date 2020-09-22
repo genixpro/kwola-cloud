@@ -3,6 +3,7 @@ from ...managers.TrainingManager import TrainingManager
 from ..base.TestingStepPluginBase import TestingStepPluginBase
 import concurrent.futures
 import os
+from ...utils.retry import autoretry
 
 
 
@@ -22,6 +23,7 @@ class PrecomputeSessionsForSampleCache(TestingStepPluginBase):
     def afterActionsRun(self, testingStep, executionSessions, traces):
         pass
 
+    @autoretry
     def testingStepFinished(self, testingStep, executionSessions):
         with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
             futures = []
