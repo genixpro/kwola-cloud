@@ -642,7 +642,7 @@ class TrainingManager:
     def loadAllTestingSteps(config, applicationId=None):
         testStepsDir = config.getKwolaUserDataDirectory("testing_steps")
 
-        if config['data_serialization_method'] == 'mongo':
+        if config['data_serialization_method']['default'] == 'mongo':
             return list(TestingStep.objects(applicationId=applicationId).no_dereference())
         else:
             testingSteps = []
