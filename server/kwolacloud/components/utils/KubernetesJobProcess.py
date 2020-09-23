@@ -32,6 +32,7 @@ from kwola.config.logger import getLogger
 from kwolacloud.db import connectToMongoWithRetries
 from ...helpers.slack import SlackLogHandler
 from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
+from kwolacloud.datamodels.KubernetesJobResult import KubernetesJobResult
 
 class KubernetesJobProcess:
     """
@@ -51,11 +52,13 @@ class KubernetesJobProcess:
     def run(self):
         logging.info(f"[{os.getpid()}] KubernetesJobProcess: Waiting for input from stdin")
         dataStr = sys.argv[1]
-        data = pickle.loads(base64.b64decode(dataStr, altchars=KubernetesJobProcess.base64AltChars))
+        jobName, data = pickle.loads(base64.b64decode(dataStr, altchars=KubernetesJobProcess.base64AltChars))
         logging.info(f"[{os.getpid()}] Running process with following data:\n{json.dumps(data, indent=4)}")
         result = self.targetFunc(**data)
         logging.info(f"Process finished with result:\n{json.dumps(result, indent=4)}")
-        print(KubernetesJobProcess.resultStartString +
-              str(base64.b64encode(pickle.dumps(result), altchars=KubernetesJobProcess.base64AltChars), "utf8") +
-              KubernetesJobProcess.resultFinishString, flush=True)
+        resultObj = KubernetesJobResult(
+            id=jobName,
+            result=result
+        )
+        resultObj.save()
         exit(0)

@@ -8,6 +8,7 @@ import logging
 import base64
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwola.components.utils.retry import autoretry
+from kwolacloud.datamodels.KubernetesJobResult import KubernetesJobResult
 
 class KubernetesJob:
     def __init__(self, module, data, referenceId, image="worker", cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi", gpu=False):
@@ -75,7 +76,7 @@ class KubernetesJob:
                                 "name": f"kwola-cloud-sha256",
                                 "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-{self.image}",
                                 "command": ["/usr/bin/python3"],
-                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
+                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps((self.kubeJobName(), self.data)), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
                                 "securityContext": {
                                     "privileged": True,
                                     "capabilities":
@@ -182,30 +183,10 @@ class KubernetesJob:
             raise RuntimeError(
                 f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
-    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
-    def getLogs(self):
-        process = subprocess.run(["kubectl", "logs", "--tail", "100", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
-            raise RuntimeError(
-                f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
-        return str(process.stdout, 'utf8')
-
-    def extractResultFromLogs(self):
-        logs = self.getLogs()
-        if KubernetesJobProcess.resultStartString not in logs or KubernetesJobProcess.resultFinishString not in logs:
-            logging.error(f"[{os.getpid()}] Error! Unable to extract result from the subprocess. Its possible the subprocess may have died")
-            return None
-        else:
-            resultStart = logs.index(KubernetesJobProcess.resultStartString)
-            resultFinish = logs.index(KubernetesJobProcess.resultFinishString)
-
-            resultDataString = logs[resultStart + len(KubernetesJobProcess.resultStartString) : resultFinish].strip()
-            try:
-                result = pickle.loads(base64.b64decode(resultDataString, altchars=KubernetesJobProcess.base64AltChars))
-                return result
-            except Exception as e:
-                raise RuntimeError(f"Error! Unable to decode pickled string {resultDataString}. Error message: {str(e)}")
+    def getResult(self):
+        result = KubernetesJobResult.objects(id=self.kubeJobName()).first()
+        return result
 
 
 
