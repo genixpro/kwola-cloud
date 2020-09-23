@@ -113,7 +113,9 @@ class WebEnvironmentSession:
         p = psutil.Process(pid.service.process.pid)
 
         p.rlimit(psutil.RLIMIT_DATA, 1024*1024*1024)
+        p.rlimit(psutil.RLIMIT_AS, 1024*1024*1024)
         for child in p.children(recursive=True):
+            child.rlimit(psutil.RLIMIT_AS, 1024*1024*1024)
             child.rlimit(psutil.RLIMIT_DATA, 1024*1024*1024)
 
     def initializeWebBrowser(self):
