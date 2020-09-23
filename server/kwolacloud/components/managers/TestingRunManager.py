@@ -258,7 +258,7 @@ class TestingRunManager:
             # otherwise it needs to be done over again.
             if job.successful():
                 result = job.getResult()
-                if isinstance(result, dict) and result['success']:
+                if result is not None and result['success']:
                     logging.info(f"Finished a testing step for run {self.run.id} with name {job.kubeJobName()}")
                     job.cleanup()
 
