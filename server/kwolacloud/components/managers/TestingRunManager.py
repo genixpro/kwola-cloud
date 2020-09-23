@@ -150,6 +150,11 @@ class TestingRunManager:
 
             self.run.save()
 
+            self.updateKwolaConfigJSONFile()
+            self.config = KwolaCoreConfiguration(self.configDir)
+
+            self.doInitialBrowserSession()
+
     def launchTestingStepsIfNeeded(self):
         while self.calculateNumberOfTestingSessionsToStart() > 0:
             self.launchTestingStep()
@@ -423,12 +428,7 @@ class TestingRunManager:
         self.doTestingRunInitializationIfNeeded()
 
         try:
-            self.updateKwolaConfigJSONFile()
-            self.config = KwolaCoreConfiguration(self.configDir)
-
             logging.info(f"Testing Run starting with configuration: \n{pformat(self.config.configData)}")
-
-            self.doInitialBrowserSession()
 
             self.shouldExit = False
 

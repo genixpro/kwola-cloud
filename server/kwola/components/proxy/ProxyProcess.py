@@ -25,16 +25,17 @@ from ...config.logger import getLogger, setupLocalLogging
 from ..plugins.core.JSRewriter import JSRewriter
 from ..plugins.core.HTMLRewriter import HTMLRewriter
 from contextlib import closing
-from mitmproxy.tools.dump import DumpMaster
 import pickle
-import mitmproxy.exceptions
 from threading import Thread
 import asyncio
-import billiard as multiprocessing
+# import billiard as multiprocessing
 import socket
+import multiprocessing
 import time
 import requests
 import traceback
+import os
+import signal
 from ...config.logger import getLogger
 from ..utils.retry import autoretry
 
@@ -43,6 +44,8 @@ class ProxyProcess:
     """
         This class is used to run and manage the proxy subprocess
     """
+
+    sharedMultiprocessingContext = multiprocessing.get_context('spawn')
 
     def __init__(self, config, plugins=None):
         if plugins is None:
@@ -56,10 +59,10 @@ class ProxyProcess:
         ] + self.plugins
 
         self.config = config
-        self.commandQueue = multiprocessing.Queue()
-        self.resultQueue = multiprocessing.Queue()
+        self.commandQueue = ProxyProcess.sharedMultiprocessingContext.Queue()
+        self.resultQueue = ProxyProcess.sharedMultiprocessingContext.Queue()
 
-        self.proxyProcess = multiprocessing.Process(target=self.runProxyServerSubprocess, args=(self.config, self.commandQueue, self.resultQueue, pickle.dumps(self.plugins)))
+        self.proxyProcess = ProxyProcess.sharedMultiprocessingContext.Process(target=self.runProxyServerSubprocess, args=(self.config, self.commandQueue, self.resultQueue, pickle.dumps(self.plugins)), daemon=True)
         self.proxyProcess.start()
 
         # Wait for the result indicating that the proxy process is ready
@@ -69,8 +72,12 @@ class ProxyProcess:
         self.checkProxyFunctioning()
 
     def __del__(self):
+        self.shutdown()
+
+    def shutdown(self):
         if self.proxyProcess is not None:
-            self.proxyProcess.terminate()
+            self.commandQueue.put("exit")
+            self.proxyProcess = None
 
     @staticmethod
     def findFreePort():
@@ -147,6 +154,9 @@ class ProxyProcess:
             if message == "getMostRecentNetworkActivityTime":
                 resultQueue.put(pathTracer.mostRecentNetworkActivityTime)
 
+            if message == "exit":
+                exit(0)
+
     @staticmethod
     def runProxyServerThread(codeRewriter, pathTracer, networkErrorTracer, resultQueue):
         while True:
@@ -158,6 +168,8 @@ class ProxyProcess:
     @staticmethod
     def runProxyServerOnce(codeRewriter, pathTracer, networkErrorTracer, resultQueue):
         from mitmproxy import proxy, options
+        from mitmproxy.tools.dump import DumpMaster
+        import mitmproxy.exceptions
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)

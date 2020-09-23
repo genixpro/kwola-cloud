@@ -78,19 +78,11 @@ class WebEnvironmentSession:
 
         self.urlWhitelistRegexes = [re.compile(pattern) for pattern in self.config['web_session_restrict_url_to_regexes']]
 
-        self.initializeProxy()
-        self.initializeWebBrowser()
-        self.fetchTargetWebpage()
-
-        if self.config.autologin:
-            self.runAutoLogin()
+        self.proxy = None
+        self.driver = None
 
         self.tabNumber = tabNumber
         self.traceNumber = 0
-
-        for plugin in self.plugins:
-            if self.executionSession is not None:
-                plugin.browserSessionStarted(self.driver, self.proxy, self.executionSession)
 
     def __del__(self):
         self.shutdown()
@@ -98,6 +90,19 @@ class WebEnvironmentSession:
     def initializeProxy(self):
         self.proxy = ProxyProcess(self.config, plugins=self.proxyPlugins)
 
+    def initialize(self):
+        self.initializeProxy()
+        self.initializeWebBrowser()
+        self.fetchTargetWebpage()
+
+        if self.config.autologin:
+            self.runAutoLogin()
+
+        self.traceNumber = 0
+
+        for plugin in self.plugins:
+            if self.executionSession is not None:
+                plugin.browserSessionStarted(self.driver, self.proxy, self.executionSession)
 
     def initializeWebBrowser(self):
         chrome_options = Options()
@@ -126,7 +131,7 @@ class WebEnvironmentSession:
             """, self.config['web_session_width'], self.config['web_session_height'])
         self.driver.set_window_size(*window_size)
 
-
+    @autoretry()
     def fetchTargetWebpage(self):
         try:
             self.driver.get(self.targetURL)
@@ -156,6 +161,10 @@ class WebEnvironmentSession:
             for plugin in self.plugins:
                 if self.executionSession is not None:
                     plugin.cleanup(self.driver, self.proxy, self.executionSession)
+
+        if hasattr(self, 'proxy'):
+            if self.proxy is not None:
+                self.proxy.shutdown()
 
         if hasattr(self, "driver"):
             if self.driver:

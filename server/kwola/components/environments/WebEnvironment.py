@@ -72,7 +72,9 @@ class WebEnvironment:
 
         @autoretry()
         def createSession(number):
-            return WebEnvironmentSession(config, number, self.plugins, self.executionSessions[number])
+            session = WebEnvironmentSession(config, number, self.plugins, self.executionSessions[number])
+            session.initialize()
+            return session
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['web_session_max_startup_workers']) as executor:
             sessionCount = config['web_session_parallel_execution_sessions']
