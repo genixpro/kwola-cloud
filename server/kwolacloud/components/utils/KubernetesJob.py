@@ -23,7 +23,7 @@ class KubernetesJob:
         self.gpu = gpu
         self.maxKubectlRetries = 10
 
-    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10, ignoreFailure=True)
+    @autoretry(onFailure=lambda self: self.refreshCredentials(), ignoreFailure=True)
     def cleanup(self):
         process = subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
         if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
@@ -117,7 +117,7 @@ class KubernetesJob:
         return yamlStr
 
 
-    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
+    @autoretry(onFailure=lambda self: self.refreshCredentials())
     def start(self):
         yamlStr = self.generateJobSpec()
 
@@ -128,7 +128,7 @@ class KubernetesJob:
         return
 
 
-    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
+    @autoretry(onFailure=lambda self: self.refreshCredentials())
     def getJobStatus(self):
         process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode == 1 and (b"NotFound" in process.stderr):
@@ -174,7 +174,7 @@ class KubernetesJob:
         while not self.ready():
             time.sleep(10)
 
-    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
+    @autoretry(onFailure=lambda self: self.refreshCredentials())
     def doesJobStillExist(self):
         process = subprocess.run(["kubectl", "get", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode == 1 and (b"NotFound" in process.stderr):
