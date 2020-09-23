@@ -117,7 +117,7 @@ class TestingRunsGroup(Resource):
         else:
             data['stripeSubscriptionId'] = None
 
-        data['id'] = generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=user)
+        data['id'] = generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=application.owner)
         data['owner'] = application.owner
         data['status'] = "created"
         data['startTime'] = datetime.datetime.now()

@@ -188,7 +188,7 @@ class KubernetesJob:
 
     def getResult(self):
         result = KubernetesJobResult.objects(id=self.kubeJobName()).first()
-        return result
+        return result.result
 
 
 
