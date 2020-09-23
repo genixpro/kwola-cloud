@@ -50,7 +50,7 @@ import google.api_core.exceptions
 from google.cloud import storage
 
 
-storageClient = storage.Client()
+# storageClient = storage.Client()
 
 
 def isNumpyArray(obj):

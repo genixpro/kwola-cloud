@@ -33,8 +33,10 @@ import asyncio
 import billiard as multiprocessing
 import socket
 import time
+import requests
 import traceback
 from ...config.logger import getLogger
+from ..utils.retry import autoretry
 
 
 class ProxyProcess:
@@ -62,8 +64,9 @@ class ProxyProcess:
 
         # Wait for the result indicating that the proxy process is ready
         self.port = self.resultQueue.get()
-        time.sleep(0.1)
+        time.sleep(0.5)
         getLogger().info(f"Proxy process has started on port {self.port}")
+        self.checkProxyFunctioning()
 
     def __del__(self):
         if self.proxyProcess is not None:
@@ -93,6 +96,18 @@ class ProxyProcess:
 
     def resetNetworkErrors(self):
         self.commandQueue.put("resetNetworkErrors")
+
+    @autoretry(logRetries=False)
+    def checkProxyFunctioning(self):
+        proxies = {
+            'http': f'http://127.0.0.1:{self.port}',
+            'https': f'http://127.0.0.1:{self.port}',
+        }
+
+        testUrl = "https://app.kwola.io/"
+        response = requests.get(testUrl, proxies=proxies, verify=False)
+        if response.status_code != 200:
+            raise RuntimeError(f"Error in the proxy - unable to connect to the testing url at {testUrl} through the local proxy. Status code: {response.status_code}. Body: {response.content}")
 
     @staticmethod
     def runProxyServerSubprocess(config, commandQueue, resultQueue, plugins):
