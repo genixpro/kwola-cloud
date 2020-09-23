@@ -1993,9 +1993,9 @@ class DeepLearningAgent:
         # This works great on UIs because the elements always have big areas of solid-color which respond in the same
         # way.
         for localX in range(localLeft, localRight + 1):
-            if localX < width:
+            if width > localX >= 0:
                 for localY in range(localTop, localBottom + 1):
-                    if localY < height:
+                    if height > localY >= 0:
                         try:
                             rewardPixelMask += skimage.segmentation.flood(numpy.array(processedImage[0], dtype=numpy.float32), (int(localY), int(localX)))
                         except ValueError:
