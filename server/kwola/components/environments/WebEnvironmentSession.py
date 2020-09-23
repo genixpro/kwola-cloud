@@ -52,6 +52,8 @@ import time
 import pickle
 import urllib.parse
 import urllib3
+import resource
+import psutil
 
 class WebEnvironmentSession:
     """
@@ -103,6 +105,16 @@ class WebEnvironmentSession:
         for plugin in self.plugins:
             if self.executionSession is not None:
                 plugin.browserSessionStarted(self.driver, self.proxy, self.executionSession)
+
+        self.enforceMemoryLimits()
+
+    def enforceMemoryLimits(self):
+        pid = self.driver.service.process.pid  # is a Popen instance for the chromedriver process
+        p = psutil.Process(pid.service.process.pid)
+
+        p.rlimit(psutil.RLIMIT_DATA, 1024*1024*1024)
+        for child in p.children(recursive=True):
+            child.rlimit(psutil.RLIMIT_DATA, 1024*1024*1024)
 
     def initializeWebBrowser(self):
         chrome_options = Options()
@@ -656,6 +668,8 @@ class WebEnvironmentSession:
                 plugin.afterActionRuns(self.driver, self.proxy, self.executionSession, executionTrace, action)
 
             self.traceNumber += 1
+
+            self.enforceMemoryLimits()
 
             return executionTrace
         except urllib3.exceptions.MaxRetryError:
