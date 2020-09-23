@@ -62,7 +62,7 @@ class RecordScreenshots(WebEnvironmentPluginBase):
             errorMsg += str(result.stderr, 'utf8') + "\n"
             getLogger().error(errorMsg)
 
-    @autoretry
+    @autoretry()
     def addScreenshot(self, webDriver, executionSession):
         fileName = f"kwola-screenshot-{self.frameNumber[executionSession.id]:05d}.png"
 
