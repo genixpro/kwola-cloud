@@ -428,9 +428,8 @@ class TestingRunManager:
         self.doTestingRunInitializationIfNeeded()
 
         try:
-            logging.info(f"Testing Run starting with configuration: \n{pformat(self.config.configData)}")
-            
             self.config = KwolaCoreConfiguration(self.configDir)
+            logging.info(f"Testing Run starting with configuration: \n{pformat(self.config.configData)}")
 
             self.shouldExit = False
 
