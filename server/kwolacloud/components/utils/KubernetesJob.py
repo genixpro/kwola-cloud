@@ -131,7 +131,9 @@ class KubernetesJob:
     @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
     def getJobStatus(self):
         process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
+        if process.returncode == 1 and (b"NotFound" in process.stderr):
+            return "Failed"
+        elif process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
             raise RuntimeError(
                 f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
