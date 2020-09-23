@@ -222,13 +222,12 @@ class TestingRunManager:
         toRemove = []
         toKill = []
         for jobId, startTime in zip(self.run.runningTestingStepJobIds, self.run.runningTestingStepStartTimes):
+            timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
             job = self.createTestingStepKubeJob(jobId)
             if job.ready():
                 logging.info("Ready job has been found!")
                 toRemove.append((jobId, job))
-
-            timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
-            if timeElapsed > self.config['testing_step_timeout']:
+            elif timeElapsed > self.config['testing_step_timeout']:
                 logging.error(f"A testing step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}")
                 toKill.append((jobId, job))
 

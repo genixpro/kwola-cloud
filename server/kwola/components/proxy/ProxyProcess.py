@@ -63,6 +63,7 @@ class ProxyProcess:
         # Wait for the result indicating that the proxy process is ready
         self.port = self.resultQueue.get()
         time.sleep(0.1)
+        getLogger().info(f"Proxy process has started on port {self.port}")
 
     def __del__(self):
         if self.proxyProcess is not None:

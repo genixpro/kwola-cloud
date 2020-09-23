@@ -3,7 +3,7 @@ import os
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-with open('requirements.txt', 'rt') as f:
+with open('requirements-frozen.txt', 'rt') as f:
     requires = f.readlines()
 
 tests_require = [
