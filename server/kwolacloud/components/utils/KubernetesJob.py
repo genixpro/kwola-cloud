@@ -172,6 +172,17 @@ class KubernetesJob:
             time.sleep(10)
 
     @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
+    def doesJobStillExist(self):
+        process = subprocess.run(["kubectl", "get", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode == 1 and (b"NotFound" in process.stderr):
+            return False
+        elif process.returncode == 0:
+            return True
+        else:
+            raise RuntimeError(
+                f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
+
+    @autoretry(onFailure=lambda self: self.refreshCredentials(), maxAttempts=10)
     def getLogs(self):
         process = subprocess.run(["kubectl", "logs", "--tail", "100", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
