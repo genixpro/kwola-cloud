@@ -80,33 +80,17 @@ RUN useradd -s /bin/bash --home-dir /home/kwola kwola && \
     mkdir /home/kwola && \
     chown -R kwola:kwola /home/kwola
 
+# Set the working directory to /app
+WORKDIR /kwola
+COPY server/requirements-frozen.txt .
+
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
 RUN pip3 install --upgrade pip && \
     pip3 install --upgrade setuptools && \
     pip3 install --upgrade cryptography && \
-    pip3 install protobuf==3.11.3 && \
-    pip3 install celery && \
-    pip3 install flask && \
-    pip3 install google-cloud-storage==1.29.0 && \
-    pip3 install google-cloud-profiler && \
-    pip3 install google-cloud-logging && \
-    pip3 install gunicorn && \
-    pip3 install jwcrypto && \
-    pip3 install matplotlib && \
-    pip3 install mitmproxy && \
-    pip3 install mongoengine && \
-    pip3 install numpy && \
-    pip3 install opencv-python && \
-    pip3 install pandas && \
-    pip3 install psutil && \
-    pip3 install redis && \
-    pip3 install scikit-image && \
-    pip3 install scikit-learn && \
-    pip3 install scipy && \
-    pip3 install selenium && \
-    pip3 install stripe && \
     pip3 install torch && \
+    pip3 install -r requirements-frozen.txt && \
     chmod +r+r+r -R /usr/lib/python3/ && \
     rm -rf /root/.cache
 
