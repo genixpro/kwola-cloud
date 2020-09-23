@@ -5,6 +5,7 @@ import hashlib
 import subprocess
 from kwola.config.logger import getLogger
 from ...utils.video import chooseBestFfmpegVideoCodec
+from ...utils.retry import autoretry
 
 class RecordScreenshots(WebEnvironmentPluginBase):
     def __init__(self):
@@ -61,7 +62,7 @@ class RecordScreenshots(WebEnvironmentPluginBase):
             errorMsg += str(result.stderr, 'utf8') + "\n"
             getLogger().error(errorMsg)
 
-
+    @autoretry
     def addScreenshot(self, webDriver, executionSession):
         fileName = f"kwola-screenshot-{self.frameNumber[executionSession.id]:05d}.png"
 
