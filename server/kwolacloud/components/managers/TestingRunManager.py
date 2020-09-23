@@ -42,6 +42,8 @@ class TestingRunManager:
         self.configDir = None
         self.config = None
         self.shouldExit = False
+        self.storageClient = storage.Client()
+        self.applicationStorageBucket = None
 
 
     def mountStorageDrive(self):
@@ -103,9 +105,7 @@ class TestingRunManager:
         if not self.cloudConfigData['features']['localRuns']:
             # We have to write directly to the google cloud storage bucket because of the way that the storage
             # drives get mounted through fuse.
-            storageClient = storage.Client()
-            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.run.applicationId)
-            configFileBlob = storage.Blob("kwola.json", applicationStorageBucket)
+            configFileBlob = storage.Blob("kwola.json", self.applicationStorageBucket)
             configFileBlob.upload_from_string(json.dumps(kwolaConfigData))
 
         # Also write a copy locally.
@@ -130,6 +130,8 @@ class TestingRunManager:
             errorMessage = f"Error! {self.testingRunId} not found."
             logging.error(f"[{os.getpid()}] {errorMessage}")
             raise RuntimeError(f"Unable to find the testing run object with id {self.testingRunId}")
+
+        self.applicationStorageBucket = storage.Bucket(self.storageClient, "kwola-testing-run-data-" + self.run.applicationId)
 
     def doTestingRunInitializationIfNeeded(self):
         if self.run.status != "running":
@@ -360,16 +362,24 @@ class TestingRunManager:
         bugsZip = zipfile.ZipFile(file=bugsZipFileOnDisk, mode='w')
 
         for bugIndex, bug in enumerate(bugs):
-            bugRawVideoFilePath = os.path.join(self.configDir, "bugs", f'{str(bug.id)}.mp4')
-            bugAnnotatedVideoFilePath = os.path.join(self.configDir, "bugs", f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
+            bugRawVideoFilePath = f"bugs/{str(bug.id)}.mp4"
+            bugAnnotatedVideoFilePath = f"bugs/{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4"
 
             bugsZip.writestr(f"bug_{bugIndex+1}.json", bytes(bug.to_json(), 'utf8'))
 
-            with open(bugRawVideoFilePath, 'rb') as f:
-                bugsZip.writestr(f"bug_{bugIndex+1}_raw.mp4", f.read())
+            try:
+                bugRawVideoFile = storage.Blob(bugRawVideoFilePath, self.applicationStorageBucket)
+                data = bugRawVideoFile.download_as_string()
+                bugsZip.writestr(f"bug_{bugIndex+1}_raw.mp4", data)
+            except google.cloud.exceptions.NotFound:
+                logging.warning(f"Warning! Unable to find the bug video file {bugRawVideoFilePath} while attempting to assemble the final bug zip file.")
 
-            with open(bugAnnotatedVideoFilePath, 'rb') as f:
-                bugsZip.writestr(f"bug_{bugIndex+1}_annotated.mp4", f.read())
+            try:
+                bugAnnotatedVideoFile = storage.Blob(bugAnnotatedVideoFilePath, self.applicationStorageBucket)
+                data = bugAnnotatedVideoFile.download_as_string()
+                bugsZip.writestr(f"bug_{bugIndex+1}_annotated.mp4", data)
+            except google.cloud.exceptions.NotFound:
+                logging.warning(f"Warning! Unable to find the bug video file {bugAnnotatedVideoFilePath} while attempting to assemble the final bug zip file.")
 
         bugsZip.close()
         bugsZipFileOnDisk.close()

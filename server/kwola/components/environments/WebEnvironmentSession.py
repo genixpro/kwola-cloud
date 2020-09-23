@@ -159,7 +159,10 @@ class WebEnvironmentSession:
 
         if hasattr(self, "driver"):
             if self.driver:
-                self.driver.quit()
+                try:
+                    self.driver.quit()
+                except ImportError:
+                    pass
 
             self.driver = None
 
