@@ -109,14 +109,18 @@ class WebEnvironmentSession:
         self.enforceMemoryLimits()
 
     def enforceMemoryLimits(self):
-        pid = self.driver.service.process.pid  # is a Popen instance for the chromedriver process
-        p = psutil.Process(pid)
+        if self.driver.service.process.returncode is not None:
+            try:
+                pid = self.driver.service.process.pid  # is a Popen instance for the chromedriver process
+                p = psutil.Process(pid)
 
-        # p.rlimit(psutil.RLIMIT_DATA, (1024*1024*1024, 1024*1024*1024))
-        p.rlimit(psutil.RLIMIT_AS, (1024*1024*1024, 1024*1024*1024))
-        for child in p.children(recursive=True):
-            child.rlimit(psutil.RLIMIT_AS, (1024*1024*1024, 1024*1024*1024))
-            # child.rlimit(psutil.RLIMIT_DATA, (1024*1024*1024, 1024*1024*1024))
+                # p.rlimit(psutil.RLIMIT_DATA, (1024*1024*1024, 1024*1024*1024))
+                p.rlimit(psutil.RLIMIT_AS, (1024*1024*1024, 1024*1024*1024))
+                for child in p.children(recursive=True):
+                    child.rlimit(psutil.RLIMIT_AS, (1024*1024*1024, 1024*1024*1024))
+                    # child.rlimit(psutil.RLIMIT_DATA, (1024*1024*1024, 1024*1024*1024))
+            except OSError:
+                pass
 
     def initializeWebBrowser(self):
         chrome_options = Options()
@@ -705,6 +709,9 @@ class WebEnvironmentSession:
             self.hasBrowserDied = True
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
         except urllib3.exceptions.ProtocolError:
+            self.hasBrowserDied = True
+            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+        except AttributeError:
             self.hasBrowserDied = True
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
 
