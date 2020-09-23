@@ -22,6 +22,8 @@ from kwolacloud.helpers.slack import postToCustomerSlack
 from kwolacloud.helpers.webhook import sendCustomerWebhook
 from pprint import pformat
 import datetime
+import google
+import google.cloud
 import json
 import logging
 import os.path
