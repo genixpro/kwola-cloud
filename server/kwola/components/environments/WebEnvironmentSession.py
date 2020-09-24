@@ -151,16 +151,27 @@ class WebEnvironmentSession:
 
     @autoretry()
     def fetchTargetWebpage(self):
-        try:
-            self.driver.get(self.targetURL)
-        except selenium.common.exceptions.TimeoutException:
-            raise RuntimeError(f"The web-browser timed out while attempting to load the target URL {self.targetURL}")
+        maxAttempts = 3
+        for attempt in range(maxAttempts):
+            try:
+                self.driver.get(self.targetURL)
+            except selenium.common.exceptions.TimeoutException:
+                raise RuntimeError(f"The web-browser timed out while attempting to load the target URL {self.targetURL}")
 
-        time.sleep(2)
+            time.sleep(2)
 
-        self.waitUntilNoNetworkActivity()
+            self.waitUntilNoNetworkActivity()
 
-        time.sleep(3)
+            time.sleep(3)
+
+            # No action maps is a strong signal that the page has not loaded correctly.
+            actionMaps = self.getActionMaps()
+            if len(actionMaps) == 0:
+                time.sleep(2**attempt)
+                continue
+            else:
+                break
+
 
     def getHostRoot(self, url):
         host = str(urllib.parse.urlparse(url).hostname)
