@@ -298,15 +298,13 @@ class TestingStepManager:
             with open(fileName, 'rb') as file:
                 loadedPastExecutionTraces[fileName] = pickle.load(file)
 
-        getLogger().info(f"Preloading {len(preloadTraceFiles)} traces.")
-
         preloadStartTime = datetime.now()
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['testing_trace_load_workers']) as loadExecutor:
             for fileName in preloadTraceFiles:
                 loadExecutor.submit(preloadFile, fileName)
         preloadTime = (datetime.now() - preloadStartTime).total_seconds()
         if preloadTime > 5:
-            getLogger().info(f"Finished preload after {preloadTime} seconds")
+            getLogger().info(f"Preloaded {len(preloadTraceFiles)} traces. Finished preload after {preloadTime} seconds")
 
         while True:
             message = subProcessCommandQueue.get()
