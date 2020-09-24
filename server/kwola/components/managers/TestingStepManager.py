@@ -45,6 +45,7 @@ import tempfile
 import traceback
 import concurrent.futures
 from kwola.components.utils.retry import autoretry
+from pprint import pformat
 
 
 
@@ -339,11 +340,11 @@ class TestingStepManager:
                 getLogger().info(f"Finished trace load after {traceLoadTime} seconds")
 
             nextBestActionsStartTime = datetime.now()
-            actions = agent.nextBestActions(step, images, envActionMaps, pastExecutionTraces, shouldBeRandom=shouldBeRandom)
+            actions, times = agent.nextBestActions(step, images, envActionMaps, pastExecutionTraces, shouldBeRandom=shouldBeRandom)
 
             nextBestActionsTime = (datetime.now() - nextBestActionsStartTime).total_seconds()
             if nextBestActionsTime > 5:
-                getLogger().info(f"Finished agent.nextBestActions after {nextBestActionsTime} seconds")
+                getLogger().info(f"Finished agent.nextBestActions after {nextBestActionsTime} seconds. Subtimes: \n {pformat(times)}")
 
             resultFileDescriptor, resultFileName = tempfile.mkstemp()
             with open(resultFileDescriptor, 'wb') as file:

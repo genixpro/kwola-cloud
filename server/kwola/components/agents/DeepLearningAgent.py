@@ -631,14 +631,22 @@ class DeepLearningAgent:
                                    predictions of the machine learning algorithm.
             :return:
         """
+
+        startTime = datetime.now()
         for pastExecutionTraceList in pastExecutionTraces:
             self.computeCachedCumulativeBranchTraces(pastExecutionTraceList)
             self.computeCachedDecayingBranchTrace(pastExecutionTraceList)
             self.computeCachedDecayingFutureBranchTrace(pastExecutionTraceList)
 
+        cacheUpdateTime = (datetime.now() - startTime).total_seconds()
+        startTime = datetime.now()
+
         # Process all of the images
         processedImages = self.processImages(rawImages)
         actions = []
+
+        processImagesTime = (datetime.now() - startTime).total_seconds()
+        startTime = datetime.now()
 
         # Here we have a pretty important mechanism. The name "recentActions" is a bit of a misnomer,
         # and we should probably come up with a new variable name. Basically, what we are doing here
@@ -675,6 +683,9 @@ class DeepLearningAgent:
 
             symbolLists.append(symbols)
             symbolWeights.append(weights)
+
+        symbolComputationTime = (datetime.now() - startTime).total_seconds()
+        startTime = datetime.now()
 
         # Declare function level width and height variables for convenience.
         width = processedImages.shape[3]
@@ -760,6 +771,12 @@ class DeepLearningAgent:
                 # the original ordering.
                 actions.append((sampleIndex, action))
 
+        randomActionsTime = (datetime.now() - startTime).total_seconds()
+        startTime = datetime.now()
+
+        neuralNetworkPredictionsTime = 0
+        predictionActionProcessingTime = 0
+
         # Special catch here on the if statement. We dont need to perform any calculations
         # through the neural network if literally all the actions chosen were random. This
         # doesn't happen very often but in rare circumstances it can and we prepare for that here.
@@ -801,6 +818,9 @@ class DeepLearningAgent:
                 # GPU, but you can run the same code either way so we do it here to be safe.
                 actionProbabilities = outputs['actionProbabilities'].cpu()
                 advantageValues = outputs['advantage'].cpu()
+
+            neuralNetworkPredictionsTime = (datetime.now() - startTime).total_seconds()
+            startTime = datetime.now()
 
             # Now we iterate over all of the data and results for each of the sub environments
             for sampleIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues,\
@@ -928,14 +948,25 @@ class DeepLearningAgent:
                 # is later used to recover the original ordering of the actions list
                 actions.append((sampleIndex, action))
 
+            predictionActionProcessingTime = (datetime.now() - startTime).total_seconds()
+
         # The actions list now contained tuples of (sampleIndex, action). Now we just need to use
         # the sampleIndex to sort this list back into the original ordering of the samples.
         # This ensures that the actions we return as a result are in the exact same order as the
         # sub environments we received as input.
         sortedActions = sorted(actions, key=lambda row: row[0])
 
+        times = {
+            "cacheUpdateTime": cacheUpdateTime,
+            "processImagesTime": processImagesTime,
+            "symbolComputationTime": symbolComputationTime,
+            "randomActionsTime": randomActionsTime,
+            "neuralNetworkPredictionsTime": neuralNetworkPredictionsTime,
+            "predictionActionProcessingTime": predictionActionProcessingTime
+        }
+
         # We return a list composed of just the action objects, one for each sub environment.
-        return [action[1] for action in sortedActions]
+        return [action[1] for action in sortedActions], times
 
     def getRandomAction(self, sampleActionRecentActionCounts, sampleActionMaps, pixelActionMap):
         """
