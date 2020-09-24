@@ -244,7 +244,8 @@ class TestingStepManager:
 
             self.agent.computeCachedCumulativeBranchTraces(self.executionSessionTraces[sessionN])
             self.agent.computeCachedDecayingBranchTrace(self.executionSessionTraces[sessionN])
-            self.agent.computeCachedDecayingFutureBranchTrace(self.executionSessionTraces[sessionN])
+            # Don't need to compute the future branch trace since it is only used in training and not at inference time
+            # self.agent.computeCachedDecayingFutureBranchTrace(self.executionSessionTraces[sessionN])
 
             if self.config['testing_enable_prediction_subprocess']:
                 # We clear the actionMaps field on the trace object prior to saving the temporary pickle file. This is to reduce the amount of time

@@ -633,11 +633,11 @@ class DeepLearningAgent:
         """
 
         startTime = datetime.now()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
-            for pastExecutionTraceList in pastExecutionTraces:
-                executor.submit(DeepLearningAgent.computeCachedCumulativeBranchTraces, self, pastExecutionTraceList)
-                executor.submit(DeepLearningAgent.computeCachedDecayingBranchTrace, self, pastExecutionTraceList)
-                executor.submit(DeepLearningAgent.computeCachedDecayingFutureBranchTrace, self, pastExecutionTraceList)
+        for pastExecutionTraceList in pastExecutionTraces:
+            self.computeCachedCumulativeBranchTraces(pastExecutionTraceList)
+            self.computeCachedDecayingBranchTrace(pastExecutionTraceList)
+            # Don't need to compute the future branch trace since it is only used in training and not at inference time.
+            # self.computeCachedDecayingFutureBranchTrace(pastExecutionTraceList)
 
         cacheUpdateTime = (datetime.now() - startTime).total_seconds()
         startTime = datetime.now()
@@ -2872,31 +2872,16 @@ class DeepLearningAgent:
 
         nextTrace = reversedExecutionTraces[0]
 
-        # a = 0
-        # b = 0
-        # c = 0
-        # d = 0
-
         for trace in reversedExecutionTraces[1:]:
             if trace.cachedStartDecayingFutureBranchTrace is None:
-                # start = datetime.now()
                 trace.cachedStartDecayingFutureBranchTrace = copy.deepcopy(nextTrace.cachedStartDecayingFutureBranchTrace)
-                # a += (datetime.now() - start).total_seconds()
-                # start = datetime.now()
 
                 trace.cachedEndDecayingFutureBranchTrace = copy.deepcopy(nextTrace.cachedStartDecayingFutureBranchTrace)
-
-                # b += (datetime.now() - start).total_seconds()
-                # start = datetime.now()
 
                 for fileName in trace.cachedStartDecayingFutureBranchTrace.keys():
                     trace.cachedStartDecayingFutureBranchTrace[fileName] *= self.config['decaying_future_execution_trace_decay_rate']
 
-                # c += (datetime.now() - start).total_seconds()
-                # start = datetime.now()
-
                 for fileName in trace.branchTrace.keys():
-                    # getLogger().info(f"{fileName} {len(trace.branchTrace[fileName])}")
                     traceNumpyArray = numpy.array(trace.branchTrace[fileName])
 
                     branchesExecuted = numpy.minimum(numpy.ones_like(traceNumpyArray), traceNumpyArray) * self.config['decaying_future_branch_trace_scale']
@@ -2907,12 +2892,7 @@ class DeepLearningAgent:
                     else:
                         trace.cachedStartDecayingFutureBranchTrace[fileName] = branchesExecuted
 
-                # d += (datetime.now() - start).total_seconds()
-                # start = datetime.now()
-
             nextTrace = trace
-
-        # getLogger().info(f"a {a} b {b} c {c} d {d}")
 
     def computeCoverageSymbolsList(self, executionTrace):
         symbols = []
