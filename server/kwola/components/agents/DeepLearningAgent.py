@@ -2909,7 +2909,7 @@ class DeepLearningAgent:
 
             nextTrace = trace
 
-            getLogger().info(f"a {a} b {b} c {c} d {d}")
+        getLogger().info(f"a {a} b {b} c {c} d {d}")
 
     def computeCoverageSymbolsList(self, executionTrace):
         symbols = []
