@@ -2895,8 +2895,10 @@ class DeepLearningAgent:
                 start = datetime.now()
 
                 for fileName in trace.branchTrace.keys():
-                    branchesExecuted = numpy.minimum(numpy.ones_like(trace.branchTrace[fileName]),
-                                                     numpy.array(trace.branchTrace[fileName])) * self.config['decaying_future_branch_trace_scale']
+                    getLogger().info(f"{fileName} {len(trace.branchTrace[fileName])}")
+                    traceNumpyArray = numpy.array(trace.branchTrace[fileName])
+
+                    branchesExecuted = numpy.minimum(numpy.ones_like(traceNumpyArray), traceNumpyArray) * self.config['decaying_future_branch_trace_scale']
 
                     if fileName in trace.cachedStartDecayingFutureBranchTrace:
                         if len(trace.branchTrace[fileName]) == len(trace.cachedStartDecayingFutureBranchTrace[fileName]):
