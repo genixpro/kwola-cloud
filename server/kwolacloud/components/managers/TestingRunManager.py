@@ -290,9 +290,9 @@ class TestingRunManager:
                                                },
                                                referenceId=referenceId,
                                                image="worker",
-                                               cpuRequest="6000m",
+                                               cpuRequest="7000m",
                                                cpuLimit=None,
-                                               memoryRequest="14.0Gi",
+                                               memoryRequest="35.0Gi",
                                                memoryLimit=None,
                                                gpu=True
                                                )
