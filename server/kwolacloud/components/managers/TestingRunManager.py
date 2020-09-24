@@ -445,17 +445,32 @@ class TestingRunManager:
 
                 time.sleep(60)
 
-            # self.waitForTrainingJobCompletion()
-            # self.reviewRunningTrainingSteps()
             self.waitForTestingJobCompletion()
             self.reviewRunningTestingSteps()
 
-            logging.info(f"Finished testing run {self.run.id}")
+            logging.info(f"Finished testing main sequence of the testing run {self.run.id}")
 
             self.updateApplicationObjectForFinish()
             self.updateTestingRunObjectForFinish()
             self.createBugsZipFile()
             self.runTestingRunFinishedHooks()
+
+            # Save after all the post-testing hooks are finished.
+            self.run.save()
+
+            while self.run.trainingIterationsCompleted < self.run.configuration.trainingIterationsNeeded:
+                self.launchTrainingStepIfNeeded()
+                self.reviewRunningTrainingSteps()
+
+                # save on every step - just in case it was changed.
+                self.run.save()
+
+                time.sleep(60)
+
+            self.waitForTrainingJobCompletion()
+            self.reviewRunningTrainingSteps()
+
+            logging.info(f"Finished training for run {self.run.id}.")
 
             # Do an extra save at the end here just for good measure
             self.run.save()
