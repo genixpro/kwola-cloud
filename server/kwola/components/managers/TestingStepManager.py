@@ -24,6 +24,7 @@ from ...components.environments.WebEnvironment import WebEnvironment
 from ...config.config import KwolaCoreConfiguration
 from ...config.logger import getLogger, setupLocalLogging
 from ...datamodels.ExecutionSessionModel import ExecutionSession
+from ...datamodels.ExecutionTraceModel import ExecutionTrace
 from ...datamodels.TestingStepModel import TestingStep
 from ..plugins.core.CreateLocalBugObjects import CreateLocalBugObjects
 from datetime import datetime
@@ -238,8 +239,9 @@ class TestingStepManager:
             actionMaps = trace.actionMaps
             trace.actionMaps = None
             fileDescriptor, traceFileName = tempfile.mkstemp()
-            with open(fileDescriptor, 'wb') as file:
-                pickle.dump(trace, file, protocol=pickle.HIGHEST_PROTOCOL)
+            with open(fileDescriptor, 'wt') as file:
+                file.write(trace.to_json())
+                # pickle.dump(trace, file, protocol=pickle.HIGHEST_PROTOCOL)
             self.executionSessionTraceLocalPickleFiles[sessionN].append(traceFileName)
             trace.actionMaps = actionMaps
 
@@ -292,12 +294,16 @@ class TestingStepManager:
 
         def preloadFile(fileName):
             nonlocal loadedPastExecutionTraces
-            with open(fileName, 'rb') as file:
-                loadedPastExecutionTraces[fileName] = pickle.load(file)
+            with open(fileName, 'rt') as file:
+                loadedPastExecutionTraces[fileName] = ExecutionTrace.from_json(file.read())
 
+        preloadStartTime = datetime.now()
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['testing_trace_load_workers']) as loadExecutor:
             for fileName in preloadTraceFiles:
                 loadExecutor.submit(preloadFile, fileName)
+        preloadTime = (datetime.now() - preloadStartTime).total_seconds()
+        if preloadTime > 10:
+            getLogger().info(f"Finished preload after {preloadTime} seconds")
 
         while True:
             message = subProcessCommandQueue.get()
@@ -316,8 +322,9 @@ class TestingStepManager:
                     if fileName in loadedPastExecutionTraces:
                         pastExecutionTraces[sessionN].append(loadedPastExecutionTraces[fileName])
                     else:
-                        with open(fileName, 'rb') as file:
-                            trace = pickle.load(file)
+                        with open(fileName, 'rt') as file:
+                            # trace = pickle.load(file)
+                            trace = ExecutionTrace.from_json(file.read())
                             pastExecutionTraces[sessionN].append(trace)
                             loadedPastExecutionTraces[fileName] = trace
 
