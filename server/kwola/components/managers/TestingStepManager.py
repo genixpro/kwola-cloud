@@ -165,6 +165,8 @@ class TestingStepManager:
             getLogger().warning(f"[{os.getpid()}] Removing web browser session at index {sessionToRemove} because the browser has crashed!")
 
             session = self.executionSessions[sessionToRemove]
+            session.status = "failed"
+            session.endTime = datetime.now()
 
             del self.executionSessions[sessionToRemove]
             del self.executionSessionTraces[sessionToRemove]
@@ -172,6 +174,8 @@ class TestingStepManager:
 
             for plugin in self.testingStepPlugins:
                 plugin.sessionFailed(self.testStep, session)
+
+            session.saveToDisk(self.config)
 
             sessionToRemove = self.environment.removeBadSessionIfNeeded()
 

@@ -20,6 +20,8 @@ import os.path
 from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from ..auth import authenticate, isAdmin
 import concurrent.futures
+from mongoengine.queryset.visitor import Q
+
 
 class ExecutionSessionGroup(Resource):
     def __init__(self):
@@ -36,7 +38,9 @@ class ExecutionSessionGroup(Resource):
         if user is None:
             abort(401)
 
-        queryParams = {'totalReward__exists': True}
+        queryParams = {
+
+        }
 
         if not isAdmin():
             queryParams['owner'] = user
@@ -45,7 +49,7 @@ class ExecutionSessionGroup(Resource):
         if testingRunId is not None:
             queryParams["testingRunId"] = testingRunId
 
-        executionSessions = ExecutionSession.objects(**queryParams).no_dereference().order_by("startTime").to_json()
+        executionSessions = ExecutionSession.objects(Q(totalReward__exists=True, status__exists=False) | Q(status="completed"), **queryParams).no_dereference().order_by("startTime").to_json()
 
         return {"executionSessions": json.loads(executionSessions)}
 
