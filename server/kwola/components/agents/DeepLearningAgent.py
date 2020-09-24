@@ -1269,6 +1269,17 @@ class DeepLearningAgent:
 
         executionTraces = [ExecutionTrace.loadFromDisk(traceId, self.config) for traceId in executionSession.executionTraces]
 
+        # Some of the traces may have failed to load. In that case, we need to adjust the hilightStepNumber and cutoffStepNumber
+        if hilightStepNumber:
+            for traceIndex, trace in enumerate(executionTraces):
+                if trace is None and traceIndex <= hilightStepNumber:
+                    hilightStepNumber -= 1
+
+        if cutoffStepNumber:
+            for traceIndex, trace in enumerate(executionTraces):
+                if trace is None and traceIndex <= cutoffStepNumber:
+                    cutoffStepNumber -= 1
+
         # Filter out any traces that failed to load. Generally this only happens when you interrupt the process
         # while it is writing a file. So it happens to devs but not in production. Still we protect against
         # this case in several places throughout the code.
