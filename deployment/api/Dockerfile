@@ -157,7 +157,7 @@ RUN chown -R kwola:kwola /kwola && \
 RUN rm -rf /usr/include/*
 
 WORKDIR /home/kwola
-RUN chmod ugo+r -R /usr/lib/python3 && chown -R kwola:kwola /home/kwola &&  su kwola -c "kwola_test_installation"
+RUN chmod ugo+r -R /usr/lib/python3 && chown -R kwola:kwola /home/kwola && cd /home/kwola && su kwola -c "kwola_test_installation"
 WORKDIR /kwola/server
 
 # Output all the disk usage for various folders on the system.
