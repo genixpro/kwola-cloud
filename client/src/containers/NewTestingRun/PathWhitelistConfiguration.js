@@ -35,7 +35,7 @@ class PathWhitelistConfiguration extends Component {
         {
             this.props.onChange({
                 enablePathWhitelist: this.state.enablePathWhitelist,
-                pathRegexes: this.state.pathRegexes.map((pattern, index) =>
+                urlWhitelistRegexes: this.state.pathRegexes.map((pattern, index) =>
                 {
                     if (!this.isRegexValid(index))
                     {

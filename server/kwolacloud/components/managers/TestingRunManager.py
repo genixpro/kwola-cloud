@@ -94,7 +94,10 @@ class TestingRunManager:
         kwolaConfigData['autologin'] = runConfiguration.autologin
         kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
         kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
-        kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
+        if runConfiguration.enablePathWhitelist:
+            kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
+        else:
+            kwolaConfigData['web_session_restrict_url_to_regexes'] = []
         kwolaConfigData['custom_typing_action_strings'] = runConfiguration.customTypingActionStrings
         kwolaConfigData['enable_5xx_error'] = runConfiguration.enable5xxError
         kwolaConfigData['enable_400_error'] = runConfiguration.enable400Error

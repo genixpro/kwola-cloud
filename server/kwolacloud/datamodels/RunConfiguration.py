@@ -46,6 +46,8 @@ class RunConfiguration(EmbeddedDocument):
 
     preventOffsiteLinks = BooleanField()
 
+    enablePathWhitelist = BooleanField()
+
     urlWhitelistRegexes = ListField(StringField())
 
     testingSequenceLength = IntField()
