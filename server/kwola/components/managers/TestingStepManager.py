@@ -98,6 +98,7 @@ class TestingStepManager:
 
         self.agent = DeepLearningAgent(self.config, whichGpu=None)
         if self.config['testing_enable_prediction_subprocess']:
+            self.agent.initialize(enableTraining=False)
             self.agent.load()
 
 
