@@ -635,9 +635,9 @@ class DeepLearningAgent:
         startTime = datetime.now()
         with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
             for pastExecutionTraceList in pastExecutionTraces:
-                executor.submit(self.computeCachedCumulativeBranchTraces, self, pastExecutionTraceList)
-                executor.submit(self.computeCachedDecayingBranchTrace, self, pastExecutionTraceList)
-                executor.submit(self.computeCachedDecayingFutureBranchTrace, self, pastExecutionTraceList)
+                executor.submit(DeepLearningAgent.computeCachedCumulativeBranchTraces, self, pastExecutionTraceList)
+                executor.submit(DeepLearningAgent.computeCachedDecayingBranchTrace, self, pastExecutionTraceList)
+                executor.submit(DeepLearningAgent.computeCachedDecayingFutureBranchTrace, self, pastExecutionTraceList)
 
         cacheUpdateTime = (datetime.now() - startTime).total_seconds()
         startTime = datetime.now()
