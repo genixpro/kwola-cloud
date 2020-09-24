@@ -304,7 +304,7 @@ class TestingStepManager:
             for fileName in preloadTraceFiles:
                 loadExecutor.submit(preloadFile, fileName)
         preloadTime = (datetime.now() - preloadStartTime).total_seconds()
-        if preloadTime > 10:
+        if preloadTime > 5:
             getLogger().info(f"Finished preload after {preloadTime} seconds")
 
         while True:
@@ -335,10 +335,15 @@ class TestingStepManager:
             os.unlink(inferenceBatchFileName)
 
             traceLoadTime = (datetime.now() - traceLoadStartTime).total_seconds()
-            if traceLoadTime > 10:
-                getLogger().info(f"Finished preload after {traceLoadTime} seconds")
+            if traceLoadTime > 5:
+                getLogger().info(f"Finished trace load after {traceLoadTime} seconds")
 
+            nextBestActionsStartTime = datetime.now()
             actions = agent.nextBestActions(step, images, envActionMaps, pastExecutionTraces, shouldBeRandom=shouldBeRandom)
+
+            nextBestActionsTime = (datetime.now() - nextBestActionsStartTime).total_seconds()
+            if nextBestActionsTime > 5:
+                getLogger().info(f"Finished agent.nextBestActions after {nextBestActionsTime} seconds")
 
             resultFileDescriptor, resultFileName = tempfile.mkstemp()
             with open(resultFileDescriptor, 'wb') as file:
