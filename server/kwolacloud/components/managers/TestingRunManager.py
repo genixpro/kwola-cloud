@@ -303,7 +303,7 @@ class TestingRunManager:
         if self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded and \
                 self.run.runningTrainingStepJobId is None and \
                 self.run.testingSessionsCompleted > (1 * self.config['web_session_parallel_execution_sessions']):
-            self.launchTestingStep()
+            self.launchTrainingStep()
 
 
     def launchTrainingStep(self):
