@@ -113,7 +113,7 @@ class TestingRunManager:
         # Also write a copy locally.
         try:
             with open(configFilePath, 'wt') as configFile:
-                json.dump(kwolaConfigData, configFile)
+                json.dump(kwolaConfigData, configFile, indent=4, sort_keys=True)
         except OSError:
             pass
 
