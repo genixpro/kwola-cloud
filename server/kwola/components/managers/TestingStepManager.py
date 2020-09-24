@@ -239,9 +239,9 @@ class TestingStepManager:
             actionMaps = trace.actionMaps
             trace.actionMaps = None
             fileDescriptor, traceFileName = tempfile.mkstemp()
-            with open(fileDescriptor, 'wt') as file:
-                file.write(trace.to_json())
-                # pickle.dump(trace, file, protocol=pickle.HIGHEST_PROTOCOL)
+            with open(fileDescriptor, 'wb') as file:
+                # file.write(trace.to_json())
+                pickle.dump(trace, file, protocol=pickle.HIGHEST_PROTOCOL)
             self.executionSessionTraceLocalPickleFiles[sessionN].append(traceFileName)
             trace.actionMaps = actionMaps
 
@@ -294,8 +294,8 @@ class TestingStepManager:
 
         def preloadFile(fileName):
             nonlocal loadedPastExecutionTraces
-            with open(fileName, 'rt') as file:
-                loadedPastExecutionTraces[fileName] = ExecutionTrace.from_json(file.read())
+            with open(fileName, 'rb') as file:
+                loadedPastExecutionTraces[fileName] = pickle.load(file)
 
         preloadStartTime = datetime.now()
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['testing_trace_load_workers']) as loadExecutor:
@@ -322,9 +322,8 @@ class TestingStepManager:
                     if fileName in loadedPastExecutionTraces:
                         pastExecutionTraces[sessionN].append(loadedPastExecutionTraces[fileName])
                     else:
-                        with open(fileName, 'rt') as file:
-                            # trace = pickle.load(file)
-                            trace = ExecutionTrace.from_json(file.read())
+                        with open(fileName, 'rb') as file:
+                            trace = pickle.load(file)
                             pastExecutionTraces[sessionN].append(trace)
                             loadedPastExecutionTraces[fileName] = trace
 
