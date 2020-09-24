@@ -462,7 +462,7 @@ class TestingRunManager:
             # Save after all the post-testing hooks are finished.
             self.run.save()
 
-            while self.run.trainingIterationsCompleted < self.run.configuration.trainingIterationsNeeded and not self.shouldExit:
+            while self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded and not self.shouldExit:
                 self.launchTrainingStepIfNeeded()
                 self.reviewRunningTrainingSteps()
 
