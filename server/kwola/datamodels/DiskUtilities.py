@@ -28,6 +28,8 @@ import os
 import os.path
 import pickle
 from google.cloud import storage
+import google
+import google.cloud
 
 
 def getDataFormatAndCompressionForClass(modelClass, config, overrideSaveFormat=None, overrideCompression=None):
@@ -169,19 +171,31 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True,
 
         if object is None:
             if printErrorOnFailure:
-                getLogger().info(f"[{os.getpid()}] Error: Failed to load object. File not found. Tried: {pickleFileName}, {gzipPickleFileName}, {jsonFileName}, and {gzipJsonFileName}")
+                getLogger().info(f"Error: Failed to load object. File not found. Tried: {pickleFileName}, {gzipPickleFileName}, {jsonFileName}, and {gzipJsonFileName}")
             return None
 
         return object
     except json.JSONDecodeError:
         if printErrorOnFailure:
-            getLogger().info(f"[{os.getpid()}] Error: Failed to load object {id}. Bad JSON. Usually implies the file failed to write. "
+            getLogger().info(f"Error: Failed to load object {id}. Bad JSON. Usually implies the file failed to write. "
                                   "Sometimes this occurs if you kill the process while it is running. If this occurs "
                                   "during normal operations without interruption, that would indicate a bug.")
         return
     except EOFError:
         if printErrorOnFailure:
-            getLogger().info(f"[{os.getpid()}] Error: Failed to load object {id}. Bad pickle file. Usually implies the file failed to write. "
+            getLogger().info(f"Error: Failed to load object {id}. Bad pickle file. Usually implies the file failed to write. "
+                             "Sometimes this occurs if you kill the process while it is running. If this occurs "
+                             "during normal operations without interruption, that would indicate a bug.")
+        return
+    except FileNotFoundError:
+        if printErrorOnFailure:
+            getLogger().info(f"Error: Failed to load object {id}. File not found. Usually implies the file failed to write. "
+                                  "Sometimes this occurs if you kill the process while it is running. If this occurs "
+                                  "during normal operations without interruption, that would indicate a bug.")
+        return
+    except google.cloud.exceptions.NotFound:
+        if printErrorOnFailure:
+            getLogger().info(f"Error: Failed to load object {id}. Google cloud storage file not found. Usually implies the file failed to write. "
                                   "Sometimes this occurs if you kill the process while it is running. If this occurs "
                                   "during normal operations without interruption, that would indicate a bug.")
         return
