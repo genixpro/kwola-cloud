@@ -101,6 +101,10 @@ class TestingStepManager:
             self.agent.initialize(enableTraining=False)
             self.agent.load()
 
+    def finishAllTraceSaves(self):
+        executor = self.traceSaveExecutor
+        self.traceSaveExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=self.config['testing_trace_save_workers'])
+        executor.shutdown()
 
     def createExecutionSessions(self):
         self.executionSessions = [
@@ -206,6 +210,9 @@ class TestingStepManager:
             actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
         else:
             taskStartTime = datetime.now()
+            # We have to make sure all trace saves are finished before nextBestActions because there is a multithreading
+            # problem in ExecutionTrace.saveToDisk due to the way it handles the cached branch trace objects.
+            self.finishAllTraceSaves()
             actions, times = self.agent.nextBestActions(self.step, images, envActionMaps, self.executionSessionTraces, shouldBeRandom=self.shouldBeRandom)
             actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
 
