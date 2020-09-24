@@ -297,6 +297,8 @@ class TestingStepManager:
             with open(fileName, 'rb') as file:
                 loadedPastExecutionTraces[fileName] = pickle.load(file)
 
+        getLogger().info(f"Preloading {len(preloadTraceFiles)} traces.")
+
         preloadStartTime = datetime.now()
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['testing_trace_load_workers']) as loadExecutor:
             for fileName in preloadTraceFiles:
@@ -312,6 +314,8 @@ class TestingStepManager:
                 break
             else:
                 inferenceBatchFileName = message
+
+            traceLoadStartTime = datetime.now()
 
             with open(inferenceBatchFileName, 'rb') as file:
                 step, images, envActionMaps, pastExecutionTraceLocalTempFiles = pickle.load(file)
@@ -329,6 +333,10 @@ class TestingStepManager:
 
 
             os.unlink(inferenceBatchFileName)
+
+            traceLoadTime = (datetime.now() - traceLoadStartTime).total_seconds()
+            if traceLoadTime > 10:
+                getLogger().info(f"Finished preload after {traceLoadTime} seconds")
 
             actions = agent.nextBestActions(step, images, envActionMaps, pastExecutionTraces, shouldBeRandom=shouldBeRandom)
 
