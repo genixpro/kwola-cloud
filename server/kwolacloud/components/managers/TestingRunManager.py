@@ -329,7 +329,11 @@ class TestingRunManager:
         if self.run.runningTrainingStepJobId is not None:
             job = self.createTrainingStepKubeJob(self.run.runningTrainingStepJobId)
 
-            if job.ready():
+            if not job.doesJobStillExist():
+                logging.info(f"Job {job.kubeJobName()} was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
+                self.run.runningTrainingStepJobId = None
+                self.run.save()
+            elif job.ready():
                 logging.info(f"Finished a training step for run {self.run.id}")
 
                 self.run.runningTrainingStepJobId = None
