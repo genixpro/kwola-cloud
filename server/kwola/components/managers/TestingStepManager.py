@@ -97,6 +97,8 @@ class TestingStepManager:
         self.traceSaveExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=self.config['testing_trace_save_workers'])
 
         self.agent = DeepLearningAgent(self.config, whichGpu=None)
+        if self.config['testing_enable_prediction_subprocess']:
+            self.agent.load()
 
 
     def createExecutionSessions(self):
