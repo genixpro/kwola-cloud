@@ -30,6 +30,7 @@ import pickle
 from google.cloud import storage
 import google
 import google.cloud
+from ..components.utils.retry import autoretry
 
 
 def getDataFormatAndCompressionForClass(modelClass, config, overrideSaveFormat=None, overrideCompression=None):
@@ -59,6 +60,7 @@ def getDataFormatAndCompressionForClass(modelClass, config, overrideSaveFormat=N
 
     return dataFormat, compression
 
+@autoretry()
 def saveObjectToDisk(targetObject, folder, config, overrideSaveFormat=None, overrideCompression=None):
     dataFormat, compression = getDataFormatAndCompressionForClass(type(targetObject), config, overrideSaveFormat, overrideCompression)
 
@@ -98,6 +100,7 @@ def saveObjectToDisk(targetObject, folder, config, overrideSaveFormat=None, over
         data = gzip.compress(bytes(targetObject.to_json(indent=4), "utf8"), compresslevel=compression)
         objectBlob.upload_from_string(data)
 
+@autoretry()
 def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True, applicationId=None):
     openFileFunc = LockedFile
     if not config.data_enable_local_file_locking:
