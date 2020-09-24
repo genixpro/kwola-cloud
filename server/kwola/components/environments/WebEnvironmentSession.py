@@ -162,7 +162,7 @@ class WebEnvironmentSession:
 
             self.waitUntilNoNetworkActivity()
 
-            time.sleep(3)
+            time.sleep(6)
 
             # No action maps is a strong signal that the page has not loaded correctly.
             actionMaps = self.getActionMaps()
