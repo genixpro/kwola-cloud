@@ -17,7 +17,7 @@
   },
   "data_serialization_method": {
     "default": "mongo",
-    "ExecutionTrace": "json"
+    "ExecutionTrace": "gcs"
   },
   "data_enable_local_file_locking": false,
   "debug_video_action_prediction_circle_1_radius":10,

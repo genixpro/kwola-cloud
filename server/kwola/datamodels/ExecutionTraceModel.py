@@ -240,8 +240,8 @@ class ExecutionTrace(Document):
 
 
     @staticmethod
-    def loadFromDisk(id, config, omitLargeFields=False, printErrorOnFailure=True):
-        trace = loadObjectFromDisk(ExecutionTrace, id, "execution_traces", config, printErrorOnFailure=printErrorOnFailure)
+    def loadFromDisk(id, config, omitLargeFields=False, printErrorOnFailure=True, applicationId=None):
+        trace = loadObjectFromDisk(ExecutionTrace, id, "execution_traces", config, printErrorOnFailure=printErrorOnFailure, applicationId=applicationId)
         if trace is not None:
             if omitLargeFields:
                 trace.branchExecutionTrace = []

@@ -659,9 +659,9 @@ class TrainingManager:
             return testingSteps
 
     @staticmethod
-    def updateTraceRewardLoss(traceId, sampleRewardLoss, configDir):
+    def updateTraceRewardLoss(traceId, applicationId, sampleRewardLoss, configDir):
         config = KwolaCoreConfiguration(configDir)
-        trace = ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=False)
+        trace = ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=False, applicationId=applicationId)
         trace.lastTrainingRewardLoss = sampleRewardLoss
         trace.saveToDisk(config)
 
@@ -893,9 +893,9 @@ class TrainingManager:
         return session
 
     @staticmethod
-    def loadExecutionTrace(traceId, configDir):
+    def loadExecutionTrace(traceId, applicationId, configDir):
         config = KwolaCoreConfiguration(configDir)
-        trace = ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True)
+        trace = ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True, applicationId=applicationId)
         return pickle.dumps(trace, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod

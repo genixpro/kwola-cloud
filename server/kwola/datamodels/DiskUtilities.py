@@ -27,6 +27,7 @@ import json
 import os
 import os.path
 import pickle
+from google.cloud import storage
 
 
 def getDataFormatAndCompressionForClass(modelClass, config, overrideSaveFormat=None, overrideCompression=None):
@@ -87,8 +88,15 @@ def saveObjectToDisk(targetObject, folder, config, overrideSaveFormat=None, over
     elif dataFormat == "mongo":
         targetObject.save()
 
+    elif dataFormat == "gcs":
+        storageClient = storage.Client()
+        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + targetObject.applicationId)
+        objectPath = f"{folder}/{targetObject.id}.json.gz"
+        objectBlob = storage.Blob(objectPath, applicationStorageBucket)
+        data = gzip.compress(bytes(targetObject.to_json(indent=4), "utf8"), compresslevel=compression)
+        objectBlob.upload_from_string(data)
 
-def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True):
+def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True, applicationId=None):
     openFileFunc = LockedFile
     if not config.data_enable_local_file_locking:
         openFileFunc = open
@@ -98,6 +106,17 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True)
 
         if dataFormat == "mongo":
             return modelClass.objects(id=id).first()
+        elif dataFormat == "gcs":
+            if applicationId is None:
+                raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
+
+            storageClient = storage.Client()
+            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId)
+            objectPath = f"{folder}/{id}.json.gz"
+            objectBlob = storage.Blob(objectPath, applicationStorageBucket)
+            data = objectBlob.download_as_string()
+            object = modelClass.from_json(str(gzip.decompress(data), "utf8"))
+            return object
 
         object = None
         pickleFileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(id) + ".pickle")

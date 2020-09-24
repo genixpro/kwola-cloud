@@ -45,7 +45,7 @@ def loadTraces(config, session):
     for traceId in session.executionTraces:
         # logging.info(f"Loading trace object {traceId}")
 
-        trace = ExecutionTrace.loadFromDisk(traceId, config)
+        trace = ExecutionTrace.loadFromDisk(traceId, config, applicationId=session.applicationId)
         if trace is None:
             # hasNone = True
             break

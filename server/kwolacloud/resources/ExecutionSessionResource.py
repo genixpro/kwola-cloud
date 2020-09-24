@@ -156,9 +156,10 @@ class ExecutionSessionTraces(Resource):
         config = KwolaCoreConfiguration(configDir)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
-            traces = executor.map(lambda traceId: ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True),
+            traces = executor.map(lambda traceId: ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True, applicationId=executionSession.applicationId),
                                   executionSession.executionTraces)
 
+        unmountTestingRunStorageDrive(configDir)
 
         return {"executionTraces": [json.loads(trace.to_json()) for trace in traces]}
 
@@ -190,7 +191,9 @@ class ExecutionSessionSingleTrace(Resource):
 
         config = KwolaCoreConfiguration(configDir)
 
-        trace = ExecutionTrace.loadFromDisk(execution_trace_id, config)
+        trace = ExecutionTrace.loadFromDisk(execution_trace_id, config, applicationId=executionSession.applicationId)
+
+        unmountTestingRunStorageDrive(configDir)
 
         return {"executionTrace": json.loads(trace.to_json())}
 

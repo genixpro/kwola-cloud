@@ -1267,7 +1267,7 @@ class DeepLearningAgent:
 
         rawImages = DeepLearningAgent.readVideoFrames(os.path.join(videoPath, f"{str(executionSession.id)}.mp4"))
 
-        executionTraces = [ExecutionTrace.loadFromDisk(traceId, self.config) for traceId in executionSession.executionTraces]
+        executionTraces = [ExecutionTrace.loadFromDisk(traceId, self.config, applicationId=executionSession.applicationId) for traceId in executionSession.executionTraces]
 
         # Some of the traces may have failed to load. In that case, we need to adjust the hilightStepNumber and cutoffStepNumber
         if hilightStepNumber:
@@ -2135,7 +2135,7 @@ class DeepLearningAgent:
         # at the same time.
         videoPath = self.config.getKwolaUserDataDirectory("videos")
         for rawImage, traceId in zip(DeepLearningAgent.readVideoFrames(os.path.join(videoPath, f'{str(executionSession.id)}.mp4')), executionSession.executionTraces):
-            trace = ExecutionTrace.loadFromDisk(traceId, self.config)
+            trace = ExecutionTrace.loadFromDisk(traceId, self.config, applicationId=executionSession.applicationId)
             # Occasionally if your doing a lot of R&D and killing the code a lot,
             # the software will save a broken file to disk. When this happens, you
             # will not be able to load the object and get a None value. Here we just
