@@ -374,6 +374,7 @@ class TestingStepManager:
             subProcessResultQueue.put(resultFileName)
 
     @staticmethod
+    @autoretry()
     def saveTrace(trace, config):
         trace.saveToDisk(config)
 
