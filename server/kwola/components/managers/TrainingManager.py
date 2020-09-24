@@ -417,7 +417,7 @@ class TrainingManager:
 
         cacheFile = os.path.join(sampleCacheDir, traceId + "-sample.pickle.gz")
 
-        pickleBytes = pickle.dumps(traceBatch)
+        pickleBytes = pickle.dumps(traceBatch, protocol=pickle.HIGHEST_PROTOCOL)
         compressedPickleBytes = gzip.compress(pickleBytes)
 
         # getLogger().info(f"Writing batch cache file {cacheFile}")
@@ -547,7 +547,7 @@ class TrainingManager:
             fileDescriptor, fileName = tempfile.mkstemp(".bin", dir=batchDirectory)
 
             with open(fileDescriptor, 'wb') as batchFile:
-                pickle.dump(sampleBatch, batchFile)
+                pickle.dump(sampleBatch, batchFile, protocol=pickle.HIGHEST_PROTOCOL)
 
             return fileName, cacheHit
         except Exception:
@@ -628,7 +628,7 @@ class TrainingManager:
 
             resultFileDescriptor, resultFileName = tempfile.mkstemp()
             with open(resultFileDescriptor, 'wb') as file:
-                pickle.dump((batch, cacheHitRate), file)
+                pickle.dump((batch, cacheHitRate), file, protocol=pickle.HIGHEST_PROTOCOL)
 
             subProcessBatchResultQueue.put(resultFileName)
 
@@ -896,7 +896,7 @@ class TrainingManager:
     def loadExecutionTrace(traceId, configDir):
         config = KwolaCoreConfiguration(configDir)
         trace = ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True)
-        return pickle.dumps(trace)
+        return pickle.dumps(trace, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
     def loadExecutionTraceWeightData(traceId, sessionId, configDir, applicationId):
@@ -940,7 +940,7 @@ class TrainingManager:
             data['executionSessionId'] = sessionId
 
             # getLogger().info(f"Loaded {traceId}")
-            return pickle.dumps(data)
+            return pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
         except Exception as e:
             getLogger().error(traceback.format_exc())
             return None

@@ -67,11 +67,11 @@ def saveObjectToDisk(targetObject, folder, config, overrideSaveFormat=None, over
         if compression == 0:
             fileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(targetObject.id) + ".pickle")
             with openFileFunc(fileName, 'wb') as f:
-                pickle.dump(targetObject, f)
+                pickle.dump(targetObject, f, protocol=pickle.HIGHEST_PROTOCOL)
         else:
             fileName = os.path.join(config.getKwolaUserDataDirectory(folder), str(targetObject.id) + ".pickle.gz")
             with openFileFunc(fileName, 'wb') as f:
-                data = pickle.dumps(targetObject)
+                data = pickle.dumps(targetObject, protocol=pickle.HIGHEST_PROTOCOL)
                 f.write(gzip.compress(data, compresslevel=compression))
 
     elif dataFormat == "json":

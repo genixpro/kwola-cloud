@@ -179,7 +179,7 @@ class TestingStepManager:
         fileDescriptor, inferenceBatchFileName = tempfile.mkstemp()
 
         with open(fileDescriptor, 'wb') as file:
-            pickle.dump((self.step, images, envActionMaps, self.executionSessionTraceLocalPickleFiles), file)
+            pickle.dump((self.step, images, envActionMaps, self.executionSessionTraceLocalPickleFiles), file, protocol=pickle.HIGHEST_PROTOCOL)
 
         del images, envActionMaps
 
@@ -239,7 +239,7 @@ class TestingStepManager:
             trace.actionMaps = None
             fileDescriptor, traceFileName = tempfile.mkstemp()
             with open(fileDescriptor, 'wb') as file:
-                pickle.dump(trace, file)
+                pickle.dump(trace, file, protocol=pickle.HIGHEST_PROTOCOL)
             self.executionSessionTraceLocalPickleFiles[sessionN].append(traceFileName)
             trace.actionMaps = actionMaps
 
@@ -328,7 +328,7 @@ class TestingStepManager:
 
             resultFileDescriptor, resultFileName = tempfile.mkstemp()
             with open(resultFileDescriptor, 'wb') as file:
-                pickle.dump(actions, file)
+                pickle.dump(actions, file, protocol=pickle.HIGHEST_PROTOCOL)
 
             subProcessResultQueue.put(resultFileName)
 

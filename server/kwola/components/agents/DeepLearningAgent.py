@@ -357,7 +357,7 @@ class DeepLearningAgent:
 
     def saveSymbolMap(self):
         with open(self.symbolMapPath, 'wb') as f:
-            pickle.dump((self.symbolMap, self.knownFiles, self.nextSymbolIndex), f)
+            pickle.dump((self.symbolMap, self.knownFiles, self.nextSymbolIndex), f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def getTorchDevices(self):
         """
@@ -1399,7 +1399,7 @@ class DeepLearningAgent:
                         hilight = 1 / ((dist/3)+1)
 
                     future = executor.submit(self.createDebugImagesForExecutionTrace,
-                                             str(executionSession.id), traceIndex, pickle.dumps(trace),
+                                             str(executionSession.id), traceIndex, pickle.dumps(trace, protocol=pickle.HIGHEST_PROTOCOL),
                                              rawImage, lastRawImage, networkOutput,
                                              presentRewards, discountedFutureRewards, tempScreenshotDirectory,
                                              includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight,

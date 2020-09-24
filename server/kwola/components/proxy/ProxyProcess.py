@@ -62,7 +62,7 @@ class ProxyProcess:
         self.commandQueue = ProxyProcess.sharedMultiprocessingContext.Queue()
         self.resultQueue = ProxyProcess.sharedMultiprocessingContext.Queue()
 
-        self.proxyProcess = ProxyProcess.sharedMultiprocessingContext.Process(target=self.runProxyServerSubprocess, args=(self.config, self.commandQueue, self.resultQueue, pickle.dumps(self.plugins)), daemon=True)
+        self.proxyProcess = ProxyProcess.sharedMultiprocessingContext.Process(target=self.runProxyServerSubprocess, args=(self.config, self.commandQueue, self.resultQueue, pickle.dumps(self.plugins, protocol=pickle.HIGHEST_PROTOCOL)), daemon=True)
         self.proxyProcess.start()
 
         # Wait for the result indicating that the proxy process is ready
@@ -149,7 +149,7 @@ class ProxyProcess:
                 resultQueue.put(pathTrace)
 
             if message == "getNetworkErrors":
-                resultQueue.put(pickle.dumps(networkErrorTracer.errors))
+                resultQueue.put(pickle.dumps(networkErrorTracer.errors, protocol=pickle.HIGHEST_PROTOCOL))
 
             if message == "getMostRecentNetworkActivityTime":
                 resultQueue.put(pathTracer.mostRecentNetworkActivityTime)
