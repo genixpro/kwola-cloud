@@ -1287,7 +1287,7 @@ class DeepLearningAgent:
         executionTracesFiltered = [obj[0] for obj in filtered]
         rawImagesFiltered = [rawImages[0]] + [obj[1] for obj in filtered]
 
-        if len(executionTracesFiltered) != (len(executionTraces) - 1):
+        if len(executionTracesFiltered) != (len(executionTraces)):
             getLogger().error(f"Warning while generating a debug video for execution session {executionSession.id}. Some of the traces failed to load from disk. This likely means that an ExecutionTrace object failed to save correctly and was ignored by the system.")
 
         self.computeCachedCumulativeBranchTraces(executionTracesFiltered)
