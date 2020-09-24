@@ -2871,13 +2871,28 @@ class DeepLearningAgent:
 
         nextTrace = reversedExecutionTraces[0]
 
+        a = 0
+        b = 0
+        c = 0
+        d = 0
+
         for trace in reversedExecutionTraces[1:]:
             if trace.cachedStartDecayingFutureBranchTrace is None:
+                start = datetime.now()
                 trace.cachedStartDecayingFutureBranchTrace = copy.deepcopy(nextTrace.cachedStartDecayingFutureBranchTrace)
+                a += (datetime.now() - start).total_seconds()
+                start = datetime.now()
+
                 trace.cachedEndDecayingFutureBranchTrace = copy.deepcopy(nextTrace.cachedStartDecayingFutureBranchTrace)
+
+                b += (datetime.now() - start).total_seconds()
+                start = datetime.now()
 
                 for fileName in trace.cachedStartDecayingFutureBranchTrace.keys():
                     trace.cachedStartDecayingFutureBranchTrace[fileName] *= self.config['decaying_future_execution_trace_decay_rate']
+
+                c += (datetime.now() - start).total_seconds()
+                start = datetime.now()
 
                 for fileName in trace.branchTrace.keys():
                     branchesExecuted = numpy.minimum(numpy.ones_like(trace.branchTrace[fileName]),
@@ -2889,7 +2904,12 @@ class DeepLearningAgent:
                     else:
                         trace.cachedStartDecayingFutureBranchTrace[fileName] = branchesExecuted
 
+                d += (datetime.now() - start).total_seconds()
+                start = datetime.now()
+
             nextTrace = trace
+
+            getLogger().info(f"a {a} b {b} c {c} d {d}")
 
     def computeCoverageSymbolsList(self, executionTrace):
         symbols = []

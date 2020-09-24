@@ -235,10 +235,10 @@ class TestingStepManager:
             self.executionSessionTraces[sessionN].append(trace)
             self.executionSessions[sessionN].totalReward = float(numpy.sum(DeepLearningAgent.computePresentRewards(self.executionSessionTraces[sessionN], self.config)))
 
-            for pastExecutionTraceList in self.executionSessionTraces:
-                self.agent.computeCachedCumulativeBranchTraces(pastExecutionTraceList)
-                self.agent.computeCachedDecayingBranchTrace(pastExecutionTraceList)
-                self.agent.computeCachedDecayingFutureBranchTrace(pastExecutionTraceList)
+            # for pastExecutionTraceList in self.executionSessionTraces:
+            #     self.agent.computeCachedCumulativeBranchTraces(pastExecutionTraceList)
+            #     self.agent.computeCachedDecayingBranchTrace(pastExecutionTraceList)
+            #     self.agent.computeCachedDecayingFutureBranchTrace(pastExecutionTraceList)
 
             # We clear the actionMaps field on the trace object prior to saving the temporary pickle file. This is to reduce the amount of time
             # it takes to pickle and unpickle this object. This is a bit of a HACK and depends on the fact that the DeepLearningAgent.nextBestActions
