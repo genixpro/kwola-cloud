@@ -104,6 +104,7 @@ class TestingStepManager:
             ExecutionSession(
                 id=str(self.testStep.id) + "_session_" + str(sessionN),
                 owner=self.testStep.owner,
+                status="running",
                 testingStepId=self.testStep.id,
                 testingRunId=self.testStep.testingRunId,
                 applicationId=self.testStep.applicationId,
@@ -424,6 +425,7 @@ class TestingStepManager:
 
             for session in self.executionSessions:
                 session.endTime = datetime.now()
+                session.status = "completed"
                 session.saveToDisk(self.config)
 
             # We shutdown the environment before generating the annotated videos in order

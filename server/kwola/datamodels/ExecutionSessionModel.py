@@ -41,6 +41,8 @@ class ExecutionSession(Document):
 
     testingStepId = StringField()
 
+    status = StringField(default="completed")
+
     testingRunId = StringField(required=False)
 
     startTime = DateTimeField(max_length=200, required=False)
