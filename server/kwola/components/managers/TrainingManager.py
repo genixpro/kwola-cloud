@@ -712,7 +712,11 @@ class TrainingManager:
 
             completed = 0
             for traceFuture in executionTraceFutures:
-                traceWeightData = pickle.loads(traceFuture.get(timeout=30))
+                traceWeightData = None
+                try:
+                    traceWeightData = pickle.loads(traceFuture.get(timeout=30))
+                except multiprocessing.context.TimeoutError:
+                    pass
                 if traceWeightData is not None:
                     executionTraceWeightDatas.append(traceWeightData)
                     executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
