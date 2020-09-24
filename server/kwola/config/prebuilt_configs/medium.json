@@ -190,6 +190,7 @@
   "testing_subprocess_pool_size": 3,
   "testing_trace_load_workers": 8,
   "testing_trace_save_workers": 8,
+  "testing_enable_prediction_subprocess": true,
   "training_action_prob_reward_square_size": 30,
   "training_background_trace_save_workers": 2,
   "training_batch_prep_subprocesses": 2,

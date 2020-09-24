@@ -180,22 +180,29 @@ class TestingStepManager:
         envActionMaps = self.environment.getActionMaps()
         actionMapRetrievalTime = (datetime.now() - taskStartTime).total_seconds()
 
-        fileDescriptor, inferenceBatchFileName = tempfile.mkstemp()
+        if self.config['testing_enable_prediction_subprocess']:
+            fileDescriptor, inferenceBatchFileName = tempfile.mkstemp()
 
-        with open(fileDescriptor, 'wb') as file:
-            pickle.dump((self.step, images, envActionMaps, self.executionSessionTraceLocalPickleFiles), file, protocol=pickle.HIGHEST_PROTOCOL)
+            with open(fileDescriptor, 'wb') as file:
+                pickle.dump((self.step, images, envActionMaps, self.executionSessionTraceLocalPickleFiles), file, protocol=pickle.HIGHEST_PROTOCOL)
 
-        del images, envActionMaps
+            del images, envActionMaps
+            subProcessCommandQueue, subProcessResultQueue, subProcess = self.subProcesses[0]
 
-        subProcessCommandQueue, subProcessResultQueue, subProcess = self.subProcesses[0]
+            taskStartTime = datetime.now()
+            subProcessCommandQueue.put(inferenceBatchFileName)
+            resultFileName = subProcessResultQueue.get()
+            with open(resultFileName, 'rb') as file:
+                actions = pickle.load(file)
+            os.unlink(resultFileName)
+            actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
+        else:
+            taskStartTime = datetime.now()
+            actions, times = self.agent.nextBestActions(self.step, images, envActionMaps, self.executionSessionTraces, shouldBeRandom=self.shouldBeRandom)
+            actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
 
-        taskStartTime = datetime.now()
-        subProcessCommandQueue.put(inferenceBatchFileName)
-        resultFileName = subProcessResultQueue.get()
-        actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
-        with open(resultFileName, 'rb') as file:
-            actions = pickle.load(file)
-        os.unlink(resultFileName)
+            if actionDecisionTime > 5.0:
+                getLogger().info(f"Finished agent.nextBestActions after {actionDecisionTime} seconds. Subtimes: \n {pformat(times)}")
 
         for plugin in self.testingStepPlugins:
             plugin.beforeActionsRun(self.testStep, self.executionSessions, actions)
@@ -235,23 +242,24 @@ class TestingStepManager:
             self.executionSessionTraces[sessionN].append(trace)
             self.executionSessions[sessionN].totalReward = float(numpy.sum(DeepLearningAgent.computePresentRewards(self.executionSessionTraces[sessionN], self.config)))
 
-            # for pastExecutionTraceList in self.executionSessionTraces:
-            #     self.agent.computeCachedCumulativeBranchTraces(pastExecutionTraceList)
-            #     self.agent.computeCachedDecayingBranchTrace(pastExecutionTraceList)
-            #     self.agent.computeCachedDecayingFutureBranchTrace(pastExecutionTraceList)
+            for pastExecutionTraceList in self.executionSessionTraces:
+                self.agent.computeCachedCumulativeBranchTraces(pastExecutionTraceList)
+                self.agent.computeCachedDecayingBranchTrace(pastExecutionTraceList)
+                self.agent.computeCachedDecayingFutureBranchTrace(pastExecutionTraceList)
 
-            # We clear the actionMaps field on the trace object prior to saving the temporary pickle file. This is to reduce the amount of time
-            # it takes to pickle and unpickle this object. This is a bit of a HACK and depends on the fact that the DeepLearningAgent.nextBestActions
-            # function does not actually require this field at all. Without this, the pickling/unpickling can come to take up to 90% of the total time
-            # of each loop
-            actionMaps = trace.actionMaps
-            trace.actionMaps = None
-            fileDescriptor, traceFileName = tempfile.mkstemp()
-            with open(fileDescriptor, 'wb') as file:
-                # file.write(trace.to_json())
-                pickle.dump(trace, file, protocol=pickle.HIGHEST_PROTOCOL)
-            self.executionSessionTraceLocalPickleFiles[sessionN].append(traceFileName)
-            trace.actionMaps = actionMaps
+            if self.config['testing_enable_prediction_subprocess']:
+                # We clear the actionMaps field on the trace object prior to saving the temporary pickle file. This is to reduce the amount of time
+                # it takes to pickle and unpickle this object. This is a bit of a HACK and depends on the fact that the DeepLearningAgent.nextBestActions
+                # function does not actually require this field at all. Without this, the pickling/unpickling can come to take up to 90% of the total time
+                # of each loop
+                actionMaps = trace.actionMaps
+                trace.actionMaps = None
+                fileDescriptor, traceFileName = tempfile.mkstemp()
+                with open(fileDescriptor, 'wb') as file:
+                    # file.write(trace.to_json())
+                    pickle.dump(trace, file, protocol=pickle.HIGHEST_PROTOCOL)
+                self.executionSessionTraceLocalPickleFiles[sessionN].append(traceFileName)
+                trace.actionMaps = actionMaps
 
             # Submit a lambda to save this trace to disk. This is done in the background to avoid
             # holding up the main loop. Saving the trace to disk can be time consuming.
@@ -379,7 +387,8 @@ class TestingStepManager:
             resultValue["testingStepId"] = str(self.testStep.id)
 
             self.createExecutionSessions()
-            self.createTestingSubprocesses()
+            if self.config['testing_enable_prediction_subprocess']:
+                self.createTestingSubprocesses()
 
             for plugin in self.testingStepPlugins:
                 plugin.testingStepStarted(self.testStep, self.executionSessions)
@@ -396,12 +405,14 @@ class TestingStepManager:
 
                 self.executeSingleAction()
 
-                if self.config['testing_reset_agent_period'] == 1 or self.stepsRemaining % self.config['testing_reset_agent_period'] == (self.config['testing_reset_agent_period'] - 1):
-                    self.restartOneTestingSubprocess()
+                if self.config['testing_enable_prediction_subprocess']:
+                    if self.config['testing_reset_agent_period'] == 1 or self.stepsRemaining % self.config['testing_reset_agent_period'] == (self.config['testing_reset_agent_period'] - 1):
+                        self.restartOneTestingSubprocess()
 
                 self.step += 1
 
-            self.killAndJoinTestingSubprocesses()
+            if self.config['testing_enable_prediction_subprocess']:
+                self.killAndJoinTestingSubprocesses()
             self.removeBadSessions()
 
             # Ensure all the trace objects get saved to disc
