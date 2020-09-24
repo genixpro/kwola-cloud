@@ -217,6 +217,13 @@ class ExecutionTrace(Document):
         return numpy.array(newArray)
 
     def saveToDisk(self, config):
+        cachedStartCumulativeBranchTrace = self.cachedStartCumulativeBranchTrace
+        cachedStartDecayingBranchTrace = self.cachedStartDecayingBranchTrace
+        cachedEndCumulativeBranchTrace = self.cachedEndCumulativeBranchTrace
+        cachedEndDecayingBranchTrace = self.cachedEndDecayingBranchTrace
+        cachedStartDecayingFutureBranchTrace = self.cachedStartDecayingFutureBranchTrace
+        cachedEndDecayingFutureBranchTrace = self.cachedEndDecayingFutureBranchTrace
+
         self.cachedStartCumulativeBranchTrace = None
         self.cachedStartDecayingBranchTrace = None
         self.cachedEndCumulativeBranchTrace = None
@@ -224,6 +231,12 @@ class ExecutionTrace(Document):
         self.cachedStartDecayingFutureBranchTrace = None
         self.cachedEndDecayingFutureBranchTrace = None
         saveObjectToDisk(self, "execution_traces", config)
+        self.cachedStartCumulativeBranchTrace = cachedStartCumulativeBranchTrace
+        self.cachedStartDecayingBranchTrace = cachedStartDecayingBranchTrace
+        self.cachedEndCumulativeBranchTrace = cachedEndCumulativeBranchTrace
+        self.cachedEndDecayingBranchTrace = cachedEndDecayingBranchTrace
+        self.cachedStartDecayingFutureBranchTrace = cachedStartDecayingFutureBranchTrace
+        self.cachedEndDecayingFutureBranchTrace = cachedEndDecayingFutureBranchTrace
 
 
     @staticmethod
