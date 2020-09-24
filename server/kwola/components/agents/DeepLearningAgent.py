@@ -1272,10 +1272,12 @@ class DeepLearningAgent:
         # Filter out any traces that failed to load. Generally this only happens when you interrupt the process
         # while it is writing a file. So it happens to devs but not in production. Still we protect against
         # this case in several places throughout the code.
-        executionTracesFiltered = [trace for trace in executionTraces if trace is not None]
+        filtered = [(trace, image) for trace, image in zip(executionTraces, rawImages[1:]) if trace is not None]
+        executionTracesFiltered = [obj[0] for obj in filtered]
+        rawImagesFiltered = [rawImages[0]] + [obj[1] for obj in filtered]
 
-        if len(executionTracesFiltered) != (len(rawImages) - 1):
-            getLogger().error(f"Warning while generating a debug video for execution session {executionSession.id}. Some of the traces failed to load from disk, resulting in the execution traces not lining up correctly with the frames in the video sequence. This likely means that an ExecutionTrace object failed to save correctly and was ignored by the system.")
+        if len(executionTracesFiltered) != (len(executionTraces) - 1):
+            getLogger().error(f"Warning while generating a debug video for execution session {executionSession.id}. Some of the traces failed to load from disk. This likely means that an ExecutionTrace object failed to save correctly and was ignored by the system.")
 
         self.computeCachedCumulativeBranchTraces(executionTracesFiltered)
         self.computeCachedDecayingBranchTrace(executionTracesFiltered)
@@ -1287,19 +1289,19 @@ class DeepLearningAgent:
 
         tempScreenshotDirectory = tempfile.mkdtemp()
 
-        lastRawImage = rawImages.pop(0)
+        lastRawImage = rawImagesFiltered.pop(0)
 
         mpl.use('Agg')
         mpl.rcParams['figure.max_open_warning'] = 1000
 
         if cutoffStepNumber is not None:
             executionTracesFiltered = executionTracesFiltered[:cutoffStepNumber]
-            rawImages = rawImages[:cutoffStepNumber]
+            rawImagesFiltered = rawImagesFiltered[:cutoffStepNumber + 1]
 
         if includeNeuralNetworkCharts:
             neuralNetworkFutures = []
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-                for trace, rawImage in zip(executionTracesFiltered, rawImages):
+                for trace, rawImage in zip(executionTracesFiltered, rawImagesFiltered):
                     future = executor.submit(self.processDebugTraceThroughNeuralNetwork, trace, rawImage)
                     neuralNetworkFutures.append(future)
             networkOutputs = [future.result() for future in neuralNetworkFutures]
@@ -1422,7 +1424,7 @@ class DeepLearningAgent:
         # with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             imageGenerationFutures = []
-            for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImages, networkOutputs):
+            for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImagesFiltered, networkOutputs):
                 if trace is not None:
                     hilight = 0
                     if hilightStepNumber is not None:
