@@ -429,6 +429,12 @@ class TestingRunManager:
 
     def runTesting(self):
         self.loadTestingRun()
+
+        # Special override here: if the application object has been marked as deleted, or is literally deleted and
+        # missing from the database, then do not continue the testing run. Just finish quietly.
+        if ApplicationModel.objects(id=self.run.applicationId, status="active").count() == 0:
+            return
+
         self.mountStorageDrive()
         self.updateApplicationObjectForStart()
 

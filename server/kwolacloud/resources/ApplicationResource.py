@@ -18,6 +18,7 @@ import flask
 import json
 import logging
 import requests
+from mongoengine.queryset.visitor import Q
 
 
 class ApplicationGroup(Resource):
@@ -35,7 +36,7 @@ class ApplicationGroup(Resource):
         if not isAdmin():
             query['owner'] = user
 
-        applications = ApplicationModel.objects(**query).no_dereference().to_json()
+        applications = ApplicationModel.objects(Q(status__exists=False) | Q(status="active"), **query).no_dereference().to_json()
 
         return {"applications": json.loads(applications)}
 
@@ -153,7 +154,8 @@ class ApplicationSingle(Resource):
         application = ApplicationModel.objects(**query).limit(1).first()
 
         if application is not None:
-            ApplicationModel.objects(**query).delete()
+            application.status = "deleted"
+            application.save()
         else:
             abort(404)
 

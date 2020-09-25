@@ -34,6 +34,8 @@ class ApplicationModel(Document):
 
     url = StringField(required=True)
 
+    status = StringField(default="active", enumerate=['active', 'deleted'])
+
     creationDate = DateTimeField()
 
     slackAccessToken = StringField(default=None)

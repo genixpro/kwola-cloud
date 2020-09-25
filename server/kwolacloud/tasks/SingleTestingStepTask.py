@@ -68,6 +68,11 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
 
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
 
+        # Special override here: if the application object has been marked as deleted, or is literally deleted and
+        # missing from the database, then do not continue the testing run. Just finish quietly.
+        if application is None or application.status != "active":
+            return {"success": False, "exception": f"The application object with id {run.applicationId} is either missing from the database or has been marked as deleted by the user."}
+
         plugins = [
             CreateCloudBugObjects(config),
             LogSessionRewards(config),

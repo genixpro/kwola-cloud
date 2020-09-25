@@ -18,6 +18,7 @@ from ..helpers.email import sendOfferSupportEmail, sendRequestFeedbackEmail
 from ..helpers.auth0 import loadAuth0Service, updateUserProfileMetadataValue
 from ..config.config import loadConfiguration
 import subprocess
+from mongoengine.queryset.visitor import Q
 
 def runHourlyTasks():
     try:
@@ -49,6 +50,7 @@ def runHourlyTasks():
 
 def sendSupportOfferEmailsOnApplications():
     applications = ApplicationModel.objects(
+        Q(status__exists=False) | Q(status="active"),
         hasFirstTestingRunLaunched=False,
         creationDate__lt=(datetime.now() - relativedelta(hours=24)),
         hasSentSupportOfferEmail=False
@@ -99,7 +101,14 @@ def evaluateRecurringTestingTriggers():
 
     logging.info(f"Processing {len(triggers)} recurring testing triggers that need a feedback request sent for them.")
 
+    triggersToDelete = []
+
     for trigger in triggers:
+        if ApplicationModel.objects(id=trigger.applicationId, status="active").count() == 0:
+            logging.warning(f"Warning: The application object with id {trigger.applicationId} attached to trigger {trigger.id} is either missing from the database, or is no longer marked as active. Deleting the trigger object.")
+            triggersToDelete.append(trigger)
+            continue
+        
         if trigger.repeatTrigger == 'time':
             dayOfWeek = datetime.now().strftime('%a')
 
@@ -145,6 +154,8 @@ def evaluateRecurringTestingTriggers():
                 if newCommitHash != trigger.lastRepositoryCommitHash:
                     trigger.launchTestingRun()
 
+    for trigger in triggersToDelete:
+        trigger.delete()
 
 
 
