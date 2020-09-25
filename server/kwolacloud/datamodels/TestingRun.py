@@ -108,5 +108,8 @@ class TestingRun(Document):
                                 memoryLimit="2048Mi"
                                 )
         if configData['features']['enableRuns']:
+            if job.doesJobStillExist():
+                job.cleanup()
+
             job.start()
 
