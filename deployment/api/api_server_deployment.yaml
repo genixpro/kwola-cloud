@@ -23,7 +23,7 @@ spec:
       - env:
         - name: KWOLA_ENV
           value: __KWOLA_ENV__
-        image: gcr.io/kwola-cloud/kwola:__REVISION_ID__-__KWOLA_ENV__-api
+        image: gcr.io/kwola-cloud/kwola-api-__KWOLA_ENV__:__REVISION_ID__
         imagePullPolicy: IfNotPresent
         name: kwola-cloud-sha256
         readinessProbe:
