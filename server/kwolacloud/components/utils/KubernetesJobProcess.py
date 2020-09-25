@@ -25,6 +25,8 @@ import pickle
 import base64
 import sys
 import os
+import psutil
+import time
 import google.cloud.logging
 from kwolacloud.config.config import loadConfiguration
 import stripe
@@ -61,4 +63,12 @@ class KubernetesJobProcess:
             result=result
         )
         resultObj.save()
+
+        p = psutil.Process(os.getpid())
+        for child in p.children(recursive=True):
+            child.terminate()
+        time.sleep(1)
+        for child in p.children(recursive=True):
+            child.kill()
+        
         exit(0)
