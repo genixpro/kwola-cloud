@@ -361,7 +361,10 @@ class TestingRunManager:
 
                 if job.successful():
                     result = job.getResult()
-                    if result['success']:
+                    if result is None:
+                        errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
+                        logging.error(errorMessage)
+                    elif result['success']:
                         job.cleanup()
                     else:
                         errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
