@@ -31,7 +31,7 @@ import random
 import time
 import traceback
 import zipfile
-
+from mongoengine.queryset.visitor import Q
 
 
 class TestingRunManager:
@@ -445,7 +445,7 @@ class TestingRunManager:
 
         # Special override here: if the application object has been marked as deleted, or is literally deleted and
         # missing from the database, then do not continue the testing run. Just finish quietly.
-        if ApplicationModel.objects(id=self.run.applicationId, status="active").count() == 0:
+        if ApplicationModel.objects(Q(status__exists=False) | Q(status="active"), id=self.run.applicationId).count() == 0:
             return
 
         self.mountStorageDrive()

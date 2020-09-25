@@ -104,7 +104,7 @@ def evaluateRecurringTestingTriggers():
     triggersToDelete = []
 
     for trigger in triggers:
-        if ApplicationModel.objects(id=trigger.applicationId, status="active").count() == 0:
+        if ApplicationModel.objects(Q(status__exists=False) | Q(status="active"), id=trigger.applicationId).count() == 0:
             logging.warning(f"Warning: The application object with id {trigger.applicationId} attached to trigger {trigger.id} is either missing from the database, or is no longer marked as active. Deleting the trigger object.")
             triggersToDelete.append(trigger)
             continue
