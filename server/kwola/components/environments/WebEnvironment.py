@@ -70,7 +70,6 @@ class WebEnvironment:
         else:
             self.plugins = defaultPlugins + plugins
 
-        @autoretry()
         def createSession(number):
             session = WebEnvironmentSession(config, number, self.plugins, self.executionSessions[number])
             session.initialize()

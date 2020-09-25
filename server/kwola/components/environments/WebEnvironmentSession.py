@@ -114,11 +114,9 @@ class WebEnvironmentSession:
                 pid = self.driver.service.process.pid  # is a Popen instance for the chromedriver process
                 p = psutil.Process(pid)
 
-                # p.rlimit(psutil.RLIMIT_DATA, (1024*1024*1024, 1024*1024*1024))
                 p.rlimit(psutil.RLIMIT_AS, (1024*1024*1024, 1024*1024*1024))
                 for child in p.children(recursive=True):
                     child.rlimit(psutil.RLIMIT_AS, (1024*1024*1024, 1024*1024*1024))
-                    # child.rlimit(psutil.RLIMIT_DATA, (1024*1024*1024, 1024*1024*1024))
             except OSError:
                 pass
 
