@@ -43,6 +43,7 @@ import os
 import pickle
 import tempfile
 import traceback
+import selenium.common.exceptions
 import concurrent.futures
 from kwola.components.utils.retry import autoretry
 from pprint import pformat
@@ -463,6 +464,13 @@ class TestingStepManager:
                 for fileName in traceList:
                     os.unlink(fileName)
 
+        except selenium.common.exceptions.WebDriverException:
+            # This error just happens sometimes. It has something to do with the chrome process failing to interact correctly
+            # with mitmproxy. Its not at all clear what causes it, but the system can safely auto retry from it.
+            # So we just explicitly catch it here so we don't trigger an error level log message, which gets sent to slack.
+            getLogger().warning(f"[{os.getpid()}] Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
+            resultValue['success'] = False
+            resultValue['exception'] = traceback.format_exc()
         except Exception as e:
             getLogger().error(f"[{os.getpid()}] Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
             resultValue['success'] = False
