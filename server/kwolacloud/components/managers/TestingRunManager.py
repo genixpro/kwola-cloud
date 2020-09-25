@@ -139,7 +139,7 @@ class TestingRunManager:
         self.applicationStorageBucket = storage.Bucket(self.storageClient, "kwola-testing-run-data-" + self.run.applicationId)
 
     def doTestingRunInitializationIfNeeded(self):
-        if self.run.status != "running":
+        if self.run.status == "created":
             if self.run.startTime is None:
                 self.run.startTime = datetime.datetime.now()
 
