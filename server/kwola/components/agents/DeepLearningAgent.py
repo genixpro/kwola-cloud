@@ -332,6 +332,7 @@ class DeepLearningAgent:
             # This is a fresh network, initialize it.
             self.model.initialize()
 
+    @autoretry()
     def save(self, saveName=""):
         """
             Saves the agent to disk. By default, you will save the agent into the primary slot, which is the
@@ -356,6 +357,7 @@ class DeepLearningAgent:
             with open(self.symbolMapPath, 'rb') as f:
                 (self.symbolMap, self.knownFiles, self.nextSymbolIndex) = pickle.load(f)
 
+    @autoretry()
     def saveSymbolMap(self):
         with open(self.symbolMapPath, 'wb') as f:
             pickle.dump((self.symbolMap, self.knownFiles, self.nextSymbolIndex), f, protocol=pickle.HIGHEST_PROTOCOL)
