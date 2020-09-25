@@ -70,5 +70,5 @@ class KubernetesJobProcess:
         time.sleep(1)
         for child in p.children(recursive=True):
             child.kill()
-        
+
         exit(0)

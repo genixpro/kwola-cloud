@@ -2,7 +2,8 @@ steps:
 - name: 'gcr.io/kaniko-project/executor:latest'
   id: Build Frontend Docker Image
   args:
-    - "--destination=gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-frontend"
+    - "--destination=gcr.io/kwola-cloud/kwola-frontend-$_KWOLA_ENV:$REVISION_ID"
+    - "--destination=gcr.io/kwola-cloud/kwola-frontend-$_KWOLA_ENV:latest"
     - "--cache=true"
     - "--cache-ttl=720h"
     - "--snapshotMode=time"
