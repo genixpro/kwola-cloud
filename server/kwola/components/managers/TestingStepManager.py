@@ -466,8 +466,9 @@ class TestingStepManager:
 
         except selenium.common.exceptions.WebDriverException:
             # This error just happens sometimes. It has something to do with the chrome process failing to interact correctly
-            # with mitmproxy. Its not at all clear what causes it, but the system can safely auto retry from it.
-            # So we just explicitly catch it here so we don't trigger an error level log message, which gets sent to slack.
+            # with mitmproxy. Its not at all clear what causes it, but the system can't auto retry from it unless the whole container
+            # is killed. So we just explicitly catch it here so we don't trigger an error level log message, which gets sent to slack.
+            # The manager process will safely restart this testing step.
             getLogger().warning(f"[{os.getpid()}] Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
             resultValue['success'] = False
             resultValue['exception'] = traceback.format_exc()
