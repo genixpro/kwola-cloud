@@ -83,6 +83,7 @@ class KubernetesJob:
                                 "image": f"gcr.io/kwola-cloud/kwola-{self.image}-{os.getenv('KWOLA_ENV')}:latest",
                                 "command": ["/usr/bin/python3"],
                                 "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps((self.kubeJobName(), self.data)), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
+                                "imagePullPolicy": "Always",
                                 "securityContext": {
                                     "privileged": True,
                                     "capabilities":
