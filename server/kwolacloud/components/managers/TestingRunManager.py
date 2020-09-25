@@ -247,10 +247,10 @@ class TestingRunManager:
             timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
             job = self.createTestingStepKubeJob(jobId)
             if not job.doesJobStillExist():
-                logging.info("Job was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
+                logging.info(f"Job with id {jobId} was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
                 jobsToRemove.append((jobId, job))
             elif job.ready():
-                logging.info("Ready job has been found!")
+                logging.info(f"Ready job has been found for run {self.run.id} with name {job.kubeJobName()}!")
 
                 # We only count this testing step if it actually completed successfully, because
                 # otherwise it needs to be done over again.
