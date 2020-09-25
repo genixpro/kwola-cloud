@@ -6,6 +6,7 @@ import pickle
 import time
 import logging
 import base64
+import datetime
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwola.components.utils.retry import autoretry
 from kwolacloud.datamodels.KubernetesJobResult import KubernetesJobResult
@@ -168,11 +169,6 @@ class KubernetesJob:
         if status == "Running":
             raise ValueError("Can't ask if job is successful if it is still running")
         return status == "Failed"
-
-
-    def wait(self):
-        while not self.ready():
-            time.sleep(10)
 
     @autoretry(onFailure=lambda self: self.refreshCredentials())
     def doesJobStillExist(self):

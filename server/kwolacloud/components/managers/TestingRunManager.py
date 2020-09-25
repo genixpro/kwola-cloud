@@ -326,11 +326,19 @@ class TestingRunManager:
         currentTrainingStepJob.start()
 
         self.run.runningTrainingStepJobId = jobId
+        self.run.runningTrainingStepStartTime = datetime.datetime.now()
         self.run.save()
 
     def reviewRunningTrainingSteps(self):
         if self.run.runningTrainingStepJobId is not None:
             job = self.createTrainingStepKubeJob(self.run.runningTrainingStepJobId)
+
+            # This line is just for backwards compatibility
+            if self.run.runningTrainingStepStartTime is None:
+                self.run.runningTrainingStepStartTime = datetime.datetime.now()
+                self.run.save()
+
+            timeElapsed = (datetime.datetime.now() - self.run.runningTrainingStepStartTime).total_seconds()
 
             if not job.doesJobStillExist():
                 logging.info(f"Job {job.kubeJobName()} was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
@@ -357,16 +365,11 @@ class TestingRunManager:
                 else:
                     errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. The job did not produce a result object."
                     logging.error(errorMessage)
-
-    def waitForTrainingJobCompletion(self):
-        if self.run.runningTrainingStepJobId is not None:
-            job = self.createTrainingStepKubeJob(self.run.runningTrainingStepJobId)
-            job.wait()
-
-    def waitForTestingJobCompletion(self):
-        for jobId in self.run.runningTestingStepJobIds:
-            job = self.createTestingStepKubeJob(jobId)
-            job.wait()
+            elif timeElapsed > self.config['training_step_timeout']:
+                logging.error(f"A training step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}")
+                job.cleanup()
+                self.run.runningTrainingStepJobId = None
+                self.run.runningTrainingStepStartTime = None
 
     @autoretry()
     def createBugsZipFile(self):
@@ -446,7 +449,8 @@ class TestingRunManager:
 
             self.shouldExit = False
 
-            while self.run.testingSessionsCompleted < self.run.configuration.totalTestingSessions and not self.shouldExit:
+            while (self.run.testingSessionsCompleted < self.run.configuration.totalTestingSessions
+                   or len(self.run.runningTestingStepJobIds) > 0) and not self.shouldExit:
                 self.launchTestingStepsIfNeeded()
                 self.reviewRunningTestingSteps()
 
@@ -458,7 +462,6 @@ class TestingRunManager:
 
                 time.sleep(60)
 
-            self.waitForTestingJobCompletion()
             self.reviewRunningTestingSteps()
 
             logging.info(f"Finished testing main sequence of the testing run {self.run.id}")
@@ -471,7 +474,8 @@ class TestingRunManager:
             # Save after all the post-testing hooks are finished.
             self.run.save()
 
-            while self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded and not self.shouldExit:
+            while (self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded
+                   or self.run.runningTrainingStepJobId is not None) and not self.shouldExit:
                 self.launchTrainingStepIfNeeded()
                 self.reviewRunningTrainingSteps()
 
@@ -480,7 +484,6 @@ class TestingRunManager:
 
                 time.sleep(60)
 
-            self.waitForTrainingJobCompletion()
             self.reviewRunningTrainingSteps()
 
             logging.info(f"Finished training for run {self.run.id}.")
