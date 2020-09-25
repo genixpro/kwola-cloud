@@ -348,6 +348,7 @@ class DeepLearningAgent:
 
         self.saveSymbolMap()
 
+    @autoretry()
     def loadSymbolMap(self):
         # We also need to load the symbol map - this is the mapping between symbol strings
         # and their index values within the embedding structure
