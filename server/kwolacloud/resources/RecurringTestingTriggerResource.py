@@ -104,7 +104,7 @@ class RecurringTestingTriggerGroup(Resource):
         else:
             data['stripeSubscriptionId'] = None
 
-        data['id'] = generateKwolaId(modelClass=RecurringTestingTrigger, kwolaConfig=getKwolaConfiguration(), owner=user)
+        data['id'] = generateKwolaId(modelClass=RecurringTestingTrigger, kwolaConfig=getKwolaConfiguration(), owner=application.owner)
         data['owner'] = application.owner
         data['creationTime'] = datetime.datetime.now()
 
