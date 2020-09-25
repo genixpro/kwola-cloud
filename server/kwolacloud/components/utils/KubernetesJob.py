@@ -12,6 +12,8 @@ from kwola.components.utils.retry import autoretry
 from kwolacloud.datamodels.KubernetesJobResult import KubernetesJobResult
 
 class KubernetesJob:
+    statusRefreshTime = 30
+
     def __init__(self, module, data, referenceId, image="worker", cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi", gpu=False):
         self.module = module
         self.data = data
@@ -23,6 +25,9 @@ class KubernetesJob:
         self.memoryLimit = memoryLimit
         self.gpu = gpu
         self.maxKubectlRetries = 10
+        self.result = None
+        self.lastStatus = None
+        self.lastStatusTime = None
 
     @autoretry(onFailure=lambda self: self.refreshCredentials(), ignoreFailure=True)
     def cleanup(self):
@@ -131,9 +136,14 @@ class KubernetesJob:
 
     @autoretry(onFailure=lambda self: self.refreshCredentials())
     def getJobStatus(self):
+        if self.lastStatus is not None and (datetime.datetime.now() - self.lastStatusTime).total_seconds() > KubernetesJob.statusRefreshTime:
+            return self.lastStatus
+
         process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode == 1 and (b"NotFound" in process.stderr):
-            return "Failed"
+            self.lastStatus = "Failed"
+            self.lastStatusTime = datetime.datetime.now()
+            return self.lastStatus
         elif process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
             raise RuntimeError(
                 f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
@@ -145,13 +155,19 @@ class KubernetesJob:
             raise
 
         if "active" in jsonData['status'] and jsonData['status']['active'] >= 1:
-            return "Running"
+            self.lastStatus = "Running"
+            self.lastStatusTime = datetime.datetime.now()
+            return self.lastStatus
 
         if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] >= 1:
-            return "Success"
+            self.lastStatus = "Success"
+            self.lastStatusTime = datetime.datetime.now()
+            return self.lastStatus
 
         if "failed" in jsonData['status'] and jsonData['status']['failed'] >= 1:
-            return "Failed"
+            self.lastStatus = "Failed"
+            self.lastStatusTime = datetime.datetime.now()
+            return self.lastStatus
 
     def ready(self):
         status = self.getJobStatus()
@@ -183,8 +199,15 @@ class KubernetesJob:
 
 
     def getResult(self):
-        result = KubernetesJobResult.objects(id=self.kubeJobName()).first()
-        return result.result
+        if self.result is not None:
+            return self.result.result
+
+        self.result = KubernetesJobResult.objects(id=self.kubeJobName()).first()
+
+        if self.result is not None:
+            return self.result.result
+        else:
+            return None
 
 
 

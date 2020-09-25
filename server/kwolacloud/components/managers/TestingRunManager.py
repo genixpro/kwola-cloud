@@ -231,57 +231,64 @@ class TestingRunManager:
             self.run.runningTestingStepStartTimes = [datetime.datetime.now()] * len(self.run.runningTestingStepJobIds)
             self.run.save()
 
-        destroyed = []
-        toRemove = []
-        toKill = []
+        def handleSuccess(result):
+            self.run.trainingIterationsNeeded += trainingIterationsNeededPerSession * self.config['web_session_parallel_execution_sessions']
+            self.run.testingSessionsCompleted += result['successfulExecutionSessions']
+            self.run.testingSteps.append(result['testingStepId'])
+
+        def handleFailure():
+            # Double check that the stripe subscription is still good. If the testing step failed because our
+            # stripe subscription is bad, we should just exit immediately.
+            if not verifyStripeSubscription(self.run):
+                self.shouldExit = True
+
+        jobsToRemove = []
         for jobId, startTime in zip(self.run.runningTestingStepJobIds, self.run.runningTestingStepStartTimes):
             timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
             job = self.createTestingStepKubeJob(jobId)
             if not job.doesJobStillExist():
                 logging.info("Job was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
-                destroyed.append((jobId, job))
+                jobsToRemove.append((jobId, job))
             elif job.ready():
                 logging.info("Ready job has been found!")
-                toRemove.append((jobId, job))
-            elif timeElapsed > self.config['testing_step_timeout']:
-                logging.error(f"A testing step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}")
-                toKill.append((jobId, job))
 
-        for (jobId, job) in destroyed:
-            jobIndex = self.run.runningTestingStepJobIds.index(jobId)
-            del self.run.runningTestingStepStartTimes[jobIndex]
-            self.run.runningTestingStepJobIds.remove(jobId)
-
-        for (jobId, job) in toRemove:
-            jobIndex = self.run.runningTestingStepJobIds.index(jobId)
-            del self.run.runningTestingStepStartTimes[jobIndex]
-            self.run.runningTestingStepJobIds.remove(jobId)
-
-            # We only count this testing step if it actually completed successfully, because
-            # otherwise it needs to be done over again.
-            if job.successful():
-                result = job.getResult()
-                if result is not None and result['success']:
-                    logging.info(f"Finished a testing step for run {self.run.id} with name {job.kubeJobName()}")
-                    job.cleanup()
-
-                    self.run.trainingIterationsNeeded += trainingIterationsNeededPerSession * self.config['web_session_parallel_execution_sessions']
-                    self.run.testingSessionsCompleted += result['successfulExecutionSessions']
-                    self.run.testingSteps.append(result['testingStepId'])
+                # We only count this testing step if it actually completed successfully, because
+                # otherwise it needs to be done over again.
+                if job.successful():
+                    result = job.getResult()
+                    if result is not None and result['success']:
+                        logging.info(f"Finished a testing step successfully for run {self.run.id} with name {job.kubeJobName()}")
+                        handleSuccess(result)
+                        job.cleanup()
+                    else:
+                        logging.error(f"A testing step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}")
+                        handleFailure()
                 else:
                     logging.error(f"A testing step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}")
+                    handleFailure()
 
-                    # Double check that the stripe subscription is still good. If the testing step failed because our
-                    # stripe subscription is bad, we should just exit immediately.
-                    if not verifyStripeSubscription(self.run):
-                        self.shouldExit = True
-                        break
+                jobsToRemove.append((jobId, job))
+            elif timeElapsed > self.config['testing_step_timeout']:
+                # First check to see if there was a result object. Sometimes jobs are timing out after completion for some bizarre reason.
+                result = job.getResult()
+                if result is not None:
+                    if result['success']:
+                        logging.warning(f"A testing step has timed out for run {self.run.id} with name {job.kubeJobName()}, but it appears it to have run successfully but then continued running after completion. It produced a result object: {pformat(result)}")
+                        handleSuccess(result)
+                    else:
+                        logging.error(f"A testing step has timed out on testing run {self.run.id} with job name {job.kubeJobName()}, but it also appears to have failed and then continued running after completion. It produced a result object: {pformat(result)}")
+                        handleFailure()
+                else:
+                    logging.error(f"A testing step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}. It has not produced a result object - presumably it is still running.")
 
-        for (jobId, job) in toKill:
+                # We always cleanup timed out tasks, because we don't want to leave them around consuming CPU.
+                job.cleanup()
+                jobsToRemove.append((jobId, job))
+
+        for (jobId, job) in jobsToRemove:
             jobIndex = self.run.runningTestingStepJobIds.index(jobId)
             del self.run.runningTestingStepStartTimes[jobIndex]
             self.run.runningTestingStepJobIds.remove(jobId)
-            job.cleanup()
 
         self.run.save()
 
