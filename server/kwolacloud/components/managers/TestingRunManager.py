@@ -476,10 +476,11 @@ class TestingRunManager:
 
             logging.info(f"Finished testing main sequence of the testing run {self.run.id}")
 
-            self.updateApplicationObjectForFinish()
-            self.updateTestingRunObjectForFinish()
-            self.createBugsZipFile()
-            self.runTestingRunFinishedHooks()
+            if self.run.status == "running":
+                self.updateApplicationObjectForFinish()
+                self.updateTestingRunObjectForFinish()
+                self.createBugsZipFile()
+                self.runTestingRunFinishedHooks()
 
             # Save after all the post-testing hooks are finished.
             self.run.save()
