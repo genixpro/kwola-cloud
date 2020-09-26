@@ -305,7 +305,7 @@ class TestingRunManager:
                                                image="worker",
                                                cpuRequest="7000m",
                                                cpuLimit=None,
-                                               memoryRequest="35.0Gi",
+                                               memoryRequest="34.0Gi",
                                                memoryLimit=None,
                                                gpu=True
                                                )
