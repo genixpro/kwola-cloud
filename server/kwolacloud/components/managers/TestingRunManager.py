@@ -18,7 +18,7 @@ from kwola.datamodels.BugModel import BugModel
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from kwola.components.utils.retry import autoretry
 from kwolacloud.components.utils.KubernetesJob import KubernetesJob
-from kwolacloud.helpers.slack import postToCustomerSlack
+from kwolacloud.helpers.slack import postToCustomerSlack, postToKwolaSlack
 from kwolacloud.helpers.webhook import sendCustomerWebhook
 from pprint import pformat
 import datetime
@@ -237,6 +237,8 @@ class TestingRunManager:
             self.run.testingSteps.append(result['testingStepId'])
 
         def handleFailure():
+            self.run.failedTestingSteps += 1
+
             # Double check that the stripe subscription is still good. If the testing step failed because our
             # stripe subscription is bad, we should just exit immediately.
             if not verifyStripeSubscription(self.run):
@@ -280,6 +282,7 @@ class TestingRunManager:
                         handleFailure()
                 else:
                     logging.error(f"A testing step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}. It has not produced a result object - presumably it is still running.")
+                    handleFailure()
 
                 # We always cleanup timed out tasks, because we don't want to leave them around consuming CPU.
                 job.cleanup()
@@ -364,6 +367,7 @@ class TestingRunManager:
                     if result is None:
                         errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
                         logging.error(errorMessage)
+                        self.run.failedTrainingSteps += 1
                     elif result['success']:
                         job.cleanup()
                     else:
@@ -372,14 +376,34 @@ class TestingRunManager:
                             errorMessage += "\n\n" + result['exception']
 
                         logging.error(errorMessage)
+
+                        self.run.failedTrainingSteps += 1
                 else:
                     errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. The job did not produce a result object."
                     logging.error(errorMessage)
+                    self.run.failedTrainingSteps += 1
             elif timeElapsed > self.config['training_step_timeout']:
                 logging.error(f"A training step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}")
                 job.cleanup()
                 self.run.runningTrainingStepJobId = None
                 self.run.runningTrainingStepStartTime = None
+                self.run.failedTrainingSteps += 1
+
+            self.run.save()
+
+    def isTestingFailureConditionsMet(self):
+        failedSessions = self.run.failedTestingSteps * self.config['web_session_parallel_execution_sessions']
+        # The x2 here is purely an arbitrary cutoff point. If the system has failed more then twice what the entire testing
+        # run was supposed to produce in successful steps, then the failure conditions are met.
+        if failedSessions > (self.run.configuration.totalTestingSessions * 2):
+            return True
+        return False
+
+    def isTrainingFailureConditionsMet(self):
+        # This cutoff point is purely arbitrary. We set it at 5 just to ensure the amount of GPU time consumed doesn't get too crazy.
+        if self.run.failedTrainingSteps > 5:
+            return True
+        return False
 
     @autoretry()
     def createBugsZipFile(self):
@@ -422,8 +446,13 @@ class TestingRunManager:
 
         self.application.save()
 
-    def updateTestingRunObjectForFinish(self):
+    def updateTestingRunObjectForSuccessfulFinish(self):
         self.run.status = "completed"
+        self.run.endTime = datetime.datetime.now()
+        self.run.save()
+
+    def updateTestingRunObjectForFailureFinish(self):
+        self.run.status = "failed"
         self.run.endTime = datetime.datetime.now()
         self.run.save()
 
@@ -459,7 +488,8 @@ class TestingRunManager:
 
             self.shouldExit = False
 
-            while (self.run.testingSessionsCompleted < self.run.configuration.totalTestingSessions
+            while ((self.run.testingSessionsCompleted < self.run.configuration.totalTestingSessions
+                    and not self.isTestingFailureConditionsMet())
                    or len(self.run.runningTestingStepJobIds) > 0) and not self.shouldExit:
                 self.launchTestingStepsIfNeeded()
                 self.reviewRunningTestingSteps()
@@ -477,15 +507,22 @@ class TestingRunManager:
             logging.info(f"Finished testing main sequence of the testing run {self.run.id}")
 
             if self.run.status == "running":
-                self.updateApplicationObjectForFinish()
-                self.updateTestingRunObjectForFinish()
                 self.createBugsZipFile()
-                self.runTestingRunFinishedHooks()
+
+                if not self.isTestingFailureConditionsMet():
+                    self.updateApplicationObjectForFinish()
+                    self.updateTestingRunObjectForSuccessfulFinish()
+                    self.runTestingRunFinishedHooks()
+                else:
+                    self.updateTestingRunObjectForFailureFinish()
+                    postToKwolaSlack(f"Warning! The testing run {self.run.id} has totally failed.")
+
 
             # Save after all the post-testing hooks are finished.
             self.run.save()
 
-            while (self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded
+            while ((self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded
+                    and not self.isTrainingFailureConditionsMet())
                    or self.run.runningTrainingStepJobId is not None) and not self.shouldExit:
                 self.launchTrainingStepIfNeeded()
                 self.reviewRunningTrainingSteps()
@@ -496,6 +533,13 @@ class TestingRunManager:
                 time.sleep(60)
 
             self.reviewRunningTrainingSteps()
+
+            if self.isTrainingFailureConditionsMet():
+                self.run.didTrainingFail = True
+                self.run.save()
+
+                postToKwolaSlack(f"Warning! Training totally failed on run {self.run.id}")
+                
 
             logging.info(f"Finished training for run {self.run.id}.")
 

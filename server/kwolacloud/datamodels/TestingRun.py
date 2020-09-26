@@ -77,6 +77,12 @@ class TestingRun(Document):
 
     runningTrainingStepStartTime = DateTimeField(default=None)
 
+    failedTestingSteps = IntField(default=0)
+
+    failedTrainingSteps = IntField(default=0)
+
+    didTrainingFail = BooleanField(default=False)
+
     def saveToDisk(self, config):
         self.save()
 
