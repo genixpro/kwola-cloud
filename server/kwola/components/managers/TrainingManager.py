@@ -722,8 +722,6 @@ class TrainingManager:
                     executionTraceWeightDatas.append(traceWeightData)
                     executionTraceWeightDataIdMap[str(traceWeightData['id'])] = traceWeightData
                 completed += 1
-                if completed % 100 == 0:
-                    subprocess.run(["ps", "aux"])
                 if completed % 1000 == 0:
                     getLogger().info(f"[{os.getpid()}] Finished loading {completed} execution trace weight datas.")
 
