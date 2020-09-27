@@ -151,6 +151,8 @@ class WebEnvironment:
             resultFuture.result() for resultFuture in resultFutures
         ]
 
+        self.synchronizeNoActivityTimeouts()
+
         timeTaken = (datetime.now() - startTime).total_seconds()
         subTimes = {}
         if timeTaken > 10:
@@ -189,3 +191,16 @@ class WebEnvironment:
         for tab in self.sessions:
             tab.runSessionCompletedHooks()
 
+
+    def synchronizeNoActivityTimeouts(self):
+        # In this section we synchronize the no-activity timeouts of all the sessions. The session adjusts the no activity
+        # If we observe timeouts in one browser, we
+        # can assume it will likely show up in other browsers, so lets not hold thm all up.
+        minNoActivityTimeout = None
+        for session in self.sessions:
+            if minNoActivityTimeout is None:
+                minNoActivityTimeout = session.noActivityTimeout
+            else:
+                minNoActivityTimeout = min(minNoActivityTimeout, session.noActivityTimeout)
+        for session in self.sessions:
+            session.noActivityTimeout = minNoActivityTimeout

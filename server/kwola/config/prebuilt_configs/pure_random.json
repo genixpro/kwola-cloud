@@ -238,8 +238,8 @@
   "web_session_restrict_url_to_regexes": [],
   "web_session_width": 1024,
   "web_session_height": 768,
-  "web_session_no_network_activity_wait_time": 2.0,
-  "web_session_no_network_activity_timeout": 30,
+  "web_session_no_network_activity_wait_time": 1.0,
+  "web_session_no_network_activity_timeout": 10,
   "web_session_perform_action_wait_time": 0.5,
   "web_session_action_map_max_keyword_size": 1024,
   "web_session_ignored_javascript_file_keywords": [
