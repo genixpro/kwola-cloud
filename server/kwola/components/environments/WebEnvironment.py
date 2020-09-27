@@ -159,7 +159,7 @@ class WebEnvironment:
 
         timeTaken = (datetime.now() - startTime).total_seconds()
         subTimes = {}
-        if timeTaken > 0:
+        if timeTaken > 10:
             # Log data for all of the sub times
             validTraces = [trace for trace in traces if trace is not None]
             if len(validTraces) > 0:
