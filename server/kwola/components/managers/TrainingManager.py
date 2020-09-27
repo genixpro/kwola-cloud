@@ -465,6 +465,29 @@ class TrainingManager:
                     getLogger().warning(f"[{os.getpid()}] Warning! Failed to prepare samples for execution session {executionSessionId}. Error was: {traceback.print_exc()}")
 
     @staticmethod
+    def destroyPreparedSamplesForExecutionTrace(configDir, executionTraceId):
+        """ This method is used to destroy the cached prepared_samples data so that it can later be recreated. This is commonly triggered
+            in the event of an error."""
+        config = KwolaCoreConfiguration(configDir)
+        sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples", ensureExists=False)
+
+        cacheFile = os.path.join(sampleCacheDir, executionTraceId + "-sample.pickle.gz")
+
+        # Just for compatibility with the old naming scheme
+        oldCacheFileName = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
+
+        try:
+            os.unlink(cacheFile)
+        except FileNotFoundError:
+            pass
+
+        try:
+            os.unlink(oldCacheFileName)
+        except FileNotFoundError:
+            pass
+
+
+    @staticmethod
     def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory, applicationId):
         try:
             config = KwolaCoreConfiguration(configDir)
@@ -580,6 +603,12 @@ class TrainingManager:
 
             chosenExecutionTraceIds = numpy.random.choice(traceIds, [config['batch_size']], p=traceProbabilities)
 
+        except Exception:
+            getLogger().error(f"prepareAndLoadSingleBatchForSubprocess failed! Putting a retry into the queue.\n{traceback.format_exc()}")
+            subProcessCommandQueue.put(("batch", {}))
+            return 1.0
+
+        try:
             futures = []
             for traceId in chosenExecutionTraceIds:
                 traceWeightData = executionTraceWeightDataIdMap[str(traceId)]
@@ -635,7 +664,14 @@ class TrainingManager:
 
             return cacheHitRate
         except Exception:
-            getLogger().error(f"prepareAndLoadSingleBatchForSubprocess failed! Putting a retry into the queue.\n{traceback.format_exc()}")
+            getLogger().error(f"prepareAndLoadSingleBatchForSubprocess failed! Destroying the batch cache for the traces and then putting a retry into the queue.\n{traceback.format_exc()}")
+
+            # As a precautionary measure, we destroy whatever data is in the
+            # prepared samples cache for all of the various traceIds that were
+            # chosen here.
+            for traceId in chosenExecutionTraceIds:
+                TrainingManager.destroyPreparedSamplesForExecutionTrace(config.configurationDirectory, traceId)
+
             subProcessCommandQueue.put(("batch", {}))
             return 1.0
 
