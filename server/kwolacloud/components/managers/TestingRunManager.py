@@ -153,7 +153,6 @@ class TestingRunManager:
 
             self.run.save()
 
-            self.updateKwolaConfigJSONFile()
             self.config = KwolaCoreConfiguration(self.configDir)
 
             self.doInitialBrowserSession()
@@ -480,6 +479,7 @@ class TestingRunManager:
         self.mountStorageDrive()
         self.updateApplicationObjectForStart()
 
+        self.updateKwolaConfigJSONFile()
         self.doTestingRunInitializationIfNeeded()
 
         try:

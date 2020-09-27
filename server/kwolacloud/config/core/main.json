@@ -191,7 +191,7 @@
   "testing_enable_prediction_subprocess": false,
   "training_action_prob_reward_square_size": 30,
   "training_background_trace_save_workers": 2,
-  "training_batch_prep_subprocesses": 5,
+  "training_batch_prep_subprocesses": 2,
   "training_cache_full_batch_prep_workers": 2,
   "training_cache_full_state_min_cache_hit_rate": 0.997,
   "training_cache_full_state_moving_average_length": 100,
