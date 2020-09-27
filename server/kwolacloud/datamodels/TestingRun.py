@@ -106,7 +106,7 @@ class TestingRun(Document):
                                 data={
                                     "testingRunId": self.id
                                 },
-                                referenceId=self.id,
+                                referenceId=self.id + "-manager",
                                 image="worker",
                                 cpuRequest="100m",
                                 cpuLimit=None,
