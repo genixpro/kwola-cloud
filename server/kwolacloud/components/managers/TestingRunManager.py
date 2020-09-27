@@ -194,8 +194,8 @@ class TestingRunManager:
                                },
                             referenceId=referenceId,
                             image="worker",
-                            cpuRequest="3200m",
-                            cpuLimit="5000m",
+                            cpuRequest="6000m",
+                            cpuLimit="8000m",
                             memoryRequest="20.0Gi",
                             memoryLimit="23.0Gi"
                             )
