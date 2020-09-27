@@ -66,6 +66,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId)
         testingStep.saveToDisk(config)
 
+        logging.info(f"This testing step was given the id: {newID}")
+
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
 
         # Special override here: if the application object has been marked as deleted, or is literally deleted and
