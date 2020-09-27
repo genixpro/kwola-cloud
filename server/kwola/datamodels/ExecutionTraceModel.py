@@ -143,6 +143,8 @@ class ExecutionTrace(Document):
     timeForActionExecution = FloatField()
     timeForMiscellaneous = FloatField()
 
+    actionExecutionTimes = DictField(FloatField())
+
     # We use Python getter / setter methods to transparently compress and decompress
     # these fields as they go into and out of the database model.
     @property

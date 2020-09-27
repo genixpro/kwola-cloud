@@ -220,6 +220,8 @@ class WebEnvironmentSession:
                     self.config['web_session_no_network_activity_timeout'] = self.config['web_session_no_network_activity_timeout'] * 0.50
 
                 break
+        elapsedTime = abs((datetime.now() - startTime).total_seconds())
+        return elapsedTime
 
     def findElementsForAutoLogin(self):
         actionMaps = self.getActionMaps()
@@ -279,7 +281,7 @@ class WebEnvironmentSession:
                                                   source="autologin",
                                                   times=1,
                                                   type="click")
-                success = self.performActionInBrowser(loginClickAction)
+                success, networkWaitTime = self.performActionInBrowser(loginClickAction)
 
                 emailInputs, passwordInputs, loginButtons = self.findElementsForAutoLogin()
 
@@ -328,9 +330,9 @@ class WebEnvironmentSession:
                                               times=1,
                                               type="click")
 
-            success1 = self.performActionInBrowser(emailTypeAction)
-            success2 = self.performActionInBrowser(passwordTypeAction)
-            success3 = self.performActionInBrowser(loginClickAction)
+            success1, networkWaitTime = self.performActionInBrowser(emailTypeAction)
+            success2, networkWaitTime = self.performActionInBrowser(passwordTypeAction)
+            success3, networkWaitTime = self.performActionInBrowser(loginClickAction)
 
             time.sleep(2)
             self.waitUntilNoNetworkActivity()
@@ -605,9 +607,9 @@ class WebEnvironmentSession:
         except selenium.common.exceptions.NoAlertPresentException:
             pass
 
-        self.waitUntilNoNetworkActivity()
+        networkWaitTime = self.waitUntilNoNetworkActivity()
 
-        return success
+        return success, networkWaitTime
 
     def checkOffsite(self, priorURL):
         try:
@@ -651,7 +653,11 @@ class WebEnvironmentSession:
             if self.hasBrowserDied:
                 return None
 
+            actionExecutionTimes = {}
+
+            startTime = datetime.now()
             self.checkOffsite(priorURL=self.targetURL)
+            actionExecutionTimes['checkOffsite-first'] = (datetime.now() - startTime).total_seconds()
 
             executionTrace = ExecutionTrace(id=str(self.executionSession.id) + "_trace_" + str(self.traceNumber))
             executionTrace.time = datetime.now()
@@ -670,21 +676,36 @@ class WebEnvironmentSession:
             executionTrace.traceNumber = self.traceNumber
 
             for plugin in self.plugins:
+                startTime = datetime.now()
                 plugin.beforeActionRuns(self.driver, self.proxy, self.executionSession, executionTrace, action)
+                actionExecutionTimes[f"plugin-before-{type(plugin).__name__}"] = (datetime.now() - startTime).total_seconds()
 
-            success = self.performActionInBrowser(action)
+            startTime = datetime.now()
+            success, networkWaitTime = self.performActionInBrowser(action)
+            timeTaken = (datetime.now() - startTime).total_seconds()
+            actionExecutionTimes[f"performActionInBrowser-body"] = (timeTaken - networkWaitTime)
+            actionExecutionTimes[f"performActionInBrowser-networkWaitTime"] = networkWaitTime
 
             executionTrace.didActionSucceed = success
 
+            startTime = datetime.now()
             self.checkOffsite(priorURL=executionTrace.startURL)
+            actionExecutionTimes['checkOffsite-second'] = (datetime.now() - startTime).total_seconds()
+
+            startTime = datetime.now()
             self.checkLoadFailure()
+            actionExecutionTimes['checkLoadFailure'] = (datetime.now() - startTime).total_seconds()
 
             for plugin in self.plugins:
+                startTime = datetime.now()
                 plugin.afterActionRuns(self.driver, self.proxy, self.executionSession, executionTrace, action)
+                actionExecutionTimes[f"plugin-after-{type(plugin).__name__}"] = (datetime.now() - startTime).total_seconds()
 
             self.traceNumber += 1
 
             self.enforceMemoryLimits()
+
+            executionTrace.actionExecutionTimes = actionExecutionTimes
 
             return executionTrace
         except urllib3.exceptions.MaxRetryError:

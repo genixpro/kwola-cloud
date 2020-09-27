@@ -26,10 +26,11 @@ from .WebEnvironmentSession import WebEnvironmentSession
 from contextlib import closing
 from mitmproxy.tools.dump import DumpMaster
 from threading import Thread
+from pprint import pformat
 import asyncio
 import concurrent.futures
 from datetime import datetime
-import numpy as np
+import numpy
 import socket
 import time
 import os
@@ -144,6 +145,7 @@ class WebEnvironment:
             :return:
         """
 
+        startTime = datetime.now()
         resultFutures = []
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -151,10 +153,27 @@ class WebEnvironment:
                 resultFuture = executor.submit(tab.runAction, action)
                 resultFutures.append(resultFuture)
 
-        results = [
+        traces = [
             resultFuture.result() for resultFuture in resultFutures
         ]
-        return results
+
+        timeTaken = (datetime.now() - startTime).total_seconds()
+        subTimes = {}
+        if timeTaken > 0:
+            # Log data for all of the sub times
+            validTraces = [trace for trace in traces if trace is not None]
+            if len(validTraces) > 0:
+                for key in validTraces[0].actionExecutionTimes:
+                    subTimes[key] = {
+                        "min": numpy.min([trace.actionExecutionTimes[key] for trace in validTraces]),
+                        "max": numpy.max([trace.actionExecutionTimes[key] for trace in validTraces]),
+                        "mean": numpy.mean([trace.actionExecutionTimes[key] for trace in validTraces]),
+                        "median": numpy.median([trace.actionExecutionTimes[key] for trace in validTraces]),
+                        "std": numpy.std([trace.actionExecutionTimes[key] for trace in validTraces])
+                    }
+                getLogger().warning(f"Time taken to execute the actions in the browser was unusually long: {timeTaken} seconds. Here are the subtimes: {pformat(subTimes)}")
+
+        return traces
 
     def removeBadSessionIfNeeded(self):
         """
