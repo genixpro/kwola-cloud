@@ -68,7 +68,7 @@ class ProxyProcess:
         # Wait for the result indicating that the proxy process is ready
         self.port = self.resultQueue.get()
         time.sleep(0.5)
-        getLogger().info(f"Proxy process has started on port {self.port}")
+        getLogger().info(f"Proxy process has started on port {self.port} with pid {self.proxyProcess.pid}")
         self.checkProxyFunctioning()
 
     def __del__(self):
@@ -115,6 +115,10 @@ class ProxyProcess:
         response = requests.get(testUrl, proxies=proxies, verify=False)
         if response.status_code != 200:
             raise RuntimeError(f"Error in the proxy - unable to connect to the testing url at {testUrl} through the local proxy. Status code: {response.status_code}. Body: {response.content}")
+        else:
+            self.resetPathTrace()
+            self.resetNetworkErrors()
+
 
     @staticmethod
     def runProxyServerSubprocess(config, commandQueue, resultQueue, plugins):
@@ -143,8 +147,6 @@ class ProxyProcess:
                     "seen": pathTracer.seenPaths,
                     "recent": pathTracer.recentPaths
                 }
-
-                pathTracer.recentPaths = set()
 
                 resultQueue.put(pathTrace)
 

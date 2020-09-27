@@ -44,6 +44,7 @@ import numpy
 import numpy as np
 import re
 import os
+import shutil
 import os.path
 import selenium.common.exceptions
 import subprocess
@@ -86,6 +87,9 @@ class WebEnvironmentSession:
         self.tabNumber = tabNumber
         self.traceNumber = 0
 
+        self.initializeProxy()
+        self.initializeWebBrowser()
+
     def __del__(self):
         self.shutdown()
 
@@ -93,8 +97,6 @@ class WebEnvironmentSession:
         self.proxy = ProxyProcess(self.config, plugins=self.proxyPlugins)
 
     def initialize(self):
-        self.initializeProxy()
-        self.initializeWebBrowser()
         self.fetchTargetWebpage()
 
         if self.config.autologin:
@@ -127,17 +129,13 @@ class WebEnvironmentSession:
             chrome_options.add_argument(f"--disk-cache-dir={self.config.getKwolaUserDataDirectory('chrome_cache')}")
             chrome_options.add_argument(f"--disk-cache-size={1024*1024*1024}")
 
-        chrome_options.add_argument(f"--no-sandbox")
         chrome_options.add_argument(f"--disable-gpu")
         chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
+        chrome_options.add_argument(f"--temp-profile")
+        chrome_options.add_argument(f"--proxy-server=localhost:{self.proxy.port}")
 
         capabilities = webdriver.DesiredCapabilities.CHROME
         capabilities['loggingPrefs'] = {'browser': 'ALL'}
-        proxyConfig = Proxy()
-        proxyConfig.proxy_type = ProxyType.MANUAL
-        proxyConfig.http_proxy = f"localhost:{self.proxy.port}"
-        proxyConfig.ssl_proxy = f"localhost:{self.proxy.port}"
-        proxyConfig.add_to_capabilities(capabilities)
 
         self.driver = webdriver.Chrome(desired_capabilities=capabilities, chrome_options=chrome_options)
 

@@ -71,10 +71,8 @@ class WebEnvironment:
         else:
             self.plugins = defaultPlugins + plugins
 
-        def createSession(number):
-            session = WebEnvironmentSession(config, number, self.plugins, self.executionSessions[number])
+        def initializeSession(session):
             session.initialize()
-            return session
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['web_session_max_startup_workers']) as executor:
             sessionCount = config['web_session_parallel_execution_sessions']
@@ -88,17 +86,13 @@ class WebEnvironment:
 
             getLogger().info(f"[{os.getpid()}] Starting up {sessionCount} parallel browser sessions.")
 
-            sessionFutures = []
-            for sessionNumber in range(sessionCount):
-                future = executor.submit(createSession, sessionNumber)
-                sessionFutures.append(future)
-                # Added a sleep here just as a precautionary measure against any collisions in the underlying session objects, in
-                # particular collisions when selecting a port.
-                time.sleep(0.1)
-
             self.sessions = [
-                future.result() for future in sessionFutures
+                WebEnvironmentSession(config, sessionNumber, self.plugins, self.executionSessions[sessionNumber])
+                for sessionNumber in range(sessionCount)
             ]
+
+            for sessionNumber in range(sessionCount):
+                executor.submit(initializeSession, self.sessions[sessionNumber])
 
     def shutdown(self):
         for session in self.sessions:
