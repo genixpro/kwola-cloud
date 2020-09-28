@@ -16,14 +16,14 @@ class ActionsConfiguration extends Component {
     state = {
         enableDoubleClickCommand: false,
         enableRightClickCommand: false,
-        enableRandomBracketCommand: false,
+        enableRandomBracketCommand: true,
         enableRandomMathCommand: false,
         enableRandomOtherSymbolCommand: false,
-        enableRandomNumberCommand: false,
+        enableRandomNumberCommand: true,
         enableScrolling: false,
         enableDragging: false,
-        enableTypeEmail: false,
-        enableTypePassword: false,
+        enableTypeEmail: true,
+        enableTypePassword: true,
         customTypingActionStrings: []
     }
 
