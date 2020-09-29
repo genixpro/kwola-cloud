@@ -60,12 +60,12 @@ class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):
 
                     getLogger().error(logMsgString)
                 elif ignoreErrorKeywordFound:
-                    logMsgString = f"[{os.getpid()}] Warning. Suppressed an error message because it matched the " \
+                    logMsgString = f"[{os.getpid()}] Suppressed an error message because it matched the " \
                                    f"error ignore keyword {matchingIgnoreKeyword}. "
 
                     logMsgString += f"{message}\n"
 
-                    getLogger().error(logMsgString)
+                    getLogger().info(logMsgString)
                 else:
                     error = LogError(type="log", page=executionTrace.startURL, message=message, logLevel=log['level'])
                     executionTrace.errorsDetected.append(error)
