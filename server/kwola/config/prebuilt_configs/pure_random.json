@@ -242,6 +242,12 @@
   "web_session_no_network_activity_timeout": 10,
   "web_session_perform_action_wait_time": 0.5,
   "web_session_action_map_max_keyword_size": 1024,
+  "web_session_ignored_log_error_keywords": [
+    "net::ERR_CONNECTION_CLOSED",
+    "net::ERR_HTTP2_PROTOCOL_ERROR",
+    "net::ERR_FAILED",
+    "net::ERR_PROXY_CONNECTION_FAILED"
+  ],
   "web_session_ignored_javascript_file_keywords": [
     "angular",
     "anime",
