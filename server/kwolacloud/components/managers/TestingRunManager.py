@@ -314,6 +314,7 @@ class TestingRunManager:
     def launchTrainingStepIfNeeded(self):
         if self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded and \
                 self.run.runningTrainingStepJobId is None and \
+                not self.isTrainingFailureConditionsMet() and \
                 self.run.testingSessionsCompleted > (1 * self.config['web_session_parallel_execution_sessions']):
             self.launchTrainingStep()
 
