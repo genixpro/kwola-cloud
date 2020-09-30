@@ -108,8 +108,6 @@ class CreateCloudBugObjects(TestingStepPluginBase):
                     mutedError.saveToDisk(self.config)
 
             if not duplicate:
-                bug.save()
-
                 bugVideoFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".mp4")
                 with open(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), "rb") as origFile:
                     with open(bugVideoFilePath, 'wb') as cloneFile:
@@ -128,6 +126,15 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         testingStep.errors = self.newErrorsThisTestingStep[testingStep.id]
 
         self.generateVideoFilesForBugs(testingStep, bugObjects)
+        # We save the bug objects after generating the video files
+        # Just to ensure that any bugs which get shown on the frontend
+        # actually had their associated video files and don't cause
+        # errors. This is because occasionally this process can get
+        # killed while its working on generating the videos, and we
+        # thus don't want to leave a bunch of bug objects in the db
+        # without their associated video objects.
+        for bug in bugObjects:
+            bug.save()
 
     def sessionFailed(self, testingStep, executionSession):
         n = 0
