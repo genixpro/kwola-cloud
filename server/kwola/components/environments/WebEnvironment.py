@@ -34,6 +34,7 @@ import numpy
 import socket
 import time
 import os
+import psutil
 from ..utils.retry import autoretry
 from ..plugins.core.RecordAllPaths import RecordAllPaths
 from ..plugins.core.RecordBranchTrace import RecordBranchTrace
@@ -184,6 +185,16 @@ class WebEnvironment:
             if session.hasBrowserDied:
                 del self.sessions[sessionN]
                 return sessionN
+
+        stats = psutil.virtual_memory()
+        if stats.percent > 90:
+            # If we are using more then 90% memory, then cleave off one session from the pack to try and cut back on memory usage
+            getLogger().warning(f"Had to kill one of the web browser sessions because the system was running out of available memory. Cleaving one to save the herd. The session being killed is {self.sessions[0].executionSession.id}")
+            sessionToDestroy = self.sessions.pop(0)
+            sessionToDestroy.shutdown()
+            time.sleep(3)
+            return 0
+
         return None
 
 
