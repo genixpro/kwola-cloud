@@ -187,7 +187,7 @@ class WebEnvironment:
                 return sessionN
 
         stats = psutil.virtual_memory()
-        if stats.percent > 90:
+        if stats.percent > 80:
             # If we are using more then 90% memory, then cleave off one session from the pack to try and cut back on memory usage
             getLogger().warning(f"Had to kill one of the web browser sessions because the system was running out of available memory. Cleaving one to save the herd. The session being killed is {self.sessions[0].executionSession.id}")
             sessionToDestroy = self.sessions.pop(0)

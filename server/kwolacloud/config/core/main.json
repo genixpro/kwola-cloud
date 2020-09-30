@@ -220,7 +220,7 @@
   "training_reward_normalizer_fit_population_size": 1000,
   "training_save_model_checkpoints": false,
   "training_step_timeout": 7200,
-  "training_steps_needed": 1000,
+  "training_steps_needed": 500,
   "training_surplus_batches": 10,
   "training_trace_selection_cache_not_full_state_one_side_bias": 0.5,
   "training_trace_selection_maximum_weight": 10.0,
