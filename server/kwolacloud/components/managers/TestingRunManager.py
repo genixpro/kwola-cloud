@@ -13,6 +13,10 @@ from ...tasks.utils import mountTestingRunStorageDrive, verifyStripeSubscription
 from dateutil.relativedelta import relativedelta
 from google.cloud import storage
 from kwola.components.environments.WebEnvironment import WebEnvironment
+from kwola.components.agents.DeepLearningAgent import DeepLearningAgent
+from kwola.datamodels.TestingStepModel import TestingStep
+from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
+from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.config.config import KwolaCoreConfiguration
 from kwola.datamodels.BugModel import BugModel
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
@@ -234,6 +238,7 @@ class TestingRunManager:
             self.run.trainingIterationsNeeded += trainingIterationsNeededPerSession * self.config['web_session_parallel_execution_sessions']
             self.run.testingSessionsCompleted += result['successfulExecutionSessions']
             self.run.testingSteps.append(result['testingStepId'])
+            self.run.testingStepsNeedingSymbolProcessing.append(result['testingStepId'])
 
         def handleFailure():
             self.run.failedTestingSteps += 1
@@ -321,6 +326,9 @@ class TestingRunManager:
 
     def launchTrainingStep(self):
         logging.info(f"Starting a training step for run {self.run.id}")
+
+        self.updateModelSymbols(self.config, self.run.testingStepsNeedingSymbolProcessing)
+        self.run.testingStepsNeedingSymbolProcessing = []
 
         jobId = f"{self.run.id}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}"
 
@@ -468,6 +476,28 @@ class TestingRunManager:
         if self.application.testingRunFinishedWebhookURL:
             sendCustomerWebhook(self.application, "testingRunFinishedWebhookURL", json.loads(self.run.to_json()))
 
+    def updateModelSymbols(self, config, testingStepIdsToProcess):
+        # Load and save the agent to make sure all training subprocesses are synced
+        agent = DeepLearningAgent(config=config, whichGpu=None)
+        agent.initialize(enableTraining=False)
+        agent.loadSymbolMap()
+
+        totalNewSymbols = 0
+
+        for testingStepId in testingStepIdsToProcess:
+            testingStep = TestingStep.loadFromDisk(testingStepId, config)
+            for executionSessionId in testingStep.executionSessions:
+                executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
+
+                traces = []
+                for executionTraceId in executionSession.executionTraces:
+                    traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
+
+                totalNewSymbols += agent.assignNewSymbols(traces)
+
+        logging.info(f"[{os.getpid()}] Added {totalNewSymbols} new symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
+
+        agent.saveSymbolMap()
 
     def runTesting(self):
         self.loadTestingRun()

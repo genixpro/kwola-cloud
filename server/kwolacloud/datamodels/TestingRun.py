@@ -77,6 +77,8 @@ class TestingRun(Document):
 
     runningTrainingStepStartTime = DateTimeField(default=None)
 
+    testingStepsNeedingSymbolProcessing = ListField(StringField())
+
     failedTestingSteps = IntField(default=0)
 
     failedTrainingSteps = IntField(default=0)
