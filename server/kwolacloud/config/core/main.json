@@ -208,7 +208,7 @@
   "training_learning_rate": 2e-4,
   "training_max_batch_prep_thread_workers": 16,
   "training_max_batch_prep_workers": 5,
-  "training_max_initialization_workers": 128,
+  "training_max_initialization_workers": 32,
   "training_min_batches_between_starve_state_adjustments": 25,
   "training_next_step_crop_height": 448,
   "training_next_step_crop_width": 448,

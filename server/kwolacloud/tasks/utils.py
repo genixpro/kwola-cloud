@@ -137,7 +137,7 @@ def mountTestingRunStorageDrive(applicationId):
 
     cacheFolders = [
         "prepared_samples",
-        "execution_trace_weight_files"
+        "execution_session_trace_weights"
     ]
 
     for folder in mainStorageFolders:
