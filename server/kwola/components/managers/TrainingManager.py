@@ -754,7 +754,9 @@ class TrainingManager:
             for traceFuture in executionTraceFutures:
                 traceWeightData = None
                 try:
-                    traceWeightData = pickle.loads(traceFuture.get(timeout=60))
+                    traceWeightDataStr = traceFuture.get(timeout=60)
+                    if traceWeightDataStr is not None:
+                        traceWeightData = pickle.loads(traceWeightDataStr)
                 except multiprocessing.context.TimeoutError:
                     pass
                 if traceWeightData is not None:
