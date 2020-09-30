@@ -220,9 +220,9 @@ class TestingRunsRestartTraining(Resource):
                                                    },
                                                    referenceId=f"{testingRun.id}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}",
                                                    image="worker",
-                                                   cpuRequest="6000m",
+                                                   cpuRequest="7000m",
                                                    cpuLimit=None,
-                                                   memoryRequest="12.0Gi",
+                                                   memoryRequest="34.0Gi",
                                                    memoryLimit=None,
                                                    gpu=True
                                                    )
