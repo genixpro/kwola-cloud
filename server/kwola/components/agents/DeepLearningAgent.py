@@ -349,7 +349,7 @@ class DeepLearningAgent:
 
         self.saveSymbolMap()
 
-    @autoretry()
+    @autoretry(ignoreFailure=True, onFailure=lambda self: getLogger().error(f"Failed to load symbol file for the deep learning agent. Tried path {self.symbolMapPath}. Got error: {traceback.format_exc()}"))
     def loadSymbolMap(self):
         # We also need to load the symbol map - this is the mapping between symbol strings
         # and their index values within the embedding structure
