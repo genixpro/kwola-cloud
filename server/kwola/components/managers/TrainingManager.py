@@ -218,8 +218,8 @@ class TrainingManager:
 
             self.threadExecutor.shutdown(wait=True)
 
-            self.shutdownAndJoinSubProcesses()
             self.saveAgent()
+            self.shutdownAndJoinSubProcesses()
 
         except Exception:
             getLogger().error(f"[{os.getpid()}] Error occurred while learning sequence!\n{traceback.format_exc()}")
@@ -381,12 +381,15 @@ class TrainingManager:
         getLogger().info(f"[{os.getpid()}] Shutting down and joining the sub-processes")
         for subProcess, subProcessCommandQueue in zip(self.subProcesses, self.subProcessCommandQueues):
             subProcessCommandQueue.put(("quit", {}))
+            getLogger().info(f"[{os.getpid()}] Waiting for batch prep subprocess with pid {subProcess.pid} to quit")
             subProcess.join(timeout=30)
             if subProcess.is_alive():
                 # Use kill in python 3.7+, terminate in lower versions
                 if hasattr(subProcess, 'kill'):
+                    getLogger().info(f"[{os.getpid()}] Sending the subprocess with pid {subProcess.pid} the kill signal with.")
                     subProcess.kill()
                 else:
+                    getLogger().info(f"[{os.getpid()}] Sending the subprocess with pid {subProcess.pid} the terminate signal.")
                     subProcess.terminate()
 
     def saveAgent(self):
