@@ -1,4 +1,4 @@
-from kwola.config.logger import getLogger
+from kwola.config.logger import getLogger, setupLocalLogging
 from ...managers.TrainingManager import TrainingManager
 from ..base.TestingStepPluginBase import TestingStepPluginBase
 import concurrent.futures
@@ -23,13 +23,18 @@ class PrecomputeSessionsForSampleCache(TestingStepPluginBase):
     def afterActionsRun(self, testingStep, executionSessions, traces):
         pass
 
+    @staticmethod
+    def addExecutionSessionToSampleCache(id, config):
+        setupLocalLogging()
+        return TrainingManager.addExecutionSessionToSampleCache(id, config)
+
     @autoretry()
     def testingStepFinished(self, testingStep, executionSessions):
         with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
             futures = []
             for session in executionSessions:
                 getLogger().info(f"[{os.getpid()}] Preparing samples for {session.id} and adding them to the sample cache.")
-                futures.append(executor.submit(TrainingManager.addExecutionSessionToSampleCache, session.id, self.config))
+                futures.append(executor.submit(PrecomputeSessionsForSampleCache.addExecutionSessionToSampleCache, session.id, self.config))
             for future in futures:
                 future.result()
 
