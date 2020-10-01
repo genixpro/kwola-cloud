@@ -1740,7 +1740,7 @@ class DeepLearningAgent:
             def addRightSideDebugCharts(plotImage, rawImage, trace):
                 chartTopMargin = self.config.debug_video_neural_network_chart_top_margin
 
-                neededFigures = 3 + len(self.actionsSorted) * 3
+                neededFigures = 4 + len(self.actionsSorted) * 5
 
                 squareSize = int(numpy.sqrt(neededFigures))
 
