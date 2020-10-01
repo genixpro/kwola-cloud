@@ -11,6 +11,7 @@ from ..app import cache
 from kwola.datamodels.BugModel import BugModel
 from ..tasks.RunTesting import runTesting
 import json
+import logging
 import bson
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration, loadConfiguration
@@ -138,6 +139,7 @@ class BugVideo(Resource):
             with open(videoFilePath, 'rb') as videoFile:
                 videoData = videoFile.read()
         else:
+            logging.error(f"Error! Missing bug video: {videoFilePath}")
             return abort(404)
 
         response = flask.make_response(videoData)

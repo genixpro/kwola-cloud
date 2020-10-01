@@ -13,6 +13,7 @@ from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.tasks.RunTestingStep import runTestingStep
 import json
 import os
+import logging
 import flask
 from kwola.config.config import KwolaCoreConfiguration
 from kwolacloud.config.config import loadConfiguration
@@ -117,8 +118,12 @@ class ExecutionSessionVideo(Resource):
 
         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("annotated_videos"), f'{str(execution_session_id)}.mp4')
 
-        with open(videoFilePath, 'rb') as videoFile:
-            videoData = videoFile.read()
+        if os.path.exists(videoFilePath):
+            with open(videoFilePath, 'rb') as videoFile:
+                videoData = videoFile.read()
+        else:
+            logging.error(f"Error! Missing execution session video: {videoFilePath}")
+            return abort(404)
 
         response = flask.make_response(videoData)
         response.headers['content-type'] = 'video/mp4'
