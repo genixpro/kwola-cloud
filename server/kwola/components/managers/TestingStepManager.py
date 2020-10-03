@@ -101,7 +101,12 @@ class TestingStepManager:
         self.agent = DeepLearningAgent(self.config, whichGpu=None)
         if not self.config['testing_enable_prediction_subprocess']:
             self.agent.initialize(enableTraining=False)
-            self.agent.load()
+            try:
+                self.agent.load()
+            except RuntimeError as e:
+                getLogger().error(
+                    f"Warning! DeepLearningAgent was unable to load the model file from disk, and so is instead using a freshly random initialized neural network. The original error is: {traceback.format_exc()}")
+                self.agent.save()
 
     def finishAllTraceSaves(self):
         executor = self.traceSaveExecutor
