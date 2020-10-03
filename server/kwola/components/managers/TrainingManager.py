@@ -508,16 +508,10 @@ class TrainingManager:
                 # sampleBatch = pickle.loads(gzip.decompress(blob.download_as_string()))
                 cacheHit = True
             except FileNotFoundError:
-                try:
-                    with open(oldCacheFileName, 'rb') as file:
-                        sampleBatch = pickle.loads(gzip.decompress(file.read()))
-                    # sampleBatch = pickle.loads(gzip.decompress(blob.download_as_string()))
-                    cacheHit = True
-                except FileNotFoundError:
-                    TrainingManager.addExecutionSessionToSampleCache(executionSessionId, config)
-                    cacheHit = False
-                    with open(cacheFile, 'rb') as file:
-                        sampleBatch = pickle.loads(gzip.decompress(file.read()))
+                TrainingManager.addExecutionSessionToSampleCache(executionSessionId, config)
+                cacheHit = False
+                with open(cacheFile, 'rb') as file:
+                    sampleBatch = pickle.loads(gzip.decompress(file.read()))
 
             imageWidth = sampleBatch['processedImages'].shape[3]
             imageHeight = sampleBatch['processedImages'].shape[2]
