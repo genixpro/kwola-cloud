@@ -42,6 +42,7 @@ import os
 import pickle
 import random
 import scipy.special
+import shutil
 import sys
 import tempfile
 import time
@@ -60,6 +61,8 @@ def isNumpyArray(obj):
 
 
 class TrainingManager:
+    localPreparedSamplesCacheDir = "/tmp/kwola-local-prepared-samples-cache"
+
     def __init__(self, configDir, trainingSequenceId, trainingStepIndex, gpu=None, coordinatorTempFileName="kwola_distributed_coordinator", testingRunId=None, applicationId=None, gpuWorldSize=torch.cuda.device_count(), plugins=None):
         self.config = KwolaCoreConfiguration(configDir)
         self.configDir = configDir
@@ -161,6 +164,9 @@ class TrainingManager:
             self.agent.initialize()
             self.agent.load()
 
+            if not os.path.exists(TrainingManager.localPreparedSamplesCacheDir):
+                os.mkdir(TrainingManager.localPreparedSamplesCacheDir)
+
             self.createSubproccesses()
 
             for plugin in self.plugins:
@@ -233,6 +239,8 @@ class TrainingManager:
             os.rmdir(self.batchDirectory)
 
             del self.agent
+
+            shutil.rmtree(TrainingManager.localPreparedSamplesCacheDir)
 
         # This print statement will trigger the parent manager process to kill this process.
         getLogger().info(f"[{os.getpid()}] ==== Training Step Completed ====")
@@ -494,30 +502,36 @@ class TrainingManager:
             agent = DeepLearningAgent(config, whichGpu=None)
 
             sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples", ensureExists=False)
-            cacheFile = os.path.join(sampleCacheDir, executionTraceId + "-sample.pickle.gz")
+            cacheFileName = executionTraceId + "-sample.pickle.gz"
+            gcsCacheFilePath = os.path.join(sampleCacheDir, cacheFileName)
 
-            # Just for compatibility with the old naming scheme
-            oldCacheFileName = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
+            localCacheFilePath = os.path.join(TrainingManager.localPreparedSamplesCacheDir, cacheFileName)
 
             # applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId + "-cache")
             # blob = storage.Blob(os.path.join(executionTraceId + "-sample.pickle.gz"), applicationStorageBucket)
 
             try:
-                with open(cacheFile, 'rb') as file:
+                with open(localCacheFilePath, 'rb') as file:
                     sampleBatch = pickle.loads(gzip.decompress(file.read()))
                 # sampleBatch = pickle.loads(gzip.decompress(blob.download_as_string()))
                 cacheHit = True
             except FileNotFoundError:
                 try:
-                    with open(oldCacheFileName, 'rb') as file:
-                        sampleBatch = pickle.loads(gzip.decompress(file.read()))
+                    with open(gcsCacheFilePath, 'rb') as file:
+                        fileData = file.read()
+                        sampleBatch = pickle.loads(gzip.decompress(fileData))
+                    with open(localCacheFilePath, 'wb') as file:
+                        file.write(fileData)
                     # sampleBatch = pickle.loads(gzip.decompress(blob.download_as_string()))
                     cacheHit = True
                 except FileNotFoundError:
                     TrainingManager.addExecutionSessionToSampleCache(executionSessionId, config)
                     cacheHit = False
-                    with open(cacheFile, 'rb') as file:
-                        sampleBatch = pickle.loads(gzip.decompress(file.read()))
+                    with open(gcsCacheFilePath, 'rb') as file:
+                        fileData = file.read()
+                        sampleBatch = pickle.loads(gzip.decompress(fileData))
+                    with open(localCacheFilePath, 'wb') as file:
+                        file.write(fileData)
 
             imageWidth = sampleBatch['processedImages'].shape[3]
             imageHeight = sampleBatch['processedImages'].shape[2]
