@@ -187,10 +187,12 @@ class WebEnvironmentSession:
             for plugin in self.plugins:
                 if self.executionSession is not None:
                     plugin.cleanup(self.driver, self.proxy, self.executionSession)
+            self.plugins = []
 
         if hasattr(self, 'proxy'):
             if self.proxy is not None:
                 self.proxy.shutdown()
+                self.proxy = None
 
         if hasattr(self, "driver"):
             if self.driver:

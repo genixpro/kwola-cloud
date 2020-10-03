@@ -38,6 +38,7 @@ import os
 import signal
 from ...config.logger import getLogger
 from ..utils.retry import autoretry
+from ...errors import ProxyVerificationFailed
 
 
 class ProxyProcess:
@@ -111,10 +112,10 @@ class ProxyProcess:
             'https': f'http://127.0.0.1:{self.port}',
         }
 
-        testUrl = "https://app.kwola.io/"
+        testUrl = "http://kros3.kwola.io/"
         response = requests.get(testUrl, proxies=proxies, verify=False)
         if response.status_code != 200:
-            raise RuntimeError(f"Error in the proxy - unable to connect to the testing url at {testUrl} through the local proxy. Status code: {response.status_code}. Body: {response.content}")
+            raise ProxyVerificationFailed(f"Error in the proxy - unable to connect to the testing url at {testUrl} through the local proxy. Status code: {response.status_code}. Body: {response.content}")
         else:
             self.resetPathTrace()
             self.resetNetworkErrors()

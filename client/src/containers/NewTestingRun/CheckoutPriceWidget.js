@@ -54,7 +54,10 @@ class CheckoutPriceWidget extends Component {
     componentDidMount()
     {
         // Temporary: Prefill the promocode field
-        setTimeout(() => this.changePromoCode("BETATRIAL"), 1500);
+        if (this.props.prefillPromoCode)
+        {
+            setTimeout(() => this.changePromoCode("BETATRIAL"), 1500);
+        }
 
         if (this.props.objRef)
         {
@@ -109,7 +112,7 @@ class CheckoutPriceWidget extends Component {
     {
         if (this.props.onCheckoutButtonClicked)
         {
-            this.props.onCheckoutButtonClicked();
+            return this.props.onCheckoutButtonClicked();
         }
     }
 

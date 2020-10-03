@@ -327,6 +327,7 @@ class NewRecurringTestingTrigger extends Component {
                                                 onCheckoutButtonClicked={() => this.checkoutButtonClicked(elements)}
                                                 onChange={(data) => this.setState(data)}
                                                 checkoutButtonText={this.state.mode === 'details' ? 'Create Trigger' : 'Complete Order'}
+                                                prefillPromoCode={false}
                                             />
                                         </Papersheet>
                                         <br/>

@@ -95,7 +95,12 @@ class RecordScreenshots(WebEnvironmentPluginBase):
             os.unlink(self.movieFilePath(executionSession))
 
         if os.path.exists(self.screenshotDirectory[executionSession.id]):
-            os.rmdir(self.screenshotDirectory[executionSession.id])
+            try:
+                os.rmdir(self.screenshotDirectory[executionSession.id])
+            except OSError:
+                pass # Sometimes get "Directory not empty" here, not sure why,
+                     # since above commands should have removed all data in the directory.
+                     # Need to investigate more at somepoint
 
         del self.screenshotDirectory[executionSession.id]
         del self.screenshotPaths[executionSession.id]

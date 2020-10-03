@@ -148,7 +148,7 @@ class NewTestingRun extends Component {
 
         if (Auth0.isUserAllowedFreeRuns() || this.checkoutWidget.calculateFinalTotal() === 0)
         {
-            this.launchTestingRun(null);
+            return this.launchTestingRun(null);
         }
         else
         {
@@ -317,6 +317,7 @@ class NewTestingRun extends Component {
                                             onCheckoutButtonClicked={() => this.checkoutButtonClicked(elements)}
                                             onChange={(data) => this.setState(data)}
                                             checkoutButtonText={this.state.mode === 'details' ? 'Launch Testing Run' : 'Complete Order'}
+                                            prefillPromoCode={true}
                                         />
                                     </Papersheet>
                                     <br/>

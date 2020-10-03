@@ -66,9 +66,15 @@ class KubernetesJobProcess:
 
         p = psutil.Process(os.getpid())
         for child in p.children(recursive=True):
-            child.terminate()
+            try:
+                child.terminate()
+            except psutil.NoSuchProcess:
+                pass
         time.sleep(1)
         for child in p.children(recursive=True):
-            child.kill()
+            try:
+                child.kill()
+            except psutil.NoSuchProcess:
+                pass
 
         exit(0)

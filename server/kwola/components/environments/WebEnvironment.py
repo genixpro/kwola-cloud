@@ -72,6 +72,12 @@ class WebEnvironment:
         else:
             self.plugins = defaultPlugins + plugins
 
+        @autoretry()
+        def createSession():
+            session = WebEnvironmentSession(config, sessionNumber, self.plugins, self.executionSessions[sessionNumber])
+            return session
+
+        @autoretry()
         def initializeSession(session):
             session.initialize()
 
@@ -88,7 +94,7 @@ class WebEnvironment:
             getLogger().info(f"[{os.getpid()}] Starting up {sessionCount} parallel browser sessions.")
 
             self.sessions = [
-                WebEnvironmentSession(config, sessionNumber, self.plugins, self.executionSessions[sessionNumber])
+                createSession()
                 for sessionNumber in range(sessionCount)
             ]
 

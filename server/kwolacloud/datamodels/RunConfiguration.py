@@ -20,21 +20,21 @@ class RunConfiguration(EmbeddedDocument):
 
     paragraph = StringField()
 
-    enableRandomNumberCommand = BooleanField()
+    enableRandomNumberCommand = BooleanField(default=True)
 
-    enableRandomBracketCommand = BooleanField()
+    enableRandomBracketCommand = BooleanField(default=True)
 
-    enableRandomMathCommand = BooleanField()
+    enableRandomMathCommand = BooleanField(default=True)
 
-    enableRandomOtherSymbolCommand = BooleanField()
+    enableRandomOtherSymbolCommand = BooleanField(default=False)
 
-    enableDoubleClickCommand = BooleanField()
+    enableDoubleClickCommand = BooleanField(default=False)
 
-    enableRightClickCommand = BooleanField()
+    enableRightClickCommand = BooleanField(default=False)
 
-    enableTypeEmail = BooleanField()
+    enableTypeEmail = BooleanField(default=True)
 
-    enableTypePassword = BooleanField()
+    enableTypePassword = BooleanField(default=True)
 
     enableScrolling = BooleanField()
 
