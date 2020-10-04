@@ -900,11 +900,19 @@ class DeepLearningAgent:
                     try:
                         # Compute the minimum after removing all the impossible actions
                         minAdvantage = numpy.min(reshaped[reshaped > self.config['reward_impossible_action_threshold']])
+                        maxAdvantage = numpy.max(reshaped[reshaped > self.config['reward_impossible_action_threshold']])
                     except ValueError:
                         minAdvantage = 0
+                        maxAdvantage = 1
 
-                    # Ensure all of the values are positive by shifting it so the minimum value is 0
-                    reshapedAdjusted = reshaped - minAdvantage
+                    if maxAdvantage > 0:
+                        # We just cutoff all the negative values and make a random weighted choice based on which pixels
+                        # are positive.
+                        reshapedAdjusted = numpy.square(numpy.max(reshaped, numpy.zeros_like(reshaped)))
+                    else:
+                        # Ensure all of the values are positive by shifting it so the minimum value is 0
+                        reshapedAdjusted = numpy.square(reshaped - minAdvantage)
+
                     reshapedAdjusted[reshaped <= self.config['reward_impossible_action_threshold']] = 0
 
                     # Here we resize the array so that it adds up to 1.
@@ -1562,7 +1570,7 @@ class DeepLearningAgent:
 
             :return: None
         """
-        setupLocalLogging()
+        # setupLocalLogging()
 
         try:
             trace = pickle.loads(trace)
