@@ -660,16 +660,17 @@ class TrainingManager:
             subProcessBatchResultQueue.put(resultFileName)
 
             return cacheHitRate
-        except Exception:
-            getLogger().error(f"prepareAndLoadSingleBatchForSubprocess failed! Destroying the batch cache for the traces and then putting a retry into the queue.\n{traceback.format_exc()}")
+        except Exception as e:
+            if not isinstance(e, KeyboardInterrupt):
+                getLogger().error(f"prepareAndLoadSingleBatchForSubprocess failed! Destroying the batch cache for the traces and then putting a retry into the queue.\n{traceback.format_exc()}")
 
-            # As a precautionary measure, we destroy whatever data is in the
-            # prepared samples cache for all of the various traceIds that were
-            # chosen here.
-            for traceId in chosenExecutionTraceIds:
-                TrainingManager.destroyPreparedSamplesForExecutionTrace(config.configurationDirectory, traceId)
+                # As a precautionary measure, we destroy whatever data is in the
+                # prepared samples cache for all of the various traceIds that were
+                # chosen here.
+                for traceId in chosenExecutionTraceIds:
+                    TrainingManager.destroyPreparedSamplesForExecutionTrace(config.configurationDirectory, traceId)
 
-            subProcessCommandQueue.put(("batch", {}))
+                subProcessCommandQueue.put(("batch", {}))
             return 1.0
 
     @staticmethod
