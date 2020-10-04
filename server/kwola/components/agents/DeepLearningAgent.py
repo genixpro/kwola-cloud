@@ -238,7 +238,7 @@ class DeepLearningAgent:
 
         # Only add in the random number action if the user configured it
         if 'enableRandomDateTimeCommand' in config and config['enableRandomDateTimeCommand']:
-            self.actions['typeRandomDateTime'] = lambda x, y: TypeAction(type="typeRandomDateTime", x=x, y=y, label="random_date_time", text=self.fakeStringGenerator.date_time())
+            self.actions['typeRandomDateTime'] = lambda x, y: TypeAction(type="typeRandomDateTime", x=x, y=y, label="random_date_time", text=self.fakeStringGenerator.date())
             self.actionBaseWeights.append(config['random_weight_type_random_date_time'])
             self.actionProbabilityBoostKeywords.append(["date", "time"])
             hasTypingAction = True
