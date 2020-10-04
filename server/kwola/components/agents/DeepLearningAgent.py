@@ -1961,8 +1961,12 @@ class DeepLearningAgent:
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = presentRewardPredictions[0][actionIndex][presentRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
-                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                    if len(predictionsNoImpossible) == 0:
+                        maxValue = 0.0
+                        minValue = 0.0
+                    else:
+                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
 
                     presentRewardPredictionAxes[actionIndex].set_xticks([])
                     presentRewardPredictionAxes[actionIndex].set_yticks([])
@@ -1976,8 +1980,12 @@ class DeepLearningAgent:
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = discountedRewardPredictions[0][actionIndex][discountedRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
-                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                    if len(predictionsNoImpossible) == 0:
+                        maxValue = 0.0
+                        minValue = 0.0
+                    else:
+                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
 
                     rewardPredictionsShrunk = skimage.measure.block_reduce(discountedRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
@@ -1988,8 +1996,12 @@ class DeepLearningAgent:
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = totalRewardPredictions[0][actionIndex][totalRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
-                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                    if len(predictionsNoImpossible) == 0:
+                        maxValue = 0.0
+                        minValue = 0.0
+                    else:
+                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
 
                     totalRewardPredictionAxes[actionIndex].set_xticks([])
                     totalRewardPredictionAxes[actionIndex].set_yticks([])
@@ -2003,8 +2015,12 @@ class DeepLearningAgent:
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = advantagePredictions[0][actionIndex][advantagePredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
-                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                    if len(predictionsNoImpossible) == 0:
+                        maxValue = 1.0
+                        minValue = 0.0
+                    else:
+                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
                     advantageRange = maxValue - minValue
 
                     advantagePredictionAxes[actionIndex].set_xticks([])
@@ -2019,8 +2035,12 @@ class DeepLearningAgent:
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = actionProbabilities[0][actionIndex][actionProbabilities[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
-                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                    if len(predictionsNoImpossible) == 0:
+                        maxValue = 0.0
+                        minValue = 0.0
+                    else:
+                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
 
                     actionProbabilityPredictionAxes[actionIndex].set_xticks([])
                     actionProbabilityPredictionAxes[actionIndex].set_yticks([])
