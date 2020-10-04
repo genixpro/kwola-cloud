@@ -26,6 +26,7 @@ from ...datamodels.actions.ClickTapAction import ClickTapAction
 from ...datamodels.actions.RightClickAction import RightClickAction
 from ...datamodels.actions.TypeAction import TypeAction
 from ...datamodels.actions.WaitAction import WaitAction
+from ...datamodels.actions.ScrollingAction import ScrollingAction
 from ...datamodels.errors.ExceptionError import ExceptionError
 from ...datamodels.errors.LogError import LogError
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
@@ -212,7 +213,7 @@ class WebEnvironmentSession:
             elapsedTime = abs((datetime.now() - startTime).total_seconds())
             if elapsedTime > self.noActivityTimeout:
                 if self.noActivityTimeout > 1:
-                    getLogger().warning(f"[{os.getpid()}] Warning! There was a timeout while waiting for network activity from the browser to die down. Maybe it is causing non"
+                    getLogger().warning(f"Warning! There was a timeout while waiting for network activity from the browser to die down. Maybe it is causing non"
                           f" stop network activity all on its own? Try changing the config value web_session_no_network_activity_wait_time lower"
                           f" if constant network activity is the expected behaviour. List of suspect paths: {set(self.proxy.getPathTrace()['recent']).difference(startPaths)}")
 
@@ -290,7 +291,7 @@ class WebEnvironmentSession:
 
 
             if len(emailInputs) == 0 or len(passwordInputs) == 0 or len(loginButtons) == 0:
-                getLogger().warning(f"[{os.getpid()}] Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.")
+                getLogger().warning(f"Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.")
                 return
 
             if len(emailInputs) == 1:
@@ -342,11 +343,11 @@ class WebEnvironmentSession:
 
             if success1 and success2 and success3:
                 if didURLChange:
-                    getLogger().info(f"[{os.getpid()}] Heuristic autologin appears to have worked!")
+                    getLogger().info(f"Heuristic autologin appears to have worked!")
                 else:
-                    getLogger().warning(f"[{os.getpid()}] Warning! Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change.")
+                    getLogger().warning(f"Warning! Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change.")
             else:
-                getLogger().warning(f"[{os.getpid()}] There was an error running one of the actions required for the heuristic auto login.")
+                getLogger().warning(f"There was an error running one of the actions required for the heuristic auto login.")
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
             return None
@@ -389,6 +390,7 @@ class WebEnvironmentSession:
                         canClick: false,
                         canRightClick: false,
                         canType: false,
+                        canScroll: false,
                         left: bounds.left + paddingLeft + 3,
                         right: bounds.right - paddingRight - 3,
                         top: bounds.top + paddingTop + 3,
@@ -426,6 +428,9 @@ class WebEnvironmentSession:
                     const elemStyle = window.getComputedStyle(element);
                     if (elemStyle.getPropertyValue("cursor") === "pointer")
                         data.canClick = true;
+                    
+                    if (elemStyle.getPropertyValue("overflow-y") === "scroll" || elemStyle.getPropertyValue("overflow-y") === "auto")
+                        data.canScroll = true;
                     
                     if (element.tagName === "INPUT" || element.tagName === "TEXTAREA")
                         data.canType = true;
@@ -487,7 +492,7 @@ class WebEnvironmentSession:
                         }
                     }
                     
-                    if (data.canType || data.canClick || data.canRightClick)
+                    if (data.canType || data.canClick || data.canRightClick || data.canScroll)
                         if (data.width >= 1 && data.height >= 1)
                             actionMaps.push(data);
                 }
@@ -527,12 +532,12 @@ class WebEnvironmentSession:
                 actionChain.move_to_element_with_offset(element, 0, 0)
                 if action.times == 1:
                     if self.config['web_session_print_every_action']:
-                        getLogger().info(f"[{os.getpid()}] Clicking {action.x} {action.y} from {action.source}")
+                        getLogger().info(f"Clicking {action.x} {action.y} from {action.source}")
                     actionChain.click(on_element=element)
                     actionChain.pause(self.config.web_session_perform_action_wait_time)
                 elif action.times == 2:
                     if self.config['web_session_print_every_action']:
-                        getLogger().info(f"[{os.getpid()}] Double Clicking {action.x} {action.y} from {action.source}")
+                        getLogger().info(f"Double Clicking {action.x} {action.y} from {action.source}")
                     actionChain.double_click(on_element=element)
                     actionChain.pause(self.config.web_session_perform_action_wait_time)
 
@@ -540,7 +545,7 @@ class WebEnvironmentSession:
 
             if isinstance(action, RightClickAction):
                 if self.config['web_session_print_every_action']:
-                    getLogger().info(f"[{os.getpid()}] Right Clicking {action.x} {action.y} from {action.source}")
+                    getLogger().info(f"Right Clicking {action.x} {action.y} from {action.source}")
                 actionChain = webdriver.common.action_chains.ActionChains(self.driver)
                 actionChain.move_to_element_with_offset(element, 0, 0)
                 actionChain.context_click(on_element=element)
@@ -549,7 +554,7 @@ class WebEnvironmentSession:
 
             if isinstance(action, TypeAction):
                 if self.config['web_session_print_every_action']:
-                    getLogger().info(f"[{os.getpid()}] Typing {action.text} at {action.x} {action.y} from {action.source}")
+                    getLogger().info(f"Typing {action.text} at {action.x} {action.y} from {action.source}")
                 actionChain = webdriver.common.action_chains.ActionChains(self.driver)
                 actionChain.move_to_element_with_offset(element, 0, 0)
                 actionChain.click(on_element=element)
@@ -558,47 +563,57 @@ class WebEnvironmentSession:
                 actionChain.pause(self.config.web_session_perform_action_wait_time)
                 actionChain.perform()
 
+            if isinstance(action, ScrollingAction):
+                if self.config['web_session_print_every_action']:
+                    getLogger().info(f"Scrolling {action.direction} at {action.x} {action.y}")
+
+                if action.direction == "down":
+                    self.driver.execute_script("window.scrollTo(0, window.scrollY + 400)")
+                else:
+                    self.driver.execute_script("window.scrollTo(0, Math.max(0, window.scrollY - 400))")
+                time.sleep(1.0)
+
             if isinstance(action, ClearFieldAction):
                 if self.config['web_session_print_every_action']:
-                    getLogger().info(f"[{os.getpid()}] Clearing field at {action.x} {action.y} from {action.source}")
+                    getLogger().info(f"Clearing field at {action.x} {action.y} from {action.source}")
                 element.clear()
 
             if isinstance(action, WaitAction):
-                getLogger().info(f"[{os.getpid()}] Waiting for {action.time} at {action.x} {action.y} from {action.source}")
+                getLogger().info(f"Waiting for {action.time} at {action.x} {action.y} from {action.source}")
                 time.sleep(action.time)
 
         except selenium.common.exceptions.MoveTargetOutOfBoundsException as e:
             if self.config['web_session_print_every_action_failure']:
-                getLogger().warning(f"[{os.getpid()}] Running {action.source} action {action.type} at {action.x},{action.y} failed due to a MoveTargetOutOfBoundsException exception!")
+                getLogger().warning(f"Running {action.source} action {action.type} at {action.x},{action.y} failed due to a MoveTargetOutOfBoundsException exception!")
 
             success = False
         except selenium.common.exceptions.StaleElementReferenceException as e:
             if self.config['web_session_print_every_action_failure']:
-                getLogger().warning(f"[{os.getpid()}] Running {action.source} action {action.type} at {action.x},{action.y} failed due to a StaleElementReferenceException!")
+                getLogger().warning(f"Running {action.source} action {action.type} at {action.x},{action.y} failed due to a StaleElementReferenceException!")
             success = False
         except selenium.common.exceptions.InvalidElementStateException as e:
             if self.config['web_session_print_every_action_failure']:
-                getLogger().warning(f"[{os.getpid()}] Running {action.source} action {action.type} at {action.x},{action.y} failed due to a InvalidElementStateException!")
+                getLogger().warning(f"Running {action.source} action {action.type} at {action.x},{action.y} failed due to a InvalidElementStateException!")
 
             success = False
         except selenium.common.exceptions.TimeoutException as e:
             if self.config['web_session_print_every_action_failure']:
-                getLogger().warning(f"[{os.getpid()}] Running {action.source} action {action.type} at {action.x},{action.y} failed due to a TimeoutException!")
+                getLogger().warning(f"Running {action.source} action {action.type} at {action.x},{action.y} failed due to a TimeoutException!")
 
             success = False
         except selenium.common.exceptions.JavascriptException as e:
             if self.config['web_session_print_every_action_failure']:
-                getLogger().warning(f"[{os.getpid()}] Running {action.source} action {action.type} at {action.x},{action.y} failed due to a JavascriptException!")
+                getLogger().warning(f"Running {action.source} action {action.type} at {action.x},{action.y} failed due to a JavascriptException!")
 
             success = False
         except urllib3.exceptions.MaxRetryError as e:
             if self.config['web_session_print_every_action_failure']:
-                getLogger().warning(f"[{os.getpid()}] Running {action.source} action {action.type} at {action.x},{action.y} failed due to a MaxRetryError!")
+                getLogger().warning(f"Running {action.source} action {action.type} at {action.x},{action.y} failed due to a MaxRetryError!")
 
             success = False
         except AttributeError as e:
             if self.config['web_session_print_every_action_failure']:
-                getLogger().warning(f"[{os.getpid()}] Running {action.source} action {action.type} at {action.x},{action.y} failed due to an AttributeError!")
+                getLogger().warning(f"Running {action.source} action {action.type} at {action.x},{action.y} failed due to an AttributeError!")
 
             success = False
 
@@ -634,7 +649,7 @@ class WebEnvironmentSession:
                     offsite = True
 
                 if offsite:
-                    getLogger().info(f"[{os.getpid()}] The browser session went offsite (to {self.driver.current_url}) and going offsite is disabled. The browser is being reset back to the URL it was at prior to this action: {priorURL}")
+                    getLogger().info(f"The browser session went offsite (to {self.driver.current_url}) and going offsite is disabled. The browser is being reset back to the URL it was at prior to this action: {priorURL}")
                     self.driver.get(priorURL)
                     self.waitUntilNoNetworkActivity()
         except selenium.common.exceptions.TimeoutException:
@@ -643,7 +658,7 @@ class WebEnvironmentSession:
     def checkLoadFailure(self):
         try:
             if self.driver.current_url == "data:,":
-                getLogger().warning(f"[{os.getpid()}] The browser session needed to be reset back to the origin url {self.targetURL}")
+                getLogger().warning(f"The browser session needed to be reset back to the origin url {self.targetURL}")
                 self.driver.get(self.targetURL)
                 self.waitUntilNoNetworkActivity()
         except selenium.common.exceptions.TimeoutException:

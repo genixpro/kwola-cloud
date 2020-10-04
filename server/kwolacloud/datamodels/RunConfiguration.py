@@ -22,9 +22,9 @@ class RunConfiguration(EmbeddedDocument):
 
     enableRandomNumberCommand = BooleanField(default=True)
 
-    enableRandomBracketCommand = BooleanField(default=True)
+    enableRandomBracketCommand = BooleanField(default=False)
 
-    enableRandomMathCommand = BooleanField(default=True)
+    enableRandomMathCommand = BooleanField(default=False)
 
     enableRandomOtherSymbolCommand = BooleanField(default=False)
 
@@ -32,11 +32,27 @@ class RunConfiguration(EmbeddedDocument):
 
     enableRightClickCommand = BooleanField(default=False)
 
-    enableTypeEmail = BooleanField(default=True)
+    enableTypeEmail = BooleanField(default=False)
 
-    enableTypePassword = BooleanField(default=True)
+    enableTypePassword = BooleanField(default=False)
 
-    enableScrolling = BooleanField()
+    enableRandomLettersCommand = BooleanField(default=True)
+
+    enableRandomAddressCommand = BooleanField(default=True)
+
+    enableRandomEmailCommand = BooleanField(default=True)
+
+    enableRandomPhoneNumberCommand = BooleanField(default=True)
+
+    enableRandomParagraphCommand = BooleanField(default=True)
+
+    enableRandomDateTimeCommand = BooleanField(default=True)
+
+    enableRandomCreditCardCommand = BooleanField(default=True)
+
+    enableRandomURLCommand = BooleanField(default=False)
+
+    enableScrolling = BooleanField(default=True)
 
     enableDragging = BooleanField()
 
