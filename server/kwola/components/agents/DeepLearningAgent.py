@@ -908,7 +908,7 @@ class DeepLearningAgent:
                     if maxAdvantage > 0:
                         # We just cutoff all the negative values and make a random weighted choice based on which pixels
                         # are positive.
-                        reshapedAdjusted = numpy.square(numpy.max(reshaped, numpy.zeros_like(reshaped)))
+                        reshapedAdjusted = numpy.square(numpy.maximum(reshaped, numpy.zeros_like(reshaped)))
                     else:
                         # Ensure all of the values are positive by shifting it so the minimum value is 0
                         reshapedAdjusted = numpy.square(reshaped - minAdvantage)
