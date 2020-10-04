@@ -62,6 +62,7 @@ import traceback
 import pickle
 import copy
 from ..utils.retry import autoretry
+from ...config.logger import setupLocalLogging
 
 
 class DeepLearningAgent:
@@ -1434,9 +1435,19 @@ class DeepLearningAgent:
             for index, action in enumerate(uniqueActions)
         }
 
-        # Max workers set to 1 here temporarily due to a threading bug in the latest version of matplotlib
-        # with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        # Remove several variables from 'self'. This is so that the 'self' object can be serialized
+        # and sent to various subprocesses in the code below without triggering errors. Unfortunately,
+        # neither the pytorch model nor lambda's can be serialized using pythons pickle. This is a bit
+        # of a hack. We have to use subprocesses and not threads to get around limitations in matplotlib
+        # which do not allow multiprocessing.
+        model = self.model
+        self.model = None
+        variableWrapperFunc = self.variableWrapperFunc
+        self.variableWrapperFunc = None
+        actions = self.actions
+        self.actions = None
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
             imageGenerationFutures = []
             for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImagesFiltered, networkOutputs):
                 if trace is not None:
@@ -1456,7 +1467,13 @@ class DeepLearningAgent:
 
                     lastRawImage = rawImage
 
-            concurrent.futures.wait(imageGenerationFutures)
+            for future in imageGenerationFutures:
+                future.result()
+
+        # Restore the variables removed above back to the self object, now that the multiple subprocesses has finished.
+        self.model = model
+        self.variableWrapperFunc = variableWrapperFunc
+        self.actions = actions
 
         moviePath = os.path.join(tempScreenshotDirectory, "debug.mp4")
 
@@ -1545,6 +1562,8 @@ class DeepLearningAgent:
 
             :return: None
         """
+        setupLocalLogging()
+
         try:
             trace = pickle.loads(trace)
 
@@ -1865,7 +1884,10 @@ class DeepLearningAgent:
                                                              self.config.debug_video_action_prediction_circle_color_b]
 
                 for actionIndex, action in enumerate(self.actionsSorted):
-                    maxValue = numpy.max(numpy.array(presentRewardPredictions[0][actionIndex]))
+                    predictionsNoImpossible = presentRewardPredictions[0][actionIndex][presentRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
+
+                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
 
                     presentRewardPredictionAxes[actionIndex].set_xticks([])
                     presentRewardPredictionAxes[actionIndex].set_yticks([])
@@ -1873,23 +1895,26 @@ class DeepLearningAgent:
                     rewardPredictionsShrunk = skimage.measure.block_reduce(presentRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = presentRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minPresentReward, vmax=maxPresentReward)
-                    presentRewardPredictionAxes[actionIndex].set_title(f"{action} {maxValue:.2f} present reward")
+                    presentRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} present reward")
                     mainFigure.colorbar(im, ax=presentRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
-                    maxValue = numpy.max(numpy.array(discountedRewardPredictions[0][actionIndex]))
+                    predictionsNoImpossible = discountedRewardPredictions[0][actionIndex][discountedRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
-                    discountedRewardPredictionAxes[actionIndex].set_xticks([])
-                    discountedRewardPredictionAxes[actionIndex].set_yticks([])
+                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
 
                     rewardPredictionsShrunk = skimage.measure.block_reduce(discountedRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = discountedRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minDiscountedReward, vmax=maxDiscountedReward)
-                    discountedRewardPredictionAxes[actionIndex].set_title(f"{action} {maxValue:.2f} discounted reward")
+                    discountedRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} discounted reward")
                     mainFigure.colorbar(im, ax=discountedRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
-                    maxValue = numpy.max(numpy.array(totalRewardPredictions[0][actionIndex]))
+                    predictionsNoImpossible = totalRewardPredictions[0][actionIndex][totalRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
+
+                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
 
                     totalRewardPredictionAxes[actionIndex].set_xticks([])
                     totalRewardPredictionAxes[actionIndex].set_yticks([])
@@ -1897,23 +1922,30 @@ class DeepLearningAgent:
                     rewardPredictionsShrunk = skimage.measure.block_reduce(totalRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = totalRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minTotalReward, vmax=maxTotalReward)
-                    totalRewardPredictionAxes[actionIndex].set_title(f"{action} {maxValue:.2f} total reward")
+                    totalRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} total reward")
                     mainFigure.colorbar(im, ax=totalRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
-                    maxValue = numpy.max(numpy.array(advantagePredictions[0][actionIndex]))
+                    predictionsNoImpossible = advantagePredictions[0][actionIndex][advantagePredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
+
+                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                    advantageRange = maxValue - minValue
 
                     advantagePredictionAxes[actionIndex].set_xticks([])
                     advantagePredictionAxes[actionIndex].set_yticks([])
 
                     advanagePredictionsShrunk = skimage.measure.block_reduce(advantagePredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
-                    im = advantagePredictionAxes[actionIndex].imshow(advanagePredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minAdvantage, vmax=maxAdvantage)
-                    advantagePredictionAxes[actionIndex].set_title(f"{action} {maxValue:.2f} advantage")
+                    im = advantagePredictionAxes[actionIndex].imshow(advanagePredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minValue - advantageRange*0.1, vmax=maxValue)
+                    advantagePredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} advantage")
                     mainFigure.colorbar(im, ax=advantagePredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
-                    maxValue = numpy.max(numpy.array(actionProbabilities[0][actionIndex]))
+                    predictionsNoImpossible = actionProbabilities[0][actionIndex][actionProbabilities[0][actionIndex] > self.config['reward_impossible_action_threshold']]
+
+                    maxValue = numpy.max(numpy.array(predictionsNoImpossible))
+                    minValue = numpy.min(numpy.array(predictionsNoImpossible))
 
                     actionProbabilityPredictionAxes[actionIndex].set_xticks([])
                     actionProbabilityPredictionAxes[actionIndex].set_yticks([])
@@ -1921,7 +1953,7 @@ class DeepLearningAgent:
                     actionProbabilityPredictionsShrunk = skimage.measure.block_reduce(actionProbabilities[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = actionProbabilityPredictionAxes[actionIndex].imshow(actionProbabilityPredictionsShrunk, cmap=mainColorMap, interpolation="nearest")
-                    actionProbabilityPredictionAxes[actionIndex].set_title(f"{action} {maxValue:.3f} prob")
+                    actionProbabilityPredictionAxes[actionIndex].set_title(f"{action} {minValue:.1e} - {maxValue:.1e} prob")
                     mainFigure.colorbar(im, ax=actionProbabilityPredictionAxes[actionIndex], orientation='vertical')
 
                 stampAxes.set_xticks([])
