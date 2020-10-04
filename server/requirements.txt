@@ -39,3 +39,4 @@ testtools
 torch
 wheel
 giturlparse
+Faker

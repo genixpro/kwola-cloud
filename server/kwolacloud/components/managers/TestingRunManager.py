@@ -95,6 +95,15 @@ class TestingRunManager:
         kwolaConfigData['enableRightClickCommand'] = runConfiguration.enableRightClickCommand
         kwolaConfigData['enableTypeEmail'] = runConfiguration.enableTypeEmail
         kwolaConfigData['enableTypePassword'] = runConfiguration.enableTypePassword
+        kwolaConfigData['enableScrolling'] = runConfiguration.enableScrolling
+        kwolaConfigData['enableRandomLettersCommand'] = runConfiguration.enableRandomLettersCommand
+        kwolaConfigData['enableRandomAddressCommand'] = runConfiguration.enableRandomAddressCommand
+        kwolaConfigData['enableRandomEmailCommand'] = runConfiguration.enableRandomEmailCommand
+        kwolaConfigData['enableRandomPhoneNumberCommand'] = runConfiguration.enableRandomPhoneNumberCommand
+        kwolaConfigData['enableRandomParagraphCommand'] = runConfiguration.enableRandomParagraphCommand
+        kwolaConfigData['enableRandomDateTimeCommand'] = runConfiguration.enableRandomDateTimeCommand
+        kwolaConfigData['enableRandomCreditCardCommand'] = runConfiguration.enableRandomCreditCardCommand
+        kwolaConfigData['enableRandomURLCommand'] = runConfiguration.enableRandomURLCommand
         kwolaConfigData['autologin'] = runConfiguration.autologin
         kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
         kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength

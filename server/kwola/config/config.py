@@ -121,6 +121,9 @@ class KwolaCoreConfiguration:
 
         return subDirectory
 
+    def __contains__(self, key):
+        return key in self.configData
+
     def __getitem__(self, key):
         try:
             return self.configData[key]

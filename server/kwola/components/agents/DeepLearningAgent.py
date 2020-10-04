@@ -25,6 +25,7 @@ from ...datamodels.actions.ClickTapAction import ClickTapAction
 from ...datamodels.actions.ClearFieldAction import ClearFieldAction
 from ...datamodels.actions.RightClickAction import RightClickAction
 from ...datamodels.actions.TypeAction import TypeAction
+from ...datamodels.actions.ScrollingAction import ScrollingAction
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
 from .TraceNet import TraceNet
@@ -62,6 +63,7 @@ import traceback
 import pickle
 import copy
 from ..utils.retry import autoretry
+from faker import Faker
 
 
 class DeepLearningAgent:
@@ -88,6 +90,8 @@ class DeepLearningAgent:
         # Fetch the folder that we will store the model parameters in
         self.modelPath = os.path.join(config.getKwolaUserDataDirectory("models"), "deep_learning_model")
         self.symbolMapPath = os.path.join(config.getKwolaUserDataDirectory("models"), "symbol_map")
+
+        self.fakeStringGenerator = Faker()
 
         # This is just a generic list of known HTML cursors. Its pretty comprehensive,
         # and is used for the cursor prediction, which is an additional loss that
@@ -197,6 +201,62 @@ class DeepLearningAgent:
             hasTypingAction = True
 
         # Only add in the random number action if the user configured it
+        if 'enableRandomLettersCommand' in config and config['enableRandomLettersCommand']:
+            self.actions['typeRandomLetters'] = lambda x, y: TypeAction(type="typeRandomLetters", x=x, y=y, label="random_letters", text=self.randomString('abcdefghijklmnopqrstuvwxyz', random.randint(4, 20)))
+            self.actionBaseWeights.append(config['random_weight_type_random_letters'])
+            self.actionProbabilityBoostKeywords.append([])
+            hasTypingAction = True
+
+        # Only add in the random number action if the user configured it
+        if 'enableRandomAddressCommand' in config and config['enableRandomAddressCommand']:
+            self.actions['typeRandomAddress'] = lambda x, y: TypeAction(type="typeRandomAddress", x=x, y=y, label="random_address", text=self.fakeStringGenerator.address())
+            self.actionBaseWeights.append(config['random_weight_type_random_address'])
+            self.actionProbabilityBoostKeywords.append(["address", "street"])
+            hasTypingAction = True
+
+        # Only add in the random number action if the user configured it
+        if 'enableRandomEmailCommand' in config and config['enableRandomEmailCommand']:
+            self.actions['typeRandomEmail'] = lambda x, y: TypeAction(type="typeRandomEmail", x=x, y=y, label="random_email", text=self.fakeStringGenerator.email())
+            self.actionBaseWeights.append(config['random_weight_type_random_email'])
+            self.actionProbabilityBoostKeywords.append(["email", "user"])
+            hasTypingAction = True
+
+        # Only add in the random number action if the user configured it
+        if 'enableRandomPhoneNumberCommand' in config and config['enableRandomPhoneNumberCommand']:
+            self.actions['typeRandomPhoneNumber'] = lambda x, y: TypeAction(type="typeRandomPhoneNumber", x=x, y=y, label="random_phone_number", text=self.fakeStringGenerator.phone_number())
+            self.actionBaseWeights.append(config['random_weight_type_random_phone_number'])
+            self.actionProbabilityBoostKeywords.append(["phone", "cell", "mobile"])
+            hasTypingAction = True
+
+        # Only add in the random number action if the user configured it
+        if 'enableRandomParagraphCommand' in config and config['enableRandomParagraphCommand']:
+            self.actions['typeRandomParagraph'] = lambda x, y: TypeAction(type="typeRandomParagraph", x=x, y=y, label="random_paragraph", text=self.fakeStringGenerator.text())
+            self.actionBaseWeights.append(config['random_weight_type_random_paragraph'])
+            self.actionProbabilityBoostKeywords.append([])
+            hasTypingAction = True
+
+        # Only add in the random number action if the user configured it
+        if 'enableRandomDateTimeCommand' in config and config['enableRandomDateTimeCommand']:
+            self.actions['typeRandomDateTime'] = lambda x, y: TypeAction(type="typeRandomDateTime", x=x, y=y, label="random_date_time", text=self.fakeStringGenerator.date_time())
+            self.actionBaseWeights.append(config['random_weight_type_random_date_time'])
+            self.actionProbabilityBoostKeywords.append(["date", "time"])
+            hasTypingAction = True
+
+        # Only add in the random number action if the user configured it
+        if 'enableRandomCreditCardCommand' in config and config['enableRandomCreditCardCommand']:
+            self.actions['typeRandomCreditCard'] = lambda x, y: TypeAction(type="typeRandomCreditCard", x=x, y=y, label="random_credit_card", text=self.fakeStringGenerator.credit_card_number())
+            self.actionBaseWeights.append(config['random_weight_type_random_credit_card'])
+            self.actionProbabilityBoostKeywords.append(["card", "credit"])
+            hasTypingAction = True
+
+        # Only add in the random number action if the user configured it
+        if 'enableRandomURLCommand' in config and config['enableRandomURLCommand']:
+            self.actions['typeRandomURL'] = lambda x, y: TypeAction(type="typeRandomURL", x=x, y=y, label="random_url", text=self.fakeStringGenerator.uri())
+            self.actionBaseWeights.append(config['random_weight_type_random_url'])
+            self.actionProbabilityBoostKeywords.append(["url", "uri"])
+            hasTypingAction = True
+
+        # Only add in the random number action if the user configured it
         if config['enableRandomNumberCommand']:
             self.actions['typeNumber'] = lambda x, y: TypeAction(type="typeNumber", x=x, y=y, label="number", text=self.randomString('-.0123456789$%', random.randint(1, 5)))
             self.actionBaseWeights.append(config['random_weight_type_number'])
@@ -228,7 +288,7 @@ class DeepLearningAgent:
         # This action basically types in equation related letters, like
         # plus and minus
         if config['enableRandomMathCommand']:
-            self.actions['typeMath'] = lambda x, y: TypeAction(type="typeMath", x=x, y=y, label="symbol", text=self.randomString('*=+<>-', random.randint(1, 3)))
+            self.actions['typeMath'] = lambda x, y: TypeAction(type="typeMath", x=x, y=y, label="math", text=self.randomString('*=+<>-', random.randint(1, 3)))
             self.actionBaseWeights.append(config['random_weight_type_math'])
             self.actionProbabilityBoostKeywords.append([])
             hasTypingAction = True
@@ -250,6 +310,16 @@ class DeepLearningAgent:
         if hasTypingAction:
             self.actions['clear'] = lambda x, y: ClearFieldAction(type="clear", x=x, y=y)
             self.actionBaseWeights.append(config['random_weight_clear'])
+            self.actionProbabilityBoostKeywords.append([])
+
+        # Only add in the random number action if the user configured it
+        if 'enableScrolling' in config and config['enableScrolling']:
+            self.actions['scrollUp'] = lambda x, y: ScrollingAction(type="scrollUp", x=x, y=y, direction="down")
+            self.actionBaseWeights.append(config['random_weight_scrolling'])
+            self.actionProbabilityBoostKeywords.append([])
+
+            self.actions['scrollDown'] = lambda x, y: ScrollingAction(type="scrollDown", x=x, y=y, direction="up")
+            self.actionBaseWeights.append(config['random_weight_scrolling'])
             self.actionProbabilityBoostKeywords.append([])
 
         # This dictionary provides random weightings for each HTML element.
@@ -514,6 +584,12 @@ class DeepLearningAgent:
 
                 if "clear" in self.actionsSorted:
                     actionTypes.append(self.actionsSorted.index("clear"))
+
+            # if element['canScroll']:
+            # Temporary: allow scrolling on any element.
+            for actionName in self.actionsSorted:
+                if actionName.startswith("scroll"):
+                    actionTypes.append(self.actionsSorted.index(actionName))
 
             # Here is the essential part. For each of the actions that are supported by this action
             # element, we paint a rectangle of 1's on the pixel action map. Effectively, the pixel
@@ -1068,7 +1144,9 @@ class DeepLearningAgent:
         # Now we run the weights for each of the actions through a softmax and use numpy to make a final decision on
         # what action we should perform at the given pixel
         try:
-            actionType = numpy.random.choice(possibleActionIndexes, p=scipy.special.softmax(numpy.array(possibleActionWeights) * numpy.array(possibleActionBoosts)))
+            weights = numpy.array(possibleActionWeights) * numpy.array(possibleActionBoosts)
+            probabilities = weights / numpy.sum(weights)
+            actionType = numpy.random.choice(possibleActionIndexes, p=probabilities)
         except ValueError:
             # If something went wrong, well this is very unusual. So we choose a totally random action at large.
             actionType = random.choice(range(len(self.actionsSorted)))

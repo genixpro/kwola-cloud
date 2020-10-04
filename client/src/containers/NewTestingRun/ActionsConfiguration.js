@@ -24,6 +24,14 @@ class ActionsConfiguration extends Component {
         enableDragging: false,
         enableTypeEmail: true,
         enableTypePassword: true,
+        enableRandomLettersCommand: true,
+        enableRandomAddressCommand: true,
+        enableRandomEmailCommand: true,
+        enableRandomPhoneNumberCommand: true,
+        enableRandomParagraphCommand: true,
+        enableRandomDateTimeCommand: true,
+        enableRandomCreditCardCommand: true,
+        enableRandomURLCommand: false,
         customTypingActionStrings: []
     }
 
@@ -43,6 +51,14 @@ class ActionsConfiguration extends Component {
                 enableDragging: config.enableDragging,
                 enableTypeEmail: config.enableTypeEmail,
                 enableTypePassword: config.enableTypePassword,
+                enableRandomLettersCommand: config.enableRandomLettersCommand,
+                enableRandomAddressCommand: config.enableRandomAddressCommand,
+                enableRandomEmailCommand: config.enableRandomEmailCommand,
+                enableRandomPhoneNumberCommand: config.enableRandomPhoneNumberCommand,
+                enableRandomParagraphCommand: config.enableRandomParagraphCommand,
+                enableRandomDateTimeCommand: config.enableRandomDateTimeCommand,
+                enableRandomCreditCardCommand: config.enableRandomCreditCardCommand,
+                enableRandomURLCommand: config.enableRandomURLCommand,
                 customTypingActionStrings: config.customTypingActionStrings || []
             });
         }
@@ -67,7 +83,15 @@ class ActionsConfiguration extends Component {
             enableDragging: this.state.enableDragging,
             enableTypeEmail: this.state.enableTypeEmail,
             enableTypePassword: this.state.enableTypePassword,
-            customTypingActionStrings: this.state.customTypingActionStrings
+            customTypingActionStrings: this.state.customTypingActionStrings,
+            enableRandomLettersCommand: this.enableRandomLettersCommand,
+            enableRandomAddressCommand: this.enableRandomAddressCommand,
+            enableRandomEmailCommand: this.enableRandomEmailCommand,
+            enableRandomPhoneNumberCommand: this.enableRandomPhoneNumberCommand,
+            enableRandomParagraphCommand: this.enableRandomParagraphCommand,
+            enableRandomDateTimeCommand: this.enableRandomDateTimeCommand,
+            enableRandomCreditCardCommand: this.enableRandomCreditCardCommand,
+            enableRandomURLCommand: this.enableRandomURLCommand
         })
     }
 
@@ -173,19 +197,123 @@ class ActionsConfiguration extends Component {
                             style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
-                        {/*<FormControlLabel*/}
-                        {/*    control={*/}
-                        {/*        <Checkbox*/}
-                        {/*            checked={this.state.enableScrolling}*/}
-                        {/*            onChange={() => this.toggle('enableScrolling')}*/}
-                        {/*            value="enableScrolling"*/}
-                        {/*            style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
-                        {/*        />*/}
-                        {/*    }*/}
-                        {/*    label="Enable scrolling actions?"*/}
-                        {/*    style={{"cursor": this.props.disabled ? "default" : "pointer"}}*/}
-                        {/*/>*/}
-                        {/*<br/>*/}
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.enableScrolling}
+                                    onChange={() => this.toggle('enableScrolling')}
+                                    value="enableScrolling"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                />
+                            }
+                            label="Enable scrolling actions?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                        />
+                        <br/>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.enableRandomLettersCommand}
+                                    onChange={() => this.toggle('enableRandomLettersCommand')}
+                                    value="enableRandomLettersCommand"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                />
+                            }
+                            label="Enable type random letters?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                        />
+                        <br/>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.enableRandomAddressCommand}
+                                    onChange={() => this.toggle('enableRandomAddressCommand')}
+                                    value="enableRandomAddressCommand"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                />
+                            }
+                            label="Enable type random address?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                        />
+                        <br/>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.enableRandomEmailCommand}
+                                    onChange={() => this.toggle('enableRandomEmailCommand')}
+                                    value="enableRandomEmailCommand"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                />
+                            }
+                            label="Enable type random email?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                        />
+                        <br/>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.enableRandomPhoneNumberCommand}
+                                    onChange={() => this.toggle('enableRandomPhoneNumberCommand')}
+                                    value="enableRandomPhoneNumberCommand"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                />
+                            }
+                            label="Enable type random phone number?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                        />
+                        <br/>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.enableRandomParagraphCommand}
+                                    onChange={() => this.toggle('enableRandomParagraphCommand')}
+                                    value="enableRandomParagraphCommand"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                />
+                            }
+                            label="Enable type random paragraph?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                        />
+                        <br/>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.enableRandomDateTimeCommand}
+                                    onChange={() => this.toggle('enableRandomDateTimeCommand')}
+                                    value="enableRandomDateTimeCommand"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                />
+                            }
+                            label="Enable type random date time?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                        />
+                        <br/>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.enableRandomCreditCardCommand}
+                                    onChange={() => this.toggle('enableRandomCreditCardCommand')}
+                                    value="enableRandomCreditCardCommand"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                />
+                            }
+                            label="Enable type random credit card number?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                        />
+                        <br/>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.enableRandomURLCommand}
+                                    onChange={() => this.toggle('enableRandomURLCommand')}
+                                    value="enableRandomURLCommand"
+                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                                />
+                            }
+                            label="Enable type random url?"
+                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                        />
+                        <br/>
                         {/*<FormControlLabel*/}
                         {/*    control={*/}
                         {/*        <Checkbox*/}
