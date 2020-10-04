@@ -1447,19 +1447,9 @@ class DeepLearningAgent:
             for index, action in enumerate(uniqueActions)
         }
 
-        # Remove several variables from 'self'. This is so that the 'self' object can be serialized
-        # and sent to various subprocesses in the code below without triggering errors. Unfortunately,
-        # neither the pytorch model nor lambda's can be serialized using pythons pickle. This is a bit
-        # of a hack. We have to use subprocesses and not threads to get around limitations in matplotlib
-        # which do not allow multiprocessing.
-        model = self.model
-        self.model = None
-        variableWrapperFunc = self.variableWrapperFunc
-        self.variableWrapperFunc = None
-        actions = self.actions
-        self.actions = None
-
-        with concurrent.futures.ProcessPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
+        # Keeping this temporarily as a ThreadPoolExecutor with max_workers as 1.
+        # Eventually should put this under multiple sub processes.
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             imageGenerationFutures = []
             for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImagesFiltered, networkOutputs):
                 if trace is not None:
@@ -1481,11 +1471,6 @@ class DeepLearningAgent:
 
             for future in imageGenerationFutures:
                 future.result()
-
-        # Restore the variables removed above back to the self object, now that the multiple subprocesses has finished.
-        self.model = model
-        self.variableWrapperFunc = variableWrapperFunc
-        self.actions = actions
 
         moviePath = os.path.join(tempScreenshotDirectory, "debug.mp4")
 
