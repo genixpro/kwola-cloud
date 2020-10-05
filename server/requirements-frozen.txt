@@ -51,7 +51,6 @@ jwcrypto==0.8
 kaitaistruct==0.8
 kiwisolver==1.2.0
 kombu==5.0.2
--e git+git@github.com:Kwola/kwola-cloud.git@13a4af554a608b1290e47218e596c22b688b56f0#egg=kwolacloud&subdirectory=server
 ldap3==2.7
 linecache2==1.0.0
 MarkupSafe==2.0.0a1
