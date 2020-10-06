@@ -223,7 +223,7 @@ class TestingStepManager:
             actions, times = self.agent.nextBestActions(self.step, images, envActionMaps, self.executionSessionTraces, shouldBeRandom=self.shouldBeRandom)
             actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
 
-            if actionDecisionTime > 5.0:
+            if actionDecisionTime > 15.0:
                 getLogger().info(f"Finished agent.nextBestActions after {actionDecisionTime} seconds. Subtimes: \n {pformat(times)}")
 
         for plugin in self.testingStepPlugins:
