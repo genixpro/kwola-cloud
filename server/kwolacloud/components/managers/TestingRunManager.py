@@ -300,6 +300,18 @@ class TestingRunManager:
                 # We always cleanup timed out tasks, because we don't want to leave them around consuming CPU.
                 job.cleanup()
                 jobsToRemove.append((jobId, job))
+            elif not job.ready() and job.getResult() is not None:
+                result = job.getResult()
+                if result['success']:
+                    logging.warning(f"A testing step with id {self.run.id} and name {job.kubeJobName()} has finished successfully, but it appears to have been hung and did not exit cleanly. It had to be forcibly stopped. It produced a result object: {pformat(result)}")
+                    handleSuccess(result)
+                else:
+                    logging.error(f"A testing step has failed with id {self.run.id} with job name {job.kubeJobName()}. It also appears to have been hung on exit and did not exit cleanly, meaning we had to forcibly shut it down. It produced a result object: {pformat(result)}")
+                    handleFailure()
+
+                # We force cleaning up this task, because it is still running and thus if we don't forcibly clean it, it will hang around taking up resources.
+                job.cleanup()
+                jobsToRemove.append((jobId, job))
 
         for (jobId, job) in jobsToRemove:
             jobIndex = self.run.runningTestingStepJobIds.index(jobId)
