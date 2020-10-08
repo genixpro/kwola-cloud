@@ -367,16 +367,15 @@ class TestingRunManager:
 
             timeElapsed = (datetime.datetime.now() - self.run.runningTrainingStepStartTime).total_seconds()
 
-            result = job.getResult()
-
             if not job.doesJobStillExist():
                 logging.info(f"Job {job.kubeJobName()} was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
                 self.run.runningTrainingStepJobId = None
                 self.run.save()
-            elif job.ready() or result is not None:
+            elif job.ready():
                 logging.info(f"Finished a training step for run {self.run.id}")
 
                 self.run.runningTrainingStepJobId = None
+                self.run.runningTrainingStepStartTime = None
                 self.run.trainingIterationsCompleted += self.config['iterations_per_training_step']
                 self.run.trainingStepsCompleted += 1
                 self.run.save()
@@ -384,7 +383,7 @@ class TestingRunManager:
                 if job.successful():
                     result = job.getResult()
                     if result is None:
-                        errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
+                        errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. The job did not produce a result object."
                         logging.error(errorMessage)
                         self.run.failedTrainingSteps += 1
                     elif result['success']:
@@ -403,6 +402,19 @@ class TestingRunManager:
                     self.run.failedTrainingSteps += 1
             elif timeElapsed > self.config['training_step_timeout']:
                 logging.error(f"A training step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}")
+                job.cleanup()
+                self.run.runningTrainingStepJobId = None
+                self.run.runningTrainingStepStartTime = None
+                self.run.failedTrainingSteps += 1
+            elif not job.ready() and job.getResult() is not None:
+                result = job.getResult()
+
+                errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
+                if 'exception' in result:
+                    errorMessage += "\n\n" + result['exception']
+
+                logging.error(errorMessage)
+                
                 job.cleanup()
                 self.run.runningTrainingStepJobId = None
                 self.run.runningTrainingStepStartTime = None
