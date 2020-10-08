@@ -367,11 +367,13 @@ class TestingRunManager:
 
             timeElapsed = (datetime.datetime.now() - self.run.runningTrainingStepStartTime).total_seconds()
 
+            result = job.getResult()
+
             if not job.doesJobStillExist():
                 logging.info(f"Job {job.kubeJobName()} was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
                 self.run.runningTrainingStepJobId = None
                 self.run.save()
-            elif job.ready():
+            elif job.ready() or result is not None:
                 logging.info(f"Finished a training step for run {self.run.id}")
 
                 self.run.runningTrainingStepJobId = None
