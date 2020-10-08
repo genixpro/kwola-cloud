@@ -421,7 +421,7 @@ class TestingRunManager:
             elif not job.ready() and job.getResult() is not None:
                 result = job.getResult()
 
-                errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
+                errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. It also appears to have hung on exit and had to be forcibly shut down."
                 if 'exception' in result:
                     errorMessage += "\n\n" + result['exception']
 

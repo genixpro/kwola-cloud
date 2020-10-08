@@ -41,6 +41,7 @@ import numpy
 import os
 import pickle
 import random
+import shutil
 import scipy.special
 import sys
 import tempfile
@@ -230,7 +231,7 @@ class TrainingManager:
             files = os.listdir(self.batchDirectory)
             for file in files:
                 os.unlink(os.path.join(self.batchDirectory, file))
-            os.rmdir(self.batchDirectory)
+            shutil.rmtree(self.batchDirectory)
 
             del self.agent
 
