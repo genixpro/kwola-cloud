@@ -382,15 +382,12 @@ class TestingRunManager:
             if not job.doesJobStillExist():
                 logging.info(f"Job {job.kubeJobName()} was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
                 self.run.runningTrainingStepJobId = None
+                self.run.runningTrainingStepStartTime = None
                 self.run.save()
             elif job.ready():
                 logging.info(f"Finished a training step for run {self.run.id}")
-
                 self.run.runningTrainingStepJobId = None
                 self.run.runningTrainingStepStartTime = None
-                self.run.trainingIterationsCompleted += self.config['iterations_per_training_step']
-                self.run.trainingStepsCompleted += 1
-                self.run.save()
 
                 if job.successful():
                     result = job.getResult()
@@ -400,6 +397,9 @@ class TestingRunManager:
                         self.run.failedTrainingSteps += 1
                     elif result['success']:
                         job.cleanup()
+
+                        self.run.trainingIterationsCompleted += self.config['iterations_per_training_step']
+                        self.run.trainingStepsCompleted += 1
                     else:
                         errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
                         if 'exception' in result:
@@ -421,16 +421,25 @@ class TestingRunManager:
             elif not job.ready() and job.getResult() is not None:
                 result = job.getResult()
 
-                errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. It also appears to have hung on exit and had to be forcibly shut down."
-                if 'exception' in result:
-                    errorMessage += "\n\n" + result['exception']
-
-                logging.error(errorMessage)
-                
-                job.cleanup()
                 self.run.runningTrainingStepJobId = None
                 self.run.runningTrainingStepStartTime = None
-                self.run.failedTrainingSteps += 1
+
+                if not result['success']:
+                    errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. It also appears to have hung on exit and had to be forcibly shut down."
+                    if 'exception' in result:
+                        errorMessage += "\n\n" + result['exception']
+
+                    logging.error(errorMessage)
+
+                    self.run.failedTrainingSteps += 1
+                else:
+                    warningMessage = f"A training step has succeeded for testing run {self.run.id} with job name {job.kubeJobName()}. But it also appears to have hung on exit and had to be forcibly shut down."
+                    logging.warning(warningMessage)
+
+                    self.run.trainingIterationsCompleted += self.config['iterations_per_training_step']
+                    self.run.trainingStepsCompleted += 1
+
+                job.cleanup()
 
             self.run.save()
 
