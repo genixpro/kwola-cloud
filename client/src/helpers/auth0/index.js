@@ -20,6 +20,7 @@ class Auth0Helper {
     this.updateAcquisitionUrl();
     this.emailVerified();
     this.webAuth = new auth0.WebAuth(Auth0Config);
+    this.userInfo = null;
   }
   login(handleLogin)
   {
@@ -85,7 +86,15 @@ class Auth0Helper {
 
   getUserInfo()
   {
-    return jwt.decode(localStorage.getItem('id_token'));
+    if (this.userInfo)
+    {
+      return this.userInfo;
+    }
+    else
+    {
+      this.userInfo = jwt.decode(localStorage.getItem('id_token'));
+      return this.userInfo;
+    }
   }
 
   isAdmin()
@@ -112,13 +121,16 @@ class Auth0Helper {
     localStorage.setItem('access_token', authResult.accessToken);
     localStorage.setItem('id_token', authResult.idToken);
     localStorage.setItem('expires_at', expiresAt);
+
+    this.userInfo = jwt.decode(authResult.idToken);
     this.updateAxiosToken();
     this.updateMixpanelIdentity();
     this.updateHubspotIdentity();
     this.updateGoogleAnalyticsIdentity();
   }
 
-  logout() {
+  logout()
+  {
     // Clear access token and ID token from local storage
     localStorage.removeItem('access_token');
     localStorage.removeItem('id_token');

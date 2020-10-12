@@ -67,11 +67,13 @@ class ListApplications extends Component
     })
   }
 
-  handleRowClick = (event, rowData)=>{
+  handleRowClick = (event, rowData)=>
+  {
     this.props.history.push(`/app/dashboard/applications/${rowData._id}`)
   }
 
- ListApps = (applications) => { 
+    ListApps = (applications) =>
+    {
       let appsTableRows = []
       applications.map(application => {
         //return (
@@ -89,15 +91,16 @@ class ListApplications extends Component
        let button = <Button variant="extended" size="small" color="secondary" onClick={() => this.dialogComp(application)}>
                   <Icon>delete</Icon>
                 </Button>
-      
+
        appsTableRows.push({_id:application._id,name:application.name,url:application.url,delete:button})
       })
       return appsTableRows;
-    } 
+    }
 
   
-dialogComp = (application) => {
-  var ConfirmText = <div>
+    dialogComp = (application) =>
+    {
+      var ConfirmText = <div>
             <DialogTitle id="alert-dialog-title">{application ? "Delete "+application.name : ''}?</DialogTitle>
               <DialogContent>
                 <DialogContentText id="alert-dialog-description">
@@ -116,7 +119,8 @@ dialogComp = (application) => {
     this.setState({dialog:true,confirm:ConfirmText})
   }
 
-  render() {
+  render()
+  {
 
     let dialog = <Dialog
         open={this.state.dialog}
@@ -199,7 +203,7 @@ dialogComp = (application) => {
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word",
                         fontSize:"14px"
                       },
-                      search:showFilter
+                      search: showFilter
                       // fixedColumns: {
                       //   left: 0, 
                       //   right: 1

@@ -59,8 +59,9 @@ class TopbarUser extends Component {
 
     openFeedback()
     {
-        window.HubSpotConversations.widget.open();
+        // window.HubSpotConversations.widget.open();
         this.setState({ visible: false });
+        window.location.href = "https://kwola.atlassian.net/servicedesk/customer/portal/2";
     }
 
   render() {
@@ -80,18 +81,22 @@ class TopbarUser extends Component {
         </UserInformation>
 
         <SettingsList>
-          <Link href="#" onClick={() => this.openBilling()} className="dropdownLink">
+          <a href="#" onClick={() => this.openBilling()} className="dropdownLink">
             <Icon>money-sharp</Icon>
             <IntlMessages id="topbar.billing" />
-          </Link>
-          <Link href="#" onClick={() => this.openFeedback()} className="dropdownLink">
+          </a>
+          <a href="https://kwola.atlassian.net/wiki/spaces/KC/overview" className="dropdownLink">
             <Icon>feedback</Icon>
-            <IntlMessages id="sidebar.feedback" />
-          </Link>
-          <Link href="#" onClick={() => this.openHelp()} className="dropdownLink">
+              <span>Documentation</span>
+         </a>
+          {/*<Link href="#" onClick={() => this.openFeedback()} className="dropdownLink">*/}
+          {/*  <Icon>feedback</Icon>*/}
+          {/*  <IntlMessages id="sidebar.feedback" />*/}
+          {/*</Link>*/}
+          <a href="https://kwola.atlassian.net/servicedesk/customer/portal/2" className="dropdownLink">
             <Icon>help</Icon>
             <IntlMessages id="topbar.help" />
-          </Link>
+          </a>
           <Link href="#" onClick={() => Auth.logout()} className="dropdownLink">
             <Icon>input</Icon>
             <IntlMessages id="topbar.logout" />
