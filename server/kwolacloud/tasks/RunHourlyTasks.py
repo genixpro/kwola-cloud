@@ -109,7 +109,7 @@ def evaluateRecurringTestingTriggers():
             triggersToDelete.append(trigger)
             continue
 
-        application = ApplicationModel.objects(id=trigger.applicationId)
+        application = ApplicationModel.objects(id=trigger.applicationId).first()
         if not application.checkSubscriptionLaunchRunAllowed():
             continue
         
