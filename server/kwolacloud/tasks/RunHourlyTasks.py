@@ -108,6 +108,10 @@ def evaluateRecurringTestingTriggers():
             logging.warning(f"Warning: The application object with id {trigger.applicationId} attached to trigger {trigger.id} is either missing from the database, or is no longer marked as active. Deleting the trigger object.")
             triggersToDelete.append(trigger)
             continue
+
+        application = ApplicationModel.objects(id=trigger.applicationId)
+        if not application.checkSubscriptionLaunchRunAllowed():
+            continue
         
         if trigger.repeatTrigger == 'time':
             dayOfWeek = datetime.now().strftime('%a')
@@ -125,10 +129,10 @@ def evaluateRecurringTestingTriggers():
                     nextExecutionTime = (trigger.lastTriggerTime + relativedelta(days=trigger.repeatFrequency, hour=trigger.hourOfDay, minutes=-1))
             elif trigger.repeatUnit == 'weeks':
                 if trigger.daysOfWeekEnabled[dayOfWeek]:
-                    if trigger.lastTriggerTime is None:
-                        nextExecutionTime = (datetime.now() + relativedelta(minutes=-1))
+                    if trigger.lastTriggerTime is None or dayOfWeek not in trigger.lastTriggerTimesByDayOfWeek:
+                        nextExecutionTime = (datetime.now() + relativedelta(minutes=-1, hour=trigger.hourOfDay))
                     else:
-                        nextExecutionTime = (trigger.lastTriggerTimesByDayOfWeek[dayOfWeek] + relativedelta(weeks=trigger.repeatFrequency, minutes=-1))
+                        nextExecutionTime = (trigger.lastTriggerTimesByDayOfWeek[dayOfWeek] + relativedelta(weeks=trigger.repeatFrequency, minutes=-1, hour=trigger.hourOfDay))
                 else:
                     nextExecutionTime = None
             elif trigger.repeatUnit == 'months':
@@ -136,10 +140,22 @@ def evaluateRecurringTestingTriggers():
                 weekOfMonth = str(int(datetime.now().strftime('%U')) - int(firstDayOfMonth.strftime('%U')))
 
                 if trigger.daysOfMonthEnabled[weekOfMonth][dayOfWeek]:
-                    if trigger.lastTriggerTime is None:
-                        nextExecutionTime = (datetime.now() + relativedelta(minutes=-1))
+                    if trigger.lastTriggerTime is None \
+                            or weekOfMonth not in trigger.lastTriggerTimesByDayOfMonth\
+                            or dayOfWeek not in trigger.lastTriggerTimesByDayOfMonth[weekOfMonth]:
+                        nextExecutionTime = (datetime.now() + relativedelta(minutes=-1, hour=trigger.hourOfDay))
                     else:
-                        nextExecutionTime = (trigger.lastTriggerTimesByDayOfMonth[weekOfMonth][dayOfWeek] + relativedelta(months=trigger.repeatFrequency, minutes=-1))
+                        nextExecutionTime = (trigger.lastTriggerTimesByDayOfMonth[weekOfMonth][dayOfWeek] + relativedelta(months=trigger.repeatFrequency, minutes=-1, hour=trigger.hourOfDay))
+                else:
+                    nextExecutionTime = None
+            elif trigger.repeatUnit == 'months_by_date':
+                dateOfMonth = str(int(datetime.now().strftime('%d')) - 1)
+
+                if dateOfMonth in trigger.datesOfMonthEnabled and trigger.datesOfMonthEnabled[dateOfMonth]:
+                    if trigger.lastTriggerTime is None or dateOfMonth not in trigger.lastTriggerTimesByDateOfMonth:
+                        nextExecutionTime = (datetime.now() + relativedelta(minutes=-1, hour=trigger.hourOfDay))
+                    else:
+                        nextExecutionTime = (trigger.lastTriggerTimesByDateOfMonth[dateOfMonth] + relativedelta(months=trigger.repeatFrequency, minutes=-1, hour=trigger.hourOfDay))
                 else:
                     nextExecutionTime = None
 

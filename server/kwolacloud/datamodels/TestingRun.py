@@ -46,6 +46,8 @@ class TestingRun(Document):
 
     predictedEndTime = DateTimeField()
 
+    launchSource = StringField()
+
     # Deprecated
     testingSessionsRemaining = IntField(default=0)
 
@@ -116,7 +118,7 @@ class TestingRun(Document):
                                 memoryLimit="2048Mi"
                                 )
         if configData['features']['enableRuns']:
-            if job.doesJobStillExist():
+            if not configData['features']['localRuns'] and job.doesJobStillExist():
                 job.cleanup()
 
             job.start()

@@ -9,7 +9,7 @@ from ..datamodels.id_utility import generateKwolaId
 from ..datamodels.TestingRun import TestingRun
 from ..helpers.jira import postBugToCustomerJIRA
 from ..helpers.slack import postToCustomerSlack
-from .utils import mountTestingRunStorageDrive, verifyStripeSubscription, attachUsageBilling
+from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
 from kwola.components.plugins.core.CreateLocalBugObjects import CreateLocalBugObjects
 from kwola.components.plugins.core.GenerateAnnotatedVideos import GenerateAnnotatedVideos
 from kwola.components.plugins.core.LogSessionActionExecutionTimes import LogSessionActionExecutionTimes
@@ -105,9 +105,6 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
 
             if application.bugFoundWebhookURL:
                 sendCustomerWebhook(application, "bugFoundWebhookURL", json.loads(bug.to_json()))
-
-        if result['success'] and 'successfulExecutionSessions' in result:
-            attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])
 
         logging.info(f"Finished testing step for testing run {testingRunId}")
 

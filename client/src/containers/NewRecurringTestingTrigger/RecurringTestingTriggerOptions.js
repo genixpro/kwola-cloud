@@ -16,6 +16,8 @@ import {
 import Radio from '../../components/uielements/radio';
 import { RadioGroup } from '../../components/uielements/radio';
 import Papersheet from "../../components/utility/papersheet";
+import HourOfDaySelector from "./HourOfDaySelector";
+import DaysOfMonthSelector from "../NewApplicationWizard/DaysOfMonthSelector";
 
 
 class RecurringTestingTriggerOptions extends Component {
@@ -33,52 +35,38 @@ class RecurringTestingTriggerOptions extends Component {
             "Fri": false,
             "Sat": false
         },
-        daysOfMonthEnabled: {
-            0: {
-                "Sun": false,
-                "Mon": false,
-                "Tue": false,
-                "Wed": false,
-                "Thu": false,
-                "Fri": false,
-                "Sat": false
-            },
-            1: {
-                "Sun": false,
-                "Mon": false,
-                "Tue": false,
-                "Wed": false,
-                "Thu": false,
-                "Fri": false,
-                "Sat": false
-            },
-            2: {
-                "Sun": false,
-                "Mon": false,
-                "Tue": false,
-                "Wed": true,
-                "Thu": false,
-                "Fri": false,
-                "Sat": false
-            },
-            3: {
-                "Sun": false,
-                "Mon": false,
-                "Tue": false,
-                "Wed": false,
-                "Thu": false,
-                "Fri": false,
-                "Sat": false
-            },
-            4: {
-                "Sun": false,
-                "Mon": false,
-                "Tue": false,
-                "Wed": false,
-                "Thu": false,
-                "Fri": false,
-                "Sat": false
-            }
+        datesOfMonthEnabled: {
+            0: false,
+            1: false,
+            2: false,
+            3: false,
+            4: false,
+            5: false,
+            6: false,
+            7: false,
+            8: false,
+            9: false,
+            10: false,
+            11: false,
+            12: false,
+            13: false,
+            14: false,
+            15: false,
+            16: false,
+            17: false,
+            18: false,
+            19: false,
+            20: false,
+            21: false,
+            22: false,
+            23: false,
+            24: false,
+            25: false,
+            26: false,
+            27: false,
+            28: false,
+            29: false,
+            30: false
         },
         repositoryURL: "",
         repositoryUsername: "",
@@ -142,7 +130,7 @@ class RecurringTestingTriggerOptions extends Component {
                 repeatUnit: this.state.repeatUnit,
                 hourOfDay: this.state.hourOfDay,
                 daysOfWeekEnabled: this.state.daysOfWeekEnabled,
-                daysOfMonthEnabled: this.state.daysOfMonthEnabled,
+                datesOfMonthEnabled: this.state.datesOfMonthEnabled,
                 repositoryURL: this.state.repositoryURL,
                 repositoryUsername: this.state.repositoryUsername,
                 repositoryPassword: this.state.repositoryPassword,
@@ -222,20 +210,6 @@ class RecurringTestingTriggerOptions extends Component {
     }
 
 
-    toggleDaysOfMonthEnabled(week, day)
-    {
-        if (this.props.disabled)
-        {
-            // Do nothing
-            return;
-        }
-
-        const daysOfMonthEnabled = this.state.daysOfMonthEnabled;
-        daysOfMonthEnabled[week][day] = !daysOfMonthEnabled[week][day];
-        this.setState({daysOfMonthEnabled: daysOfMonthEnabled}, () => this.updateParent())
-    }
-
-
     changeRepositoryField(field, newValue)
     {
         if (this.props.disabled)
@@ -247,11 +221,14 @@ class RecurringTestingTriggerOptions extends Component {
         this.setState({[field]: newValue}, () => this.updateParent());
     }
 
+
+    datesOfMonthChanged(datesOfMonth)
+    {
+        this.setState({datesOfMonthEnabled: datesOfMonth});
+    }
+
     render() {
-        return <Papersheet
-                title={`Trigger Options`}
-                subtitle={``}
-            >
+        const body = <div>
             <Row>
                 <Column xs={this.props.hideHelp ? 12 : 9}>
                     {/*<Button*/}
@@ -347,7 +324,7 @@ class RecurringTestingTriggerOptions extends Component {
                                         <option value={"weeks"}>
                                             weeks
                                         </option>
-                                        <option value={"months"}>
+                                        <option value={"months_by_date"}>
                                             months
                                         </option>
                                     </TextField>
@@ -362,56 +339,14 @@ class RecurringTestingTriggerOptions extends Component {
                                         : null
                                 }
                                 {
-                                    this.state.repeatUnit === "days" || this.state.repeatUnit === "weeks" || this.state.repeatUnit === "months" ?
+                                    this.state.repeatUnit === "days" || this.state.repeatUnit === "weeks" || this.state.repeatUnit === "months_by_date" ?
                                         <div style={{"flexGrow": "1"}}>
-                                            <TextField
-                                                id="select-currency-native"
-                                                select
+                                            <HourOfDaySelector
                                                 value={this.state.hourOfDay}
-                                                onChange={(event) => this.hourOfDayChanged(event.target.value)}
-                                                SelectProps={{
-                                                    native: true,
-                                                    MenuProps: {
-                                                        className: 'menu',
-                                                    },
-                                                }}
-                                            >
-                                                {
-                                                    [0,1,2,3,4,5].map((hour) =>
-                                                        <option value={hour}>
-                                                            {hour === 0 ? 12 : hour} am
-                                                        </option>
-                                                    )
-                                                }
-                                                <br/>
-                                                {
-                                                    [6,7,8,9,10,11].map((hour) =>
-                                                        <option value={hour}>
-                                                            {hour === 0 ? 12 : hour} am
-                                                        </option>
-                                                    )
-                                                }
-                                                <br/>
-                                                {
-                                                    [12,13,14,15,16,17].map((hour) =>
-                                                        <option value={hour}>
-                                                            {hour === 12 ? 12 : (hour - 12)} pm
-                                                        </option>
-                                                    )
-                                                }
-                                                <br/>
-                                                {
-                                                    [18,19,20,21,22,23].map((hour) =>
-                                                        <option value={hour}>
-                                                            {hour === 12 ? 12 : (hour - 12)} pm
-                                                        </option>
-                                                    )
-                                                }
-                                            </TextField>
+                                                onChange={(event) => this.hourOfDayChanged(event.target.value)} />
                                         </div>
                                         : null
                                 }
-
                             </div>
                             <br/>
                             <br/>
@@ -444,40 +379,12 @@ class RecurringTestingTriggerOptions extends Component {
                                     : null
                             }
                             {
-                                this.state.repeatUnit === "months" ?
-                                    <div style={{
-                                        "display": "flex",
-                                        "flexDirection": "column",
-                                        "alignItems": "flex-start"
-                                    }}>
-                                        {
-                                            [0,1,2,3,4].map((weekOfMonth) =>
-                                                <div style={{
-                                                    "display": "flex",
-                                                    "flexDirection": "row",
-                                                    "alignItems": "flex-start",
-                                                    "width": "100%"
-                                                }}>
-                                                    <div style={{"flexBasis": "100px", "marginTop": "20px", "flexGrow":"0"}}>{weekOfMonth === 0 ? <span>Repeat on</span> : null}</div>
-                                                    {
-                                                        <div style={{"flexGrow": "1"}}>
-                                                            <span>Week {weekOfMonth + 1}</span>
-                                                            {
-                                                                ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayOfWeek) =>
-                                                                    <Button variant="extended"
-                                                                            color={this.state.daysOfMonthEnabled[weekOfMonth][dayOfWeek] ? "primary" : "default"}
-                                                                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
-                                                                            onClick={() => this.toggleDaysOfMonthEnabled(weekOfMonth, dayOfWeek)}>
-                                                                        {dayOfWeek}
-                                                                    </Button>
-                                                                )
-                                                            }
-                                                        </div>
-                                                    }
-                                                </div>
-                                            )
-                                        }
-                                    </div>
+                                this.state.repeatUnit === "months_by_date" ?
+                                    <DaysOfMonthSelector
+                                        value={this.props.datesOfMonthEnabled}
+                                        onChange={(datesOfMonth) => this.datesOfMonthChanged(datesOfMonth)}
+                                        maxDaysSelected={5}
+                                    />
                                     : null
                             }
                         </div>
@@ -567,7 +474,19 @@ class RecurringTestingTriggerOptions extends Component {
                         }
                     </Row>: null
             }
-        </Papersheet>;
+        </div>;
+
+        if (!this.props.hideFrame)
+        {
+            return <Papersheet
+                title={`Trigger Options`}
+                subtitle={``}
+            >{body}</Papersheet>;
+        }
+        else
+        {
+            return body;
+        }
     }
 }
 

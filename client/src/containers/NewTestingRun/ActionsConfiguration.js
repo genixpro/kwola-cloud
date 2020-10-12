@@ -20,7 +20,7 @@ class ActionsConfiguration extends Component {
         enableRandomMathCommand: false,
         enableRandomOtherSymbolCommand: false,
         enableRandomNumberCommand: true,
-        enableScrolling: false,
+        enableScrolling: true,
         enableDragging: false,
         enableTypeEmail: true,
         enableTypePassword: true,
@@ -84,14 +84,14 @@ class ActionsConfiguration extends Component {
             enableTypeEmail: this.state.enableTypeEmail,
             enableTypePassword: this.state.enableTypePassword,
             customTypingActionStrings: this.state.customTypingActionStrings,
-            enableRandomLettersCommand: this.enableRandomLettersCommand,
-            enableRandomAddressCommand: this.enableRandomAddressCommand,
-            enableRandomEmailCommand: this.enableRandomEmailCommand,
-            enableRandomPhoneNumberCommand: this.enableRandomPhoneNumberCommand,
-            enableRandomParagraphCommand: this.enableRandomParagraphCommand,
-            enableRandomDateTimeCommand: this.enableRandomDateTimeCommand,
-            enableRandomCreditCardCommand: this.enableRandomCreditCardCommand,
-            enableRandomURLCommand: this.enableRandomURLCommand
+            enableRandomLettersCommand: this.state.enableRandomLettersCommand,
+            enableRandomAddressCommand: this.state.enableRandomAddressCommand,
+            enableRandomEmailCommand: this.state.enableRandomEmailCommand,
+            enableRandomPhoneNumberCommand: this.state.enableRandomPhoneNumberCommand,
+            enableRandomParagraphCommand: this.state.enableRandomParagraphCommand,
+            enableRandomDateTimeCommand: this.state.enableRandomDateTimeCommand,
+            enableRandomCreditCardCommand: this.state.enableRandomCreditCardCommand,
+            enableRandomURLCommand: this.state.enableRandomURLCommand
         })
     }
 
@@ -151,13 +151,10 @@ class ActionsConfiguration extends Component {
 
 
     render() {
-        return <Papersheet
-                title={`Actions`}
-                subtitle={``}
-            >
-            <Row>
+        const body = <Row>
                 <Column xs={this.props.hideHelp ? 12 : 9}>
                     <FormGroup>
+                        <h4>Click Actions</h4>
                         <FormControlLabel
                             control={
                                 <Checkbox
@@ -197,19 +194,7 @@ class ActionsConfiguration extends Component {
                             style={{"cursor": this.props.disabled ? "default" : "pointer"}}
                         />
                         <br/>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={this.state.enableScrolling}
-                                    onChange={() => this.toggle('enableScrolling')}
-                                    value="enableScrolling"
-                                    style={{"cursor": this.props.disabled ? "default" : "pointer"}}
-                                />
-                            }
-                            label="Enable scrolling actions?"
-                            style={{"cursor": this.props.disabled ? "default" : "pointer"}}
-                        />
-                        <br/>
+                        <h4>Typing Actions</h4>
                         <FormControlLabel
                             control={
                                 <Checkbox
@@ -407,7 +392,6 @@ class ActionsConfiguration extends Component {
                     </FormGroup>
                     <br/>
                     <br/>
-                    <br/>
 
                     {
                         <Button variant="extended" color={"primary"} onClick={() => this.addNewCustomString()}
@@ -437,16 +421,47 @@ class ActionsConfiguration extends Component {
                             </div>;
                         })
                     }
+                    <br/>
+                    <br/>
+                    <h4>Miscellaneous Actions</h4>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={this.state.enableScrolling}
+                                onChange={() => this.toggle('enableScrolling')}
+                                value="enableScrolling"
+                                style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                            />
+                        }
+                        label="Enable scrolling?"
+                        style={{"cursor": this.props.disabled ? "default" : "pointer"}}
+                    />
+                    <br/>
+                    <br/>
+                    <br/>
 
                 </Column>
                 {
                     !this.props.hideHelp ?
                         <Column xs={3}>
-                            <p>Select which of the default, built-in actions you would like to enable?</p>
+                            <p>Select which of the default, built-in actions you would like to enable.</p>
                         </Column> : null
                 }
-            </Row>
-        </Papersheet>;
+            </Row>;
+
+        if (this.props.hideWrapper)
+        {
+            return body;
+        }
+        else
+        {
+            return <Papersheet
+                title={`Actions`}
+                subtitle={``}
+            >
+                {body}
+            </Papersheet>;
+        }
     }
 }
 

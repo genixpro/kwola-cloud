@@ -45,27 +45,22 @@ import PaymentDetailsSection from "../NewTestingRun/PaymentDetailsSection";
 import RecurringTestingOptions from "./RecurringTestingTriggerOptions";
 import SizeOfRun from "../NewTestingRun/SizeOfRun";
 import CheckoutWidget from "../NewTestingRun/CheckoutPriceWidget";
+import DoneIcon from "@material-ui/icons/Done";
+import "./NewRecurringTestingTrigger.scss";
 
 
 class NewRecurringTestingTrigger extends Component {
     state = {
         result: '',
-        paymentRequest: null,
-        mode: "details",
-        name: "",
-        address: "",
         snackbar:false,
         snackbarSeverity:"info",
         promoCode: "",
-        discountApplied: 0,
-        runConfiguration: {}
+        discountApplied: 0
     };
 
     constructor()
     {
         super();
-
-        this.checkoutWidget = null;
     }
 
 
@@ -74,30 +69,14 @@ class NewRecurringTestingTrigger extends Component {
         axios.get(`/application/${this.props.match.params.id}`).then((response) =>
         {
             const stateUpdate = {application: response.data};
-            if (response.data.defaultRunConfiguration)
-            {
-                stateUpdate.runConfiguration = response.data.defaultRunConfiguration;
-            }
 
             this.setState(stateUpdate);
         });
     }
 
 
-    createRunConfiguration()
-    {
-        const runConfig = this.state.runConfiguration;
-        runConfig.url = this.state.application.url;
-        runConfig.name = "";
-        runConfig.paragraph = "";
-        runConfig.preventOffsiteLinks = true;
-        return runConfig;
-    }
-
-
     createDataForRecurringTestingTrigger()
     {
-        const runConfig = this.createRunConfiguration();
         return {
             applicationId: this.props.match.params.id,
             promoCode: this.state.promoCode,
@@ -106,26 +85,14 @@ class NewRecurringTestingTrigger extends Component {
             repeatUnit: this.state.repeatUnit,
             hoursEnabled: this.state.hoursEnabled,
             daysOfWeekEnabled: this.state.daysOfWeekEnabled,
-            daysOfMonthEnabled: this.state.daysOfMonthEnabled,
+            datesOfMonthEnabled: this.state.datesOfMonthEnabled,
             repositoryURL: this.state.repositoryURL,
             repositoryUsername: this.state.repositoryUsername,
             repositoryPassword: this.state.repositoryPassword,
             repositorySSHPrivateKey: this.state.repositorySSHPrivateKey,
-            webhookIdentifier: this.state.webhookIdentifier,
-            configuration: runConfig
+            webhookIdentifier: this.state.webhookIdentifier
         };
     }
-
-    changeRunConfiguration(newValues)
-    {
-        const runConfig = this.state.runConfiguration;
-        Object.keys(newValues).forEach((key) =>
-        {
-            runConfig[key] = newValues[key];
-        });
-        this.setState({runConfiguration: runConfig})
-    }
-
 
     createTriggerClicked()
     {
@@ -134,32 +101,7 @@ class NewRecurringTestingTrigger extends Component {
             window.dataLayer.push({'event': 'clicked-create-trigger'});
         }
 
-
-        if (Auth0.isUserAllowedFreeRuns() || this.checkoutWidget.calculateFinalTotal() === 0)
-        {
-            return this.createRecurringRunConfiguration(null);
-        }
-        else
-        {
-            this.setState({"mode": "payment"});
-        }
-    }
-
-
-    createRecurringRunConfiguration(paymentMethod)
-    {
-        let price = this.checkoutWidget.calculateFinalTotal();
-        if (Auth0.isUserAllowedFreeRuns() || paymentMethod === null)
-        {
-            price = 0;
-        }
-
         const recurringTestingTriggerData = this.createDataForRecurringTestingTrigger();
-
-        if(paymentMethod !== null)
-        {
-            recurringTestingTriggerData['payment_method'] = paymentMethod.id;
-        }
 
         // testingRunData['stripe'] = {productId:this.state.productId, priceId:this.}
         return axios.post(`/recurring_testing_trigger`, recurringTestingTriggerData).then((response) => {
@@ -168,7 +110,7 @@ class NewRecurringTestingTrigger extends Component {
                 snackbar: true,
                 snackbarText: 'Your recurring testing has been setup successfully!'
             })
-            this.trackTriggerCreateSuccess(response.data.recurringTestingTriggerId, price);
+            this.trackTriggerCreateSuccess(response.data.recurringTestingTriggerId);
             this.props.history.push(`/app/dashboard/triggers/${response.data.recurringTestingTriggerId}`);
         }, (error) =>
         {
@@ -177,40 +119,9 @@ class NewRecurringTestingTrigger extends Component {
                 snackbar:true,
                 snackbarText:'Order failed. Your recurring testing could not be setup. Please ensure your payment method is valid or contact support.'
             })
-            this.trackTriggerCreateFailure(price);
+            this.trackTriggerCreateFailure();
             return Promise.rejected(error);
         });
-    }
-
-    completeOrder(elements)
-    {
-        const price = this.checkoutWidget.calculatePrice();
-        return stripePromise.then((stripe) =>
-        {
-            const cardElement = elements.getElement(CardElement);
-
-            return stripe.createPaymentMethod({
-                type: "card",
-                card: cardElement,
-                billing_details: {
-                    name: this.state.name,
-                    address: this.state.address
-                }
-            }).then((result) =>
-            {
-                if (result.error)
-                {
-                    // Show error to your customer (e.g., insufficient funds)
-                    this.setState({snackbarSeverity:"warning",snackbar:true,snackbarText:'Processing Error. Please check your payment information and try again.'})
-                    this.trackTriggerCreateFailure(price);
-                    return Promise.rejected(result.error);
-                }
-                else
-                {
-                    return this.createRecurringRunConfiguration(result.paymentMethod);
-                }
-            });
-        })
     }
 
     closeSnackbar()
@@ -219,31 +130,19 @@ class NewRecurringTestingTrigger extends Component {
     }
 
 
-    checkoutButtonClicked(elements)
-    {
-        if (this.state.mode === 'details')
-        {
-            return this.createTriggerClicked();
-        }
-        if (this.state.mode === 'payment')
-        {
-            return this.completeOrder(elements)
-        }
-    }
-
-    trackTriggerCreateSuccess(recurringTestingTriggerId, price)
+    trackTriggerCreateSuccess(recurringTestingTriggerId)
     {
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            window.dataLayer.push({'event': 'setup-recurring-trigger-success', 'conversionValue': price});
+            window.dataLayer.push({'event': 'setup-recurring-trigger-success', 'conversionValue': 250});
         }
     }
 
-    trackTriggerCreateFailure(price)
+    trackTriggerCreateFailure()
     {
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            window.dataLayer.push({'event': 'setup-recurring-trigger-failure', 'conversionValue': price});
+            window.dataLayer.push({'event': 'setup-recurring-trigger-failure', 'conversionValue': 250});
         }
     }
 
@@ -259,94 +158,45 @@ class NewRecurringTestingTrigger extends Component {
 
         return (
             <LayoutWrapper>
-                <ElementsConsumer>
-                    {({elements, stripe}) => (
-                        <FullColumn>
-                            <Row>
-                                {
-                                    this.state.mode === "details" ?
-                                        <TwoThirdColumn>
-                                            <div>
-                                                <RecurringTestingOptions
-                                                    onChange={(data) => this.setState(data)}
-                                                />
-                                                <br/>
-                                                <br/>
-                                                <br/>
-                                                <SizeOfRun
-                                                    defaultRunConfiguration={this.state.application.defaultRunConfiguration}
-                                                    onChange={(data) => this.changeRunConfiguration(data)}
-                                                />
-                                                <br/>
-                                                <br/>
-                                                <br/>
-                                                <AutologinCredentials
-                                                    defaultRunConfiguration={this.state.application.defaultRunConfiguration}
-                                                    onChange={(data) => this.changeRunConfiguration(data)}
-                                                />
-                                                <br/>
-                                                <br/>
-                                                <br/>
-                                                <ActionsConfiguration
-                                                    defaultRunConfiguration={this.state.application.defaultRunConfiguration}
-                                                    onChange={(data) => this.changeRunConfiguration(data)}
-                                                />
-                                                <br/>
-                                                <br/>
-                                                <br/>
-                                                <PathWhitelistConfiguration
-                                                    defaultRunConfiguration={this.state.application.defaultRunConfiguration}
-                                                    onChange={(data) => this.changeRunConfiguration(data)}
-                                                    application={this.state.application}
-                                                />
-                                                <br/>
-                                                <br/>
-                                                <br/>
-                                                <ErrorsConfiguration onChange={(data) => this.changeRunConfiguration(data)} />
-                                            </div>
-                                        </TwoThirdColumn> : null
-                                }
+                <FullColumn>
+                    <Row>
+                        <Column>
+                            <div>
+                                <Papersheet
+                                    title={`Trigger Options`}
+                                    subtitle={``}
+                                >
+                                    <RecurringTestingOptions
+                                        onChange={(data) => this.setState(data)}
+                                        hideFrame={true}
+                                    />
+                                    <Row>
+                                        <Column>
+                                            <LoaderButton onClick={() => this.createTriggerClicked()} className={"create-trigger-button"}>
+                                                Create Trigger
+                                            </LoaderButton>
+                                        </Column>
+                                    </Row>
+                                </Papersheet>
 
-                                {
-                                    this.state.mode === "payment" ?
-                                        <TwoThirdColumn>
-                                            <PaymentDetailsSection
-                                                onChange={(data) => this.setState(data)} />
-                                        </TwoThirdColumn> : null
-                                }
-
-                                <OneThirdColumn>
-                                    <div style={{"position":"sticky", "top":"5vh"}}>
-                                        <Papersheet
-                                            title={`Checkout`}
-                                            subtitle={``}
-                                        >
-                                            <CheckoutWidget
-                                                objRef={(elem) => this.checkoutWidget = elem}
-                                                runConfiguration={this.state.runConfiguration}
-                                                onCheckoutButtonClicked={() => this.checkoutButtonClicked(elements)}
-                                                onChange={(data) => this.setState(data)}
-                                                checkoutButtonText={this.state.mode === 'details' ? 'Create Trigger' : 'Complete Order'}
-                                                prefillPromoCode={false}
-                                            />
-                                        </Papersheet>
-                                        <br/>
-                                        <Papersheet title={`Did you like this checkout page?`}>
-                                            <FeedbackWidget
-                                                applicationId={this.props.match.params.id}
-                                                positivePlaceholder={"What did you like about it?"}
-                                                negativePlaceholder={"How could we make it better?"}
-                                                screen={"New Testing Run"}
-                                                positiveText={"Thumbs up: I like this checkout page."}
-                                                negativeText={"Thumbs down: I find this confusing or don't like the price."}
-                                            />
-                                        </Papersheet>
-                                    </div>
-                                </OneThirdColumn>
-                            </Row>
-                        </FullColumn>
-                    )}
-                </ElementsConsumer>
+                            </div>
+                        </Column>
+                    </Row>
+                    <Row>
+                        <Column>
+                            <Papersheet title={`Did you like this page to create your trigger?`}>
+                                <FeedbackWidget
+                                    applicationId={this.props.match.params.id}
+                                    positivePlaceholder={"What did you like about it?"}
+                                    negativePlaceholder={"How could we make it better?"}
+                                    screen={"New Testing Run"}
+                                    positiveText={"Thumbs up: I like this trigger creation page."}
+                                    negativeText={"Thumbs down: I find this confusing."}
+                                />
+                            </Papersheet>
+                        </Column>
+                    </Row>
+                </FullColumn>
                 <Snackbar
                     anchorOrigin={{
                         vertical: 'bottom',

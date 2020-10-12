@@ -7,6 +7,7 @@
 from kwola.datamodels.CustomIDField import CustomIDField
 from .RunConfiguration import RunConfiguration
 from .TestingRun import TestingRun
+from .ApplicationModel import ApplicationModel
 from mongoengine import *
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from ..config.config import getKwolaConfiguration
@@ -22,6 +23,7 @@ import sys
 import shutil
 import urllib.parse
 import logging
+import stripe
 import stat
 import giturlparse
 
@@ -47,6 +49,9 @@ class RecurringTestingTrigger(Document):
 
     promoCode = StringField()
 
+    # This is now deprecated. Now instead the defaultRunConfiguration
+    # attached to the application object is used as the basis for
+    # the testing runs for recurring testing triggers.
     configuration = EmbeddedDocumentField(RunConfiguration)
 
     lastTriggerTime = DateTimeField()
@@ -55,7 +60,7 @@ class RecurringTestingTrigger(Document):
 
     repeatFrequency = IntField(default=None)
 
-    repeatUnit = StringField(enumerate=['hours', 'days', 'weeks', 'months'], default=None)
+    repeatUnit = StringField(enumerate=['hours', 'days', 'weeks', 'months', 'months_by_date'], default=None)
 
     hourOfDay = IntField(default=None)
 
@@ -66,6 +71,10 @@ class RecurringTestingTrigger(Document):
     daysOfMonthEnabled = DictField(field=DictField(BooleanField()), default=None)
 
     lastTriggerTimesByDayOfMonth = DictField(field=DictField(DateTimeField()), default=dict())
+
+    datesOfMonthEnabled = DictField(field=BooleanField(), default=None)
+
+    lastTriggerTimesByDateOfMonth = DictField(field=DateTimeField(), default=dict())
 
     repositoryURL = StringField(default=None)
 
@@ -91,6 +100,10 @@ class RecurringTestingTrigger(Document):
     def launchTestingRun(self):
         logging.info(f"Launching a testing run for application {self.applicationId}")
 
+        application = ApplicationModel.objects(id=self.applicationId).first()
+
+        configData = loadConfiguration()
+
         newTestingRun = TestingRun(
             id=generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=self.owner),
             owner=self.owner,
@@ -102,7 +115,8 @@ class RecurringTestingTrigger(Document):
             predictedEndTime=(datetime.now() + relativedelta(hours=(self.configuration.hours + 1))),
             recurringTestingTriggerId=self.id,
             isRecurring=True,
-            configuration=self.configuration
+            configuration=application.defaultRunConfiguration,
+            launchSource="trigger"
         )
 
         newTestingRun.save()
@@ -125,6 +139,15 @@ class RecurringTestingTrigger(Document):
         self.save()
 
         newTestingRun.runJob()
+
+        if application.package == "pay_as_you_go" and application.countTestingRunsLaunchedThisMonth() > 10:
+            subscription = stripe.Subscription.retrieve(application.stripeSubscriptionId)
+
+            stripe.InvoiceItem.create(
+                customer=subscription.customer,
+                price=configData['stripe']['price_1HbBKrIblHdmFFAoMXAbtwBD'],
+                subscription=application.stripeSubscriptionId
+            )
 
     def getLatestCommitHash(self):
         gitArgs = ['git', 'clone', '--bare']

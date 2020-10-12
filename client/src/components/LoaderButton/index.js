@@ -98,7 +98,7 @@ class LoaderButton extends Component {
                     variant="extended"
                     color={this.props.color || "primary"}
                     disabled={this.props.disabled}
-                    className="orderBtn"
+                    className={`orderBtn ${this.props.className}`}
                     title={this.props.title}
                     onClick={() => this.onClick()}>
                 {this.props.children}

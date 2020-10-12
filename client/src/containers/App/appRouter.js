@@ -1,23 +1,7 @@
 import React, { Component, lazy, Suspense } from 'react';
 import Route from '../../components/utility/customRoute';
 import Loader from '../../components/utility/Loader/';
-
-function safeImport(importFunc)
-{
-  return () =>
-  {
-    try
-    {
-      return importFunc();
-    }
-    catch(err)
-    {
-      // If there is an error lazy loading a specific page, that may mean that the underlying frontend code was updated. So
-      // just force a full reload of the page.
-      window.location.reload(true);
-    }
-  };
-}
+import safeImport from "../../safe_import";
 
 const routes = [
   {
@@ -26,7 +10,11 @@ const routes = [
   },
   {
     path: 'new-application',
-    component: lazy(safeImport(() => import('../NewApplication'))),
+    component: lazy(safeImport(() => import('../NewApplicationWizard'))),
+  },
+  {
+    path: 'new-application/:page',
+    component: lazy(safeImport(() => import('../NewApplicationWizard'))),
   },
   {
     path: 'jira',
@@ -59,6 +47,14 @@ const routes = [
   {
     path: 'applications/:id/new_trigger',
     component: lazy(safeImport(() => import('../NewRecurringTestingTrigger'))),
+  },
+  {
+    path: 'applications/:id/testing_run_options',
+    component: lazy(safeImport(() => import('../ConfigureTestingRunOptions'))),
+  },
+  {
+    path: 'applications/:id/subscription',
+    component: lazy(safeImport(() => import('../ChangeSubscription'))),
   },
   {
     path: 'applications',

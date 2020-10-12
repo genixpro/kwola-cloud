@@ -10,7 +10,10 @@
   },
   "stripe": {
     "apiKey": "sk_test_WHeVtPF7ILpuTA4JhGhKleHA00EghhZOTM",
-    "planId": "plan_HGd3ZO1iW4FqHp",
+    "monthlyPriceId": "price_1Hb8ngIblHdmFFAobmKEiq1u",
+    "payAsYouGoPriceId": "price_1Hb94OIblHdmFFAoBRbY9zb9",
+    "payAsYouGoSingleRunPriceId": "price_1HbBIdIblHdmFFAo8Ueu3M6h",
+    "oneOffRunPriceId": "price_1Hb97XIblHdmFFAo6b5VHZ8C",
     "productId":"prod_HWLIaQaPlFi5PU"
   },
   "auth0": {

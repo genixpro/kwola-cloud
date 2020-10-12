@@ -212,28 +212,8 @@ def verifyStripeSubscription(testingRun):
         logging.error(f"Error! Did not find the Stripe subscription object for this testing run.")
         return False
 
-    if subscription.status != "active":
+    if subscription.status != "active" and subscription.status != "trialing" and subscription.status != "past_due":
         logging.warning("Error! Stripe subscription is not in the active state.")
         return False
 
     return True
-
-def attachUsageBilling(config, testingRun, sessionsToBill):
-    if testingRun.stripeSubscriptionId is None:
-        return True
-
-    # Verify this subscription with stripe
-    subscription = stripe.Subscription.retrieve(testingRun.stripeSubscriptionId)
-    if subscription is None:
-        logging.error("Error! Did not find the Stripe subscription object for this testing run.")
-        return False
-
-    stripe.SubscriptionItem.create_usage_record(
-        subscription['items'].data[0].id,
-        quantity=int(config['testing_sequence_length'] * sessionsToBill),
-        timestamp=int(datetime.datetime.now().timestamp()),
-        action='increment',
-    )
-
-    return True
-

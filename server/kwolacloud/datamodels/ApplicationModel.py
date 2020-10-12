@@ -4,6 +4,7 @@
 from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.datamodels.DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from kwolacloud.datamodels.RunConfiguration import RunConfiguration
+from kwolacloud.datamodels.TestingRun import TestingRun
 from mongoengine import *
 from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
@@ -17,6 +18,8 @@ import logging
 from google.cloud import storage
 import numpy
 import secrets
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 
 class ApplicationModel(Document):
@@ -90,6 +93,14 @@ class ApplicationModel(Document):
 
     webhookSignatureSecret = StringField(default="")
 
+    stripeSubscriptionId = StringField(default=None)
+
+    stripeCustomerId = StringField(default=None)
+
+    package = StringField(default=None)
+
+    promoCode = StringField(default=None)
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
 
@@ -150,3 +161,21 @@ class ApplicationModel(Document):
 
     def generateWebhookSignatureSecret(self):
         self.webhookSignatureSecret = secrets.token_urlsafe(32)
+
+    def countTestingRunsLaunchedThisMonth(self):
+        return TestingRun.objects(
+            startTime__gt=(datetime.now() + relativedelta(day=1, hour=0, minute=0, second=0, microsecond=0)),
+            status__ne="failed"
+        ).count()
+
+    def checkSubscriptionLaunchRunAllowed(self):
+        if self.package == "once" or self.package is None:
+            return False
+
+        if self.package == "monthly":
+            testingRunsLaunched = self.countTestingRunsLaunchedThisMonth()
+            return testingRunsLaunched < 5
+        elif self.package == "pay_as_you_go":
+            return True
+
+        return True

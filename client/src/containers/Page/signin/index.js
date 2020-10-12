@@ -32,7 +32,17 @@ class SignIn extends Component {
     {
       setTimeout(() =>
       {
-        this.props.history.push('/app/dashboard/');
+        const returnToPath = window.localStorage.getItem("returnTo");
+        window.localStorage.setItem("returnTo", null);
+        if (returnToPath && returnToPath !== "null" && returnToPath !== "undefined")
+        {
+          this.props.history.push(returnToPath);
+        }
+        else
+        {
+          this.props.history.push('/app/dashboard/');
+        }
+
         window.location.reload();
       }, 250);
     }
@@ -53,7 +63,16 @@ class SignIn extends Component {
       window.dataLayer.push({'event': 'login'});
     }
 
-    this.props.history.push('/app/dashboard/');
+    const returnToPath = window.localStorage.getItem("returnTo");
+    window.localStorage.setItem("returnTo", null);
+    if (returnToPath && returnToPath !== "null" && returnToPath !== "undefined")
+    {
+      this.props.history.push(returnToPath);
+    }
+    else
+    {
+      this.props.history.push('/app/dashboard/');
+    }
   };
   onChangeUsername = event => this.setState({ username: event.target.value });
   onChangePassword = event => this.setState({ password: event.target.value });

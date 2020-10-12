@@ -59,7 +59,6 @@ class TestingRunsGroup(Resource):
         return {"testingRuns": json.loads(testingRuns)}
 
     def post(self):
-        #logging.info(f"Attempt Stripe verification")
         user, claims = authenticate(returnAllClaims=True)
         if user is None:
             return abort(401)
@@ -70,77 +69,49 @@ class TestingRunsGroup(Resource):
         if not isAdmin():
             query['owner'] = user
 
-        promoCode = None
-        coupon = None
-        if 'promoCode' in data and data['promoCode']:
-            promoCode = data['promoCode']
-        else:
-            # Temporarily just autofill with a promocode
-            promoCode = "BETATRIAL"
-
-        if promoCode:
-            codes = stripe.PromotionCode.list(active=True, code=promoCode, limit=1).data
-            if len(codes) > 0:
-                coupon = codes[0].coupon
-
         application = ApplicationModel.objects(**query).limit(1).first()
 
         if application is None:
             return abort(400)
 
+        if not application.checkSubscriptionLaunchRunAllowed():
+            return abort(400)
+
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
-
         allowFreeRuns = claims['https://kwola.io/freeRuns']
-        
 
-        if not allowFreeRuns and coupon is None:
-            customer = stripe.Customer.retrieve(stripeCustomerId)
+        newTestingRun = TestingRun(
+            id=generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=application.owner),
+            owner=application.owner,
+            applicationId=application.id,
+            stripeSubscriptionId=application.stripeSubscriptionId,
+            promoCode=application.promoCode,
+            status="created",
+            startTime=datetime.datetime.now(),
+            predictedEndTime=(datetime.datetime.now() + relativedelta(hours=(application.defaultRunConfiguration.hours + 1), minute=30)),
+            recurringTestingTriggerId=None,
+            isRecurring=False,
+            configuration=application.defaultRunConfiguration,
+            launchSource="manual"
+        )
 
-            stripe.PaymentMethod.attach(
-              data['payment_method'],
-              customer=stripeCustomerId,
-            )
-
-            # Update this to the new product with price attached
-            subscription = stripe.Subscription.create(
-               customer=customer.id,
-               items=[{'plan': self.configData['stripe']['planId']}],
-               coupon=coupon,
-               expand=['latest_invoice.payment_intent'],
-            )
-
-            if subscription.status != "active":
-                return abort(400)
-
-            del data['payment_method']
-            data['stripeSubscriptionId'] = subscription.id
-        else:
-            data['stripeSubscriptionId'] = None
-
-        data['id'] = generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=application.owner)
-        data['owner'] = application.owner
-        data['status'] = "created"
-        data['startTime'] = datetime.datetime.now()
-        data['predictedEndTime'] = data['startTime'] + relativedelta(hours=(data['configuration']['hours'] + 1), minute=30, second=0, microsecond=0)
-        data['isRecurring'] = False
-
-        if 'stripe' in data:
-            del data['stripe']
-        
-        newTestingRun = TestingRun(**data)
         newTestingRun.save()
 
-        application.defaultRunConfiguration = newTestingRun.configuration
-        application.save()
-
-        postToKwolaSlack(f"New testing run was started with id {data['id']} for application {data['applicationId']} and user {claims['name']} [{claims['email']}]")
+        postToKwolaSlack(f"New testing run was started with id {newTestingRun.id} for application {data['applicationId']} and user {claims['name']} [{claims['email']}]")
 
         if application.enableEmailNewTestingRunNotifications:
             sendStartTestingRunEmail(application)
 
         newTestingRun.runJob()
 
-        return {"testingRunId": data['id']}
+        if application.package == "pay_as_you_go" and application.countTestingRunsLaunchedThisMonth() > 10:
+            stripe.InvoiceItem.create(
+                customer=stripeCustomerId,
+                price=self.configData['stripe']['price_1HbBKrIblHdmFFAoMXAbtwBD'],
+                subscription=application.stripeSubscriptionId
+            )
+
+        return {"testingRunId": newTestingRun.id}
 
 
 class TestingRunsSingle(Resource):

@@ -4,6 +4,9 @@ import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, OneFourthColum
 import {connect, Provider} from 'react-redux';
 import {PaymentRequestButtonElement, CardElement, useStripe, useElements, ElementsConsumer} from "@stripe/react-stripe-js";
 import Papersheet from "../../components/utility/papersheet";
+import stripePromise from "../../stripe";
+import Promise from "bluebird";
+import axios from "axios";
 
 
 class PaymentDetailsSection extends Component {
@@ -13,22 +16,62 @@ class PaymentDetailsSection extends Component {
         address: ""
     }
 
-    updateParent()
-    {
-        if (!this.props.onChange)
-        {
+    updateParent() {
+        if (!this.props.onChange) {
             return null;
         }
 
-        this.props.onChange({
-            name: this.state.name,
-            address: this.state.address,
-            card: this.state.card
-        })
+        if (this.state.card && this.state.card.complete) {
+            stripePromise.then((stripe) => {
+                const cardElement = this.elements.getElement(CardElement);
+
+                return stripe.createPaymentMethod({
+                    type: "card",
+                    card: cardElement,
+                    billing_details: {
+                        name: this.state.name,
+                        address: this.state.address
+                    }
+                }).then((result) => {
+                    if (result.error) {
+                        return Promise.rejected(result.error);
+                    } else {
+                        this.props.onChange({
+                            billingName: this.state.name,
+                            billingAddress: this.state.address,
+                            billingCard: this.state.card,
+                            billingPaymentMethod: result.paymentMethod.id
+                        });
+                        return Promise.fulfilled();
+                    }
+                });
+            })
+        }
+        else
+        {
+            this.props.onChange({
+                billingName: this.state.name,
+                billingAddress: this.state.address,
+                billingCard: this.state.card,
+                billingPaymentMethod: null
+            });
+            return Promise.fulfilled();
+        }
     }
 
-    componentDidMount() {
 
+
+
+    componentDidMount()
+    {
+        if (this.props.value)
+        {
+            this.setState({
+                name: this.props.value.billingName,
+                address: this.props.value.billingAddress,
+                card: null
+            }, () => this.updateParent());
+        }
     }
 
 
@@ -61,49 +104,86 @@ class PaymentDetailsSection extends Component {
         this.setState({address: newValue}, () => this.updateParent());
     }
 
-    render() {
-        return <Papersheet
+    render()
+    {
+        const body =
+            <ElementsConsumer>
+                {({elements, stripe}) => {
+                    this.elements = elements;
+                    return <Row>
+                        <Column xs={9}>
+                            <div style={{
+                                "width": "calc(min(100%, 600px))",
+                                "borderBottom": "1px solid grey",
+                                "paddingBottom": "15px"
+                            }}>
+                                <CardElement
+                                    onChange={(cardChangedEvent) => this.cardDetailsChanged(cardChangedEvent)}
+                                />
+                            </div>
+                            {this.state.errorMessage}
+                            {
+                                this.props.showNoChargeText ?
+                                    <div>
+                                        <span style={{"fontSize": "12px", "color": "#333", "fontStyle": "italic"}}>Your credit card will not be charged until after your free first month. Cancel anytime without being charged.</span>
+                                        <br/>
+                                    </div> : null
+                            }
+                            {
+                                process.env.REACT_APP_SHOW_INTERNAL_TESTING_MESSAGES === "true" ?
+                                    <div>
+                                        <br/>
+                                        <a href={"https://stripe.com/docs/testing"} target={"_blank"}
+                                           style={{"fontSize": "12px", "color": "#333"}}>DEBUG: Click here to get
+                                            testing card numbers</a>
+                                        <br/>
+                                    </div> : null
+                            }
+                            <br/>
+                            <TextField
+                                id="name"
+                                label="Name"
+                                type={"text"}
+                                value={this.state.name}
+                                onChange={(event) => this.nameChanged(event.target.value)}
+                                margin="normal"
+                                style={{"width": "calc(min(100%, 800px))"}}
+                            />
+                            <br/>
+                            <TextField
+                                id="address"
+                                label="Billing Address"
+                                type={"text"}
+                                value={this.state.address}
+                                onChange={(event) => this.addressChanged(event.target.value)}
+                                margin="normal"
+                                style={{"width": "calc(min(100%, 800px))"}}
+                            />
+                        </Column>
+                        {
+                            !this.props.hideHelp ?
+                                <Column xs={3}>
+                                    <p>Please provide your payment details</p>
+                                </Column> : null
+                        }
+                    </Row>
+                }
+            }
+        </ElementsConsumer>;
+
+        if (this.props.hideWrapper)
+        {
+            return body;
+        }
+        else
+        {
+            return <Papersheet
                 title={`Payment Details`}
                 subtitle={``}
             >
-            <Row>
-                <Column xs={9}>
-                    <CardElement
-                        onChange={(cardChangedEvent) => this.cardDetailsChanged(cardChangedEvent)}
-                    />
-                    {this.state.errorMessage}
-                    {
-                        process.env.REACT_APP_SHOW_INTERNAL_TESTING_MESSAGES === "true" ?
-                            <div>
-                                <br/>
-                                <a href={"https://stripe.com/docs/testing"} target={"_blank"}>Please click here to get testing card numbers</a>
-                                <br/>
-                            </div> : null
-                    }
-                    <br/>
-                    <TextField
-                        id="name"
-                        label="Name"
-                        type={"text"}
-                        value={this.state.name}
-                        onChange={(event) => this.nameChanged(event.target.value)}
-                        margin="normal"
-                    />
-                    <br/>
-                    <TextField
-                        id="address"
-                        label="Billing Address"
-                        type={"text"}
-                        value={this.state.address}
-                        onChange={(event) => this.addressChanged(event.target.value)}
-                        margin="normal"
-                    />
-                </Column>
-                <Column xs={3}>
-                    <p>Please provide your payment details</p>
-                </Column>
-            </Row>
-        </Papersheet>;
+                {body}
+            </Papersheet>;
+        }
     }
 }
 

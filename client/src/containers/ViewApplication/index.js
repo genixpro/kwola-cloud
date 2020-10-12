@@ -30,6 +30,9 @@ import SettingsIcon from '@material-ui/icons/Settings';
 import Menus, { MenuItem } from '../../components/uielements/menus';
 import ScheduleIcon from "@material-ui/icons/Schedule";
 import TestingRunsTable from "../ViewRecurringTestingTrigger/testingRunsTable";
+import LoaderButton from "../../components/LoaderButton";
+import DoneIcon from "@material-ui/icons/Done";
+import Promise from "bluebird";
 
 class ViewApplication extends Component {
     state = {
@@ -56,10 +59,26 @@ class ViewApplication extends Component {
     {
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            window.dataLayer.push({'event': 'clicked-new-testing-run'});
+            window.dataLayer.push({'event': 'launched-new-testing-run'});
         }
 
-        this.props.history.push(`/app/dashboard/applications/${this.props.match.params.id}/new_testing_run`);
+        if (this.state.application.package !== "monthly" && this.state.application.package !== "pay_as_you_go")
+        {
+            this.props.history.push(`/app/dashboard/applications/${this.state.application._id}/subscription`);
+            return Promise.fulfilled();
+        }
+
+        const testingRunData = {
+            "applicationId": this.props.match.params.id
+        }
+
+        return axios.post(`/testing_runs`, testingRunData).then((response) => {
+            this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
+            return Promise.fulfilled();
+        }, (error) =>
+        {
+            return Promise.rejected(error);
+        });
     }
 
 
@@ -68,6 +87,12 @@ class ViewApplication extends Component {
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
             window.dataLayer.push({'event': 'clicked-setup-recurring-trigger'});
+        }
+
+        if (this.state.application.package !== "monthly" && this.state.application.package !== "pay_as_you_go")
+        {
+            this.props.history.push(`/app/dashboard/applications/${this.state.application._id}/subscription`);
+            return Promise.fulfilled();
         }
 
         axios.get(`/recurring_testing_trigger`, {params: {applicationId: this.props.match.params.id}}).then((response) =>
@@ -136,6 +161,8 @@ class ViewApplication extends Component {
                                                     <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/muted_errors`} style={{"color":"black", "textDecoration": "none"}}>View Muted Errors</Link></MenuItem>
                                                     <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/notifications`} style={{"color":"black", "textDecoration": "none"}}>Configure Notifications</Link></MenuItem>
                                                     <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/integrations`} style={{"color":"black", "textDecoration": "none"}}>Configure Integrations</Link></MenuItem>
+                                                    <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/testing_run_options`} style={{"color":"black", "textDecoration": "none"}}>Configure Testing Run Options</Link></MenuItem>
+                                                    <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/subscription`} style={{"color":"black", "textDecoration": "none"}}>Change Subscription</Link></MenuItem>
                                                     <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/webhooks`} style={{"color":"black", "textDecoration": "none"}}>Configure Webhooks</Link></MenuItem>
                                                     <MenuItem><Link to={`/app/dashboard/applications/${this.props.match.params.id}/triggers`} style={{"color":"black", "textDecoration": "none"}}>View Recurring Testing Triggers</Link></MenuItem>
                                                 </Menus>
@@ -154,10 +181,10 @@ class ViewApplication extends Component {
                                                 Setup Recurring Testing
                                                 <ScheduleIcon style={{"marginLeft": "10px"}} />
                                             </Button>
-                                            <Button variant="extended" color="primary" onClick={() => this.launchTestingSequenceButtonClicked()}>
+                                            <LoaderButton onClick={() => this.launchTestingSequenceButtonClicked()}  className={""}>
                                                 Launch New Testing Run
                                                 <Icon className="rightIcon" style={{"marginLeft": "10px"}}>send</Icon>
-                                            </Button>
+                                            </LoaderButton>
                                         </DemoWrapper>
                                     </Papersheet>
                                 </HalfColumn>
