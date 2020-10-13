@@ -139,7 +139,7 @@ class ViewApplication extends Component {
                                 <HalfColumn>
                                     <Papersheet
                                         title={`${this.state.application.name}`}
-                                        subtitle={`Last Tested ${moment(this.props.timestamp).format('MMM Do, YYYY')}`}
+                                        subtitle={`Last Tested ${moment(this.state.application.lastTestingDate ? this.state.application.lastTestingDate.$date : new Date()).format('MMM Do, YYYY')}`}
                                         button={
                                             <div>
                                                 <Button variant="contained"

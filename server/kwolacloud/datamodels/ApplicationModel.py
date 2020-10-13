@@ -101,6 +101,8 @@ class ApplicationModel(Document):
 
     promoCode = StringField(default=None)
 
+    lastTestingDate = DateTimeField(default=None)
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
 
