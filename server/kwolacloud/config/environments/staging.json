@@ -9,7 +9,7 @@
     "password": "FzwsIyK5knft5IuE"
   },
   "stripe": {
-    "apiKey": "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71",
+    "apiKey": "sk_test_WHeVtPF7ILpuTA4JhGhKleHA00EghhZOTM",
     "monthlyPriceId": "price_1Hb8ngIblHdmFFAobmKEiq1u",
     "payAsYouGoPriceId": "price_1Hb94OIblHdmFFAoBRbY9zb9",
     "payAsYouGoSingleRunPriceId": "price_1HbBIdIblHdmFFAo8Ueu3M6h",
