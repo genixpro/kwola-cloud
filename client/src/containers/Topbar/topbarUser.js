@@ -85,21 +85,27 @@ class TopbarUser extends Component {
             <Icon>money-sharp</Icon>
             <IntlMessages id="topbar.billing" />
           </a>
-          <a href="https://kwola.atlassian.net/wiki/spaces/KC/overview" className="dropdownLink">
-            <Icon>feedback</Icon>
-              <span>Documentation</span>
-         </a>
+            {
+                process.env.REACT_APP_DISABLE_LOGOUT !== 'true' ?
+                    <a href="https://kwola.atlassian.net/wiki/spaces/KC/overview" className="dropdownLink">
+                        <Icon>feedback</Icon>
+                        <span>Documentation</span>
+                    </a> : null
+            }
           {/*<Link href="#" onClick={() => this.openFeedback()} className="dropdownLink">*/}
           {/*  <Icon>feedback</Icon>*/}
           {/*  <IntlMessages id="sidebar.feedback" />*/}
           {/*</Link>*/}
-          <a href="https://kwola.atlassian.net/servicedesk/customer/portal/2" className="dropdownLink">
-            <Icon>help</Icon>
-            <IntlMessages id="topbar.help" />
-          </a>
             {
-                process.env.REACT_APP_ENABLE_SENTRY_TRACKING !== 'true'
-                ?   <Link href="#" onClick={() => Auth.logout()} className="dropdownLink">
+                process.env.REACT_APP_DISABLE_LOGOUT !== 'true' ?
+                  <a href="https://kwola.atlassian.net/servicedesk/customer/portal/2" className="dropdownLink">
+                    <Icon>help</Icon>
+                    <IntlMessages id="topbar.help" />
+                  </a> : null
+            }
+            {
+                process.env.REACT_APP_DISABLE_LOGOUT !== 'true' ?
+                    <Link href="#" onClick={() => Auth.logout()} className="dropdownLink">
                         <Icon>input</Icon>
                         <IntlMessages id="topbar.logout" />
                     </Link> : null
