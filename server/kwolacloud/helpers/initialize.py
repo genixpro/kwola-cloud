@@ -41,6 +41,6 @@ def initializeKwolaCloudProcess():
     stripe.api_key = configData['stripe']['apiKey']
 
     if 'GCLOUD_PROJECT' not in os.environ or not os.environ['GCLOUD_PROJECT']:
-        os.environ['GCLOUD_PROJECT'] = 'kwolacloud'
+        os.environ['GCLOUD_PROJECT'] = 'kwola-cloud'
 
     getLogger().info(f"Finished initialization routine for kwola cloud process with pid {os.getpid()}.")
