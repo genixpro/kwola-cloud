@@ -50,7 +50,7 @@ class ExecutionSessionGroup(Resource):
         if testingRunId is not None:
             queryParams["testingRunId"] = testingRunId
 
-        executionSessions = ExecutionSession.objects(Q(totalReward__exists=True, status__exists=False) | Q(status="completed"), **queryParams).no_dereference().order_by("startTime").to_json()
+        executionSessions = ExecutionSession.objects(Q(totalReward__exists=True, status__exists=False) | Q(status="completed"), **queryParams).no_dereference().order_by("-startTime").to_json()
 
         return {"executionSessions": json.loads(executionSessions)}
 
