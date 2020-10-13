@@ -97,10 +97,13 @@ class TopbarUser extends Component {
             <Icon>help</Icon>
             <IntlMessages id="topbar.help" />
           </a>
-          <Link href="#" onClick={() => Auth.logout()} className="dropdownLink">
-            <Icon>input</Icon>
-            <IntlMessages id="topbar.logout" />
-          </Link>
+            {
+                process.env.REACT_APP_ENABLE_SENTRY_TRACKING !== 'true'
+                ?   <Link href="#" onClick={() => Auth.logout()} className="dropdownLink">
+                        <Icon>input</Icon>
+                        <IntlMessages id="topbar.logout" />
+                    </Link> : null
+            }
         </SettingsList>
       </TopbarDropdown>
     );
