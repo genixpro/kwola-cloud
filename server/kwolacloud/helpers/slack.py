@@ -4,19 +4,24 @@ import requests
 import json
 from ..config.config import loadConfiguration, getKwolaConfiguration
 
-slack = Slack(url='https://hooks.slack.com/services/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')
+slackErrors = Slack(url='https://hooks.slack.com/services/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')
 config = loadConfiguration()
 
-def postToKwolaSlack(message):
+slackGeneral = Slack(url="https://hooks.slack.com/services/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")
+
+def postToKwolaSlack(message, error=True):
     if config['features']['enableSlackLogging']:
-        slack.post(text=message)
+        if error:
+            slackErrors.post(text=message)
+        else:
+            slackGeneral.post(text=message)
 
 
 class SlackLogHandler(logging.Handler):
     def emit(self, record):
         if record.levelno >= logging.ERROR:
             message = f"[{config['name']}] {record.filename}:{record.lineno} {record.getMessage()}"
-            slack.post(text=message)
+            slackErrors.post(text=message)
 
 
 def postToCustomerSlack(message, application, attachmentText=None):

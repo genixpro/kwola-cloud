@@ -35,7 +35,7 @@ class FeedbackSubmissionsGroup(Resource):
         message = f"We received feedback with id {data['id']}. Screen: {data['screen']}. Valence: {data['valence']}."
         if data['text']:
             message += f" Text: {data['text']}"
-        postToKwolaSlack(message)
+        postToKwolaSlack(message, error=False)
 
         return {"feedbackSubmissionId": data['id']}
 
@@ -64,6 +64,6 @@ class FeedbackSubmissionSingle(Resource):
 
         submission.save()
 
-        postToKwolaSlack(f"We received feedback with id {submission.id}. Valence: {submission.valence}. Text: {submission.text}")
+        postToKwolaSlack(f"We received feedback with id {submission.id}. Valence: {submission.valence}. Text: {submission.text}", error=False)
 
         return {}

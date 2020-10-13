@@ -204,7 +204,7 @@ class ApplicationGroup(Resource):
 
                 newTrigger.save()
 
-        postToKwolaSlack(f"New application was created on url {data['url']}")
+        postToKwolaSlack(f"New application was created on url {data['url']}", error=False)
 
         updateUserProfileMetadataValue(user, "hasCreatedFirstApplication", True)
 

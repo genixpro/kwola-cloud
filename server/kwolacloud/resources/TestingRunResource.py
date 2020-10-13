@@ -97,7 +97,7 @@ class TestingRunsGroup(Resource):
 
         newTestingRun.save()
 
-        postToKwolaSlack(f"New testing run was started with id {newTestingRun.id} for application {data['applicationId']} and user {claims['name']} [{claims['email']}]")
+        postToKwolaSlack(f"New testing run was started with id {newTestingRun.id} for application {data['applicationId']} and user {claims['name']} [{claims['email']}]", error=False)
 
         if application.enableEmailNewTestingRunNotifications:
             sendStartTestingRunEmail(application)
