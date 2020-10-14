@@ -412,6 +412,7 @@ class WebEnvironmentSession:
                             || element.tagName === "AREA"
                             || element.tagName === "AUDIO"
                             || element.tagName === "VIDEO"
+                            || element.tagName === "OPTION"
                             || element.tagName === "SELECT")
                         data.canClick = true;
                     
