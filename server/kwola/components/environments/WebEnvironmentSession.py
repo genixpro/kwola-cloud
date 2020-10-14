@@ -318,7 +318,7 @@ class WebEnvironmentSession:
 
                 hasTypedInEmail = True
 
-            if len(emailInputs) == 0 or len(passwordInputs) == 0 or len(loginButtons) == 0:
+            if (len(emailInputs) == 0 and not hasTypedInEmail) or len(passwordInputs) == 0 or len(loginButtons) == 0:
                 getLogger().warning(f"Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.")
                 return
 
