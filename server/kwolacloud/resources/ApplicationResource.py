@@ -36,6 +36,7 @@ from google.cloud import storage
 import hashlib
 import cv2
 import numpy
+from ..helpers.auth0 import getUserProfileFromId
 
 
 class ApplicationGroup(Resource):
@@ -303,6 +304,9 @@ class ApplicationSingle(Resource):
                         application.stripeSubscriptionId = None
 
                     application.package = data['package']
+                elif data['package'] is None:
+                    email = getUserProfileFromId(user)['email']
+                    postToKwolaSlack(f"User {email} has unsubscribed.", error=False)
 
             application.save()
             return ""

@@ -11,6 +11,7 @@ from ..datamodels.FeedbackSubmission import FeedbackSubmission
 from ..helpers.slack import postToKwolaSlack
 from flask_restful import Resource, reqparse, abort
 import flask
+from ..helpers.auth0 import getUserProfileFromId
 
 
 class FeedbackSubmissionsGroup(Resource):
@@ -32,7 +33,9 @@ class FeedbackSubmissionsGroup(Resource):
         newFeedbackSubmission = FeedbackSubmission(**data)
         newFeedbackSubmission.save()
 
-        message = f"We received feedback with id {data['id']}. Screen: {data['screen']}. Valence: {data['valence']}."
+        email = getUserProfileFromId(user)['email']
+
+        message = f"We received feedback from user {email}. Screen: {data['screen']}. Valence: {data['valence']}."
         if data['text']:
             message += f" Text: {data['text']}"
         postToKwolaSlack(message, error=False)
@@ -64,6 +67,8 @@ class FeedbackSubmissionSingle(Resource):
 
         submission.save()
 
-        postToKwolaSlack(f"We received feedback with id {submission.id}. Valence: {submission.valence}. Text: {submission.text}", error=False)
+        email = getUserProfileFromId(user)['email']
+
+        postToKwolaSlack(f"We received feedback from user {email}. Valence: {submission.valence}. Text: {submission.text}", error=False)
 
         return {}
