@@ -96,7 +96,7 @@ class ApplicationGroup(Resource):
 
         if allowFreeRuns:
             newApplication.stripeSubscriptionId = None
-        elif newApplication.package == "monthly" or newApplication.package == 'pay_as_you_go':
+        elif newApplication.package == "monthly":
             customer = stripe.Customer.retrieve(stripeCustomerId)
 
             stripe.PaymentMethod.attach(
@@ -104,11 +104,7 @@ class ApplicationGroup(Resource):
                 customer=stripeCustomerId,
             )
 
-            priceId = None
-            if newApplication.package == "monthly":
-                priceId = self.configData['stripe']['monthlyPriceId']
-            elif newApplication.package == "pay_as_you_go":
-                priceId = self.configData['stripe']['payAsYouGoPriceId']
+            priceId = self.configData['stripe']['monthlyPriceId']
 
             # Update this to the new product with price attached
             subscription = stripe.Subscription.create(
@@ -146,7 +142,7 @@ class ApplicationGroup(Resource):
 
         runConfiguration = copy.deepcopy(newApplication.defaultRunConfiguration)
 
-        if newApplication.package == "monthly" or newApplication.package == 'pay_as_you_go':
+        if newApplication.package == "monthly":
             runConfiguration.testingSequenceLength = 100
             runConfiguration.totalTestingSessions = 5000
             runConfiguration.hours = 36
@@ -176,7 +172,7 @@ class ApplicationGroup(Resource):
 
         newTestingRun.runJob()
 
-        if newApplication.package == "monthly" or newApplication.package == 'pay_as_you_go':
+        if newApplication.package == "monthly":
             if data['launchMethod'] == 'weekly' or data['launchMethod'] == "date_of_month":
                 newTrigger = RecurringTestingTrigger(
                     id=generateKwolaId(modelClass=RecurringTestingTrigger, kwolaConfig=getKwolaConfiguration(), owner=newApplication.owner),
@@ -285,19 +281,15 @@ class ApplicationSingle(Resource):
                             setattr(application, key, value)
 
             if 'package' in data and data['package'] != application.package:
-                if application.package == "monthly" or application.package == "pay_as_you_go":
+                if application.package == "monthly":
                     if application.stripeSubscriptionId is not None:
                         stripe.Subscription.delete(application.stripeSubscriptionId)
                         application.stripeSubscriptionId = None
                     application.package = None
 
-                if data['package'] == 'monthly' or data['package'] == 'pay_as_you_go':
+                if data['package'] == 'monthly':
                     if not allowFreeRuns:
-                        priceId = None
-                        if data['package'] == "monthly":
-                            priceId = self.configData['stripe']['monthlyPriceId']
-                        elif data['package'] == "pay_as_you_go":
-                            priceId = self.configData['stripe']['payAsYouGoPriceId']
+                        priceId = self.configData['stripe']['monthlyPriceId']
 
                         # Update this to the new product with price attached
                         subscription = stripe.Subscription.create(

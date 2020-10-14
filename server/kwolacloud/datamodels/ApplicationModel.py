@@ -175,9 +175,6 @@ class ApplicationModel(Document):
             return False
 
         if self.package == "monthly":
-            testingRunsLaunched = self.countTestingRunsLaunchedThisMonth()
-            return testingRunsLaunched < 5
-        elif self.package == "pay_as_you_go":
             return True
 
         return True

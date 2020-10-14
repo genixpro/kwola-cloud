@@ -55,7 +55,7 @@ class PackageInfo extends Component
                                 size="medium"
                                 color={"primary"}
                                 title={"Select Package"}>
-                            <span>Select Package</span>
+                            <span>{this.props.selectionButtonText || "Select Package"}</span>
                         </Button>
                     </div>
             }
@@ -78,13 +78,17 @@ class PackageSelector extends Component {
 
     setSelected(packageName)
     {
-        this.setState({selected: packageName})
+        this.setState({selected: packageName});
         if (this.props.onChangePackage)
         {
             this.props.onChangePackage(packageName);
         }
     }
 
+    enterpriseClicked()
+    {
+        window.open("https://kwola.io/book-a-demo");
+    }
     render()
     {
         const { result } = this.state;
@@ -109,27 +113,29 @@ class PackageSelector extends Component {
                 <PackageInfo
                     title={"Recurring Testing"}
                     pricing={"$99.99 / month"}
-                    pricingSubText={<span>First Month Free!</span>}
+                    pricingSubText={<span>Extra runs for $14.99</span>}
                     packageDescriptions={[
-                        "Get 5 testing runs each month",
-                        "Launch Kwola every week or on specific dates of the month",
+                        "Get 5 testing runs each month included",
+                        "Launch Kwola every week, on specific dates of the month, manually through the UI, or based on API calls",
                         "Kwola's AI gets smarter and smarter over time, making it more and more likely it will find obscure and rare bugs",
-                        "Your first month is free, cancel anytime"
+                        "Cancel anytime in first 30 days without being charged."
                     ]}
                     selected={this.props.selectedPackage === "monthly"}
                     onClick={() => this.setSelected("monthly")}
                 />
                 <PackageInfo
-                    title={"Pay As You Go"}
-                    pricing={"$14.99 / testing run"}
-                    pricingSubText={"Min 10 runs / month"}
+                    title={"Enterprise"}
+                    pricing={"Contact Us"}
+                    pricingSubText={""}
                     packageDescriptions={[
-                        "Launch Kwola daily, any time new code is committed, or any time your deployment pipeline runs",
-                        "Kwola's AI gets smarter and smarter over time, making it more and more likely it will find obscure and rare bugs",
-                        "Cancel anytime"
+                        "Use Kwola in complex, multi-domain environments with many different technology stacks",
+                        "Allow multiple users access to your Kwola account and share bugs.",
+                        "Have custom plugins created by the Kwola team to support your unique requirements",
+                        "Our team will help you setup and integrate Kwola to ensure you get the most out of it."
                     ]}
-                    selected={this.props.selectedPackage === "pay_as_you_go"}
-                    onClick={() => this.setSelected("pay_as_you_go")}
+                    selectionButtonText={"Contact Us"}
+                    selected={false}
+                    onClick={() => this.enterpriseClicked()}
                 />
             </div>
         );

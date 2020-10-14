@@ -169,7 +169,7 @@ class NewApplicationWizard extends Component {
             {
                 this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
             }
-            else if(this.state.application.package === "monthly" || this.state.application.package === "pay_as_you_go")
+            else if(this.state.application.package === "monthly")
             {
                 this.props.history.push(`/app/dashboard/applications/${response.data.applicationId}`);
             }

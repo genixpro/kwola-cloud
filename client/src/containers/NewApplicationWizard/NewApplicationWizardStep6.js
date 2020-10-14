@@ -89,7 +89,7 @@ class NewApplicationWizardStep6 extends Component {
                 }
 
                 {
-                    this.props.application.package === "monthly" || this.props.application.package === "pay_as_you_go" ?
+                    this.props.application.package === "monthly" ?
                         <div>
                             <span>
                                 Setup is now complete.
@@ -120,7 +120,7 @@ class NewApplicationWizardStep6 extends Component {
 
                         <LoaderButton onClick={() => this.finishButtonClicked()}  className={"wizard-button"}>
                             {
-                                this.props.application.package === "monthly" || this.props.application.package === "pay_as_you_go" ?
+                                this.props.application.package === "monthly" ?
                                     <span>&nbsp;&nbsp;&nbsp;Launch First Testing Run&nbsp;&nbsp;&nbsp;<DoneIcon style={{"position": "relative", "top": "6px"}} /></span> : null
                             }
                             {

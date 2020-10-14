@@ -140,12 +140,12 @@ class RecurringTestingTrigger(Document):
 
         newTestingRun.runJob()
 
-        if application.package == "pay_as_you_go" and application.countTestingRunsLaunchedThisMonth() > 10:
+        if application.package == "monthly" and application.countTestingRunsLaunchedThisMonth() > 5:
             subscription = stripe.Subscription.retrieve(application.stripeSubscriptionId)
 
             stripe.InvoiceItem.create(
                 customer=subscription.customer,
-                price=configData['stripe']['price_1HbBKrIblHdmFFAoMXAbtwBD'],
+                price=configData['stripe']['monthlyExtraPriceId'],
                 subscription=application.stripeSubscriptionId
             )
 

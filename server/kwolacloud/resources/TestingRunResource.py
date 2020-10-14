@@ -104,10 +104,10 @@ class TestingRunsGroup(Resource):
 
         newTestingRun.runJob()
 
-        if application.package == "pay_as_you_go" and application.countTestingRunsLaunchedThisMonth() > 10:
+        if application.package == "monthly" and application.countTestingRunsLaunchedThisMonth() > 5:
             stripe.InvoiceItem.create(
                 customer=stripeCustomerId,
-                price=self.configData['stripe']['price_1HbBKrIblHdmFFAoMXAbtwBD'],
+                price=self.configData['stripe']['monthlyExtraPriceId'],
                 subscription=application.stripeSubscriptionId
             )
 

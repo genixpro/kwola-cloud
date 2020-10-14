@@ -117,7 +117,7 @@ class ChangeSubscription extends Component {
                                         onChangePackage={(name) => this.changePackage(name)}
                                     />
                                     {
-                                        this.state.startPackage === "monthly" || this.state.startPackage === "pay_as_you_go" ?
+                                        this.state.startPackage === "monthly" ?
                                             <span>
                                                 <br/>
                                                 <br/>

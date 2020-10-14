@@ -62,7 +62,7 @@ class ViewApplication extends Component {
             window.dataLayer.push({'event': 'launched-new-testing-run'});
         }
 
-        if (this.state.application.package !== "monthly" && this.state.application.package !== "pay_as_you_go")
+        if (this.state.application.package !== "monthly")
         {
             this.props.history.push(`/app/dashboard/applications/${this.state.application._id}/subscription`);
             return Promise.fulfilled();
@@ -89,7 +89,7 @@ class ViewApplication extends Component {
             window.dataLayer.push({'event': 'clicked-setup-recurring-trigger'});
         }
 
-        if (this.state.application.package !== "monthly" && this.state.application.package !== "pay_as_you_go")
+        if (this.state.application.package !== "monthly")
         {
             this.props.history.push(`/app/dashboard/applications/${this.state.application._id}/subscription`);
             return Promise.fulfilled();
