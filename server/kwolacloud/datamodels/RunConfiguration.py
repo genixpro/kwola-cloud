@@ -60,7 +60,7 @@ class RunConfiguration(EmbeddedDocument):
 
     autologin = BooleanField()
 
-    preventOffsiteLinks = BooleanField()
+    preventOffsiteLinks = BooleanField(default=True)
 
     enablePathWhitelist = BooleanField()
 
