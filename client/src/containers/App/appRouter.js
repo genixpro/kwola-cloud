@@ -2,107 +2,131 @@ import React, { Component, lazy, Suspense } from 'react';
 import Route from '../../components/utility/customRoute';
 import Loader from '../../components/utility/Loader/';
 import safeImport from "../../safe_import";
+import Dashboard from '../Dashboard';
+import NewApplicationWizard from '../NewApplicationWizard';
+import JIRARedirect from '../JIRARedirect';
+import NewTestingRun from '../NewTestingRun';
+import ViewMutedErrors from '../ViewMutedErrors';
+import ConfigureNotifications from '../ConfigureNotifications';
+import ConfigureIntegrations from '../ConfigureIntegrations';
+import ConfigureWebhooks from '../ConfigureWebhooks';
+import ListRecurringTestingTriggers from '../ListRecurringTestingTriggers';
+import NewRecurringTestingTrigger from '../NewRecurringTestingTrigger';
+import ConfigureTestingRunOptions from '../ConfigureTestingRunOptions';
+import ChangeSubscription from '../ChangeSubscription';
+import ListApplications from '../ListApplications';
+import ViewApplication from '../ViewApplication';
+import ViewTestingSequence from '../ViewTestingSequence';
+import ViewTrainingSequence from '../ViewTrainingSequence';
+import ViewTrainingStep from '../ViewTrainingStep';
+import ViewExecutionSession from '../ViewExecutionSession';
+import ViewExecutionTrace from '../ViewExecutionTrace';
+import ViewTestingRunConfiguration from '../ViewTestingRunConfiguration';
+import ViewTestingRun from '../ViewTestingRun';
+import ViewBug from '../ViewBug';
+import ViewRecurringTestingTrigger from '../ViewRecurringTestingTrigger';
+import ViewRecurringTestingTriggerConfiguration from '../ViewRecurringTestingTriggerConfiguration';
 
 const routes = [
   {
     path: '',
-    component: lazy(safeImport(() => import('../Dashboard'))),
+    component: Dashboard,
   },
   {
     path: 'new-application',
-    component: lazy(safeImport(() => import('../NewApplicationWizard'))),
+    component: NewApplicationWizard,
   },
   {
     path: 'new-application/:page',
-    component: lazy(safeImport(() => import('../NewApplicationWizard'))),
+    component: NewApplicationWizard,
   },
   {
     path: 'jira',
-    component: lazy(safeImport(() => import('../JIRARedirect'))),
+    component: JIRARedirect,
   },
   {
     path: 'applications/:id/new_testing_run',
-    component: lazy(safeImport(() => import('../NewTestingRun'))),
+    component: NewTestingRun,
   },
   {
     path: 'applications/:id/muted_errors',
-    component: lazy(safeImport(() => import('../ViewMutedErrors'))),
+    component: ViewMutedErrors,
   },
   {
     path: 'applications/:id/notifications',
-    component: lazy(safeImport(() => import('../ConfigureNotifications'))),
+    component: ConfigureNotifications,
   },
   {
     path: 'applications/:id/integrations',
-    component: lazy(safeImport(() => import('../ConfigureIntegrations'))),
+    component: ConfigureIntegrations,
   },
   {
     path: 'applications/:id/webhooks',
-    component: lazy(safeImport(() => import('../ConfigureWebhooks'))),
+    component: ConfigureWebhooks,
   },
   {
     path: 'applications/:id/triggers',
-    component: lazy(safeImport(() => import('../ListRecurringTestingTriggers'))),
+    component: ListRecurringTestingTriggers,
   },
   {
     path: 'applications/:id/new_trigger',
-    component: lazy(safeImport(() => import('../NewRecurringTestingTrigger'))),
+    component: NewRecurringTestingTrigger,
   },
   {
     path: 'applications/:id/testing_run_options',
-    component: lazy(safeImport(() => import('../ConfigureTestingRunOptions'))),
+    component: ConfigureTestingRunOptions,
   },
   {
     path: 'applications/:id/subscription',
-    component: lazy(safeImport(() => import('../ChangeSubscription'))),
+    component: ChangeSubscription,
   },
   {
     path: 'applications',
-    component: lazy(safeImport(() => import('../ListApplications'))),
+    component: ListApplications,
   },
   {
     path: 'applications/:id',
-    component: lazy(safeImport(() => import('../ViewApplication'))),
+    component: ViewApplication,
   },
   {
     path: 'testing_sequences/:id',
-    component: lazy(safeImport(() => import('../ViewTestingSequence'))),
+    component: ViewTestingSequence,
   },
   {
     path: 'training_sequences/:id',
-    component: lazy(safeImport(() => import('../ViewTrainingSequence'))),
+    component: ViewTrainingSequence,
   },
   {
     path: 'training_steps/:id',
-    component: lazy(safeImport(() => import('../ViewTrainingStep'))),
+    component: ViewTrainingStep,
   },
   {
     path: 'execution_sessions/:id',
-    component: lazy(safeImport(() => import('../ViewExecutionSession'))),
+    component: ViewExecutionSession,
   },
   {
     path: 'execution_sessions/:id/execution_traces/:traceId',
-    component: lazy(safeImport(() => import('../ViewExecutionTrace'))),
+    component: ViewExecutionTrace,
   },
   {
     path: 'testing_runs/:id/configuration',
-    component: lazy(safeImport(() => import('../ViewTestingRunConfiguration'))),
+    component: ViewTestingRunConfiguration,
   },
   {
     path: 'testing_runs/:id',
-    component: lazy(safeImport(() => import('../ViewTestingRun'))),
+    component: ViewTestingRun,
   },
   {
     path: 'bugs/:id',
-    component: lazy(safeImport(() => import('../ViewBug'))),
+    component: ViewBug,
   },
   {
     path: 'triggers/:id',
-    component: lazy(safeImport(() => import('../ViewRecurringTestingTrigger'))),
+    component: ViewRecurringTestingTrigger,
   },
   {
     path: 'triggers/:id/configuration',
-    component: lazy(safeImport(() => import('../ViewRecurringTestingTriggerConfiguration'))),
+    component: ViewRecurringTestingTriggerConfiguration,
   }
 ];
 

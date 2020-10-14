@@ -5,6 +5,10 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './containers/App';
 import Auth0 from './helpers/auth0';
 import safeImport from "./safe_import";
+import SignInPage from './containers/Page/signin';
+import Page404 from './containers/Page/404';
+import Page505 from './containers/Page/505';
+
 
 const RestrictedRoute = ({ component: Component, isLoggedIn, ...rest }) => {
     if(!isLoggedIn)
@@ -35,22 +39,22 @@ const PublicRoutes = ({ history, isLoggedIn }) => (
       <Route
         exact
         path="/"
-        component={lazy(safeImport(() => import('./containers/Page/signin')))}
+        component={SignInPage}
       />
       <Route
           exact
           path="/app/"
-          component={lazy(safeImport(() => import('./containers/Page/signin')))}
+          component={SignInPage}
       />
       <Route
         exact
         path="/app/signin"
-        component={lazy(safeImport(() => import('./containers/Page/signin')))}
+        component={SignInPage}
       />
       <Route
         exact
         path="/app/login"
-        component={lazy(safeImport(() => import('./containers/Page/signin')))}
+        component={SignInPage}
       />
       <Route
         path="/app/auth0loginCallback"
@@ -66,33 +70,33 @@ const PublicRoutes = ({ history, isLoggedIn }) => (
       <Route
         exact
         path="/app/404"
-        component={lazy(safeImport(() => import('./containers/Page/404')))}
+        component={Page404}
       />
       <Route
         exact
         path="/app/505"
-        component={lazy(safeImport(() => import('./containers/Page/505')))}
+        component={Page505}
       />
-      <Route
-        exact
-        path="/app/signup"
-        component={lazy(safeImport(() => import('./containers/Page/signup')))}
-      />
-      <Route
-        exact
-        path="/app/forgot-password"
-        component={lazy(safeImport(() => import('./containers/Page/forgetpassword')))}
-      />
-      <Route
-        exact
-        path="/app/reset-password"
-        component={lazy(safeImport(() => import('./containers/Page/resetpassword')))}
-      />
-      <Route
-        exact
-        path="/app/confirm-email"
-        component={lazy(safeImport(() => import('./containers/Page/confirmemail')))}
-      />
+      {/*<Route*/}
+      {/*  exact*/}
+      {/*  path="/app/signup"*/}
+      {/*  component={lazy(safeImport(() => import('./containers/Page/signup')))}*/}
+      {/*/>*/}
+      {/*<Route*/}
+      {/*  exact*/}
+      {/*  path="/app/forgot-password"*/}
+      {/*  component={lazy(safeImport(() => import('./containers/Page/forgetpassword')))}*/}
+      {/*/>*/}
+      {/*<Route*/}
+      {/*  exact*/}
+      {/*  path="/app/reset-password"*/}
+      {/*  component={lazy(safeImport(() => import('./containers/Page/resetpassword')))}*/}
+      {/*/>*/}
+      {/*<Route*/}
+      {/*  exact*/}
+      {/*  path="/app/confirm-email"*/}
+      {/*  component={lazy(safeImport(() => import('./containers/Page/confirmemail')))}*/}
+      {/*/>*/}
     </>
   </BrowserRouter>
 );
