@@ -67,6 +67,8 @@ class ExecutionTrace(Document):
 
     frameNumber = IntField()
 
+    traceNumber = IntField()
+
     tabNumber = IntField()
 
     startURL = StringField()
@@ -111,35 +113,37 @@ class ExecutionTrace(Document):
 
     # Cached cumulative branch trace vector at the start of this trace, e.g. before the action was ran.
     # This is only "cached" because it can actually be recomputed on the fly
-    cachedStartCumulativeBranchTrace = DictField(ListField())
+    cachedStartCumulativeBranchTrace = DictField(ListField(), default=None)
 
     # Cached decaying branch trace vector at the start of this trace, e.g. before the action was ran.
     # This is only "cached" because it can actually be recomputed on the fly
-    cachedStartDecayingBranchTrace = DictField(ListField())
+    cachedStartDecayingBranchTrace = DictField(ListField(), default=None)
 
     # Cached cumulative branch trace vector at the end of this trace, e.g. after the action was ran.
     # This is only "cached" because it can actually be recomputed on the fly
-    cachedEndCumulativeBranchTrace = DictField(ListField())
+    cachedEndCumulativeBranchTrace = DictField(ListField(), default=None)
 
     # Cached decaying branch trace vector at the end of this trace, e.g. after the action was ran.
     # This is only "cached" because it can actually be recomputed on the fly
-    cachedEndDecayingBranchTrace = DictField(ListField())
+    cachedEndDecayingBranchTrace = DictField(ListField(), default=None)
 
     # Cached decaying branch trace vector at the start of this trace, e.g. before the action was ran.
     # This is only "cached" because it can actually be recomputed on the fly
     # To be clear, this is a 'future' branch trace, so at the start of the trace,
     # the future includes the actions being performed in this frame.
-    cachedStartDecayingFutureBranchTrace = DictField(ListField())
+    cachedStartDecayingFutureBranchTrace = DictField(ListField(), default=None)
 
     # Cached decaying branch trace vector at the end of this trace, e.g. after the action was ran.
     # This is only "cached" because it can actually be recomputed on the fly
-    cachedEndDecayingFutureBranchTrace = DictField(ListField())
+    cachedEndDecayingFutureBranchTrace = DictField(ListField(), default=None)
 
     timeForScreenshot = FloatField()
     timeForActionMapRetrieval = FloatField()
     timeForActionDecision = FloatField()
     timeForActionExecution = FloatField()
     timeForMiscellaneous = FloatField()
+
+    actionExecutionTimes = DictField(FloatField())
 
     # We use Python getter / setter methods to transparently compress and decompress
     # these fields as they go into and out of the database model.
@@ -215,21 +219,34 @@ class ExecutionTrace(Document):
         return numpy.array(newArray)
 
     def saveToDisk(self, config):
+        cachedStartCumulativeBranchTrace = self.cachedStartCumulativeBranchTrace
+        cachedStartDecayingBranchTrace = self.cachedStartDecayingBranchTrace
+        cachedEndCumulativeBranchTrace = self.cachedEndCumulativeBranchTrace
+        cachedEndDecayingBranchTrace = self.cachedEndDecayingBranchTrace
+        cachedStartDecayingFutureBranchTrace = self.cachedStartDecayingFutureBranchTrace
+        cachedEndDecayingFutureBranchTrace = self.cachedEndDecayingFutureBranchTrace
+
         self.cachedStartCumulativeBranchTrace = None
         self.cachedStartDecayingBranchTrace = None
         self.cachedEndCumulativeBranchTrace = None
         self.cachedEndDecayingBranchTrace = None
-        self.cachedDecayingFutureBranchTrace = None
+        self.cachedStartDecayingFutureBranchTrace = None
+        self.cachedEndDecayingFutureBranchTrace = None
         saveObjectToDisk(self, "execution_traces", config)
+        self.cachedStartCumulativeBranchTrace = cachedStartCumulativeBranchTrace
+        self.cachedStartDecayingBranchTrace = cachedStartDecayingBranchTrace
+        self.cachedEndCumulativeBranchTrace = cachedEndCumulativeBranchTrace
+        self.cachedEndDecayingBranchTrace = cachedEndDecayingBranchTrace
+        self.cachedStartDecayingFutureBranchTrace = cachedStartDecayingFutureBranchTrace
+        self.cachedEndDecayingFutureBranchTrace = cachedEndDecayingFutureBranchTrace
 
 
     @staticmethod
-    def loadFromDisk(id, config, omitLargeFields=False, printErrorOnFailure=True):
-        trace = loadObjectFromDisk(ExecutionTrace, id, "execution_traces", config, printErrorOnFailure=printErrorOnFailure)
+    def loadFromDisk(id, config, omitLargeFields=False, printErrorOnFailure=True, applicationId=None):
+        trace = loadObjectFromDisk(ExecutionTrace, id, "execution_traces", config, printErrorOnFailure=printErrorOnFailure, applicationId=applicationId)
         if trace is not None:
             if omitLargeFields:
                 trace.branchExecutionTrace = []
-                trace.startDecayingExecutionTrace = []
-                trace.startCumulativeBranchExecutionTrace = []
+                trace.actionMaps = []
 
         return trace

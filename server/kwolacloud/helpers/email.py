@@ -3,11 +3,19 @@ from sendgrid.helpers.mail import To, Mail, From, Attachment, FileContent, FileN
 import base64
 from ..config.config import loadConfiguration
 import logging
+import os.path
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from kwola.config.config import KwolaCoreConfiguration
+from ..helpers.auth0 import getUserProfileFromId
 
 
+def sendStartTestingRunEmail(application):
+    if application.overrideNotificationEmail:
+        email = application.overrideNotificationEmail
+    else:
+        email = getUserProfileFromId(application.owner)['email']
 
-def sendStartTestingRunEmail(email, application):
-    logging.info(f"Sending the testing run started email to {email} for application {application.id}")
+    logging.info(f"Sending the 'testing run started' email to {email} for application {application.id}")
 
     configData = loadConfiguration()
 
@@ -31,8 +39,61 @@ def sendStartTestingRunEmail(email, application):
 
 
 
-def sendFinishTestingRunEmail(email, application, testingRun, bugCount):
-    logging.info(f"Sending the testing run finished email to {email} for testing run {testingRun.id}")
+def sendBugFoundNotification(application, bug):
+    if application.overrideNotificationEmail:
+        email = application.overrideNotificationEmail
+    else:
+        email = getUserProfileFromId(application.owner)['email']
+
+    logging.info(f"Sending the 'new bug found' email to {email} for application {application.id} and bug {bug.id}")
+
+    configData = loadConfiguration()
+
+    message = Mail(
+        from_email=From('admin@kwola.io', 'Kwola'),
+        to_emails=To(email))
+
+    message.dynamic_template_data = {
+        "bugUrl": f"{configData['frontend']['url']}app/dashboard/bugs/{bug.id}"
+    }
+
+    if not configData['features']['localRuns']:
+        configDir = mountTestingRunStorageDrive(bug.applicationId)
+    else:
+        configDir = os.path.join("data", bug.applicationId)
+
+    config = KwolaCoreConfiguration(configDir)
+
+    videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
+
+    if os.path.exists(videoFilePath):
+        with open(videoFilePath, 'rb') as videoFile:
+            videoData = videoFile.read()
+    else:
+        raise RuntimeError(f"The bug video was not found while trying to send an email for bug {bug.id}")
+
+    message.attachment = Attachment(FileContent(str(base64.b64encode(videoData), 'ascii')),
+                                    FileName('application.png'),
+                                    FileType('image/png'),
+                                    Disposition('inline'),
+                                    ContentId('bugVideo'))
+
+    message.template_id = 'd-a7f557fbf657448b9a38f7e3e5be3f8a'
+    sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
+    response = sg.send(message)
+
+    if not configData['features']['localRuns']:
+        unmountTestingRunStorageDrive(configDir)
+
+
+
+def sendFinishTestingRunEmail(application, testingRun, bugCount):
+    if application.overrideNotificationEmail:
+        email = application.overrideNotificationEmail
+    else:
+        email = getUserProfileFromId(application.owner)['email']
+
+    logging.info(f"Sending the 'testing run finished' email to {email} for testing run {testingRun.id}")
 
     configData = loadConfiguration()
 
@@ -42,7 +103,7 @@ def sendFinishTestingRunEmail(email, application, testingRun, bugCount):
 
     message.dynamic_template_data = {
         "bugCount": bugCount,
-        "testingRunUrl": configData['frontend']['url'] + "dashboard/testing_runs/" + testingRun.id
+        "testingRunUrl": configData['frontend']['url'] + "app/dashboard/testing_runs/" + testingRun.id
     }
 
     screenshot = application.fetchScreenshot()
@@ -53,6 +114,45 @@ def sendFinishTestingRunEmail(email, application, testingRun, bugCount):
                                     ContentId('applicationImage'))
 
     message.template_id = 'd-f9cd06a48be7418d82a3648708fb5429'
+    sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
+    response = sg.send(message)
+
+
+
+def sendOfferSupportEmail(application=None, email=None):
+    if email is None:
+        email = getUserProfileFromId(application.owner)['email']
+
+    logging.info(f"Sending the 'offer support' email to {email}")
+
+    configData = loadConfiguration()
+
+    message = Mail(
+        from_email=From('brad@kwola.io', 'Brad from Kwola'),
+        to_emails=To(email))
+
+    message.dynamic_template_data = {}
+
+    message.template_id = 'd-179043fa251f4dc2b13984a2255aedde'
+    sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
+    response = sg.send(message)
+
+
+
+def sendRequestFeedbackEmail(owner):
+    email = getUserProfileFromId(owner)['email']
+
+    logging.info(f"Sending the 'request feedback' email to {email}")
+
+    configData = loadConfiguration()
+
+    message = Mail(
+        from_email=From('brad@kwola.io', 'Brad from Kwola'),
+        to_emails=To(email))
+
+    message.dynamic_template_data = {}
+
+    message.template_id = 'd-d57af2bdd553469c97edfef7841c41dc'
     sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
     response = sg.send(message)
 

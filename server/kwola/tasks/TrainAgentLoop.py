@@ -23,14 +23,14 @@ from ..config.logger import getLogger, setupLocalLogging
 from ..components.agents.DeepLearningAgent import DeepLearningAgent
 from ..components.environments.WebEnvironment import WebEnvironment
 from ..tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
-from ..config.config import Configuration
+from ..config.config import KwolaCoreConfiguration
 from ..datamodels.CustomIDField import CustomIDField
 from ..datamodels.TestingStepModel import TestingStep
 from ..datamodels.TrainingSequenceModel import TrainingSequence
 from ..datamodels.TrainingStepModel import TrainingStep
 from ..datamodels.ExecutionSessionModel import ExecutionSession
 from ..datamodels.ExecutionTraceModel import ExecutionTrace
-from .RunTrainingStep import loadAllTestingSteps
+from ..components.managers.TrainingManager import TrainingManager
 from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -132,7 +132,7 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         "testingStepId": str(testingStep.id),
         "shouldBeRandom": False,
         "generateDebugVideo": generateDebugVideo and config['enable_debug_videos']
-    }, timeout=config['training_step_timeout'], config=config, logId=testingStep.id)
+    }, timeout=config['testing_step_timeout'], config=config, logId=testingStep.id)
     process.start()
     result = process.waitForProcessResult()
 
@@ -160,7 +160,7 @@ def updateModelSymbols(config, testingStepId):
 
         traces = []
         for executionTraceId in executionSession.executionTraces:
-            traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config))
+            traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
         totalNewSymbols += agent.assignNewSymbols(traces)
 
@@ -264,7 +264,7 @@ def trainAgent(configDir, exitOnFail=False):
     except RuntimeError:
         pass
 
-    config = Configuration(configDir)
+    config = KwolaCoreConfiguration(configDir)
 
     # Create the bugs directory. This is just temporary
     config.getKwolaUserDataDirectory("bugs")
@@ -290,7 +290,7 @@ def trainAgent(configDir, exitOnFail=False):
     trainingSequence.trainingStepsCompleted = 0
     trainingSequence.saveToDisk(config)
 
-    testingSteps = [step for step in loadAllTestingSteps(config) if step.status == "completed"]
+    testingSteps = [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"]
     if len(testingSteps) == 0:
         runRandomInitialization(config, trainingSequence, exitOnFail=exitOnFail)
         trainingSequence.saveToDisk(config)

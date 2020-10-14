@@ -1,15 +1,19 @@
 import yaml
 import os
 import subprocess
-import logging
 import json
 import pickle
 import time
 import logging
 import base64
-from .KubernetesJobProcess import KubernetesJobProcess
+import datetime
+from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
+from kwola.components.utils.retry import autoretry
+from kwolacloud.datamodels.KubernetesJobResult import KubernetesJobResult
 
 class KubernetesJob:
+    statusRefreshTime = 30
+
     def __init__(self, module, data, referenceId, image="worker", cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi", gpu=False):
         self.module = module
         self.data = data
@@ -21,21 +25,15 @@ class KubernetesJob:
         self.memoryLimit = memoryLimit
         self.gpu = gpu
         self.maxKubectlRetries = 10
+        self.result = None
+        self.lastStatus = None
+        self.lastStatusTime = None
 
+    @autoretry(onFailure=lambda self: self.refreshCredentials(), ignoreFailure=True)
     def cleanup(self):
-        if self.successful():
-            for attempt in range(self.maxKubectlRetries):
-                self.refreshCredentials()
-
-                process = subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
-                if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
-                    time.sleep(1.5 ** attempt)
-                    continue
-
-                break
-
-
-
+        process = subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
+            raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
     def refreshCredentials(self):
         subprocess.run(["gcloud", "auth", "activate-service-account", "kwola-288@kwola-cloud.iam.gserviceaccount.com", f"--key-file={os.getenv('GOOGLE_APPLICATION_CREDENTIALS')}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -82,9 +80,10 @@ class KubernetesJob:
                         "containers": [
                             {
                                 "name": f"kwola-cloud-sha256",
-                                "image": f"gcr.io/kwola-cloud/kwola:{os.getenv('REVISION_ID')}-{os.getenv('KWOLA_ENV')}-{self.image}",
+                                "image": f"gcr.io/kwola-cloud/kwola-{self.image}-{os.getenv('KWOLA_ENV')}:latest",
                                 "command": ["/usr/bin/python3"],
-                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps(self.data), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
+                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps((self.kubeJobName(), self.data)), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
+                                "imagePullPolicy": "Always",
                                 "securityContext": {
                                     "privileged": True,
                                     "capabilities":
@@ -117,7 +116,7 @@ class KubernetesJob:
                         ]
                     }
                 },
-                "backoffLimit": 4
+                "backoffLimit": 5
             }
         }
 
@@ -125,50 +124,51 @@ class KubernetesJob:
         return yamlStr
 
 
+    @autoretry(onFailure=lambda self: self.refreshCredentials())
     def start(self):
-        process = None
-        for attempt in range(self.maxKubectlRetries):
-            self.refreshCredentials()
+        yamlStr = self.generateJobSpec()
 
-            yamlStr = self.generateJobSpec()
+        process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
+            raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
-            process = subprocess.run(["kubectl", "apply", "-f", "-"], input=bytes(yamlStr, 'utf8'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
-                time.sleep(1.5 ** attempt)
-                continue
-
-            return
-
-        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
+        return
 
 
-
+    @autoretry(onFailure=lambda self: self.refreshCredentials())
     def getJobStatus(self):
-        process = None
-        for attempt in range(self.maxKubectlRetries):
-            self.refreshCredentials()
+        if self.lastStatus is not None and (datetime.datetime.now() - self.lastStatusTime).total_seconds() > KubernetesJob.statusRefreshTime:
+            return self.lastStatus
 
-            process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
-                time.sleep(1.5 ** attempt)
-                continue
+        process = subprocess.run(["kubectl", "get", "-o", "json", "job", self.kubeJobName()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode == 1 and (b"NotFound" in process.stderr):
+            self.lastStatus = "Failed"
+            self.lastStatusTime = datetime.datetime.now()
+            return self.lastStatus
+        elif process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
+            raise RuntimeError(
+                f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
-            try:
-                jsonData = json.loads(process.stdout)
-            except json.JSONDecodeError:
-                logging.error(f"Error decoding json {process.stdout}")
-                raise
+        try:
+            jsonData = json.loads(process.stdout)
+        except json.JSONDecodeError:
+            logging.error(f"Error decoding json {process.stdout}")
+            raise
 
-            if "active" in jsonData['status'] and jsonData['status']['active'] == 1:
-                return "Running"
+        if "active" in jsonData['status'] and jsonData['status']['active'] >= 1:
+            self.lastStatus = "Running"
+            self.lastStatusTime = datetime.datetime.now()
+            return self.lastStatus
 
-            if "failed" in jsonData['status'] and jsonData['status']['failed'] == 1:
-                return "Failed"
+        if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] >= 1:
+            self.lastStatus = "Success"
+            self.lastStatusTime = datetime.datetime.now()
+            return self.lastStatus
 
-            if "succeeded" in jsonData['status'] and jsonData['status']['succeeded'] == 1:
-                return "Success"
-
-        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
+        if "failed" in jsonData['status'] and jsonData['status']['failed'] >= 1:
+            self.lastStatus = "Failed"
+            self.lastStatusTime = datetime.datetime.now()
+            return self.lastStatus
 
     def ready(self):
         status = self.getJobStatus()
@@ -187,40 +187,28 @@ class KubernetesJob:
             raise ValueError("Can't ask if job is successful if it is still running")
         return status == "Failed"
 
-
-    def wait(self):
-        while not self.ready():
-            time.sleep(10)
-
-    def getLogs(self):
-        process = None
-        for attempt in range(self.maxKubectlRetries):
-            self.refreshCredentials()
-
-            process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
-                time.sleep(1.5 ** attempt)
-                continue
-
-            return str(process.stdout, 'utf8')
-
-        raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
-
-    def extractResultFromLogs(self):
-        logs = self.getLogs()
-        if KubernetesJobProcess.resultStartString not in logs or KubernetesJobProcess.resultFinishString not in logs:
-            logging.error(f"[{os.getpid()}] Error! Unable to extract result from the subprocess. Its possible the subprocess may have died")
-            return None
+    @autoretry(onFailure=lambda self: self.refreshCredentials())
+    def doesJobStillExist(self):
+        process = subprocess.run(["kubectl", "get", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode == 1 and (b"NotFound" in process.stderr):
+            return False
+        elif process.returncode == 0:
+            return True
         else:
-            resultStart = logs.index(KubernetesJobProcess.resultStartString)
-            resultFinish = logs.index(KubernetesJobProcess.resultFinishString)
+            raise RuntimeError(
+                f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
-            resultDataString = logs[resultStart + len(KubernetesJobProcess.resultStartString) : resultFinish].strip()
-            try:
-                result = pickle.loads(base64.b64decode(resultDataString, altchars=KubernetesJobProcess.base64AltChars))
-                return result
-            except Exception as e:
-                raise RuntimeError(f"Error! Unable to decode pickled string {resultDataString}. Error message: {str(e)}")
+
+    def getResult(self):
+        if self.result is not None:
+            return self.result.result
+
+        self.result = KubernetesJobResult.objects(id=self.kubeJobName()).first()
+
+        if self.result is not None:
+            return self.result.result
+        else:
+            return None
 
 
 

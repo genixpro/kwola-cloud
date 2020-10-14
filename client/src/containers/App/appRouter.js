@@ -1,55 +1,132 @@
 import React, { Component, lazy, Suspense } from 'react';
 import Route from '../../components/utility/customRoute';
 import Loader from '../../components/utility/Loader/';
+import safeImport from "../../safe_import";
+import Dashboard from '../Dashboard';
+import NewApplicationWizard from '../NewApplicationWizard';
+import JIRARedirect from '../JIRARedirect';
+import NewTestingRun from '../NewTestingRun';
+import ViewMutedErrors from '../ViewMutedErrors';
+import ConfigureNotifications from '../ConfigureNotifications';
+import ConfigureIntegrations from '../ConfigureIntegrations';
+import ConfigureWebhooks from '../ConfigureWebhooks';
+import ListRecurringTestingTriggers from '../ListRecurringTestingTriggers';
+import NewRecurringTestingTrigger from '../NewRecurringTestingTrigger';
+import ConfigureTestingRunOptions from '../ConfigureTestingRunOptions';
+import ChangeSubscription from '../ChangeSubscription';
+import ListApplications from '../ListApplications';
+import ViewApplication from '../ViewApplication';
+import ViewTestingSequence from '../ViewTestingSequence';
+import ViewTrainingSequence from '../ViewTrainingSequence';
+import ViewTrainingStep from '../ViewTrainingStep';
+import ViewExecutionSession from '../ViewExecutionSession';
+import ViewExecutionTrace from '../ViewExecutionTrace';
+import ViewTestingRunConfiguration from '../ViewTestingRunConfiguration';
+import ViewTestingRun from '../ViewTestingRun';
+import ViewBug from '../ViewBug';
+import ViewRecurringTestingTrigger from '../ViewRecurringTestingTrigger';
+import ViewRecurringTestingTriggerConfiguration from '../ViewRecurringTestingTriggerConfiguration';
 
 const routes = [
   {
     path: '',
-    component: lazy(() => import('../Dashboard')),
+    component: Dashboard,
   },
   {
     path: 'new-application',
-    component: lazy(() => import('../NewApplication')),
+    component: NewApplicationWizard,
+  },
+  {
+    path: 'new-application/:page',
+    component: NewApplicationWizard,
+  },
+  {
+    path: 'jira',
+    component: JIRARedirect,
   },
   {
     path: 'applications/:id/new_testing_run',
-    component: lazy(() => import('../NewTestingRun')),
+    component: NewTestingRun,
+  },
+  {
+    path: 'applications/:id/muted_errors',
+    component: ViewMutedErrors,
+  },
+  {
+    path: 'applications/:id/notifications',
+    component: ConfigureNotifications,
+  },
+  {
+    path: 'applications/:id/integrations',
+    component: ConfigureIntegrations,
+  },
+  {
+    path: 'applications/:id/webhooks',
+    component: ConfigureWebhooks,
+  },
+  {
+    path: 'applications/:id/triggers',
+    component: ListRecurringTestingTriggers,
+  },
+  {
+    path: 'applications/:id/new_trigger',
+    component: NewRecurringTestingTrigger,
+  },
+  {
+    path: 'applications/:id/testing_run_options',
+    component: ConfigureTestingRunOptions,
+  },
+  {
+    path: 'applications/:id/subscription',
+    component: ChangeSubscription,
   },
   {
     path: 'applications',
-    component: lazy(() => import('../ListApplications')),
+    component: ListApplications,
   },
   {
     path: 'applications/:id',
-    component: lazy(() => import('../ViewApplication')),
+    component: ViewApplication,
   },
   {
     path: 'testing_sequences/:id',
-    component: lazy(() => import('../ViewTestingSequence')),
+    component: ViewTestingSequence,
   },
   {
     path: 'training_sequences/:id',
-    component: lazy(() => import('../ViewTrainingSequence')),
+    component: ViewTrainingSequence,
   },
   {
     path: 'training_steps/:id',
-    component: lazy(() => import('../ViewTrainingStep')),
+    component: ViewTrainingStep,
   },
   {
     path: 'execution_sessions/:id',
-    component: lazy(() => import('../ViewExecutionSession')),
+    component: ViewExecutionSession,
   },
   {
-    path: 'execution_traces/:id',
-    component: lazy(() => import('../ViewExecutionTrace')),
+    path: 'execution_sessions/:id/execution_traces/:traceId',
+    component: ViewExecutionTrace,
+  },
+  {
+    path: 'testing_runs/:id/configuration',
+    component: ViewTestingRunConfiguration,
   },
   {
     path: 'testing_runs/:id',
-    component: lazy(() => import('../ViewTestingRun')),
+    component: ViewTestingRun,
   },
   {
     path: 'bugs/:id',
-    component: lazy(() => import('../ViewBug')),
+    component: ViewBug,
+  },
+  {
+    path: 'triggers/:id',
+    component: ViewRecurringTestingTrigger,
+  },
+  {
+    path: 'triggers/:id/configuration',
+    component: ViewRecurringTestingTriggerConfiguration,
   }
 ];
 
@@ -58,22 +135,8 @@ class AppRouter extends Component {
     this.lastUrl = null;
   }
 
-  render() {
-    if (window.location.href !== this.lastUrl)
-    {
-      if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
-      {
-        var _hsq = window._hsq = window._hsq || [];
-        _hsq.push(['setPath', window.location.pathname]);
-        _hsq.push(['trackPageView']);
-
-        window.ga('set', 'page', window.location.href);
-        window.ga('send', 'pageview');
-      }
-
-      this.lastUrl = window.location.href;
-    }
-
+  render()
+  {
     const { url, style } = this.props;
     return (
       <Suspense fallback={<Loader />}>

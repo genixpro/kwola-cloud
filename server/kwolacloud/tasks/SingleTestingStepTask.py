@@ -4,18 +4,31 @@
 #
 
 
-from ..datamodels.TestingRun import TestingRun
-from kwola.config.config import Configuration
-from kwola.datamodels.TestingStepModel import TestingStep
-from kwola.datamodels.CustomIDField import CustomIDField
+from ..config.config import loadConfiguration
 from ..datamodels.id_utility import generateKwolaId
+from ..datamodels.TestingRun import TestingRun
+from ..helpers.jira import postBugToCustomerJIRA
+from ..helpers.slack import postToCustomerSlack
+from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
+from kwola.components.plugins.core.CreateLocalBugObjects import CreateLocalBugObjects
+from kwola.components.plugins.core.GenerateAnnotatedVideos import GenerateAnnotatedVideos
+from kwola.components.plugins.core.LogSessionActionExecutionTimes import LogSessionActionExecutionTimes
+from kwola.components.plugins.core.LogSessionRewards import LogSessionRewards
+from kwola.components.plugins.core.PrecomputeSessionsForSampleCache import PrecomputeSessionsForSampleCache
+from kwolacloud.components.plugins.SendExecutionSessionWebhooks import SendExecutionSessionWebhooks
+from kwola.config.config import KwolaCoreConfiguration
+from kwola.datamodels.BugModel import BugModel
+from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.tasks import RunTestingStep
-from ..config.config import loadConfiguration, getKwolaConfiguration
+from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
+from kwolacloud.datamodels.ApplicationModel import ApplicationModel
+from kwolacloud.helpers.webhook import sendCustomerWebhook
+from  kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
 import logging
+import json
 import os
-from .utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, verifyStripeSubscription, attachUsageBilling
-from kwolacloud.components.KubernetesJobProcess import KubernetesJobProcess
 import traceback
+
 
 def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
     logging.info(f"Starting testing step for testing run {testingRunId}")
@@ -30,8 +43,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         return {"success": False, "exception": errorMessage}
 
     # Verify this subscription with stripe
-    #if not verifyStripeSubscription(run):
-    #    return {"success": False}
+    if not verifyStripeSubscription(run):
+       return {"success": False}
 
     if not configData['features']['localRuns']:
         configDir = mountTestingRunStorageDrive(run.applicationId)
@@ -43,14 +56,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         configDir = os.path.join("data", run.applicationId)
 
     try:
-        config = Configuration(configDir)
-
-        # Deduct the sessions we are about to perform from the available list
-        modifiedObjects = TestingRun.objects(id=testingRunId, testingSessionsRemaining__gte=1).update_one(dec__testingSessionsRemaining=config['web_session_parallel_execution_sessions'])
-
-        if modifiedObjects == 0:
-            logging.warning(f"Warning! Not enough testing sessions remaining on testing run to perform this testing step, which requires {config['web_session_parallel_execution_sessions']} sessions. Probably due to prior sessions failing.")
-            return {"success": True}
+        config = KwolaCoreConfiguration(configDir)
 
         shouldBeRandom = False
         if testingStepsCompleted < (config['training_random_initialization_sequences']):
@@ -60,10 +66,45 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId)
         testingStep.saveToDisk(config)
 
-        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom)
+        logging.info(f"This testing step was given the id: {newID}")
 
-        #if result['success'] and 'successfulExecutionSessions' in result:
-            #attachUsageBilling(config, run, sessionsToBill=result['successfulExecutionSessions'])
+        application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
+
+        # Special override here: if the application object has been marked as deleted, or is literally deleted and
+        # missing from the database, then do not continue the testing run. Just finish quietly.
+        if application is None or application.status != "active":
+            return {"success": False, "exception": f"The application object with id {run.applicationId} is either missing from the database or has been marked as deleted by the user."}
+
+        plugins = [
+            CreateCloudBugObjects(config),
+            LogSessionRewards(config),
+            LogSessionActionExecutionTimes(config),
+            PrecomputeSessionsForSampleCache(config),
+            GenerateAnnotatedVideos(config),
+            SendExecutionSessionWebhooks(config, application)
+        ]
+
+        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins)
+
+        application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
+        bugs = BugModel.objects(owner=run.owner, testingStepId=newID, isMuted=False)
+        for bug in bugs:
+            if application.enableEmailNewBugNotifications:
+                # sendBugFoundNotification(application, bug)
+                pass
+
+            if application.enableSlackNewBugNotifications:
+                postToCustomerSlack(
+                    f"A new error has been found. View the bug here: {configData['frontend']['url']}app/dashboard/bugs/{bug.id}",
+                    application,
+                    bug.error.message
+                )
+
+            if application.enablePushBugsToJIRA:
+                postBugToCustomerJIRA(bug, application)
+
+            if application.bugFoundWebhookURL:
+                sendCustomerWebhook(application, "bugFoundWebhookURL", json.loads(bug.to_json()))
 
         logging.info(f"Finished testing step for testing run {testingRunId}")
 

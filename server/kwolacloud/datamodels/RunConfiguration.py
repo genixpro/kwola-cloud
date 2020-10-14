@@ -20,21 +20,49 @@ class RunConfiguration(EmbeddedDocument):
 
     paragraph = StringField()
 
-    enableRandomNumberCommand = BooleanField()
+    enableRandomNumberCommand = BooleanField(default=True)
 
-    enableRandomBracketCommand = BooleanField()
+    enableRandomBracketCommand = BooleanField(default=False)
 
-    enableRandomMathCommand = BooleanField()
+    enableRandomMathCommand = BooleanField(default=False)
 
-    enableRandomOtherSymbolCommand = BooleanField()
+    enableRandomOtherSymbolCommand = BooleanField(default=False)
 
-    enableDoubleClickCommand = BooleanField()
+    enableDoubleClickCommand = BooleanField(default=False)
 
-    enableRightClickCommand = BooleanField()
+    enableRightClickCommand = BooleanField(default=False)
+
+    enableTypeEmail = BooleanField(default=False)
+
+    enableTypePassword = BooleanField(default=False)
+
+    enableRandomLettersCommand = BooleanField(default=True)
+
+    enableRandomAddressCommand = BooleanField(default=True)
+
+    enableRandomEmailCommand = BooleanField(default=True)
+
+    enableRandomPhoneNumberCommand = BooleanField(default=True)
+
+    enableRandomParagraphCommand = BooleanField(default=True)
+
+    enableRandomDateTimeCommand = BooleanField(default=True)
+
+    enableRandomCreditCardCommand = BooleanField(default=True)
+
+    enableRandomURLCommand = BooleanField(default=False)
+
+    enableScrolling = BooleanField(default=True)
+
+    enableDragging = BooleanField()
+
+    customTypingActionStrings = ListField(StringField())
 
     autologin = BooleanField()
 
     preventOffsiteLinks = BooleanField()
+
+    enablePathWhitelist = BooleanField()
 
     urlWhitelistRegexes = ListField(StringField())
 
@@ -43,3 +71,17 @@ class RunConfiguration(EmbeddedDocument):
     totalTestingSessions = IntField()
 
     hours = IntField()
+
+    enable5xxError = BooleanField(default=True)
+
+    enable400Error = BooleanField(default=True)
+
+    enable401Error = BooleanField(default=False)
+
+    enable403Error = BooleanField(default=False)
+
+    enable404Error = BooleanField(default=True)
+
+    enableJavascriptConsoleError = BooleanField(default=True)
+
+    enableUnhandledExceptionError = BooleanField(default=True)

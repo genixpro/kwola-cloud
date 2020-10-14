@@ -5,13 +5,28 @@ import {TableBody, TableCell, TableHead, TableRow, TablePagination} from "../../
 import moment from 'moment';
 import {connect, Provider} from 'react-redux';
 import MaterialTable from 'material-table'
+import Icon from "../../components/uielements/icon";
+import Button from "../../components/uielements/button";
+import VolumeOffIcon from '@material-ui/icons/VolumeOff';
+import axios from "axios";
+import Promise from "bluebird";
 
 class BugsTable extends Component{
 	state = {
         newPage:0,
         setPage:0,
-        rowsPerPage:10
+        rowsPerPage:10,
+        muted: {}
     };
+
+    constructor(props)
+    {
+        super(props);
+        this.mutedErrorIds = {};
+    }
+
+
+
 	// handleChangePage = (event, newPage) => {
  //            this.setState({newPage:newPage})
  //    };
@@ -26,13 +41,69 @@ class BugsTable extends Component{
 
     processData = (data) => {
         let rdata = []
-        if(data){
+        if(data)
+        {
             data.map(bug=>{
-               
-                rdata.push({_id:bug._id,message:bug.error.message,_cls:bug.error._cls})
+                bug._cls = bug.error._cls;
+                bug.message = bug.error.message;
+                rdata.push(bug)
             })
         }
         return rdata;
+    }
+
+    toggleMuteError(evt, bug)
+    {
+        const muted = this.state.muted;
+        if (!muted[bug._id] && !this.mutedErrorIds[bug._id])
+        {
+            const mutedErrorData = {
+                applicationId: this.props.match.params.id,
+                error: bug.error,
+                creationDate: new Date().toISOString(),
+                totalOccurrences: 1,
+                mostRecentOccurrence: new Date(bug.creationDate.$date).toISOString()
+            };
+
+            axios.post(`/muted_errors`, mutedErrorData).then((response) => {
+                const mutedErrorId = response.data.mutedErrorId;
+
+                this.mutedErrorIds[bug._id] = mutedErrorId;
+
+                axios.post(`/bugs/${bug._id}`, {isMuted: true, mutedErrorId: mutedErrorId}).then((response) => {
+
+                }, (error) =>
+                {
+                    console.error("Error occurred while muting bug!");
+                });
+
+            }, (error) =>
+            {
+                console.error("Error occurred while muting bug!");
+            });
+
+            muted[bug._id] = true;
+        }
+        else if(muted[bug._id] && this.mutedErrorIds[bug._id])
+        {
+            axios.delete(`/muted_errors/${this.mutedErrorIds[bug._id]}`).then((response) => {
+                this.mutedErrorIds[bug._id] = null;
+
+                axios.post(`/bugs/${bug._id}`, {isMuted: false, mutedErrorId: null}).then((response) => {
+
+                }, (error) =>
+                {
+                    console.error("Error occurred while muting bug!");
+                });
+            }, (error) =>
+            {
+                console.error("Error occurred while muting bug!");
+            });
+
+            muted[bug._id] = false;
+        }
+        this.setState({muted});
+        evt.stopPropagation();
     }
 
 	render(){
@@ -91,6 +162,17 @@ class BugsTable extends Component{
                           whiteSpace: 'nowrap'
                         },
                      },
+                  {
+                      field: 'url',
+                      title: 'Options',
+                      render: (rowData) => <Button variant="contained"
+                                                            size="small"
+                                                            color={!this.state.muted[rowData._id] ? "default" : "primary"}
+                                                            title={!this.state.muted[rowData._id] ? "Mute this error" : "Unmute this error"}
+                                                            onClick={(evt) => this.toggleMuteError(evt, rowData)}>
+                          <VolumeOffIcon />
+                      </Button>
+                  }
                   ]}
                   data={tableData}
                   title=""

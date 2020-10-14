@@ -1,0 +1,39 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: kwola-hourlytasks-__KWOLA_ENV__
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: kwola-cloud-sha256
+            image: gcr.io/kwola-cloud/kwola-api-__KWOLA_ENV__:__REVISION_ID__
+            command: ["kwolacloud_run_hourly_tasks"]
+            resources:
+              requests:
+                cpu: 250m
+                memory: 512Mi
+            env:
+              - name: KWOLA_ENV
+                value: __KWOLA_ENV__
+            volumeMounts:
+                - mountPath: /dev/shm
+                  name: dshm
+            securityContext:
+              privileged: true
+              capabilities:
+                add:
+                  - SYS_ADMIN
+          restartPolicy: OnFailure
+          volumes:
+              - name: dshm
+                emptyDir:
+                  medium: Memory
+          priorityClassName: __KWOLA_ENV__-background-priority
+      backoffLimit: 4
+
+
+

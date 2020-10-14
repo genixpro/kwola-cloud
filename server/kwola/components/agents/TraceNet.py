@@ -20,6 +20,7 @@
 
 
 import torch
+import torch.cuda
 
 
 class TraceNet(torch.nn.Module):
@@ -41,8 +42,7 @@ class TraceNet(torch.nn.Module):
                 in_features=self.config['symbol_embedding_size'],
                 out_features=self.stampSize - self.timeEncodingSize
             ),
-            torch.nn.ELU(),
-            torch.nn.BatchNorm1d(num_features=self.stampSize - self.timeEncodingSize)
+            torch.nn.ELU()
         )
 
         self.mainModel = torch.nn.Sequential(
@@ -296,15 +296,17 @@ class TraceNet(torch.nn.Module):
             outputDict['decayingFutureSymbolEmbedding'] = decayingFutureSymbolEmbedding
 
         if data["computeActionProbabilities"]:
-            actorLogProbs = self.actorConvolution(mergedPixelFeatureMap)
+            # We have to do this clamp here to preserve numerical stability and prevent calculations from going
+            # out of bounds in the torch.exp command below.
+            actorLogProbs = self.actorConvolution(mergedPixelFeatureMap).clamp(-30, 30)
 
             actorProbExp = torch.exp(actorLogProbs) * data['pixelActionMaps']
             actorProbSums = torch.sum(actorProbExp.reshape(shape=[-1, width * height * self.numActions]), dim=1).unsqueeze(1).unsqueeze(1).unsqueeze(1)
-            actorProbSums = torch.max((actorProbSums == 0) * 1e-8, actorProbSums)
+            actorProbSums = torch.max(torch.eq(actorProbSums, 0).type_as(actorProbSums) * 1.0, actorProbSums)
             actorActionProbs = torch.true_divide(actorProbExp, actorProbSums)
             actorActionProbs = actorActionProbs.reshape([-1, self.numActions, height, width])
 
-            outputDict["actionProbabilities"] = actorActionProbs
+            outputDict["actionProbabilities"] = actorActionProbs.type_as(mergedPixelFeatureMap)
 
         if data['computeStateValues']:
             shrunkTrainingWidth = int(self.config['training_crop_width'] / 8)
@@ -394,7 +396,6 @@ class TraceNet(torch.nn.Module):
         bestPossibleReward += max(0.0, config['reward_no_new_url'])
         bestPossibleReward += max(0.0, config['reward_log_output'])
         bestPossibleReward += max(0.0, config['reward_no_log_output'])
-        bestPossibleReward += max(0.0, config['reward_impossible_action'])
 
         worstPossibleReward += min(0.0, config['reward_action_success'])
         worstPossibleReward += min(0.0, config['reward_action_failure'])
@@ -416,12 +417,11 @@ class TraceNet(torch.nn.Module):
         worstPossibleReward += min(0.0, config['reward_no_new_url'])
         worstPossibleReward += min(0.0, config['reward_log_output'])
         worstPossibleReward += min(0.0, config['reward_no_log_output'])
-        worstPossibleReward += min(0.0, config['reward_impossible_action'])
 
         self.bestPossibleReward = bestPossibleReward
         self.worstPossibleReward = worstPossibleReward
 
-        return worstPossibleReward, bestPossibleReward 
+        return worstPossibleReward, bestPossibleReward
 
     def computeDiscountedFutureRewardBounds(self):
         oneFrameBounds = self.computePresentRewardBounds()

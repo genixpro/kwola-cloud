@@ -11,8 +11,8 @@ spec:
       app: kwola-__KWOLA_ENV__-api
   strategy:
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: __MAX_SURGE__
+      maxUnavailable: __MAX_UNAVAILABLE__
     type: RollingUpdate
   template:
     metadata:
@@ -23,8 +23,8 @@ spec:
       - env:
         - name: KWOLA_ENV
           value: __KWOLA_ENV__
-        image: gcr.io/kwola-cloud/kwola:__REVISION_ID__-__KWOLA_ENV__-api
-        imagePullPolicy: IfNotPresent
+        image: gcr.io/kwola-cloud/kwola-api-__KWOLA_ENV__:__REVISION_ID__
+        imagePullPolicy: Always
         name: kwola-cloud-sha256
         readinessProbe:
           failureThreshold: 1
@@ -53,6 +53,7 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
+      priorityClassName: __KWOLA_ENV__-priority
       terminationGracePeriodSeconds: 15
       volumes:
         - name: dshm

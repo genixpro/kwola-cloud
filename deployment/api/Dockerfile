@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y && \
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
-    chromium-browser=84* \
+    chromium-browser=85* \
     ffmpeg \
     freetype* \
     fuse \
@@ -60,7 +60,7 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s 
     kubectl version --client
 
 # Download and install Chromedriver
-RUN wget https://chromedriver.storage.googleapis.com/84.0.4147.30/chromedriver_linux64.zip && \
+RUN wget https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip && \
     unzip chromedriver_linux64.zip && \
     cp chromedriver /usr/bin/ && \
     chmod 644 /usr/bin/chromedriver && \
@@ -80,32 +80,17 @@ RUN useradd -s /bin/bash --home-dir /home/kwola kwola && \
     mkdir /home/kwola && \
     chown -R kwola:kwola /home/kwola
 
+# Set the working directory to /app
+WORKDIR /kwola
+COPY server/requirements-frozen.txt .
+
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
 RUN pip3 install --upgrade pip && \
     pip3 install --upgrade setuptools && \
     pip3 install --upgrade cryptography && \
-    pip3 install protobuf==3.11.3 && \
-    pip3 install celery && \
-    pip3 install flask && \
-    pip3 install google-cloud-storage==1.29.0 && \
-    pip3 install google-cloud-profiler && \
-    pip3 install gunicorn && \
-    pip3 install jwcrypto && \
-    pip3 install matplotlib && \
-    pip3 install mitmproxy && \
-    pip3 install mongoengine && \
-    pip3 install numpy && \
-    pip3 install opencv-python && \
-    pip3 install pandas && \
-    pip3 install psutil && \
-    pip3 install redis && \
-    pip3 install scikit-image && \
-    pip3 install scikit-learn && \
-    pip3 install scipy && \
-    pip3 install selenium && \
-    pip3 install stripe && \
     pip3 install torch && \
+    pip3 install -r requirements-frozen.txt && \
     chmod +r+r+r -R /usr/lib/python3/ && \
     rm -rf /root/.cache
 
@@ -149,11 +134,18 @@ ENV CLOUDSDK_CONTAINER_CLUSTER=testing-workers
 ENV NODE_OPTIONS=--max-old-space-size=8192
 RUN gcloud container clusters get-credentials testing-workers
 
+RUN mkdir /home/kwola/.ssh && \
+    echo "Host *\nStrictHostKeyChecking no" >> /home/kwola/.ssh/config && \
+    chown -R kwola:kwola /home/kwola/.ssh && \
+    chmod u+rw,og-rw /home/kwola/.ssh/config && \
+    chmod u+rw,og-rw /home/kwola/.ssh
+
 ENV HOME=/home/kwola
 ENV KUBECONFIG=/home/kwola/kube_config
 RUN chown -R kwola:kwola /kwola && \
     chown -R kwola:kwola /home/kwola && \
-    chmod +r+r+r -R /usr/lib/python3 && \
+    chown -R kwola:kwola /home/kwola/.ssh && \
+    chmod ugo+r -R /usr/lib/python3 && \
     su kwola -c "gcloud container clusters get-credentials testing-workers" && \
     su kwola -c "kubectl cluster-info" && \
     su kwola -c "kwola_install_proxy_cert 1" && \
@@ -164,14 +156,16 @@ RUN chown -R kwola:kwola /kwola && \
 
 RUN rm -rf /usr/include/*
 
-RUN chmod +r+r+r -R /usr/lib/python3
-RUN su kwola -c "kwola_test_installation"
+WORKDIR /home/kwola
+RUN chmod ugo+r -R /usr/lib/python3 && chown -R kwola:kwola /home/kwola && cd /home/kwola && su kwola -c "kwola_test_installation"
+WORKDIR /kwola/server
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
-RUN du -h -d 5 -t 10M /; exit 0
+# RUN du -h -d 5 -t 10M /; exit 0
 
-USER kwola
+USER kwola:kwola
+
 
 # Setup and configure systemd
 ENTRYPOINT ["bash", "-c", "gunicorn -t 600 -w 4 -b 0.0.0.0:3000 kwolacloud.app"]

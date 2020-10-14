@@ -9,15 +9,20 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
 
 from ..app import cache
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
+from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.tasks.RunTestingStep import runTestingStep
 import json
 import os
+import logging
 import flask
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 from kwolacloud.config.config import loadConfiguration
 import os.path
-from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from ..auth import authenticate, isAdmin
+import concurrent.futures
+from mongoengine.queryset.visitor import Q
+
 
 class ExecutionSessionGroup(Resource):
     def __init__(self):
@@ -34,7 +39,9 @@ class ExecutionSessionGroup(Resource):
         if user is None:
             abort(401)
 
-        queryParams = {'totalReward__exists': True}
+        queryParams = {
+
+        }
 
         if not isAdmin():
             queryParams['owner'] = user
@@ -43,7 +50,7 @@ class ExecutionSessionGroup(Resource):
         if testingRunId is not None:
             queryParams["testingRunId"] = testingRunId
 
-        executionSessions = ExecutionSession.objects(**queryParams).no_dereference().order_by("startTime").to_json()
+        executionSessions = ExecutionSession.objects(Q(totalReward__exists=True, status__exists=False) | Q(status="completed"), **queryParams).no_dereference().order_by("-startTime").to_json()
 
         return {"executionSessions": json.loads(executionSessions)}
 
@@ -107,12 +114,16 @@ class ExecutionSessionVideo(Resource):
         else:
             configDir = os.path.join("data", executionSession.applicationId)
 
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("annotated_videos"), f'{str(execution_session_id)}.mp4')
 
-        with open(videoFilePath, 'rb') as videoFile:
-            videoData = videoFile.read()
+        if os.path.exists(videoFilePath):
+            with open(videoFilePath, 'rb') as videoFile:
+                videoData = videoFile.read()
+        else:
+            logging.error(f"Error! Missing execution session video: {videoFilePath}")
+            return abort(404)
 
         response = flask.make_response(videoData)
         response.headers['content-type'] = 'video/mp4'
@@ -120,5 +131,75 @@ class ExecutionSessionVideo(Resource):
         unmountTestingRunStorageDrive(configDir)
 
         return response
+
+
+class ExecutionSessionTraces(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+
+    @cache.cached(timeout=36000)
+    def get(self, execution_session_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": execution_session_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        executionSession = ExecutionSession.objects(**queryParams).first()
+
+        if executionSession is None:
+            return abort(404)
+
+        configData = loadConfiguration()
+        if not configData['features']['localRuns']:
+            configDir = mountTestingRunStorageDrive(executionSession.applicationId)
+        else:
+            configDir = os.path.join("data", executionSession.applicationId)
+
+        config = KwolaCoreConfiguration(configDir)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+            traces = executor.map(lambda traceId: ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True, applicationId=executionSession.applicationId),
+                                  executionSession.executionTraces)
+
+        unmountTestingRunStorageDrive(configDir)
+
+        return {"executionTraces": [json.loads(trace.to_json()) for trace in traces]}
+
+
+class ExecutionSessionSingleTrace(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+
+    @cache.cached(timeout=36000)
+    def get(self, execution_session_id, execution_trace_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": execution_session_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        executionSession = ExecutionSession.objects(**queryParams).first()
+
+        if executionSession is None:
+            return abort(404)
+
+        configData = loadConfiguration()
+        if not configData['features']['localRuns']:
+            configDir = mountTestingRunStorageDrive(executionSession.applicationId)
+        else:
+            configDir = os.path.join("data", executionSession.applicationId)
+
+        config = KwolaCoreConfiguration(configDir)
+
+        trace = ExecutionTrace.loadFromDisk(execution_trace_id, config, applicationId=executionSession.applicationId)
+
+        unmountTestingRunStorageDrive(configDir)
+
+        return {"executionTrace": json.loads(trace.to_json())}
 
 

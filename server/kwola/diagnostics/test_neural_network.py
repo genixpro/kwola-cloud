@@ -18,7 +18,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from ..config.config import Configuration
+from ..config.config import KwolaCoreConfiguration
 from ..components.agents.DeepLearningAgent import DeepLearningAgent
 import torch
 import torch.distributed
@@ -56,59 +56,60 @@ def testNeuralNetworkAllGPUs(verbose=True):
     """
 
 
-    configDir = Configuration.createNewLocalKwolaConfigDir("testing",
-                                                           url="http://demo.kwolatesting.com/",
-                                                           email="",
-                                                           password="",
-                                                           name="",
-                                                           paragraph="",
-                                                           enableRandomNumberCommand=False,
-                                                           enableRandomBracketCommand=False,
-                                                           enableRandomMathCommand=False,
-                                                           enableRandomOtherSymbolCommand=False,
-                                                           enableDoubleClickCommand=False,
-                                                           enableRightClickCommand=False
-                                                           )
+    configDir = KwolaCoreConfiguration.createNewLocalKwolaConfigDir("testing",
+                                                                    url="http://demo.kwolatesting.com/",
+                                                                    email="",
+                                                                    password="",
+                                                                    name="",
+                                                                    paragraph="",
+                                                                    enableTypeEmail=True,
+                                                                    enableTypePassword=True,
+                                                                    enableRandomNumberCommand=False,
+                                                                    enableRandomBracketCommand=False,
+                                                                    enableRandomMathCommand=False,
+                                                                    enableRandomOtherSymbolCommand=False,
+                                                                    enableDoubleClickCommand=False,
+                                                                    enableRightClickCommand=False
+                                                                    )
+    try:
+        config = KwolaCoreConfiguration(configDir)
 
-    config = Configuration(configDir)
+        allSuccess = True
 
-    allSuccess = True
-
-    if verbose:
-        print("Initializing the deep neural network on the CPU.")
-    success = runNeuralNetworkTestOnGPU(gpu=None, config=config, verbose=verbose)
-    if success:
         if verbose:
-            print("We have successfully initialized a neural network on the CPU and run a few a training batches through it.")
-    else:
-        if verbose:
-            print("Neural network training appears to have failed on the CPU.")
-        allSuccess = False
-
-    gpus = torch.cuda.device_count()
-    if gpus > 0:
-        torch.distributed.init_process_group(backend="gloo",
-                                             world_size=1,
-                                             rank=0,
-                                             init_method="file:///tmp/kwola_distributed_coordinator", )
-
-        for gpu in range(gpus):
+            print("Initializing the deep neural network on the CPU.")
+        success = runNeuralNetworkTestOnGPU(gpu=None, config=config, verbose=verbose)
+        if success:
             if verbose:
-                print(f"Initializing the deep neural network on your CUDA GPU #{gpu}")
-            success = runNeuralNetworkTestOnGPU(gpu=gpu, config=config, verbose=verbose)
-            if success:
+                print("We have successfully initialized a neural network on the CPU and run a few a training batches through it.")
+        else:
+            if verbose:
+                print("Neural network training appears to have failed on the CPU.")
+            allSuccess = False
+
+        gpus = torch.cuda.device_count()
+        if gpus > 0:
+            torch.distributed.init_process_group(backend="gloo",
+                                                 world_size=1,
+                                                 rank=0,
+                                                 init_method="file:///tmp/kwola_distributed_coordinator", )
+
+            for gpu in range(gpus):
                 if verbose:
-                    print(f"We have successfully initialized a neural network on GPU #{gpu} and run a few a training batches through it.")
-            else:
-                if verbose:
-                    print(f"Neural network training appears to have failed on GPU #{gpu}")
-                allSuccess = False
+                    print(f"Initializing the deep neural network on your CUDA GPU #{gpu}")
+                success = runNeuralNetworkTestOnGPU(gpu=gpu, config=config, verbose=verbose)
+                if success:
+                    if verbose:
+                        print(f"We have successfully initialized a neural network on GPU #{gpu} and run a few a training batches through it.")
+                else:
+                    if verbose:
+                        print(f"Neural network training appears to have failed on GPU #{gpu}")
+                    allSuccess = False
 
-    if allSuccess:
-        if verbose:
-            print("Everything worked! Kwola deep learning appears to be fully working.")
+        if allSuccess:
+            if verbose:
+                print("Everything worked! Kwola deep learning appears to be fully working.")
 
-    shutil.rmtree(configDir)
-
-    return allSuccess
-
+        return allSuccess
+    finally:
+        shutil.rmtree(configDir)

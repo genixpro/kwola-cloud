@@ -1,0 +1,54 @@
+
+
+.wizard-navigation-buttons
+{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+
+  .wizard-button
+  {
+    height: 40px;
+    span {
+      padding-bottom: 2px;
+    }
+  }
+}
+
+.promo-code-box
+{
+  display: flex;
+  flex-direction: row;
+
+  margin-top: 20px;
+
+  .promo-code-label
+  {
+    position: relative;
+    top: 35px;
+    margin-right: 20px;
+  }
+
+  .promo-code-discount-applied
+  {
+    position: relative;
+    top: 35px;
+    margin-left: 30px;
+    .MuiSvgIcon-root
+    {
+      position: relative;
+      top: 5px;
+    }
+  }
+}
+
+.day-of-week-widget
+{
+  margin-top: 30px;
+}
+
+.day-of-month-widget
+{
+  margin-top: 30px;
+}

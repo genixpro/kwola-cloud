@@ -11,13 +11,14 @@ from ..app import cache
 from kwola.datamodels.BugModel import BugModel
 from ..tasks.RunTesting import runTesting
 import json
+import logging
 import bson
 from kwola.datamodels.CustomIDField import CustomIDField
 from ..config.config import getKwolaConfiguration, loadConfiguration
 import flask
-from kwola.config.config import Configuration
+from kwola.config.config import KwolaCoreConfiguration
 import os.path
-from ..tasks.RunTesting import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from ..auth import authenticate, isAdmin
 
 class BugsGroup(Resource):
@@ -43,6 +44,8 @@ class BugsGroup(Resource):
         testingRunId = flask.request.args.get('testingRunId')
         if testingRunId is not None:
             queryParams["testingRunId"] = testingRunId
+
+        queryParams["isMuted"] = False
 
         bugs = BugModel.objects(**queryParams).no_dereference().order_by("-startTime")
 
@@ -70,6 +73,31 @@ class BugsSingle(Resource):
             return abort(404)
 
         return {"bug": json.loads(bug.to_json())}
+
+    def post(self, bug_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": bug_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        bug = BugModel.objects(**queryParams).first()
+
+        if bug is None:
+            return abort(404)
+
+        data = flask.request.get_json()
+        # Only allow updating the muted field
+        if 'isMuted' in data:
+            bug.isMuted = data['isMuted']
+        if 'mutedErrorId' in data:
+            bug.mutedErrorId = data['mutedErrorId']
+
+        bug.save()
+
+        return {}
 
 
 
@@ -103,7 +131,7 @@ class BugVideo(Resource):
         else:
             configDir = os.path.join("data", bug.applicationId)
 
-        config = Configuration(configDir)
+        config = KwolaCoreConfiguration(configDir)
 
         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), f'{str(bug_id)}_bug_{str(bug.executionSessionId)}.mp4')
 
@@ -111,12 +139,14 @@ class BugVideo(Resource):
             with open(videoFilePath, 'rb') as videoFile:
                 videoData = videoFile.read()
         else:
+            logging.error(f"Error! Missing bug video: {videoFilePath}")
             return abort(404)
 
         response = flask.make_response(videoData)
         response.headers['content-type'] = 'video/mp4'
 
-        unmountTestingRunStorageDrive(configDir)
+        if not configData['features']['localRuns']:
+            unmountTestingRunStorageDrive(configDir)
 
         return response
 

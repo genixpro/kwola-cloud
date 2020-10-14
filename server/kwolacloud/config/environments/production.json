@@ -10,7 +10,10 @@
   },
   "stripe": {
     "apiKey": "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71",
-    "planId": "plan_HIXgoqMagqDLUx",
+    "monthlyPriceId": "price_1Hb8bfIblHdmFFAotwMIFbHE",
+    "payAsYouGoPriceId": "price_1Hb92uIblHdmFFAoINmDIziP",
+    "payAsYouGoSingleRunPriceId": "price_1HbBKrIblHdmFFAoMXAbtwBD",
+    "oneOffRunPriceId": "price_1Hb9AsIblHdmFFAop1AEtQ22",
     "productId": "prod_HaMORiE1sMu6bP"
   },
   "auth0": {
@@ -32,6 +35,7 @@
     "enableGoogleCloudLogging": true,
     "enableSlackLogging": true,
     "enableRuns": true,
-    "localRuns": false
+    "localRuns": false,
+    "enableSupportOfferEmailsOnUsers": true
   }
 }

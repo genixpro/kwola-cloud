@@ -1,0 +1,20 @@
+
+
+.save-package-button-wrapper
+{
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+
+  .save-package-button
+  {
+
+  }
+}
+
+.cancel-subscription-link
+{
+  color: blue;
+  text-decoration: underline;
+  cursor: pointer;
+}

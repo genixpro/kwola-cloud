@@ -2,7 +2,8 @@ steps:
 - name: 'gcr.io/kaniko-project/executor:latest'
   id: Build worker image
   args: [
-    "--destination=gcr.io/kwola-cloud/kwola:$REVISION_ID-$_KWOLA_ENV-worker",
+    "--destination=gcr.io/kwola-cloud/kwola-worker-$_KWOLA_ENV:$REVISION_ID",
+    "--destination=gcr.io/kwola-cloud/kwola-worker-$_KWOLA_ENV:latest",
     "--cache=true",
     "--cache-ttl=720h",
     "--snapshotMode=time",
@@ -25,4 +26,4 @@ steps:
 
 timeout: 15000s
 options:
-  machineType: 'N1_HIGHCPU_8'
+  machineType: 'UNSPECIFIED'

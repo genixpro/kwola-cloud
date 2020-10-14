@@ -30,6 +30,11 @@ import { CSVLink, CSVDownload } from "react-csv";
 
 import SessionTable from './sessionTable'
 import BugsTable from './bugsTable'
+import FeedbackWidget from "../FeedbackWidget";
+import CircularProgress from "../../components/uielements/circularProgress";
+import SettingsIcon from "@material-ui/icons/Settings";
+import Menus, {MenuItem} from "../../components/uielements/menus";
+import {Link} from "react-router-dom";
 
 class ViewTestingRun extends Component {
     state = {
@@ -39,7 +44,8 @@ class ViewTestingRun extends Component {
         newPage:0,
         setPage:0,
         bugs:[],
-        isAdmin: Auth.isAdmin()
+        isAdmin: Auth.isAdmin(),
+        settingsMenuOpen: false
     };
 
     componentDidMount() {
@@ -61,20 +67,24 @@ class ViewTestingRun extends Component {
         });
     }
 
-    formatCSVData(){
+    formatCSVData()
+    {
         let headers = []
         let data = []
         let bugsClone = [...this.state.bugs];
         bugsClone.map(Bug =>{
             let bug = Object.assign({}, Bug);
-            if(headers.length == 0 ){
+            if(headers.length === 0 )
+            {
                 Object.keys(bug).map(key =>{
                     headers.push({label:key,key:key})
                     
                 }) 
             }
-            for(let arg in bug){
-                if(Array.isArray(bug[arg]) || typeof bug[arg] === "object"){
+            for(let arg in bug)
+            {
+                if(Array.isArray(bug[arg]) || typeof bug[arg] === "object")
+                {
                     bug[arg] = JSON.stringify(bug[arg])
                 }
                 
@@ -94,7 +104,32 @@ class ViewTestingRun extends Component {
         }
     }
 
-    render() {
+    restartTrainingKubeJob()
+    {
+        if (window.confirm("Are you sure you want to restart the kube job? This will cause problems if there is already a kube job doing training."))
+        {
+            axios.post(`/testing_runs/${this.props.match.params.id}/restart_training`).then((response) => {
+                window.alert("Successfully restarted Kube job");
+            });
+        }
+    }
+
+    toggleSettingsMenuOpen(event)
+    {
+        this.setState({
+            settingsMenuOpen: !this.state.settingsMenuOpen,
+            applicationSettingsMenuAnchorElement: event.currentTarget
+        });
+    }
+
+    closeSettingsMenuOpen()
+    {
+        this.setState({settingsMenuOpen: false});
+    }
+
+
+    render()
+    {
         const { result } = this.state;
         const testingTooltip = <Tooltip placement="right-end" title="Info related to this testing run.  View bugs and web browser sessions below.">
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
@@ -110,6 +145,12 @@ class ViewTestingRun extends Component {
 
         const downloadCSVButton = <CSVLink filename="BugsCSV.csv" headers={this.state.csvheaders} data={this.state.csvData}><Icon color="primary" className="fontSizeSmall">get_app</Icon></CSVLink>;
 
+        let zipFileLink = "";
+        if (this.state.testingRun)
+        {
+            zipFileLink = `${process.env.REACT_APP_BACKEND_API_URL}testing_runs/${this.state.testingRun._id}/bugs_zip?token=${Auth.getQueryParameterToken()}`;
+        }
+
         return (
             this.state.testingRun ?
                 <LayoutWrapper>
@@ -121,10 +162,52 @@ class ViewTestingRun extends Component {
 
                             <HalfColumn>
                                 <Papersheet
-                                    title={`Testing Run`}
+                                    title={
+                                        <div>
+                                            Testing Run
+                                            {
+                                                this.state.testingRun.status !== "completed" ?
+                                                    <div style={{"paddingLeft": "40px", "display": "inline", "position": "relative", "top": "20px"}}>
+                                                        <CircularProgress size={28} color="primary"/>
+                                                    </div>
+                                                    : null
+                                            }
+                                        </div>}
                                     subtitle={this.state.testingRun.status}
-                                    tooltip={testingTooltip}
+                                    button={
+                                        <div>
+                                            <Button variant="contained"
+                                                    size="small"
+                                                    color={"default"}
+                                                    title={"Settings"}
+                                                    aria-owns={this.state.settingsMenuOpen ? 'application-settings-menu' : null}
+                                                    aria-haspopup="true"
+                                                    onClick={(event) => this.toggleSettingsMenuOpen(event)}
+                                            >
+                                                <SettingsIcon />
+                                            </Button>
+                                            <Menus
+                                                id="settings-menu"
+                                                anchorEl={this.state.applicationSettingsMenuAnchorElement}
+                                                open={this.state.settingsMenuOpen}
+                                                onClose={() => this.closeSettingsMenuOpen()}
+                                            >
+                                                <MenuItem><Link to={`/app/dashboard/testing_runs/${this.props.match.params.id}/configuration`} style={{"color":"black", "textDecoration": "none"}}>View Configuration</Link></MenuItem>
+
+                                                {
+                                                    this.state.testingRun.status === "completed" ?
+                                                        <MenuItem><a
+                                                            href={zipFileLink}
+                                                            style={{"color": "black", "textDecoration": "none"}}>
+                                                            <span>Download Zip of Bugs</span>
+                                                        </a></MenuItem>
+                                                        : null
+                                                }
+                                            </Menus>
+                                        </div>
+                                    }
                                 >
+
 
                                     <span>Testing Browsers Completed: {this.state.testingRun.testingSessionsCompleted}<br/></span>
 
@@ -155,6 +238,26 @@ class ViewTestingRun extends Component {
                                                 Restart Testing Run Kube Job
                                                 <Icon className="rightIcon">send</Icon>
                                             </Button>
+                                            <Button variant="extended" color="primary"
+                                                    onClick={() => this.restartTrainingKubeJob()}>
+                                                Restart Training Kube Job
+                                                <Icon className="rightIcon">send</Icon>
+                                            </Button>
+                                        </Papersheet>
+                                        : null
+                                }
+                                <br/>
+                                {
+                                    this.state.testingRun.status === "completed" ?
+                                        <Papersheet title={`What do you think of the results?`}>
+                                            <FeedbackWidget
+                                                applicationId={this.state.testingRun.applicationId}
+                                                testingRunId={this.state.testingRun._id}
+                                                placeholder={"Written Feedback"}
+                                                positiveText={"Thumbs up: I liked these results."}
+                                                negativeText={"Thumbs down: I didn't like these results."}
+                                                screen={"View Testing Run"}
+                                            />
                                         </Papersheet>
                                         : null
                                 }
@@ -166,6 +269,13 @@ class ViewTestingRun extends Component {
                                 <Papersheet title={"Bugs Found"} tooltip={bugsTooltip}>
                                     <span>Total bugs Found: {this.state.bugs ? this.state.bugs.length: "0"}</span><br/>
                                     <span>Download CSV: {downloadCSVButton}</span><br/>
+                                    {
+                                        this.state.testingRun.status === "completed" ?
+                                            <span>Download Zip File: <a href={zipFileLink}><Icon color="primary" className="fontSizeSmall">get_app</Icon></a></span>
+                                        : null
+                                    }
+                                    <br/>
+                                    <br/>
                                     <BugsTable {...this.props} data={this.state.bugs} />
                                 </Papersheet>
                             </FullColumn>

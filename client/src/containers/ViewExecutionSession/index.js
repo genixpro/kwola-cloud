@@ -24,14 +24,24 @@ import {Table} from "../ListApplications/materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielements/table";
 import { Line } from "react-chartjs-2";
 import Auth from "../../helpers/auth0/index"
+import axios from "axios";
 
 class ViewExecutionSession extends Component {
     state = {
         result: '',
     };
 
-    componentDidMount() {
-        store.dispatch(action.requestExecutionSession(this.props.match.params.id));
+    componentDidMount()
+    {
+        axios.get(`/execution_sessions/${this.props.match.params.id}`).then((response) =>
+        {
+            this.setState({executionSession: response.data.executionSession})
+        });
+
+        axios.get(`/execution_sessions/${this.props.match.params.id}/traces`).then((response) =>
+        {
+            this.setState({executionTraces: response.data.executionTraces})
+        });
     }
 
 
@@ -39,14 +49,14 @@ class ViewExecutionSession extends Component {
         const { result } = this.state;
 
         return (
-            this.props.executionSession ?
+            this.state.executionSession ?
                 <LayoutWrapper>
                     <FullColumn>
                         <Row>
                             <HalfColumn>
                                 <Papersheet>
                                     <video controls style={{"width": "100%"}}>
-                                        <source src={`${process.env.REACT_APP_BACKEND_API_URL}execution_sessions/${this.props.executionSession._id}/video?token=${Auth.getQueryParameterToken()}`} type="video/mp4" />
+                                        <source src={`${process.env.REACT_APP_BACKEND_API_URL}execution_sessions/${this.state.executionSession._id}/video?token=${Auth.getQueryParameterToken()}`} type="video/mp4" />
                                         <span>Your browser does not support the video tag.</span>
                                     </video>
                                 </Papersheet>
@@ -54,15 +64,15 @@ class ViewExecutionSession extends Component {
 
                             <HalfColumn>
                                 <Papersheet
-                                    title={`Web Browser ${this.props.executionSession._id}`}
+                                    title={`Web Browser ${this.state.executionSession._id}`}
                                     // subtitle={}
                                 >
 
-                                    <span>Start Time: {moment(this.props.executionSession.startTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
+                                    <span>Start Time: {moment(this.state.executionSession.startTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
 
                                     {
-                                        this.props.executionSession.endTime ?
-                                            <span>End Time: {moment(this.props.executionSession.endTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
+                                        this.state.executionSession.endTime ?
+                                            <span>End Time: {moment(this.state.executionSession.endTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
                                             : <span>End Time: N/A<br/></span>
                                     }
                                 </Papersheet>
@@ -84,9 +94,9 @@ class ViewExecutionSession extends Component {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {(this.props.executionTraces || []).map(trace => {
+                                            {(this.state.executionTraces || []).map(trace => {
                                                 return (
-                                                    <TableRow key={trace._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/execution_traces/${trace._id}`)} >
+                                                    <TableRow key={trace._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/execution_sessions/${this.props.match.params.id}/execution_traces/${trace._id}`)} >
                                                         <TableCell>{trace.frameNumber}</TableCell>
                                                         <TableCell>{trace.actionPerformed.x.toString()}</TableCell>
                                                         <TableCell>{trace.actionPerformed.y.toString()}</TableCell>

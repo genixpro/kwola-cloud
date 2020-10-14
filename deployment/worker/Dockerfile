@@ -65,7 +65,7 @@ ENV NVIDIA_REQUIRE_CUDA "cuda>=10.1 brand=tesla,driver>=384,driver<385 brand=tes
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
-    chromium-browser=84* \
+    chromium-browser=85* \
     ffmpeg \
     freetype* \
     fuse \
@@ -114,7 +114,7 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s 
     kubectl version --client
 
 # Download and install Chromedriver
-RUN wget https://chromedriver.storage.googleapis.com/84.0.4147.30/chromedriver_linux64.zip && \
+RUN wget https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip && \
     unzip chromedriver_linux64.zip && \
     cp chromedriver /usr/bin/ && \
     chmod 644 /usr/bin/chromedriver && \
@@ -134,32 +134,17 @@ RUN useradd -s /bin/bash --home-dir /home/kwola kwola && \
     mkdir /home/kwola && \
     chown -R kwola:kwola /home/kwola
 
+# Set the working directory to /app
+WORKDIR /kwola
+COPY server/requirements-frozen.txt .
+
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
 RUN pip3 install --upgrade pip && \
     pip3 install --upgrade setuptools && \
     pip3 install --upgrade cryptography && \
-    pip3 install celery && \
-    pip3 install flask && \
-    pip3 install google-cloud-storage && \
-    pip3 install google-cloud-profiler && \
-    pip3 install google-cloud-logging && \
-    pip3 install gunicorn && \
-    pip3 install jwcrypto && \
-    pip3 install matplotlib && \
-    pip3 install mitmproxy && \
-    pip3 install mongoengine && \
-    pip3 install numpy && \
-    pip3 install opencv-python && \
-    pip3 install pandas && \
-    pip3 install psutil && \
-    pip3 install redis && \
-    pip3 install scikit-image && \
-    pip3 install scikit-learn && \
-    pip3 install scipy && \
-    pip3 install selenium && \
-    pip3 install stripe && \
     pip3 install torch==1.5.0+cu101 torchvision==0.6.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html && \
+    pip3 install -r requirements-frozen.txt && \
     chmod +r+r+r -R /usr/lib/python3/ && \
     rm -rf /root/.cache
 
@@ -219,16 +204,15 @@ RUN chown -R kwola:kwola /kwola && \
 RUN rm -rf /usr/include/*
 
 # Do the installation test
-RUN chmod +r+r+r -R /usr/lib/python3
-RUN su kwola -c "kwola_test_installation"
+RUN chmod +r+r+r -R /usr/lib/python3 && chown -R kwola:kwola /home/kwola && cd /home/kwola && su kwola -c "kwola_test_installation"
 
 # Lastly, we run the local test suite, which just checks to see that everything is working end
 # to end on this build.
-#RUN su kwola -c "kwola_rapid_local_test_suite"
+# RUN su kwola -c "kwola_rapid_local_test_suite"
 
 # Output all the disk usage for various folders on the system.
 # This helps us to further optimize the container
-RUN du -h -d 5 -t 10M /; exit 0
+# RUN du -h -d 5 -t 10M /; exit 0
 
 USER kwola
 

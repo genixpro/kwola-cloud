@@ -19,7 +19,7 @@
 #
 
 
-from ..config.config import Configuration
+from ..config.config import KwolaCoreConfiguration
 from ..tasks import TrainAgentLoop
 from ..diagnostics.test_installation import testInstallation
 import os.path
@@ -49,7 +49,7 @@ def getConfigurationDirFromCommandLineArgs(askTuneQuestion=True):
     configDir = None
 
     if len(commandArgs) == 0:
-        configDir = Configuration.findLocalKwolaConfigDirectory()
+        configDir = KwolaCoreConfiguration.findLocalKwolaConfigDirectory()
         if configDir is None:
             print(cantStartMessage)
             exit(1)
@@ -64,10 +64,10 @@ def getConfigurationDirFromCommandLineArgs(askTuneQuestion=True):
         if len(commandArgs) >= 2:
             configName = commandArgs[1]
 
-        if os.path.exists(secondArg) and Configuration.checkDirectoryContainsKwolaConfig(secondArg):
+        if os.path.exists(secondArg) and KwolaCoreConfiguration.checkDirectoryContainsKwolaConfig(secondArg):
             configDir = secondArg
             print(f"Loading the Kwola run in directory {configDir}")
-        elif Configuration.isValidURL(secondArg):
+        elif KwolaCoreConfiguration.isValidURL(secondArg):
             # Create a new config directory for this URL
             url = secondArg
 
@@ -107,7 +107,16 @@ def getConfigurationDirFromCommandLineArgs(askTuneQuestion=True):
                 "Enable random math symbol command?",
                 "Enable random other symbol command?",
                 "Enable double click command?",
-                "Enable right click command?"
+                "Enable right click command?",
+                "Enable scrolling command?",
+                "Enable type random letters command?",
+                "Enable type random address command?",
+                "Enable type random email command?",
+                "Enable type random phone command?",
+                "Enable type random paragraph command?",
+                "Enable type random date time command?",
+                "Enable type random credit card command?",
+                "Enable type random url command?"
             ]
 
             results = questionary.checkbox("Please select which commands you want to enable", choices=commandChoices).ask()
@@ -120,6 +129,15 @@ def getConfigurationDirFromCommandLineArgs(askTuneQuestion=True):
             enableRandomOtherSymbolCommand = bool(commandChoices[3] in results)
             enableDoubleClickCommand = bool(commandChoices[4] in results)
             enableRightClickCommand = bool(commandChoices[5] in results)
+            enableScrolling = bool(commandChoices[6] in results)
+            enableRandomLettersCommand = bool(commandChoices[7] in results)
+            enableRandomAddressCommand = bool(commandChoices[8] in results)
+            enableRandomEmailCommand = bool(commandChoices[9] in results)
+            enableRandomPhoneNumberCommand = bool(commandChoices[10] in results)
+            enableRandomParagraphCommand = bool(commandChoices[11] in results)
+            enableRandomDateTimeCommand = bool(commandChoices[12] in results)
+            enableRandomCreditCardCommand = bool(commandChoices[13] in results)
+            enableRandomURLCommand = bool(commandChoices[14] in results)
 
             autologin = False
 
@@ -146,21 +164,32 @@ def getConfigurationDirFromCommandLineArgs(askTuneQuestion=True):
 
             prevent_offsite_links = bool(prevent_offsite_links == 'yes')
 
-            configDir = Configuration.createNewLocalKwolaConfigDir(configName,
-                                                                   url=url,
-                                                                   email=email,
-                                                                   password=password,
-                                                                   name=name,
-                                                                   paragraph=paragraph,
-                                                                   enableRandomNumberCommand=enableRandomNumberCommand,
-                                                                   enableRandomBracketCommand=enableRandomBracketCommand,
-                                                                   enableRandomMathCommand=enableRandomMathCommand,
-                                                                   enableRandomOtherSymbolCommand=enableRandomOtherSymbolCommand,
-                                                                   enableDoubleClickCommand=enableDoubleClickCommand,
-                                                                   enableRightClickCommand=enableRightClickCommand,
-                                                                   autologin=autologin,
-                                                                   prevent_offsite_links=prevent_offsite_links
-                                                                   )
+            configDir = KwolaCoreConfiguration.createNewLocalKwolaConfigDir(configName,
+                                                                            url=url,
+                                                                            email=email,
+                                                                            password=password,
+                                                                            name=name,
+                                                                            paragraph=paragraph,
+                                                                            enableTypeEmail=True,
+                                                                            enableTypePassword=True,
+                                                                            enableRandomNumberCommand=enableRandomNumberCommand,
+                                                                            enableRandomBracketCommand=enableRandomBracketCommand,
+                                                                            enableRandomMathCommand=enableRandomMathCommand,
+                                                                            enableRandomOtherSymbolCommand=enableRandomOtherSymbolCommand,
+                                                                            enableDoubleClickCommand=enableDoubleClickCommand,
+                                                                            enableRightClickCommand=enableRightClickCommand,
+                                                                            enableRandomLettersCommand=enableRandomLettersCommand,
+                                                                            enableRandomAddressCommand=enableRandomAddressCommand,
+                                                                            enableRandomEmailCommand=enableRandomEmailCommand,
+                                                                            enableRandomPhoneNumberCommand=enableRandomPhoneNumberCommand,
+                                                                            enableRandomParagraphCommand=enableRandomParagraphCommand,
+                                                                            enableRandomDateTimeCommand=enableRandomDateTimeCommand,
+                                                                            enableRandomCreditCardCommand=enableRandomCreditCardCommand,
+                                                                            enableRandomURLCommand=enableRandomURLCommand,
+                                                                            enableScrolling=enableScrolling,
+                                                                            autologin=autologin,
+                                                                            prevent_offsite_links=prevent_offsite_links
+                                                                            )
             if askTuneQuestion:
                 needToChange = questionary.select(
                     "Do you want to tune any configuration settings in your Kwola run before proceeding?",

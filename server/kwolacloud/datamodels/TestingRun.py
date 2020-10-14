@@ -8,7 +8,6 @@
 from kwola.datamodels.CustomIDField import CustomIDField
 from .RunConfiguration import RunConfiguration
 from mongoengine import *
-from ..components.KubernetesJob import KubernetesJob
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from ..config.config import getKwolaConfiguration
 from ..config.config import loadConfiguration
@@ -20,6 +19,8 @@ class TestingRun(Document):
         'indexes': [
             ('owner',),
             ('owner', 'applicationId'),
+            ('owner', 'recurringTestingTriggerId'),
+            ('needsFeedbackRequestEmail', 'endTime'),
         ]
     }
 
@@ -28,6 +29,8 @@ class TestingRun(Document):
     owner = StringField()
 
     applicationId = StringField()
+
+    recurringTestingTriggerId = StringField()
 
     stripeSubscriptionId = StringField()
 
@@ -43,11 +46,18 @@ class TestingRun(Document):
 
     predictedEndTime = DateTimeField()
 
+    launchSource = StringField()
+
+    # Deprecated
     testingSessionsRemaining = IntField(default=0)
 
     testingSessionsCompleted = IntField(default=0)
 
     trainingStepsCompleted = IntField(default=0)
+
+    trainingIterationsCompleted = IntField(default=0)
+
+    trainingIterationsNeeded = IntField(default=0)
 
     initializationTestingSteps = ListField(StringField())
 
@@ -56,6 +66,26 @@ class TestingRun(Document):
     trainingSteps = ListField(StringField())
 
     averageTimePerStep = FloatField(default=0)
+
+    needsFeedbackRequestEmail = BooleanField(default=False)
+
+    isRecurring = BooleanField(default=False)
+
+    runningTestingStepJobIds = ListField(StringField())
+
+    runningTestingStepStartTimes = ListField(DateTimeField())
+
+    runningTrainingStepJobId = StringField(default=None)
+
+    runningTrainingStepStartTime = DateTimeField(default=None)
+
+    testingStepsNeedingSymbolProcessing = ListField(StringField())
+
+    failedTestingSteps = IntField(default=0)
+
+    failedTrainingSteps = IntField(default=0)
+
+    didTrainingFail = BooleanField(default=False)
 
     def saveToDisk(self, config):
         self.save()
@@ -67,6 +97,8 @@ class TestingRun(Document):
 
 
     def runJob(self):
+        from kwolacloud.components.utils.KubernetesJob import KubernetesJob
+        
         configData = loadConfiguration()
 
         if configData['features']['localRuns']:
@@ -78,7 +110,7 @@ class TestingRun(Document):
                                 data={
                                     "testingRunId": self.id
                                 },
-                                referenceId=self.id,
+                                referenceId=self.id + "-manager",
                                 image="worker",
                                 cpuRequest="100m",
                                 cpuLimit=None,
@@ -86,5 +118,8 @@ class TestingRun(Document):
                                 memoryLimit="2048Mi"
                                 )
         if configData['features']['enableRuns']:
+            if not configData['features']['localRuns'] and job.doesJobStillExist():
+                job.cleanup()
+
             job.start()
 

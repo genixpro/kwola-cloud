@@ -38,10 +38,7 @@ class TopbarUser extends Component {
     {
         if (process.env.REACT_APP_ENABLE_ANALYTICS === 'true')
         {
-            var _hsq = window._hsq = window._hsq || [];
-            mixpanel.track("open-billing");
-            _hsq.push(["trackEvent", {id: "Open Billing"}]);
-            window.ga('send', 'event', "billing", "view");
+            window.dataLayer.push({'event': 'open-billing'});
         }
 
         this.setState({ visible: false });
@@ -62,7 +59,7 @@ class TopbarUser extends Component {
 
     openFeedback()
     {
-//        window.HubSpotConversations.widget.open();
+        // window.HubSpotConversations.widget.open();
         this.setState({ visible: false });
         window.location.href = "https://kwola.atlassian.net/servicedesk/customer/portal/2";
     }
@@ -84,22 +81,35 @@ class TopbarUser extends Component {
         </UserInformation>
 
         <SettingsList>
-          <Link href="#" onClick={() => this.openBilling()} className="dropdownLink">
+          <a href="#" onClick={() => this.openBilling()} className="dropdownLink">
             <Icon>money-sharp</Icon>
             <IntlMessages id="topbar.billing" />
-          </Link>
-          <Link href="#" onClick={() => this.openFeedback()} className="dropdownLink">
-            <Icon>feedback</Icon>
-            <IntlMessages id="sidebar.feedback" />
-          </Link>
-          <Link href="#" onClick={() => this.openHelp()} className="dropdownLink">
-            <Icon>help</Icon>
-            <IntlMessages id="topbar.help" />
-          </Link>
-          <Link href="#" onClick={() => Auth.logout()} className="dropdownLink">
-            <Icon>input</Icon>
-            <IntlMessages id="topbar.logout" />
-          </Link>
+          </a>
+            {
+                process.env.REACT_APP_DISABLE_LOGOUT !== 'true' ?
+                    <a href="https://kwola.atlassian.net/wiki/spaces/KC/overview" className="dropdownLink">
+                        <Icon>feedback</Icon>
+                        <span>Documentation</span>
+                    </a> : null
+            }
+          {/*<Link href="#" onClick={() => this.openFeedback()} className="dropdownLink">*/}
+          {/*  <Icon>feedback</Icon>*/}
+          {/*  <IntlMessages id="sidebar.feedback" />*/}
+          {/*</Link>*/}
+            {
+                process.env.REACT_APP_DISABLE_LOGOUT !== 'true' ?
+                  <a href="https://kwola.atlassian.net/servicedesk/customer/portal/2" className="dropdownLink">
+                    <Icon>help</Icon>
+                    <IntlMessages id="topbar.help" />
+                  </a> : null
+            }
+            {
+                process.env.REACT_APP_DISABLE_LOGOUT !== 'true' ?
+                    <Link href="#" onClick={() => Auth.logout()} className="dropdownLink">
+                        <Icon>input</Icon>
+                        <IntlMessages id="topbar.logout" />
+                    </Link> : null
+            }
         </SettingsList>
       </TopbarDropdown>
     );

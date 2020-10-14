@@ -3,6 +3,8 @@
 
 from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.datamodels.DiskUtilities import saveObjectToDisk, loadObjectFromDisk
+from kwolacloud.datamodels.RunConfiguration import RunConfiguration
+from kwolacloud.datamodels.TestingRun import TestingRun
 from mongoengine import *
 from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
@@ -11,8 +13,13 @@ import selenium
 import time
 import selenium.common.exceptions
 import cv2
+import requests
+import logging
 from google.cloud import storage
 import numpy
+import secrets
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 
 class ApplicationModel(Document):
@@ -29,6 +36,72 @@ class ApplicationModel(Document):
     name = StringField(required=True)
 
     url = StringField(required=True)
+
+    status = StringField(default="active", enumerate=['active', 'deleted'])
+
+    creationDate = DateTimeField()
+
+    slackAccessToken = StringField(default=None)
+
+    slackChannel = StringField(default=None)
+
+    enableSlackNewTestingRunNotifications = BooleanField(default=True)
+
+    enableSlackNewBugNotifications = BooleanField(default=True)
+
+    enableSlackTestingRunCompletedNotifications = BooleanField(default=True)
+
+    enableEmailNewTestingRunNotifications = BooleanField(default=True)
+
+    enableEmailNewBugNotifications = BooleanField(default=True)
+
+    enableEmailTestingRunCompletedNotifications = BooleanField(default=True)
+
+    overrideNotificationEmail = StringField(default=None)
+
+    jiraAccessToken = StringField(default=None)
+
+    jiraRefreshToken = StringField(default=None)
+
+    jiraCloudId = StringField(default=None)
+
+    jiraProject = StringField(default=None)
+
+    jiraIssueType = StringField(default=None)
+
+    enablePushBugsToJIRA = BooleanField(default=True)
+
+    hasFirstTestingRunLaunched = BooleanField(default=False)
+
+    hasFirstTestingRunCompleted = BooleanField(default=False)
+
+    hasSentSupportOfferEmail = BooleanField(default=False)
+
+    hasSentFeedbackRequestEmail = BooleanField(default=False)
+
+    defaultRunConfiguration = EmbeddedDocumentField(RunConfiguration)
+
+    testingRunStartedWebhookURL = StringField(default="")
+
+    testingRunFinishedWebhookURL = StringField(default="")
+
+    browserSessionWillStartWebhookURL = StringField(default="")
+
+    browserSessionFinishedWebhookURL = StringField(default="")
+
+    bugFoundWebhookURL = StringField(default="")
+
+    webhookSignatureSecret = StringField(default="")
+
+    stripeSubscriptionId = StringField(default=None)
+
+    stripeCustomerId = StringField(default=None)
+
+    package = StringField(default=None)
+
+    promoCode = StringField(default=None)
+
+    lastTestingDate = DateTimeField(default=None)
 
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
@@ -70,3 +143,41 @@ class ApplicationModel(Document):
                 blob.upload_from_string(screenshotData, content_type="image/png")
 
             return screenshotData
+
+    def refreshJiraAccessToken(self):
+        response = requests.post("https://auth.atlassian.com/oauth/token", {
+            "refresh_token": self.jiraRefreshToken,
+            "grant_type": "refresh_token",
+            "client_id": "V5H8QVarAt0oytdolmjMzoIIrmRc1i41",
+            "client_secret": "rNzHZLKqiB1DNp0Mv3bw7nQ_DngMepAt6vTViWJEA6ekf1f904whaWPNxhR0C3Ji"
+        })
+
+        if response.status_code != 200:
+            logging.error(f"Error while refreshing JIRA access token with the refresh token! Status code: {response.status_code}. Text: {response.text}")
+            self.jiraAccessToken = None
+            self.jiraRefreshToken = None
+            return False
+        else:
+            self.jiraAccessToken = response.json()['access_token']
+            return True
+
+    def generateWebhookSignatureSecret(self):
+        self.webhookSignatureSecret = secrets.token_urlsafe(32)
+
+    def countTestingRunsLaunchedThisMonth(self):
+        return TestingRun.objects(
+            startTime__gt=(datetime.now() + relativedelta(day=1, hour=0, minute=0, second=0, microsecond=0)),
+            status__ne="failed"
+        ).count()
+
+    def checkSubscriptionLaunchRunAllowed(self):
+        if self.package == "once" or self.package is None:
+            return False
+
+        if self.package == "monthly":
+            testingRunsLaunched = self.countTestingRunsLaunchedThisMonth()
+            return testingRunsLaunched < 5
+        elif self.package == "pay_as_you_go":
+            return True
+
+        return True

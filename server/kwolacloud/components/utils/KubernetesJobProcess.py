@@ -25,11 +25,16 @@ import pickle
 import base64
 import sys
 import os
+import psutil
+import time
 import google.cloud.logging
-from ..config.config import loadConfiguration
+from kwolacloud.config.config import loadConfiguration
 import stripe
 from kwola.config.logger import getLogger
-from ..db import connectToMongoWithRetries
+from kwolacloud.db import connectToMongoWithRetries
+from ...helpers.slack import SlackLogHandler
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
+from kwolacloud.datamodels.KubernetesJobResult import KubernetesJobResult
 
 class KubernetesJobProcess:
     """
@@ -44,28 +49,32 @@ class KubernetesJobProcess:
     def __init__(self, targetFunc):
         self.targetFunc = targetFunc
 
-        configData = loadConfiguration()
-
-        # Setup logging with google cloud
-        client = google.cloud.logging.Client()
-        client.get_default_handler()
-        client.setup_logging()
-
-        logger = getLogger()
-        logger.handlers = logger.handlers[0:1]
-
-        connectToMongoWithRetries()
-
-        stripe.api_key = configData['stripe']['apiKey']
+        initializeKwolaCloudProcess()
 
     def run(self):
         logging.info(f"[{os.getpid()}] KubernetesJobProcess: Waiting for input from stdin")
         dataStr = sys.argv[1]
-        data = pickle.loads(base64.b64decode(dataStr, altchars=KubernetesJobProcess.base64AltChars))
+        jobName, data = pickle.loads(base64.b64decode(dataStr, altchars=KubernetesJobProcess.base64AltChars))
         logging.info(f"[{os.getpid()}] Running process with following data:\n{json.dumps(data, indent=4)}")
         result = self.targetFunc(**data)
         logging.info(f"Process finished with result:\n{json.dumps(result, indent=4)}")
-        print(KubernetesJobProcess.resultStartString +
-              str(base64.b64encode(pickle.dumps(result), altchars=KubernetesJobProcess.base64AltChars), "utf8") +
-              KubernetesJobProcess.resultFinishString, flush=True)
+        resultObj = KubernetesJobResult(
+            id=jobName,
+            result=result
+        )
+        resultObj.save()
+
+        p = psutil.Process(os.getpid())
+        for child in p.children(recursive=True):
+            try:
+                child.terminate()
+            except psutil.NoSuchProcess:
+                pass
+        time.sleep(1)
+        for child in p.children(recursive=True):
+            try:
+                child.kill()
+            except psutil.NoSuchProcess:
+                pass
+
         exit(0)

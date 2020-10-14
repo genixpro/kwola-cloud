@@ -10,17 +10,21 @@ from ..config.config import loadConfiguration
 def generateKwolaId(modelClass, owner, kwolaConfig, groupIndex=None):
     serverConfig = loadConfiguration()
 
-    prefix = generateModelNameShorthand(modelClass) + "_" + \
+    prefix = generateModelNameShorthand(modelClass) + "-" + \
              generateRandomLowercaseLetter() + \
+             generateRandomAlphanum() + \
+             generateRandomAlphanum() + \
+             generateRandomAlphanum() + "-" + \
              generateRandomLowercaseLetter() + \
-             generateRandomLowercaseLetter() + \
-             generateRandomLowercaseLetter() + "_" + \
+             generateRandomAlphanum() + \
+             generateRandomAlphanum() + \
+             generateRandomAlphanum() + "-" + \
              generateHourCode() + \
              generateDayCode() + \
              generateMonthCode() + \
-             generateYearCode() + "_" + \
+             generateYearCode() + "-" + \
              generateEnvironmentShorthand(serverConfig) + \
-             generateUserCode(owner, serverConfig) + "_" + \
+             generateUserCode(owner, serverConfig) + "-" + \
              generateObjectCounterValueCode(modelClass, owner, length=4, groupIndex=groupIndex)
 
     currentLength = 0
@@ -38,6 +42,9 @@ def generateRandomAlphanumericCode(length):
 def generateRandomLowercaseLetter():
     return random.choice(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])
 
+def generateRandomAlphanum():
+    return random.choice(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                          's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
 
 def generateRandomDigit():
     return random.choice(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'])
@@ -48,7 +55,7 @@ def generateModelNameShorthand(modelClass):
     modelName = modelName.replace("Model", "")
     pattern = '([A-Z][a-z])'
     matches = re.findall(pattern, modelName)
-    return ''.join(matches).lower()
+    return ''.join(matches).lower()[:4]
 
 
 def generateEnvironmentShorthand(serverConfig):

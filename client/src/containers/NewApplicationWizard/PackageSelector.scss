@@ -1,0 +1,93 @@
+
+.package-selector
+{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+
+.package-info
+{
+  border: 1px solid black;
+  height: 475px;
+  flex-basis: 300px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  justify-content: space-between;
+  margin-left: 10px;
+  margin-right: 10px;
+
+  .package-top-sections
+  {
+    display: flex;
+    flex-direction: column;
+  }
+
+
+  &:hover
+  {
+    background-color: #dddddd;
+  }
+  
+  .package-header
+  {
+    width: 100%;
+    text-align: center;
+    background-color: #0b7f05;
+    color: white;
+  }
+  
+  .package-price
+  {
+    margin-top: 40px;
+    margin-bottom: 20px;
+    text-align: center;
+
+    span.price-main
+    {
+      color: #444444;
+      font-weight: bold;
+      font-size: 24px;
+    }
+
+    span.price-sub
+    {
+      font-weight: normal;
+      font-size: 15px;
+      font-style: italic;
+    }
+  }
+
+  .package-description
+  {
+
+  }
+
+  .package-selected
+  {
+    align-self: center;
+    margin-left: 10px;
+    margin-bottom: 25px;
+    margin-right: 20px;
+    color: blue;
+    .MuiSvgIcon-root
+    {
+      font-size: 48px;
+    }
+
+    span
+    {
+      position: relative;
+      top: -15px;
+    }
+  }
+
+  .select-package-button
+  {
+    align-self: center;
+    margin-bottom: 30px;
+  }
+}
+

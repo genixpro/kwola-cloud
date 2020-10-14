@@ -21,7 +21,7 @@ import Icon from "../../components/uielements/icon";
 import Snackbar from "../../components/uielements/snackbar";
 import Tooltip from "../../components/uielements/tooltip";
 import MaterialTable from 'material-table'
-import Auth from "../../helpers/auth0/index"
+import Auth0 from "../../helpers/auth0"
 
 const styles = theme => ({
   root: {
@@ -67,11 +67,13 @@ class ListApplications extends Component
     })
   }
 
-  handleRowClick = (event, rowData)=>{
+  handleRowClick = (event, rowData)=>
+  {
     this.props.history.push(`/app/dashboard/applications/${rowData._id}`)
   }
 
- ListApps = (applications) => { 
+    ListApps = (applications) =>
+    {
       let appsTableRows = []
       applications.map(application => {
         //return (
@@ -89,15 +91,16 @@ class ListApplications extends Component
        let button = <Button variant="extended" size="small" color="secondary" onClick={() => this.dialogComp(application)}>
                   <Icon>delete</Icon>
                 </Button>
-      
+
        appsTableRows.push({_id:application._id,name:application.name,url:application.url,delete:button})
       })
       return appsTableRows;
-    } 
+    }
 
   
-dialogComp = (application) => {
-  var ConfirmText = <div>
+    dialogComp = (application) =>
+    {
+      var ConfirmText = <div>
             <DialogTitle id="alert-dialog-title">{application ? "Delete "+application.name : ''}?</DialogTitle>
               <DialogContent>
                 <DialogContentText id="alert-dialog-description">
@@ -116,7 +119,8 @@ dialogComp = (application) => {
     this.setState({dialog:true,confirm:ConfirmText})
   }
 
-  render() {
+  render()
+  {
 
     let dialog = <Dialog
         open={this.state.dialog}
@@ -140,7 +144,7 @@ dialogComp = (application) => {
     />
 
     let apps = this.ListApps(this.state.applications)
-    const userData = Auth.getUserInfo();
+    const userData = Auth0.getUserInfo();
     const showFilter = userData["https://kwola.io/admin"]
     let tooltip = <Tooltip placement="right-end" title="Your Kwola Applications. Click an application to view more.">
                  <Icon color="primary" className="fontSizeSmall">help</Icon>
@@ -199,7 +203,7 @@ dialogComp = (application) => {
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word",
                         fontSize:"14px"
                       },
-                      search:showFilter
+                      search: showFilter
                       // fixedColumns: {
                       //   left: 0, 
                       //   right: 1

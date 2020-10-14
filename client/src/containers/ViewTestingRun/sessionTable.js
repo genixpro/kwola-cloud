@@ -12,11 +12,13 @@ class SessionTable extends Component{
         rowsPerPage:10
     };
 
-    handleRowClick = (event, rowData)=>{
+    handleRowClick = (event, rowData)=>
+	{
     	this.props.history.push(`/app/dashboard/execution_sessions/${rowData._id}`)
     }
 
-    processData = (data) => {
+    processData = (data) =>
+	{
     	let rdata = []
     	if(data){
     		data.map(session=>{
@@ -27,7 +29,8 @@ class SessionTable extends Component{
     	return rdata;
     }
 
-	render(){
+	render()
+	{
 		const rowsPerPage = this.state.rowsPerPage;
         const setRowsPerPage = 10;
         const page = this.state.newPage

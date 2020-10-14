@@ -93,14 +93,14 @@ const MaterialUiForm = ({
           <Field
             name="name"
             component={renderTextField}
-            label="Application Name"
+            label="Name"
           />
         </div>
         <div className="mainFormsInfoField">
           <Field
             name="url"
             component={renderTextField}
-            label="Application URL"
+            label="Login Page URL"
           />
         </div>
       </div>
