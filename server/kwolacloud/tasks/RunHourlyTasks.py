@@ -114,7 +114,7 @@ def evaluateRecurringTestingTriggers():
             continue
         
         if trigger.repeatTrigger == 'time':
-            dayOfWeek = datetime.now().strftime('%a')
+            dayOfWeek = datetime.now().strftime('%w')
 
             nextExecutionTime = None
             if trigger.repeatUnit == 'hours':

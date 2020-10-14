@@ -363,11 +363,11 @@ class RecurringTestingTriggerOptions extends Component {
                                             this.state.repeatUnit === "days" || this.state.repeatUnit === "weeks" ?
                                                 <div style={{"flexGrow": "1"}}>
                                                     {
-                                                        ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayOfWeek) =>
+                                                        ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayOfWeek, dayOfWeekIndex) =>
                                                             <Button variant="extended"
-                                                                    color={this.state.daysOfWeekEnabled[dayOfWeek] ? "primary" : "default"}
+                                                                    color={this.state.daysOfWeekEnabled[dayOfWeekIndex] ? "primary" : "default"}
                                                                     style={{"cursor": this.props.disabled ? "default" : "pointer"}}
-                                                                    onClick={() => this.toggleDaysOfWeekEnabled(dayOfWeek)}>
+                                                                    onClick={() => this.toggleDaysOfWeekEnabled(dayOfWeekIndex)}>
                                                                 {dayOfWeek}
                                                             </Button>
                                                         )
