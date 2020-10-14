@@ -88,7 +88,7 @@ class TestingRunsGroup(Resource):
             promoCode=application.promoCode,
             status="created",
             startTime=datetime.datetime.now(),
-            predictedEndTime=(datetime.datetime.now() + relativedelta(hours=(application.defaultRunConfiguration.hours + 1), minute=30)),
+            predictedEndTime=(datetime.datetime.now() + relativedelta(hours=(application.defaultRunConfiguration.hours + 1), minute=30, second=0, microsecond=0)),
             recurringTestingTriggerId=None,
             isRecurring=False,
             configuration=application.defaultRunConfiguration,

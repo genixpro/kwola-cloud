@@ -112,7 +112,7 @@ class RecurringTestingTrigger(Document):
             promoCode=self.promoCode,
             status="created",
             startTime=datetime.now(),
-            predictedEndTime=(datetime.now() + relativedelta(hours=(self.configuration.hours + 1))),
+            predictedEndTime=(datetime.now() + relativedelta(hours=(self.configuration.hours + 1), minute=30, second=0, microsecond=0)),
             recurringTestingTriggerId=self.id,
             isRecurring=True,
             configuration=application.defaultRunConfiguration,

@@ -162,7 +162,7 @@ class ApplicationGroup(Resource):
             promoCode=newApplication.promoCode,
             status="created",
             startTime=datetime.now(),
-            predictedEndTime=(datetime.now() + relativedelta(hours=(runConfiguration.hours + 1), minute=30)),
+            predictedEndTime=(datetime.now() + relativedelta(hours=(runConfiguration.hours + 1), minute=30, second=0, microsecond=0)),
             recurringTestingTriggerId=None,
             isRecurring=False,
             configuration=runConfiguration,
@@ -190,7 +190,7 @@ class ApplicationGroup(Resource):
                     newTrigger.repeatFrequency = 1
                     newTrigger.hourOfDay = data['hourOfDay']
                     newTrigger.daysOfWeekEnabled = {
-                        "day": True if data['dayOfWeek'] == day else False
+                        day: True if data['dayOfWeek'] == day else False
                         for day in range(7)
                     }
                 elif data['launchMethod'] == 'date_of_month':

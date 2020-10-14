@@ -289,6 +289,34 @@ class WebEnvironmentSession:
 
                 loginButtons = list(filter(lambda button: button.keywords != loginTriggerButton.keywords, loginButtons))
 
+            hasTypedInEmail = False
+
+            # check to see if this is an "email first" login
+            if (len(emailInputs) > 0) and (len(passwordInputs) == 0) and len(loginButtons) > 0:
+                emailTypeAction = TypeAction(x=emailInputs[0].left + 1,
+                                             y=emailInputs[0].top + 1,
+                                             source="autologin",
+                                             label="email",
+                                             text=self.config.email,
+                                             type="typeEmail")
+
+                success1, networkWaitTime = self.performActionInBrowser(emailTypeAction)
+
+                loginTriggerButton = loginButtons[0]
+
+                loginClickAction = ClickTapAction(x=loginTriggerButton.left + 1,
+                                                  y=loginTriggerButton.top + 1,
+                                                  source="autologin",
+                                                  times=1,
+                                                  type="click")
+
+                success, networkWaitTime = self.performActionInBrowser(loginClickAction)
+
+                emailInputs, passwordInputs, loginButtons = self.findElementsForAutoLogin()
+
+                loginButtons = list(filter(lambda button: button.keywords != loginTriggerButton.keywords, loginButtons))
+
+                hasTypedInEmail = True
 
             if len(emailInputs) == 0 or len(passwordInputs) == 0 or len(loginButtons) == 0:
                 getLogger().warning(f"Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.")
@@ -312,12 +340,15 @@ class WebEnvironmentSession:
 
             startURL = self.driver.current_url
 
-            emailTypeAction = TypeAction(x=emailInputs[0].left + 1,
-                                         y=emailInputs[0].top + 1,
-                                         source="autologin",
-                                         label="email",
-                                         text=self.config.email,
-                                         type="typeEmail")
+            emailTypeAction = None
+            success1 = True
+            if not hasTypedInEmail:
+                emailTypeAction = TypeAction(x=emailInputs[0].left + 1,
+                                             y=emailInputs[0].top + 1,
+                                             source="autologin",
+                                             label="email",
+                                             text=self.config.email,
+                                             type="typeEmail")
 
             passwordTypeAction = TypeAction(x=passwordInputs[0].left + 1,
                                             y=passwordInputs[0].top + 1,
@@ -332,7 +363,9 @@ class WebEnvironmentSession:
                                               times=1,
                                               type="click")
 
-            success1, networkWaitTime = self.performActionInBrowser(emailTypeAction)
+            if not hasTypedInEmail:
+                success1, networkWaitTime = self.performActionInBrowser(emailTypeAction)
+
             success2, networkWaitTime = self.performActionInBrowser(passwordTypeAction)
             success3, networkWaitTime = self.performActionInBrowser(loginClickAction)
 
@@ -493,9 +526,8 @@ class WebEnvironmentSession:
                         }
                     }
                     
-                    if (data.canType || data.canClick || data.canRightClick || data.canScroll)
-                        if (data.width >= 1 && data.height >= 1)
-                            actionMaps.push(data);
+                    if (data.width >= 1 && data.height >= 1)
+                        actionMaps.push(data);
                 }
                 
                 return actionMaps;
@@ -507,9 +539,34 @@ class WebEnvironmentSession:
                 actionMap = ActionMap(**actionMapData)
                 # Cut the keywords off at 1024 characters to prevent too much memory / storage usage
                 actionMap.keywords = actionMap.keywords[:self.config['web_session_action_map_max_keyword_size']]
-                actionMaps.append(actionMap)
 
-            return actionMaps
+                overlapMap = None
+                for existingMap in actionMaps:
+                    if existingMap.doesOverlapWith(actionMap, tolerancePixels=self.config['testing_repeat_action_pixel_overlap_tolerance']):
+                        overlapMap = existingMap
+                        break
+
+                if overlapMap is not None:
+                    overlapEventsCount = int(overlapMap.canScroll) + int(overlapMap.canClick) + int(overlapMap.canType) + int(overlapMap.canRightClick)
+                    actionMapEventsCount = int(actionMap.canScroll) + int(actionMap.canClick) + int(actionMap.canType) + int(actionMap.canRightClick)
+
+                    if actionMapEventsCount > overlapEventsCount:
+                        overlapMap.elementType = actionMap.elementType
+
+                    overlapMap.canScroll = overlapMap.canScroll or actionMap.canScroll
+                    overlapMap.canClick = overlapMap.canClick or actionMap.canClick
+                    overlapMap.canType = overlapMap.canType or actionMap.canType
+                    overlapMap.canRightClick = overlapMap.canRightClick or actionMap.canRightClick
+                    overlapMap.keywords = overlapMap.keywords + " " + actionMap.keywords
+                else:
+                    actionMaps.append(actionMap)
+
+            filteredActionMaps = []
+            for actionMap in actionMaps:
+                if actionMap.canType or actionMap.canClick or actionMap.canRightClick or actionMap.canScroll:
+                    filteredActionMaps.append(actionMap)
+
+            return filteredActionMaps
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
             return []

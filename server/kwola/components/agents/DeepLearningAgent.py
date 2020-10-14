@@ -665,7 +665,7 @@ class DeepLearningAgent:
             count = 0
             for recentAction in sampleRecentActions:
                 for recentActionMap in recentAction.intersectingActionMaps:
-                    if map.doesOverlapWith(recentActionMap, tolerancePixels=self.config['testing_repeat_action_pixel_overlap_tolerance']):
+                    if map.isSameAs(recentActionMap, tolerancePixels=self.config['testing_repeat_action_pixel_overlap_tolerance']):
                         count += 1
                         break
 
@@ -953,7 +953,7 @@ class DeepLearningAgent:
                         for recentMap in recentAction.intersectingActionMaps:
                             found = False
                             for potentialMap in potentialActionMaps:
-                                if recentMap.doesOverlapWith(potentialMap, tolerancePixels=self.config['testing_repeat_action_pixel_overlap_tolerance']):
+                                if recentMap.isSameAs(potentialMap, tolerancePixels=self.config['testing_repeat_action_pixel_overlap_tolerance']):
                                     found = True
                                     break
                             if not found:

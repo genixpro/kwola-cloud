@@ -263,7 +263,8 @@
     "net::ERR_PROXY_CONNECTION_FAILED",
     "net::ERR_SPDY",
     "net::ERR_SPDY_PROTOCOL_ERROR",
-    "net::ERR_SSL"
+    "net::ERR_SSL",
+    "Failed to find a valid digest in the 'integrity' attribute for resource"
   ],
   "web_session_ignored_javascript_file_keywords": [
     "angular",
