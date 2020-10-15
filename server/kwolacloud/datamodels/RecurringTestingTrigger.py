@@ -123,15 +123,18 @@ class RecurringTestingTrigger(Document):
 
         self.lastTriggerTime = datetime.now()
 
-        dayOfWeek = datetime.now().strftime('%a')
+        dayOfWeek = datetime.now().strftime('%w')
         self.lastTriggerTimesByDayOfWeek[dayOfWeek] = datetime.now()
 
         firstDayOfMonth = datetime.now() + relativedelta(day=1)
         weekOfMonth = str(int(datetime.now().strftime('%U')) - int(firstDayOfMonth.strftime('%U')))
+        dateOfMonth = str(int(datetime.now().strftime('%d')) - 1)
 
         if weekOfMonth not in self.lastTriggerTimesByDayOfMonth:
             self.lastTriggerTimesByDayOfMonth[weekOfMonth] = {}
         self.lastTriggerTimesByDayOfMonth[weekOfMonth][dayOfWeek] = datetime.now()
+
+        self.lastTriggerTimesByDateOfMonth[dateOfMonth] = datetime.now()
 
         if self.repeatTrigger == 'commit':
             self.lastRepositoryCommitHash = self.getLatestCommitHash()
