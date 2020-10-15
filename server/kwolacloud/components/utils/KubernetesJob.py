@@ -10,6 +10,7 @@ import datetime
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwola.components.utils.retry import autoretry
 from kwolacloud.datamodels.KubernetesJobResult import KubernetesJobResult
+from kwolacloud.datamodels.KubernetesJobLogs import KubernetesJobLogs
 
 class KubernetesJob:
     statusRefreshTime = 30
@@ -31,6 +32,8 @@ class KubernetesJob:
 
     @autoretry(onFailure=lambda self: self.refreshCredentials(), ignoreFailure=True)
     def cleanup(self):
+        self.recordJobLogs()
+
         process = subprocess.run(["kubectl", "delete", f"Job/{self.kubeJobName()}"])
         if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
             raise RuntimeError(f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
@@ -210,5 +213,21 @@ class KubernetesJob:
         else:
             return None
 
+    @autoretry(onFailure=lambda self: self.refreshCredentials())
+    def getLogs(self):
+        process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
+            raise RuntimeError(
+                f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
+        return str(process.stdout, 'utf8')
+
+
+    def recordJobLogs(self):
+        logObject = KubernetesJobLogs(
+            id=self.kubeJobName(),
+            time=datetime.datetime.now(),
+            logs=self.getLogs()
+        )
+        logObject.save()
 

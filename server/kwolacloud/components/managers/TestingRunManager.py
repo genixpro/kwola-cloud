@@ -279,9 +279,11 @@ class TestingRunManager:
                     else:
                         logging.error(f"A testing step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}")
                         handleFailure()
+                        job.cleanup()
                 else:
                     logging.error(f"A testing step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}")
                     handleFailure()
+                    job.cleanup()
 
                 jobsToRemove.append((jobId, job))
             elif timeElapsed > self.config['testing_step_timeout']:
@@ -402,6 +404,7 @@ class TestingRunManager:
                         errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. The job did not produce a result object."
                         logging.error(errorMessage)
                         self.run.failedTrainingSteps += 1
+                        job.cleanup()
                     elif result['success']:
                         job.cleanup()
 
@@ -415,10 +418,12 @@ class TestingRunManager:
                         logging.error(errorMessage)
 
                         self.run.failedTrainingSteps += 1
+                        job.cleanup()
                 else:
                     errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. The job did not produce a result object."
                     logging.error(errorMessage)
                     self.run.failedTrainingSteps += 1
+                    job.recordJobLogs()
             elif timeElapsed > self.config['training_step_timeout']:
                 logging.error(f"A training step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}")
                 job.cleanup()
