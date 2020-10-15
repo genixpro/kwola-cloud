@@ -222,6 +222,9 @@ class KubernetesJob:
 
         logsJSONText = str(process.stdout, 'utf8')
 
+        if not logsJSONText.strip():
+            return None
+
         logText = ""
         for line in logsJSONText.splitlines():
             lineData = json.loads(line)
