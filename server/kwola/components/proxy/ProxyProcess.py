@@ -64,7 +64,10 @@ class ProxyProcess:
         self.resultQueue = ProxyProcess.sharedMultiprocessingContext.Queue()
 
         self.proxyProcess = ProxyProcess.sharedMultiprocessingContext.Process(target=self.runProxyServerSubprocess, args=(self.config, self.commandQueue, self.resultQueue, pickle.dumps(self.plugins, protocol=pickle.HIGHEST_PROTOCOL)), daemon=True)
-        self.proxyProcess.start()
+        try:
+            self.proxyProcess.start()
+        except BrokenPipeError:
+            raise ProxyVerificationFailed(f"Error in the proxy - unable to start the child proxy process. Received a BrokenPipeError - it is not known why this happens.")
 
         # Wait for the result indicating that the proxy process is ready
         self.port = self.resultQueue.get()
