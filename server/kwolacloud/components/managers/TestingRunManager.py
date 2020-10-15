@@ -271,51 +271,48 @@ class TestingRunManager:
                 # We only count this testing step if it actually completed successfully, because
                 # otherwise it needs to be done over again.
                 if job.successful():
-                    result = job.getResult()
-                    if result is not None and result['success']:
+                    resultObj = job.getResult()
+                    if resultObj is not None and resultObj.result is not None and resultObj.result['success']:
                         logging.info(f"Finished a testing step successfully for run {self.run.id} with name {job.kubeJobName()}")
-                        handleSuccess(result)
-                        job.cleanup()
+                        handleSuccess(resultObj.result)
                     else:
                         logging.error(f"A testing step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}")
                         handleFailure()
-                        job.cleanup()
                 else:
                     logging.error(f"A testing step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}")
                     handleFailure()
-                    job.cleanup()
 
+                job.cleanup()
                 jobsToRemove.append((jobId, job))
             elif timeElapsed > self.config['testing_step_timeout']:
                 # First check to see if there was a result object. Sometimes jobs are timing out after completion for some bizarre reason.
-                result = job.getResult()
-                if result is not None:
-                    if result['success']:
-                        logging.warning(f"A testing step has timed out for run {self.run.id} with name {job.kubeJobName()}, but it appears it to have run successfully but then continued running after completion. It produced a result object: {pformat(result)}")
-                        handleSuccess(result)
+                resultObj = job.getResult()
+                if resultObj is not None and resultObj.result is not None:
+                    if resultObj.result['success']:
+                        logging.warning(f"A testing step has timed out for run {self.run.id} with name {job.kubeJobName()}, but it appears it to have run successfully but then continued running after completion. It produced a result object: {pformat(resultObj.result)}")
+                        handleSuccess(resultObj.result)
                     else:
-                        logging.error(f"A testing step has timed out on testing run {self.run.id} with job name {job.kubeJobName()}, but it also appears to have failed and then continued running after completion. It produced a result object: {pformat(result)}")
+                        logging.error(f"A testing step has timed out on testing run {self.run.id} with job name {job.kubeJobName()}, but it also appears to have failed and then continued running after completion. It produced a result object: {pformat(resultObj.result)}")
                         handleFailure()
                 else:
                     logging.error(f"A testing step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}. It has not produced a result object - presumably it is still running.")
                     handleFailure()
 
-                # We always cleanup timed out tasks, because we don't want to leave them around consuming CPU.
                 job.cleanup()
                 jobsToRemove.append((jobId, job))
             elif not job.ready() and job.getResult() is not None:
-                result = job.getResult()
+                resultObj = job.getResult()
 
-                timePassed = abs((datetime.datetime.now() - result.time).total_seconds())
+                timePassed = abs((datetime.datetime.now() - resultObj.time).total_seconds())
                 # Make sure at least 60 seconds has passed before we evaluate this result object.
                 # This is to give the server enough time to shut down cleanly before we force
                 # kill it as a timed out process.
                 if timePassed > 60:
-                    if result['success']:
-                        logging.warning(f"A testing step with id {self.run.id} and name {job.kubeJobName()} has finished successfully, but it appears to have been hung and did not exit cleanly. It had to be forcibly stopped. It produced a result object: {pformat(result)}")
-                        handleSuccess(result)
+                    if resultObj.result['success']:
+                        logging.warning(f"A testing step with id {self.run.id} and name {job.kubeJobName()} has finished successfully, but it appears to have been hung and did not exit cleanly. It had to be forcibly stopped. It produced a result object: {pformat(resultObj.result)}")
+                        handleSuccess(resultObj.result)
                     else:
-                        logging.error(f"A testing step has failed with id {self.run.id} with job name {job.kubeJobName()}. It also appears to have been hung on exit and did not exit cleanly, meaning we had to forcibly shut it down. It produced a result object: {pformat(result)}")
+                        logging.error(f"A testing step has failed with id {self.run.id} with job name {job.kubeJobName()}. It also appears to have been hung on exit and did not exit cleanly, meaning we had to forcibly shut it down. It produced a result object: {pformat(resultObj.result)}")
                         handleFailure()
 
                     # We force cleaning up this task, because it is still running and thus if we don't forcibly clean it, it will hang around taking up resources.
@@ -399,31 +396,29 @@ class TestingRunManager:
                 self.run.runningTrainingStepStartTime = None
 
                 if job.successful():
-                    result = job.getResult()
-                    if result is None:
+                    resultObj = job.getResult()
+                    if resultObj is None or resultObj.result is None:
                         errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. The job did not produce a result object."
                         logging.error(errorMessage)
                         self.run.failedTrainingSteps += 1
-                        job.cleanup()
-                    elif result['success']:
-                        job.cleanup()
+                    elif resultObj.result['success']:
 
                         self.run.trainingIterationsCompleted += self.config['iterations_per_training_step']
                         self.run.trainingStepsCompleted += 1
                     else:
                         errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
-                        if 'exception' in result:
-                            errorMessage += "\n\n" + result['exception']
+                        if 'exception' in resultObj.result:
+                            errorMessage += "\n\n" + resultObj.result['exception']
 
                         logging.error(errorMessage)
 
                         self.run.failedTrainingSteps += 1
-                        job.cleanup()
                 else:
                     errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. The job did not produce a result object."
                     logging.error(errorMessage)
                     self.run.failedTrainingSteps += 1
-                    job.recordJobLogs()
+
+                job.cleanup()
             elif timeElapsed > self.config['training_step_timeout']:
                 logging.error(f"A training step appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}")
                 job.cleanup()
@@ -431,9 +426,9 @@ class TestingRunManager:
                 self.run.runningTrainingStepStartTime = None
                 self.run.failedTrainingSteps += 1
             elif not job.ready() and job.getResult() is not None:
-                result = job.getResult()
+                resultObj = job.getResult()
 
-                timePassed = abs((datetime.datetime.now() - result.time).total_seconds())
+                timePassed = abs((datetime.datetime.now() - resultObj.time).total_seconds())
                 # Make sure at least 60 seconds has passed before we evaluate this result object.
                 # This is to give the server enough time to shut down cleanly before we force
                 # kill it as a timed out process.
@@ -441,10 +436,10 @@ class TestingRunManager:
                     self.run.runningTrainingStepJobId = None
                     self.run.runningTrainingStepStartTime = None
 
-                    if not result['success']:
+                    if resultObj.result is None or not resultObj.result['success']:
                         errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. It also appears to have hung on exit and had to be forcibly shut down."
-                        if 'exception' in result:
-                            errorMessage += "\n\n" + result['exception']
+                        if resultObj.result is not None and 'exception' in resultObj.result:
+                            errorMessage += "\n\n" + resultObj.result['exception']
 
                         logging.error(errorMessage)
 

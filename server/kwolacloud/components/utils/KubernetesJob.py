@@ -204,16 +204,16 @@ class KubernetesJob:
 
     def getResult(self):
         if self.result is not None:
-            return self.result.result
+            return self.result
 
         self.result = KubernetesJobResult.objects(id=self.kubeJobName()).first()
 
         if self.result is not None:
-            return self.result.result
+            return self.result
         else:
             return None
 
-    @autoretry(onFailure=lambda self: self.refreshCredentials())
+    @autoretry(onFailure=lambda self: self.refreshCredentials(), ignoreFailure=True)
     def getLogs(self):
         process = subprocess.run(["kubectl", "logs", "--tail", "-1", f"Job/{self.kubeJobName()}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process.returncode != 0 and (len(process.stdout) or len(process.stderr)):
