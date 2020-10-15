@@ -60,7 +60,8 @@ class KubernetesJobProcess:
         logging.info(f"Process finished with result:\n{json.dumps(result, indent=4)}")
         resultObj = KubernetesJobResult(
             id=jobName,
-            result=result
+            result=result,
+            time=datetime.now()
         )
         resultObj.save()
 

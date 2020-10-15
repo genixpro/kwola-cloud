@@ -15,3 +15,4 @@ class KubernetesJobResult(Document):
 
     result = DynamicField()
 
+    time = DateTimeField()

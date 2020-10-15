@@ -303,16 +303,22 @@ class TestingRunManager:
                 jobsToRemove.append((jobId, job))
             elif not job.ready() and job.getResult() is not None:
                 result = job.getResult()
-                if result['success']:
-                    logging.warning(f"A testing step with id {self.run.id} and name {job.kubeJobName()} has finished successfully, but it appears to have been hung and did not exit cleanly. It had to be forcibly stopped. It produced a result object: {pformat(result)}")
-                    handleSuccess(result)
-                else:
-                    logging.error(f"A testing step has failed with id {self.run.id} with job name {job.kubeJobName()}. It also appears to have been hung on exit and did not exit cleanly, meaning we had to forcibly shut it down. It produced a result object: {pformat(result)}")
-                    handleFailure()
 
-                # We force cleaning up this task, because it is still running and thus if we don't forcibly clean it, it will hang around taking up resources.
-                job.cleanup()
-                jobsToRemove.append((jobId, job))
+                timePassed = abs((datetime.datetime.now() - result.time).total_seconds())
+                # Make sure at least 60 seconds has passed before we evaluate this result object.
+                # This is to give the server enough time to shut down cleanly before we force
+                # kill it as a timed out process.
+                if timePassed > 60:
+                    if result['success']:
+                        logging.warning(f"A testing step with id {self.run.id} and name {job.kubeJobName()} has finished successfully, but it appears to have been hung and did not exit cleanly. It had to be forcibly stopped. It produced a result object: {pformat(result)}")
+                        handleSuccess(result)
+                    else:
+                        logging.error(f"A testing step has failed with id {self.run.id} with job name {job.kubeJobName()}. It also appears to have been hung on exit and did not exit cleanly, meaning we had to forcibly shut it down. It produced a result object: {pformat(result)}")
+                        handleFailure()
+
+                    # We force cleaning up this task, because it is still running and thus if we don't forcibly clean it, it will hang around taking up resources.
+                    job.cleanup()
+                    jobsToRemove.append((jobId, job))
 
         for (jobId, job) in jobsToRemove:
             jobIndex = self.run.runningTestingStepJobIds.index(jobId)
@@ -422,25 +428,30 @@ class TestingRunManager:
             elif not job.ready() and job.getResult() is not None:
                 result = job.getResult()
 
-                self.run.runningTrainingStepJobId = None
-                self.run.runningTrainingStepStartTime = None
+                timePassed = abs((datetime.datetime.now() - result.time).total_seconds())
+                # Make sure at least 60 seconds has passed before we evaluate this result object.
+                # This is to give the server enough time to shut down cleanly before we force
+                # kill it as a timed out process.
+                if timePassed > 60:
+                    self.run.runningTrainingStepJobId = None
+                    self.run.runningTrainingStepStartTime = None
 
-                if not result['success']:
-                    errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. It also appears to have hung on exit and had to be forcibly shut down."
-                    if 'exception' in result:
-                        errorMessage += "\n\n" + result['exception']
+                    if not result['success']:
+                        errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. It also appears to have hung on exit and had to be forcibly shut down."
+                        if 'exception' in result:
+                            errorMessage += "\n\n" + result['exception']
 
-                    logging.error(errorMessage)
+                        logging.error(errorMessage)
 
-                    self.run.failedTrainingSteps += 1
-                else:
-                    warningMessage = f"A training step has succeeded for testing run {self.run.id} with job name {job.kubeJobName()}. But it also appears to have hung on exit and had to be forcibly shut down."
-                    logging.warning(warningMessage)
+                        self.run.failedTrainingSteps += 1
+                    else:
+                        warningMessage = f"A training step has succeeded for testing run {self.run.id} with job name {job.kubeJobName()}. But it also appears to have hung on exit and had to be forcibly shut down."
+                        logging.warning(warningMessage)
 
-                    self.run.trainingIterationsCompleted += self.config['iterations_per_training_step']
-                    self.run.trainingStepsCompleted += 1
+                        self.run.trainingIterationsCompleted += self.config['iterations_per_training_step']
+                        self.run.trainingStepsCompleted += 1
 
-                job.cleanup()
+                    job.cleanup()
 
             self.run.save()
 
