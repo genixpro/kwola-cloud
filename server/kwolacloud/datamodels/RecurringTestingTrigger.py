@@ -140,7 +140,7 @@ class RecurringTestingTrigger(Document):
 
         newTestingRun.runJob()
 
-        if application.package == "monthly" and application.countTestingRunsLaunchedThisMonth() > 5:
+        if application.package == "monthly" and application.countTestingRunsLaunchedThisMonth() > 5 and application.stripeSubscriptionId is not None:
             subscription = stripe.Subscription.retrieve(application.stripeSubscriptionId)
 
             stripe.InvoiceItem.create(
