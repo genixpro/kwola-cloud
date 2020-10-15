@@ -23,7 +23,8 @@ from kwola.tasks import RunTestingStep
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 from kwolacloud.helpers.webhook import sendCustomerWebhook
-from  kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
+from kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
+from pprint import pformat
 import logging
 import json
 import os
@@ -34,6 +35,8 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
     logging.info(f"Starting testing step for testing run {testingRunId}")
 
     run = TestingRun.objects(id=testingRunId).first()
+
+    logging.info(f"Testing run obj: {pformat(run.to_json())}")
 
     configData = loadConfiguration()
 

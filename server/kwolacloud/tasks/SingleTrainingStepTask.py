@@ -7,6 +7,7 @@
 from ..datamodels.TestingRun import TestingRun
 from kwola.tasks import RunTrainingStep
 import logging
+from pprint import pformat
 import traceback
 import os
 from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
@@ -17,6 +18,8 @@ from ..config.config import loadConfiguration
 def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     logging.info(f"Starting training step for testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
+
+    logging.info(f"Testing run obj: {pformat(run.to_json())}")
 
     configData = loadConfiguration()
 
