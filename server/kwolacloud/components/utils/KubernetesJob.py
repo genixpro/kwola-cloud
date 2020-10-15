@@ -225,7 +225,7 @@ class KubernetesJob:
         logText = ""
         for line in logsJSONText.splitlines():
             lineData = json.loads(line)
-            logText += f"[{lineData['severity']}] {datetime.datetime.fromtimestamp(lineData['timestamp']['seconds']).isoformat()}    {lineData['message']}"
+            logText += f"[{lineData['severity']}] {datetime.datetime.fromtimestamp(lineData['timestamp']['seconds']).isoformat()}    {lineData['message']}\n"
 
         return logText
 
