@@ -125,7 +125,7 @@ class TestingRunManager:
             # We have to write directly to the google cloud storage bucket because of the way that the storage
             # drives get mounted through fuse.
             configFileBlob = storage.Blob("kwola.json", self.applicationStorageBucket)
-            configFileBlob.upload_from_string(json.dumps(kwolaConfigData))
+            configFileBlob.upload_from_string(json.dumps(kwolaConfigData, indent=4, sort_keys=True))
 
         # Also write a copy locally.
         try:

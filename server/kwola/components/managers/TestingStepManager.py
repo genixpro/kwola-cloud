@@ -393,7 +393,7 @@ class TestingStepManager:
         trace.saveToDisk(config)
 
     def runTesting(self):
-        getLogger().info(f"[{os.getpid()}] Starting New Testing Sequence")
+        getLogger().info(f"[{os.getpid()}] Starting New Testing Sequence with configuration:\n{pformat(self.config.configData)}")
 
         resultValue = {'success': True}
 

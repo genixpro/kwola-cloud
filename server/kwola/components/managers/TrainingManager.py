@@ -49,6 +49,7 @@ import time
 import torch
 import torch.distributed
 import traceback
+from pprint import pformat
 import google.api_core.exceptions
 from google.cloud import storage
 
@@ -146,7 +147,7 @@ class TrainingManager:
                 multiprocessing.set_start_method('spawn')
             except RuntimeError:
                 pass
-            getLogger().info(f"[{os.getpid()}] Starting Training Step")
+            getLogger().info(f"[{os.getpid()}] Starting Training Step with configuration:\n{pformat(self.config.configData)}")
 
             self.initializeGPU()
             self.createTrainingStep()
