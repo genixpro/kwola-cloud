@@ -220,7 +220,14 @@ class KubernetesJob:
             raise RuntimeError(
                 f"Error! kubectl did not exit successfully: \n{process.stdout if process.stdout else 'no data on stdout'}\n{process.stderr if process.stderr else 'no data on stderr'}")
 
-        return str(process.stdout, 'utf8')
+        logsJSONText = str(process.stdout, 'utf8')
+
+        logText = ""
+        for line in logsJSONText.splitlines():
+            lineData = json.loads(line)
+            logText += f"[{lineData['severity']}] {datetime.datetime.fromtimestamp(lineData['timestamp']['seconds']).isoformat()}    {lineData['message']}"
+
+        return logText
 
 
     def recordJobLogs(self):
