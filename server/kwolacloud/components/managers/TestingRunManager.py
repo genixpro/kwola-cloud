@@ -374,6 +374,8 @@ class TestingRunManager:
         self.run.runningTrainingStepStartTime = datetime.datetime.now()
         self.run.save()
 
+        logging.info(f"Training step has started with jobId {jobId}")
+
     def reviewRunningTrainingSteps(self):
         if self.run.runningTrainingStepJobId is not None:
             job = self.createTrainingStepKubeJob(self.run.runningTrainingStepJobId)
