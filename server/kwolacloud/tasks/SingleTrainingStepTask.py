@@ -10,6 +10,7 @@ import logging
 from pprint import pformat
 import traceback
 import os
+import json
 from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from ..config.config import loadConfiguration
@@ -19,7 +20,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     logging.info(f"Starting training step for testing run {testingRunId}")
     run = TestingRun.objects(id=testingRunId).first()
 
-    logging.info(f"Testing run obj: {pformat(run.to_json())}")
+    logging.info(f"Testing run obj: {pformat(json.loads(run.to_json()))}")
 
     configData = loadConfiguration()
 

@@ -36,7 +36,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
 
     run = TestingRun.objects(id=testingRunId).first()
 
-    logging.info(f"Testing run obj: {pformat(run.to_json())}")
+    logging.info(f"Testing run obj: {pformat(json.loads(run.to_json()))}")
 
     configData = loadConfiguration()
 
