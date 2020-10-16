@@ -463,7 +463,8 @@ class WebEnvironmentSession:
                     if (elemStyle.getPropertyValue("cursor") === "pointer")
                         data.canClick = true;
                     
-                    if (elemStyle.getPropertyValue("overflow-y") === "scroll" || elemStyle.getPropertyValue("overflow-y") === "auto")
+                    if ((elemStyle.getPropertyValue("overflow-y") === "scroll" || elemStyle.getPropertyValue("overflow-y") === "auto")
+                         && element.scrollHeight > element.clientHeight)
                         data.canScroll = true;
                     
                     if (element.tagName === "INPUT" || element.tagName === "TEXTAREA")
