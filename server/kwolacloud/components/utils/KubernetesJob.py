@@ -228,21 +228,11 @@ class KubernetesJob:
         logText = ""
         for line in logsJSONText.splitlines():
             if line:
-                splits = line.split("}{")
-                for messageIndex, message in enumerate(splits):
-                    if len(splits) > 0:
-                        if messageIndex == 0:
-                            message = message + "}"
-                        elif messageIndex == len(splits) - 1:
-                            message = "{" + message
-                        else:
-                            message = "{" + message + "}"
-
-                    try:
-                        lineData = json.loads(message)
-                        logText += f"[{lineData['severity']}] {datetime.datetime.fromtimestamp(lineData['timestamp']['seconds']).isoformat()}    {lineData['message']}\n"
-                    except json.JSONDecodeError:
-                        logText += message + "\n"
+                try:
+                    lineData = json.loads(line)
+                    logText += f"[{lineData.get('severity')}] {datetime.datetime.fromtimestamp(lineData['timestamp']['seconds']).isoformat()}    {lineData['message']}\n"
+                except json.JSONDecodeError:
+                    logText += line + "\n"
 
         return logText
 
