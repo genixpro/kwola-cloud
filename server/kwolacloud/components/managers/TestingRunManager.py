@@ -354,9 +354,6 @@ class TestingRunManager:
     def launchTrainingStep(self):
         logging.info(f"Starting a training step for run {self.run.id}")
 
-        self.updateModelSymbols(self.config, self.run.testingStepsNeedingSymbolProcessing)
-        self.run.testingStepsNeedingSymbolProcessing = []
-
         jobId = f"{self.run.id}-trainingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}"
 
         if self.cloudConfigData['features']['localRuns']:
@@ -586,6 +583,9 @@ class TestingRunManager:
                 self.launchTrainingStepIfNeeded()
                 self.reviewRunningTrainingSteps()
 
+                self.updateModelSymbols(self.config, self.run.testingStepsNeedingSymbolProcessing)
+                self.run.testingStepsNeedingSymbolProcessing = []
+
                 # save on every step - just in case it was changed.
                 self.run.save()
 
@@ -608,6 +608,11 @@ class TestingRunManager:
 
 
             # Save after all the post-testing hooks are finished.
+            self.run.save()
+
+            self.updateModelSymbols(self.config, self.run.testingStepsNeedingSymbolProcessing)
+            self.run.testingStepsNeedingSymbolProcessing = []
+
             self.run.save()
 
             while ((self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded
