@@ -85,7 +85,7 @@ class KubernetesJob:
                                 "name": f"kwola-cloud-sha256",
                                 "image": f"gcr.io/kwola-cloud/kwola-{self.image}-{os.getenv('KWOLA_ENV')}:latest",
                                 "command": ["/usr/bin/python3"],
-                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps((self.kubeJobName(), self.data)), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
+                                "args": ["-m", str(self.module), str(base64.b64encode(pickle.dumps((self.module, self.referenceId, self.data)), altchars=KubernetesJobProcess.base64AltChars), 'utf8')],
                                 "imagePullPolicy": "Always",
                                 "securityContext": {
                                     "privileged": True,
@@ -238,10 +238,12 @@ class KubernetesJob:
 
 
     def recordJobLogs(self):
-        logObject = KubernetesJobLogs(
-            id=self.kubeJobName(),
-            time=datetime.datetime.now(),
-            logs=self.getLogs()
-        )
-        logObject.save()
+        logs = self.getLogs()
+        if logs:
+            logObject = KubernetesJobLogs(
+                id=self.kubeJobName(),
+                time=datetime.datetime.now(),
+                logs=logs
+            )
+            logObject.save()
 
