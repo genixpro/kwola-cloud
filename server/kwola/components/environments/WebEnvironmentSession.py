@@ -434,12 +434,6 @@ class WebEnvironmentSession:
                         keywords: (element.textContent + " " + element.getAttribute("class") + " " + element.getAttribute("name") + " " + element.getAttribute("id") + " " + element.getAttribute("type")).toLowerCase() 
                     };
                     
-                    // Skip this element if it covers basically the whole screen.
-                    if (data.width > (window.innerWidth * 0.80) && data.height > (window.innerHeight * 0.80))
-                    {
-                        continue;
-                    }
-                    
                     if (element.tagName === "A"
                             || element.tagName === "BUTTON"
                             || element.tagName === "AREA"

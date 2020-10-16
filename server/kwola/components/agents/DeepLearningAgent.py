@@ -586,11 +586,10 @@ class DeepLearningAgent:
                 if "clear" in self.actionsSorted:
                     actionTypes.append(self.actionsSorted.index("clear"))
 
-            # if element['canScroll']:
-            # Temporary: allow scrolling on any element.
-            for actionName in self.actionsSorted:
-                if actionName.startswith("scroll"):
-                    actionTypes.append(self.actionsSorted.index(actionName))
+            if element['canScroll']:
+                for actionName in self.actionsSorted:
+                    if actionName.startswith("scroll"):
+                        actionTypes.append(self.actionsSorted.index(actionName))
 
             # Here is the essential part. For each of the actions that are supported by this action
             # element, we paint a rectangle of 1's on the pixel action map. Effectively, the pixel
