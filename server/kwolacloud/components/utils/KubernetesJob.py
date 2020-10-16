@@ -7,13 +7,13 @@ import time
 import logging
 import base64
 import datetime
-from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwola.components.utils.retry import autoretry
 from kwolacloud.datamodels.KubernetesJobResult import KubernetesJobResult
 from kwolacloud.datamodels.KubernetesJobLogs import KubernetesJobLogs
 
 class KubernetesJob:
     statusRefreshTime = 30
+    base64AltChars = b"-_"
 
     def __init__(self, module, data, referenceId, image="worker", cpuRequest="1000m", memoryRequest="2.5Gi", cpuLimit="1500m", memoryLimit="3.0Gi", gpu=False):
         self.module = module
