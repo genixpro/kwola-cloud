@@ -447,7 +447,7 @@ class TestingStepManager:
 
             for session in self.executionSessions:
                 session.endTime = datetime.now()
-                session.status = "completed"
+                session.saveToDisk(self.config)
 
             # We shutdown the environment before generating the annotated videos in order
             # to conserve memory, since the environment is no longer needed after this point
@@ -462,6 +462,7 @@ class TestingStepManager:
                     plugin.testingStepFinished(self.testStep, self.executionSessions)
 
             for session in self.executionSessions:
+                session.status = "completed"
                 session.saveToDisk(self.config)
 
             self.testStep.saveToDisk(self.config)

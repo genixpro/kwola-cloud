@@ -1913,7 +1913,7 @@ class DeepLearningAgent:
                 rewardPixelMaskAxes.imshow(rewardPixelMask, vmin=0, vmax=1, cmap=plt.get_cmap("gray"), interpolation="bilinear")
                 rewardPixelMaskAxes.set_xticks([])
                 rewardPixelMaskAxes.set_yticks([])
-                rewardPixelMaskAxes.set_title(f"{rewardPixelCount} target pixels")
+                rewardPixelMaskAxes.set_title(f"{rewardPixelCount} target pixels", fontsize=10)
 
                 pixelActionMapAxes = mainFigure.add_subplot(numColumns, numRows, currentFig)
                 currentFig += 1
@@ -1928,7 +1928,7 @@ class DeepLearningAgent:
                 pixelActionMapAxes.imshow(actionMapImage, interpolation="bilinear")
                 pixelActionMapAxes.set_xticks([])
                 pixelActionMapAxes.set_yticks([])
-                pixelActionMapAxes.set_title(f"{actionPixelCount} action pixels")
+                pixelActionMapAxes.set_title(f"{actionPixelCount} action pixels", fontsize=10)
 
                 presentRewardPredictions = numpy.array(networkOutput['presentRewards'].data)
                 discountedRewardPredictions = numpy.array(networkOutput['discountFutureRewards'].data)
@@ -1977,7 +1977,7 @@ class DeepLearningAgent:
                     rewardPredictionsShrunk = skimage.measure.block_reduce(presentRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = presentRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minPresentReward, vmax=maxPresentReward)
-                    presentRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} present reward")
+                    presentRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} present reward", fontsize=10)
                     mainFigure.colorbar(im, ax=presentRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
@@ -1993,7 +1993,7 @@ class DeepLearningAgent:
                     rewardPredictionsShrunk = skimage.measure.block_reduce(discountedRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = discountedRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minDiscountedReward, vmax=maxDiscountedReward)
-                    discountedRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} discounted reward")
+                    discountedRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} discounted reward", fontsize=10)
                     mainFigure.colorbar(im, ax=discountedRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
@@ -2012,7 +2012,7 @@ class DeepLearningAgent:
                     rewardPredictionsShrunk = skimage.measure.block_reduce(totalRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = totalRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minTotalReward, vmax=maxTotalReward)
-                    totalRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} total reward")
+                    totalRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} total reward", fontsize=10)
                     mainFigure.colorbar(im, ax=totalRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
@@ -2032,7 +2032,7 @@ class DeepLearningAgent:
                     advanagePredictionsShrunk = skimage.measure.block_reduce(advantagePredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = advantagePredictionAxes[actionIndex].imshow(advanagePredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minValue - advantageRange*0.1, vmax=maxValue)
-                    advantagePredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} advantage")
+                    advantagePredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} advantage", fontsize=10)
                     mainFigure.colorbar(im, ax=advantagePredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
@@ -2051,7 +2051,7 @@ class DeepLearningAgent:
                     actionProbabilityPredictionsShrunk = skimage.measure.block_reduce(actionProbabilities[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = actionProbabilityPredictionAxes[actionIndex].imshow(actionProbabilityPredictionsShrunk, cmap=mainColorMap, interpolation="nearest")
-                    actionProbabilityPredictionAxes[actionIndex].set_title(f"{action} {minValue:.1e} - {maxValue:.1e} prob")
+                    actionProbabilityPredictionAxes[actionIndex].set_title(f"{action} {minValue:.1e} - {maxValue:.1e} prob", fontsize=10)
                     mainFigure.colorbar(im, ax=actionProbabilityPredictionAxes[actionIndex], orientation='vertical')
 
                 stampAxes.set_xticks([])
@@ -2061,13 +2061,13 @@ class DeepLearningAgent:
 
                 stampIm = stampAxes.imshow(numpy.array(stamp.data[0]).reshape([stampImageWidth, stampImageHeight]), cmap=greyColorMap, interpolation="nearest", vmin=minMemoryValue, vmax=maxMemoryValue)
                 mainFigure.colorbar(stampIm, ax=stampAxes, orientation='vertical')
-                stampAxes.set_title("Memory Stamp")
+                stampAxes.set_title("Memory Stamp", fontsize=10)
 
                 stateValueAxes.set_xticks([])
                 stateValueAxes.set_yticks([])
                 stateValueIm = stateValueAxes.imshow([stateValue], cmap=mainColorMap, interpolation="nearest", vmin=minStateValue, vmax=maxStateValue)
                 mainFigure.colorbar(stateValueIm, ax=stateValueAxes, orientation='vertical')
-                stateValueAxes.set_title(f"State Value {float(stateValue[0]):.3f}")
+                stateValueAxes.set_title(f"State Value {float(stateValue[0]):.3f}", fontsize=10)
 
                 # ax.grid()
                 mainFigure.tight_layout()
