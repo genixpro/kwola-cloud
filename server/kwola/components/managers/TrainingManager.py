@@ -668,8 +668,10 @@ class TrainingManager:
 
             return cacheHitRate
         except Exception as e:
-            if not isinstance(e, KeyboardInterrupt):
-                getLogger().error(f"prepareAndLoadSingleBatchForSubprocess failed! Destroying the batch cache for the traces and then putting a retry into the queue.\n{traceback.format_exc()}")
+            # Both KeyboardInterrupt and FileNotFoundError can occur when you Ctrl-C a process from the terminal.
+            # We don't want to force recreating the sample cache just because of that.
+            if not isinstance(e, KeyboardInterrupt) and not isinstance(e, FileNotFoundError):
+                getLogger().error(f"prepareAndLoadSingleBatchForSubprocess failed! Error: {type(e)}. Destroying the batch cache for the traces and then putting a retry into the queue.\n{traceback.format_exc()}")
 
                 # As a precautionary measure, we destroy whatever data is in the
                 # prepared samples cache for all of the various traceIds that were
