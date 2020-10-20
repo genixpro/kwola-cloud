@@ -855,7 +855,10 @@ class DeepLearningAgent:
         randomActionsTime = (datetime.now() - startTime).total_seconds()
         startTime = datetime.now()
 
-        neuralNetworkPredictionsTime = 0
+        neuralNetworkPredictionsTensorSetupTime = 0
+        neuralNetworkPredictionsModelSetupTime = 0
+        neuralNetworkPredictionsCoreTime = 0
+        neuralNetworkPredictionsFetchTime = 0
         predictionActionProcessingTime = 0
         predictionProcessingTime = 0
         actionDedupingTime = 0
@@ -866,13 +869,24 @@ class DeepLearningAgent:
         # through the neural network if literally all the actions chosen were random. This
         # doesn't happen very often but in rare circumstances it can and we prepare for that here.
         if len(imageBatch) > 0:
+            # Create numpy arrays for each of the
+            imageBatchArray = numpy.array(imageBatch)
+            symbolListBatchArray = numpy.array(symbolListBatch)
+            symbolListOffsetsArray = numpy.array(symbolListOffsets)
+            symbolWeightBatchArray = numpy.array(symbolWeightBatch)
+            pixelActionMapsBatchArray = numpy.array(pixelActionMapsBatch)
+            stepNumberArray = numpy.array([stepNumber] * len(imageBatch))
+
             # Create torch tensors out of the numpy arrays, effectively preparing the data for input into the neural network.
-            imageTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(imageBatch))
-            symbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(symbolListBatch))
-            symbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(symbolListOffsets))
-            symbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(symbolWeightBatch))
-            pixelActionMapTensor = self.variableWrapperFunc(torch.FloatTensor, pixelActionMapsBatch)
-            stepNumberTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array([stepNumber] * len(imageBatch)))
+            imageTensor = self.variableWrapperFunc(torch.FloatTensor, imageBatchArray)
+            symbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, symbolListBatchArray)
+            symbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, symbolListOffsetsArray)
+            symbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, symbolWeightBatchArray)
+            pixelActionMapTensor = self.variableWrapperFunc(torch.FloatTensor, pixelActionMapsBatchArray)
+            stepNumberTensor = self.variableWrapperFunc(torch.FloatTensor, stepNumberArray)
+
+            neuralNetworkPredictionsTensorSetupTime = (datetime.now() - startTime).total_seconds()
+            startTime = datetime.now()
 
             # Here we set torch not to calculate any gradients. Technically we don't do the backward step anyhow, but
             # adding this line helps reduce memory usage I think
@@ -881,6 +895,9 @@ class DeepLearningAgent:
                 # ways that alter depending on the size of the batch here, which is inherently random. Putting the model
                 # in evaluation mode ensures nice, clean, consistent, reproducible runs.
                 self.model.eval()
+
+                neuralNetworkPredictionsModelSetupTime = (datetime.now() - startTime).total_seconds()
+                startTime = datetime.now()
 
                 # Here we go! Here we are now finally putting data into the neural network and processing it.
                 outputs = self.modelParallel({
@@ -899,12 +916,16 @@ class DeepLearningAgent:
                     "computeAdvantageValues": True
                 })
 
+                neuralNetworkPredictionsCoreTime = (datetime.now() - startTime).total_seconds()
+                startTime = datetime.now()
+
                 # Here we move the tensors into the CPU. Technically this is only needed if you are doing testing using your
                 # GPU, but you can run the same code either way so we do it here to be safe.
                 actionProbabilities = outputs['actionProbabilities'].cpu()
                 advantageValues = outputs['advantage'].cpu()
 
-            neuralNetworkPredictionsTime = (datetime.now() - startTime).total_seconds()
+                neuralNetworkPredictionsFetchTime = (datetime.now() - startTime).total_seconds()
+                startTime = datetime.now()
 
             predictionActionProcessingStartTime = datetime.now()
 
@@ -1074,7 +1095,10 @@ class DeepLearningAgent:
             "processImagesTime": processImagesTime,
             "symbolComputationTime": symbolComputationTime,
             "randomActionsTime": randomActionsTime,
-            "neuralNetworkPredictionsTime": neuralNetworkPredictionsTime,
+            "neuralNetworkPredictionsTensorSetupTime": neuralNetworkPredictionsTensorSetupTime,
+            "neuralNetworkPredictionsModelSetupTime": neuralNetworkPredictionsModelSetupTime,
+            "neuralNetworkPredictionsCoreTime": neuralNetworkPredictionsCoreTime,
+            "neuralNetworkPredictionsFetchTime": neuralNetworkPredictionsFetchTime,
             "predictionActionProcessingTime": predictionActionProcessingTime,
             "predictionProcessingTime": predictionProcessingTime,
             "weightedPredictionProcessingPart1Time": weightedPredictionProcessingPart1Time,
