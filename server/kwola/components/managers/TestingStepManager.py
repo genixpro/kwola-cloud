@@ -224,7 +224,10 @@ class TestingStepManager:
             actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
 
             if actionDecisionTime > 15.0:
-                getLogger().info(f"Finished agent.nextBestActions after {actionDecisionTime} seconds. Subtimes: \n {pformat(times)}")
+                msg = f"Finished agent.nextBestActions after {actionDecisionTime} seconds. Subtimes: \n"
+                for key, time in times.items():
+                    msg += f"    {key}: {time:.5f}\n"
+                getLogger().info(msg)
 
         for plugin in self.testingStepPlugins:
             plugin.beforeActionsRun(self.testStep, self.executionSessions, actions)

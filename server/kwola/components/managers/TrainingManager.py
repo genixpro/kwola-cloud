@@ -83,6 +83,7 @@ class TrainingManager:
         self.starved = False
         self.lastStarveStateAdjustment = 0
         self.coreLearningTimes = []
+        self.loopTimes = []
 
         self.testingSteps = []
         self.agent = None
@@ -180,6 +181,8 @@ class TrainingManager:
             self.queueBatchesForPrecomputation()
 
             while self.trainingStep.numberOfIterationsCompleted < self.config['iterations_per_training_step']:
+                loopStart = datetime.now()
+
                 self.updateBatchPrepStarvedState()
                 batches = self.fetchBatchesForIteration()
 
@@ -195,8 +198,7 @@ class TrainingManager:
 
                 if self.trainingStep.numberOfIterationsCompleted % self.config['print_loss_iterations'] == (self.config['print_loss_iterations'] - 1):
                     if self.gpu is None or self.gpu == 0:
-                        timePerBatch = (datetime.now() - self.trainingStep.startTime).total_seconds() / self.trainingStep.numberOfIterationsCompleted
-                        getLogger().info(f"[{os.getpid()}] Completed {self.trainingStep.numberOfIterationsCompleted + 1} batches. Average time per batch: {timePerBatch:.3f}. Core learning time: {numpy.average(self.coreLearningTimes):.3f}")
+                        getLogger().info(f"[{os.getpid()}] Completed {self.trainingStep.numberOfIterationsCompleted + 1} batches. Overall average time per batch: {numpy.average(self.loopTimes[-25:]):.3f}. Core learning time: {numpy.average(self.coreLearningTimes[-25:]):.3f}")
                         self.printMovingAverageLosses()
                         if self.config['print_cache_hit_rate']:
                             getLogger().info(f"[{os.getpid()}] Batch cache hit rate {100 * numpy.mean(self.recentCacheHits[-self.config['print_cache_hit_rate_moving_average_length']:]):.0f}%")
@@ -207,6 +209,9 @@ class TrainingManager:
 
                 for plugin in self.plugins:
                     plugin.iterationCompleted(self.trainingStep)
+
+                loopEnd = datetime.now()
+                self.loopTimes.append((loopEnd - loopStart).total_seconds())
 
             getLogger().info(f"[{os.getpid()}] Finished the core training loop. Saving the training step {self.trainingStep.id}")
             self.trainingStep.endTime = datetime.now()
@@ -915,20 +920,20 @@ class TrainingManager:
 
         message = f"[{os.getpid()}] "
 
-        message += f"Moving Average Total Reward Loss: {averageTotalRewardLoss}\n"
-        message += f"Moving Average Present Reward Loss: {averagePresentRewardLoss}\n"
-        message += f"Moving Average Discounted Future Reward Loss: {averageDiscountedFutureRewardLoss}\n"
-        message += f"Moving Average State Value Loss: {averageStateValueLoss}\n"
-        message += f"Moving Average Advantage Loss: {averageAdvantageLoss}\n"
-        message += f"Moving Average Action Probability Loss: {averageActionProbabilityLoss}\n"
+        message += f"    Moving Average Total Reward Loss: {averageTotalRewardLoss:.6f}\n"
+        message += f"    Moving Average Present Reward Loss: {averagePresentRewardLoss:.6f}\n"
+        message += f"    Moving Average Discounted Future Reward Loss: {averageDiscountedFutureRewardLoss:.6f}\n"
+        message += f"    Moving Average State Value Loss: {averageStateValueLoss:.6f}\n"
+        message += f"    Moving Average Advantage Loss: {averageAdvantageLoss:.6f}\n"
+        message += f"    Moving Average Action Probability Loss: {averageActionProbabilityLoss:.6f}\n"
         if self.config['enable_trace_prediction_loss']:
-            message += f"Moving Average Trace Prediction Loss: {averageTracePredictionLoss}\n"
+            message += f"    Moving Average Trace Prediction Loss: {averageTracePredictionLoss:.6f}\n"
         if self.config['enable_execution_feature_prediction_loss']:
-            message += f"Moving Average Execution Feature Loss: {averageExecutionFeatureLoss}\n"
+            message += f"    Moving Average Execution Feature Loss: {averageExecutionFeatureLoss:.6f}\n"
         if self.config['enable_cursor_prediction_loss']:
-            message += f"Moving Average Predicted Cursor Loss: {averagePredictedCursorLoss}\n"
+            message += f"    Moving Average Predicted Cursor Loss: {averagePredictedCursorLoss:.6f}\n"
 
-        message += f"Moving Average Total Loss: {averageTotalLoss}\n"
+        message += f"Moving Average Total Loss: {averageTotalLoss:.4f}\n"
         getLogger().info(message)
 
     @staticmethod

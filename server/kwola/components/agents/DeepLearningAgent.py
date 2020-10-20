@@ -61,6 +61,7 @@ import torch.nn as nn
 import torch.optim as optim
 import traceback
 import pickle
+import multiprocessing
 import copy
 from ..utils.retry import autoretry
 from faker import Faker
@@ -808,8 +809,8 @@ class DeepLearningAgent:
             # code.
             # Therefore we make the following two equations which basically combine these two mechanisms to compute the epsilon values for the
             # algorithm.
-            randomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.50 * (1 + (stepNumber / self.config['testing_sequence_length']))
-            weightedRandomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.50 * (1 + (stepNumber / self.config['testing_sequence_length']))
+            randomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.25 * (1 + (stepNumber / self.config['testing_sequence_length']))
+            weightedRandomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.25 * (1 + (stepNumber / self.config['testing_sequence_length']))
 
             # Filter the action maps to reduce instances where the algorithm is repeating itself over and over again.
             sampleActionMaps, sampleActionRecentActionCounts = self.filterActionMapsToPreventRepeatActions(sampleActionMaps, sampleRecentActions, width, height)
@@ -856,6 +857,10 @@ class DeepLearningAgent:
 
         neuralNetworkPredictionsTime = 0
         predictionActionProcessingTime = 0
+        predictionProcessingTime = 0
+        actionDedupingTime = 0
+        weightedPredictionProcessingPart1Time = 0
+        weightedPredictionProcessingPart2Time = 0
 
         # Special catch here on the if statement. We dont need to perform any calculations
         # through the neural network if literally all the actions chosen were random. This
@@ -900,7 +905,8 @@ class DeepLearningAgent:
                 advantageValues = outputs['advantage'].cpu()
 
             neuralNetworkPredictionsTime = (datetime.now() - startTime).total_seconds()
-            startTime = datetime.now()
+
+            predictionActionProcessingStartTime = datetime.now()
 
             # Now we iterate over all of the data and results for each of the sub environments
             for sampleIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues,\
@@ -908,6 +914,8 @@ class DeepLearningAgent:
                 samplePixelActionMap in zip(batchSampleIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
                                                                   recentActionsBatch, actionMapsBatch, recentActionsCountsBatch,
                                                                   pixelActionMapsBatch):
+                startTime = datetime.now()
+
                 # Here is where we determine whether the algorithm will use the predicted best action from the neural network,
                 # or do a weighted random selection using the outputs
                 weighted = bool(random.random() < sampleEpsilon)
@@ -933,6 +941,8 @@ class DeepLearningAgent:
                     # on the original, unscaled image
                     actionX = int(actionX / modelDownscale)
                     actionY = int(actionY / modelDownscale)
+
+                    dedupingStart = datetime.now()
 
                     # Here we create an action object using the lambdas. We aren't creating the final action object,
                     # since we do one last check below to ensure this isn't an exact repeat action.
@@ -963,6 +973,11 @@ class DeepLearningAgent:
                             weighted = True
                             override = True
                             break
+
+                    actionDedupingTime += (datetime.now() - dedupingStart).total_seconds()
+
+                predictionProcessingTime += (datetime.now() - startTime).total_seconds()
+                weightedActionPart1StartTime = datetime.now()
 
                 # Here we are doing a weighted random action.
                 if weighted:
@@ -996,6 +1011,10 @@ class DeepLearningAgent:
 
                     # Here we resize the array so that it adds up to 1.
                     reshapedSum = numpy.sum(reshapedAdjusted)
+
+                    weightedPredictionProcessingPart1Time += (datetime.now() - weightedActionPart1StartTime).total_seconds()
+                    weightedActionPart2StartTime = datetime.now()
+
                     if reshapedSum > 0:
                         reshapedAdjusted = reshapedAdjusted / reshapedSum
 
@@ -1028,6 +1047,8 @@ class DeepLearningAgent:
                         source = "random"
                         override = True
 
+                    weightedPredictionProcessingPart2Time += (datetime.now() - weightedActionPart2StartTime).total_seconds()
+
                 # Here we take advantage of the lambda functions prepared in the constructor. We get the lambda function
                 # that is associated with the action type we have selected, and use it to prepare the kwola.datamodels.actions.BaseAction
                 # object.
@@ -1040,7 +1061,7 @@ class DeepLearningAgent:
                 # is later used to recover the original ordering of the actions list
                 actions.append((sampleIndex, action))
 
-            predictionActionProcessingTime = (datetime.now() - startTime).total_seconds()
+            predictionActionProcessingTime = (datetime.now() - predictionActionProcessingStartTime).total_seconds()
 
         # The actions list now contained tuples of (sampleIndex, action). Now we just need to use
         # the sampleIndex to sort this list back into the original ordering of the samples.
@@ -1054,7 +1075,11 @@ class DeepLearningAgent:
             "symbolComputationTime": symbolComputationTime,
             "randomActionsTime": randomActionsTime,
             "neuralNetworkPredictionsTime": neuralNetworkPredictionsTime,
-            "predictionActionProcessingTime": predictionActionProcessingTime
+            "predictionActionProcessingTime": predictionActionProcessingTime,
+            "predictionProcessingTime": predictionProcessingTime,
+            "weightedPredictionProcessingPart1Time": weightedPredictionProcessingPart1Time,
+            "weightedPredictionProcessingPart2Time": weightedPredictionProcessingPart2Time,
+            "actionDedupingTime": actionDedupingTime
         }
 
         # We return a list composed of just the action objects, one for each sub environment.
@@ -1404,7 +1429,7 @@ class DeepLearningAgent:
 
         if includeNeuralNetworkCharts:
             neuralNetworkFutures = []
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
                 for trace, rawImage in zip(executionTracesFiltered, rawImagesFiltered):
                     future = executor.submit(self.processDebugTraceThroughNeuralNetwork, trace, rawImage)
                     neuralNetworkFutures.append(future)
@@ -1519,35 +1544,40 @@ class DeepLearningAgent:
         else:
             rewardBounds = None
 
+        uniqueActionsShuffled = list(uniqueActions)
+        random.shuffle(uniqueActionsShuffled)
+
         uniqueActionColors = {
             action: skimage.color.hsv2rgb((float(index) / len(uniqueActions), 1, 1))
-            for index, action in enumerate(uniqueActions)
+            for index, action in enumerate(uniqueActionsShuffled)
         }
 
-        # Keeping this temporarily as a ThreadPoolExecutor with max_workers as 1.
-        # Eventually should put this under multiple sub processes.
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            imageGenerationFutures = []
-            for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImagesFiltered, networkOutputs):
-                if trace is not None:
-                    hilight = 0
-                    if hilightStepNumber is not None:
-                        dist = abs(hilightStepNumber - (trace.frameNumber - 1))
+        sharedMultiprocessingContext = multiprocessing.get_context('spawn')
+        processingPool = sharedMultiprocessingContext.Pool(processes=self.config['debug_video_workers'], initializer=setupLocalLogging)
 
-                        hilight = 1 / ((dist/3)+1)
+        imageGenerationFutures = []
+        for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImagesFiltered, networkOutputs):
+            if trace is not None:
+                hilight = 0
+                if hilightStepNumber is not None:
+                    dist = abs(hilightStepNumber - (trace.frameNumber - 1))
 
-                    future = executor.submit(self.createDebugImagesForExecutionTrace,
-                                             str(executionSession.id), traceIndex, pickle.dumps(trace, protocol=pickle.HIGHEST_PROTOCOL),
-                                             rawImage, lastRawImage, networkOutput,
-                                             presentRewards, discountedFutureRewards, tempScreenshotDirectory,
-                                             includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight,
-                                             rewardBounds, uniqueActionColors)
-                    imageGenerationFutures.append(future)
+                    hilight = 1 / ((dist/3)+1)
 
-                    lastRawImage = rawImage
+                future = processingPool.apply_async(DeepLearningAgent.createDebugImagesForExecutionTraceStatic,
+                                         args=[self.config.configurationDirectory,
+                                                 str(executionSession.id), traceIndex, pickle.dumps(trace, protocol=pickle.HIGHEST_PROTOCOL),
+                                                 rawImage, lastRawImage, networkOutput,
+                                                 presentRewards, discountedFutureRewards, tempScreenshotDirectory,
+                                                 includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight,
+                                                 rewardBounds, uniqueActionColors
+                                               ])
+                imageGenerationFutures.append(future)
 
-            for future in imageGenerationFutures:
-                future.result()
+                lastRawImage = rawImage
+
+        for future in imageGenerationFutures:
+            future.get()
 
         moviePath = os.path.join(tempScreenshotDirectory, "debug.mp4")
 
@@ -1611,6 +1641,13 @@ class DeepLearningAgent:
         outputs['uniqueActions'] = uniqueActions
         return outputs
 
+    @staticmethod
+    def createDebugImagesForExecutionTraceStatic(configDir, *args, **kwargs):
+        config = KwolaCoreConfiguration(configDir)
+
+        agent = DeepLearningAgent(config, whichGpu=None)
+        agent.loadSymbolMap()
+        return agent.createDebugImagesForExecutionTrace(*args, **kwargs)
 
 
     def createDebugImagesForExecutionTrace(self, executionSessionId, traceIndex, trace,
@@ -1625,16 +1662,23 @@ class DeepLearningAgent:
 
             :param executionSessionId: A string containing the ID of the execution session
             :param traceIndex: The index of this debug image within the movie
-            :param trace: The kwola.datamodels.ExecutionTrace object that this debug image will be generated for. It should be serialized into a string using pickle.dumps prior to input.
+            :param trace: The kwola.datamodels.ExecutionTrace object that this debug image will be generated for.
+                          It should be serialized into a string using pickle.dumps prior to input.
             :param rawImage: A numpy array containing the raw image data for the result image on this trace
-            :param lastRawImage: A numpy array containing the raw image data for the input image on this trace, e.g. the image from before the action was performed.
-            :param networkOutput: The output from the neural network for this debug image, as returned by the method processDebugTraceThroughNeuralNetwork
+            :param lastRawImage: A numpy array containing the raw image data for the input image on this trace, e.g.
+                                 the image from before the action was performed.
+            :param networkOutput: The output from the neural network for this debug image, as returned by the method
+                                  processDebugTraceThroughNeuralNetwork
             :param presentRewards: A list containing all of the calculated present reward values for the sequence
-            :param discountedFutureRewards: A list containing all of the calculated discounted future reward values for the sequence
+            :param discountedFutureRewards: A list containing all of the calculated discounted future reward values for
+                                            the sequence
             :param tempScreenshotDirectory: A string containing the path of the directory where the images will be saved
-            :param includeNeuralNetworkCharts: A boolean indicating whether to include charts showing the neural network predictions in the debug video
-            :param includeNetPresentRewardChart: A boolean indicating whether to include the net present reward chart at the bottom of the debug video
-            :param hilight: A float from 0 to 1 indicating how much hilighting to apply to this frame, 0 being no hilight and 1 being full hilight. Hilighting a frame will change the background color
+            :param includeNeuralNetworkCharts: A boolean indicating whether to include charts showing the neural
+                                               network predictions in the debug video
+            :param includeNetPresentRewardChart: A boolean indicating whether to include the net present reward chart
+                                                 at the bottom of the debug video
+            :param hilight: A float from 0 to 1 indicating how much hilighting to apply to this frame, 0 being no
+                            hilight and 1 being full hilight. Hilighting a frame will change the background color
             :param rewardBounds: A tuple containing the bounds to be used for generating images
             :param uniqueActionColors: A dictionary mapping pixel action map values to various colors
 
@@ -1913,7 +1957,7 @@ class DeepLearningAgent:
                 rewardPixelMaskAxes.imshow(rewardPixelMask, vmin=0, vmax=1, cmap=plt.get_cmap("gray"), interpolation="bilinear")
                 rewardPixelMaskAxes.set_xticks([])
                 rewardPixelMaskAxes.set_yticks([])
-                rewardPixelMaskAxes.set_title(f"{rewardPixelCount} target pixels", fontsize=10)
+                rewardPixelMaskAxes.set_title(f"{rewardPixelCount} target pixels", fontsize=8)
 
                 pixelActionMapAxes = mainFigure.add_subplot(numColumns, numRows, currentFig)
                 currentFig += 1
@@ -1928,7 +1972,7 @@ class DeepLearningAgent:
                 pixelActionMapAxes.imshow(actionMapImage, interpolation="bilinear")
                 pixelActionMapAxes.set_xticks([])
                 pixelActionMapAxes.set_yticks([])
-                pixelActionMapAxes.set_title(f"{actionPixelCount} action pixels", fontsize=10)
+                pixelActionMapAxes.set_title(f"{actionPixelCount} action pixels", fontsize=8)
 
                 presentRewardPredictions = numpy.array(networkOutput['presentRewards'].data)
                 discountedRewardPredictions = numpy.array(networkOutput['discountFutureRewards'].data)
@@ -1977,7 +2021,7 @@ class DeepLearningAgent:
                     rewardPredictionsShrunk = skimage.measure.block_reduce(presentRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = presentRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minPresentReward, vmax=maxPresentReward)
-                    presentRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} present reward", fontsize=10)
+                    presentRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} present reward", fontsize=8)
                     mainFigure.colorbar(im, ax=presentRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
@@ -1993,7 +2037,7 @@ class DeepLearningAgent:
                     rewardPredictionsShrunk = skimage.measure.block_reduce(discountedRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = discountedRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minDiscountedReward, vmax=maxDiscountedReward)
-                    discountedRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} discounted reward", fontsize=10)
+                    discountedRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} discounted reward", fontsize=8)
                     mainFigure.colorbar(im, ax=discountedRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
@@ -2012,7 +2056,7 @@ class DeepLearningAgent:
                     rewardPredictionsShrunk = skimage.measure.block_reduce(totalRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = totalRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minTotalReward, vmax=maxTotalReward)
-                    totalRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} total reward", fontsize=10)
+                    totalRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} total reward", fontsize=8)
                     mainFigure.colorbar(im, ax=totalRewardPredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
@@ -2032,7 +2076,7 @@ class DeepLearningAgent:
                     advanagePredictionsShrunk = skimage.measure.block_reduce(advantagePredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = advantagePredictionAxes[actionIndex].imshow(advanagePredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minValue - advantageRange*0.1, vmax=maxValue)
-                    advantagePredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} advantage", fontsize=10)
+                    advantagePredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} advantage", fontsize=8)
                     mainFigure.colorbar(im, ax=advantagePredictionAxes[actionIndex], orientation='vertical')
 
                 for actionIndex, action in enumerate(self.actionsSorted):
@@ -2051,7 +2095,7 @@ class DeepLearningAgent:
                     actionProbabilityPredictionsShrunk = skimage.measure.block_reduce(actionProbabilities[0][actionIndex], (squareSize, squareSize), numpy.max)
 
                     im = actionProbabilityPredictionAxes[actionIndex].imshow(actionProbabilityPredictionsShrunk, cmap=mainColorMap, interpolation="nearest")
-                    actionProbabilityPredictionAxes[actionIndex].set_title(f"{action} {minValue:.1e} - {maxValue:.1e} prob", fontsize=10)
+                    actionProbabilityPredictionAxes[actionIndex].set_title(f"{action} {minValue:.1e} - {maxValue:.1e} prob", fontsize=8)
                     mainFigure.colorbar(im, ax=actionProbabilityPredictionAxes[actionIndex], orientation='vertical')
 
                 stampAxes.set_xticks([])
@@ -2061,13 +2105,13 @@ class DeepLearningAgent:
 
                 stampIm = stampAxes.imshow(numpy.array(stamp.data[0]).reshape([stampImageWidth, stampImageHeight]), cmap=greyColorMap, interpolation="nearest", vmin=minMemoryValue, vmax=maxMemoryValue)
                 mainFigure.colorbar(stampIm, ax=stampAxes, orientation='vertical')
-                stampAxes.set_title("Memory Stamp", fontsize=10)
+                stampAxes.set_title("Memory Stamp", fontsize=8)
 
                 stateValueAxes.set_xticks([])
                 stateValueAxes.set_yticks([])
                 stateValueIm = stateValueAxes.imshow([stateValue], cmap=mainColorMap, interpolation="nearest", vmin=minStateValue, vmax=maxStateValue)
                 mainFigure.colorbar(stateValueIm, ax=stateValueAxes, orientation='vertical')
-                stateValueAxes.set_title(f"State Value {float(stateValue[0]):.3f}", fontsize=10)
+                stateValueAxes.set_title(f"State Value {float(stateValue[0]):.3f}", fontsize=8)
 
                 # ax.grid()
                 mainFigure.tight_layout()
