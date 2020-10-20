@@ -918,7 +918,7 @@ class TrainingManager:
         averageTotalLoss = numpy.mean(self.trainingStep.totalLosses[-averageStart:])
         averageTotalRebalancedLoss = numpy.mean(self.trainingStep.totalRebalancedLosses[-averageStart:])
 
-        message = f"[{os.getpid()}] "
+        message = f"[{os.getpid()}] Losses:\n"
 
         message += f"    Moving Average Total Reward Loss: {averageTotalRewardLoss:.6f}\n"
         message += f"    Moving Average Present Reward Loss: {averagePresentRewardLoss:.6f}\n"
@@ -933,7 +933,7 @@ class TrainingManager:
         if self.config['enable_cursor_prediction_loss']:
             message += f"    Moving Average Predicted Cursor Loss: {averagePredictedCursorLoss:.6f}\n"
 
-        message += f"Moving Average Total Loss: {averageTotalLoss:.4f}\n"
+        message += f"    Moving Average Total Loss: {averageTotalLoss:.6f}"
         getLogger().info(message)
 
     @staticmethod

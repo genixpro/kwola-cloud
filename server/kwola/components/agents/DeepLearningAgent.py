@@ -1019,7 +1019,7 @@ class DeepLearningAgent:
                         reshapedAdjusted = reshapedAdjusted / reshapedSum
 
                         # Choose the random action. What we get back is an index for that action in the original array
-                        actionIndex = numpy.random.choice(range(len(self.actionsSorted) * height * width), p=reshapedAdjusted)
+                        actionIndex = numpy.random.choice(a=(len(self.actionsSorted) * height * width), p=reshapedAdjusted)
 
                         # Now we do a clever trick here to recover the x,y coordinates of the action and the index
                         # of the action type
@@ -1129,7 +1129,7 @@ class DeepLearningAgent:
 
         # Use the softmax function to rescale all the weights into probabilities, and then use those probabilities to
         # choose a random action map from the list.
-        chosenActionMapIndex = numpy.random.choice(range(len(sampleActionMaps)), p=scipy.special.softmax(actionMapWeights))
+        chosenActionMapIndex = numpy.random.choice(a=len(sampleActionMaps), p=scipy.special.softmax(actionMapWeights))
         chosenActionMap = sampleActionMaps[chosenActionMapIndex]
 
         # Here we choose a random x,y coordinate from within the bounds of the action map.

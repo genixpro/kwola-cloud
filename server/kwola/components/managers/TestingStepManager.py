@@ -224,9 +224,9 @@ class TestingStepManager:
             actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
 
             if actionDecisionTime > 15.0:
-                msg = f"Finished agent.nextBestActions after {actionDecisionTime} seconds. Subtimes: \n"
+                msg = f"Finished agent.nextBestActions after {actionDecisionTime} seconds. Subtimes:"
                 for key, time in times.items():
-                    msg += f"    {key}: {time:.5f}\n"
+                    msg += f"\n    {key}: {time:.5f}"
                 getLogger().info(msg)
 
         for plugin in self.testingStepPlugins:
@@ -382,7 +382,10 @@ class TestingStepManager:
 
             nextBestActionsTime = (datetime.now() - nextBestActionsStartTime).total_seconds()
             if nextBestActionsTime > 5:
-                getLogger().info(f"Finished agent.nextBestActions after {nextBestActionsTime} seconds. Subtimes: \n {pformat(times)}")
+                msg = f"Finished agent.nextBestActions after {nextBestActionsTime} seconds. Subtimes:"
+                for key, time in times.items():
+                    msg += f"\n    {key}: {time:.5f}"
+                getLogger().info(msg)
 
             resultFileDescriptor, resultFileName = tempfile.mkstemp()
             with open(resultFileDescriptor, 'wb') as file:
