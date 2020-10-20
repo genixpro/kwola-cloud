@@ -2519,6 +2519,21 @@ class DeepLearningAgent:
         # batches.
         self.optimizer.zero_grad()
 
+        actionProbRewardSquareEdgeHalfSize = self.variableWrapperFunc(torch.IntTensor, numpy.array([int(self.config['training_action_prob_reward_square_size'] / 2)]))
+        zeroTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([0]))
+        oneTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([1]))
+        oneTensorLong = self.variableWrapperFunc(torch.LongTensor, numpy.array([1]))
+        oneTensorFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([1]))
+        stateValueLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_state_value_weight']]))
+        presentRewardLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_present_reward_weight']]))
+        discountedFutureRewardLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_discounted_future_reward_weight']]))
+        advantageLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_advantage_weight']]))
+        actionProbabilityLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_action_probability_weight']]))
+        executionFeatureLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_execution_feature_weight']]))
+        executionTraceLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_execution_trace_weight']]))
+        cursorPredictionLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_cursor_prediction_weight']]))
+        rewardImpossibleAction = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['reward_impossible_action_threshold']]))
+
         for batch in batches:
             # Here we create torch tensors out of literally all possible data we will need to do any calculations.
             # The reason its done all upfront like this is because this allows the code to pipeline the data it
@@ -2528,20 +2543,6 @@ class DeepLearningAgent:
             pixelActionMaps = self.variableWrapperFunc(torch.IntTensor, numpy.array(batch['pixelActionMaps']))
             nextStatePixelActionMaps = self.variableWrapperFunc(torch.IntTensor, numpy.array(batch['nextPixelActionMaps']))
             discountRate = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['reward_discount_rate']]))
-            actionProbRewardSquareEdgeHalfSize = self.variableWrapperFunc(torch.IntTensor, numpy.array([int(self.config['training_action_prob_reward_square_size'] / 2)]))
-            zeroTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([0]))
-            oneTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([1]))
-            oneTensorLong = self.variableWrapperFunc(torch.LongTensor, numpy.array([1]))
-            oneTensorFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([1]))
-            stateValueLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_state_value_weight']]))
-            presentRewardLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_present_reward_weight']]))
-            discountedFutureRewardLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_discounted_future_reward_weight']]))
-            advantageLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_advantage_weight']]))
-            actionProbabilityLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_action_probability_weight']]))
-            executionFeatureLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_execution_feature_weight']]))
-            executionTraceLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_execution_trace_weight']]))
-            cursorPredictionLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_cursor_prediction_weight']]))
-            rewardImpossibleAction = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['reward_impossible_action_threshold']]))
             widthTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([batch["processedImages"].shape[3]]))
             heightTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([batch["processedImages"].shape[2]]))
             presentRewardsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch["presentRewards"]))
