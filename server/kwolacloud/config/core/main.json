@@ -8,8 +8,8 @@
   "advantage_convolution_kernel_size": 3,
   "advantage_convolution_padding": 1,
   "advantage_convolution_stride": 1,
-  "batch_size": 32,
-  "batches_per_iteration": 4,
+  "batch_size": 16,
+  "batches_per_iteration": 8,
   "custom_typing_action_strings": [],
   "data_compress_level": {
     "default": 0,
