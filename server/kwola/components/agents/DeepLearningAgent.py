@@ -316,11 +316,11 @@ class DeepLearningAgent:
 
         # Only add in the random number action if the user configured it
         if 'enableScrolling' in config and config['enableScrolling']:
-            self.actions['scrollUp'] = lambda x, y: ScrollingAction(type="scrollUp", x=x, y=y, direction="down")
+            self.actions['scrollUp'] = lambda x, y: ScrollingAction(type="scrollUp", x=x, y=y, direction="up")
             self.actionBaseWeights.append(config['random_weight_scrolling'])
             self.actionProbabilityBoostKeywords.append([])
 
-            self.actions['scrollDown'] = lambda x, y: ScrollingAction(type="scrollDown", x=x, y=y, direction="up")
+            self.actions['scrollDown'] = lambda x, y: ScrollingAction(type="scrollDown", x=x, y=y, direction="down")
             self.actionBaseWeights.append(config['random_weight_scrolling'])
             self.actionProbabilityBoostKeywords.append([])
 
