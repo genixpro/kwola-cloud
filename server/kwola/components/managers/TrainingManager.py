@@ -585,7 +585,7 @@ class TrainingManager:
                                        for traceWeightData in executionSessionTraceWeightDatas
                                        for traceId in traceWeightData.weights]
 
-            traceWeights = numpy.array([weight[0] for weight in tracesWithWeightObjects])
+            traceWeights = numpy.array([weight[0] for weight in tracesWithWeightObjects], dtype=numpy.float64)
 
             traceWeights = numpy.minimum(config['training_trace_selection_maximum_weight'], traceWeights)
             traceWeights = numpy.maximum(config['training_trace_selection_minimum_weight'], traceWeights)
@@ -602,7 +602,8 @@ class TrainingManager:
                 # a single training step.
                 traceWeights = traceWeights + numpy.arange(0, config['training_trace_selection_cache_not_full_state_one_side_bias'], len(traceWeights))
 
-            traceProbabilities = scipy.special.softmax(traceWeights)
+            traceWeightsSquared = traceWeights * traceWeights
+            traceProbabilities = numpy.array(traceWeightsSquared) / numpy.sum(traceWeightsSquared)
             traceIds = [weight[1] for weight in tracesWithWeightObjects]
 
             chosenExecutionTraceIds = numpy.random.choice(traceIds, [config['batch_size']], p=traceProbabilities)
