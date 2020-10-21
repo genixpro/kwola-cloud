@@ -431,7 +431,11 @@ class WebEnvironmentSession:
                         width: bounds.width - paddingLeft - paddingRight - 6,
                         height: bounds.height - paddingTop - paddingBottom - 6,
                         elementType: element.tagName.toLowerCase(),
-                        keywords: (element.textContent + " " + element.getAttribute("class") + " " + element.getAttribute("name") + " " + element.getAttribute("id") + " " + element.getAttribute("type")).toLowerCase() 
+                        keywords: (element.textContent + " " + element.getAttribute("class") + " " +
+                                element.getAttribute("name") + " " + element.getAttribute("id") + " " + 
+                                element.getAttribute("type") + " " + element.getAttribute("placeholder") + " " + 
+                                element.getAttribute("title") + " " + element.getAttribute("aria-label") + " " + 
+                                element.getAttribute("aria-placeholder") + " " + element.getAttribute("aria-roledescription")).toLowerCase() 
                     };
                     
                     if (element.tagName === "A"
