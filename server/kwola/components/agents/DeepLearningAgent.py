@@ -1149,11 +1149,12 @@ class DeepLearningAgent:
 
         # Here we are assigning a weight for each of the action maps available to the network to choose from.
         # The weights for the action maps are based on what type of HTML element that action map is representing.
-        actionMapWeights = numpy.array([self.elementBaseWeights.get(map.elementType, self.elementBaseWeights['other']) for map in sampleActionMaps]) / (numpy.array(sampleActionRecentActionCounts) + 1)
+        actionMapWeights = numpy.array([self.elementBaseWeights.get(map.elementType, self.elementBaseWeights['other']) for map in sampleActionMaps], dtype=numpy.float64) / (numpy.array(sampleActionRecentActionCounts) + 1)
 
-        # Use the softmax function to rescale all the weights into probabilities, and then use those probabilities to
+        # Scale all the weights so that they add up to 1, becoming probabilities. Then use those probabilities to
         # choose a random action map from the list.
-        chosenActionMapIndex = numpy.random.choice(a=len(sampleActionMaps), p=scipy.special.softmax(actionMapWeights))
+        actionMapProbabilities = actionMapWeights / numpy.sum(actionMapWeights)
+        chosenActionMapIndex = numpy.random.choice(a=len(sampleActionMaps), p=actionMapProbabilities)
         chosenActionMap = sampleActionMaps[chosenActionMapIndex]
 
         # Here we choose a random x,y coordinate from within the bounds of the action map.
