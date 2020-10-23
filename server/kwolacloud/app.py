@@ -35,7 +35,9 @@ cache = Cache(flaskApplication)
 application = flaskApplication
 
 # import models
-from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage, ApplicationSubscribeToSlack, ApplicationTestSlack, ApplicationIntegrateWithJIRA, ApplicationTestWebhook, NewApplicationTestImage
+from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, ApplicationImage, \
+    ApplicationSubscribeToSlack, ApplicationTestSlack, ApplicationIntegrateWithJIRA,\
+    ApplicationTestWebhook, NewApplicationTestImage, AttachCardToUser
 from .resources.TestingStepResource import TestingStepsGroup, TestingStepsSingle
 from .resources.ExecutionSessionResource import ExecutionSessionGroup, ExecutionSessionSingle, ExecutionSessionVideo, ExecutionSessionTraces, ExecutionSessionSingleTrace
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
@@ -58,6 +60,7 @@ api.add_resource(ApplicationSubscribeToSlack, '/api/application/<string:applicat
 api.add_resource(ApplicationIntegrateWithJIRA, '/api/application/<string:application_id>/jira')
 api.add_resource(ApplicationTestWebhook, '/api/application/<string:application_id>/webhook/<string:webhook_field>/test')
 api.add_resource(NewApplicationTestImage, '/api/application_test_image')
+api.add_resource(AttachCardToUser, '/api/attach_card')
 
 
 api.add_resource(TestingStepsGroup, '/api/testing_sequences')

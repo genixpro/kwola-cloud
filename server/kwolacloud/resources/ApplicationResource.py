@@ -16,12 +16,14 @@ from ..helpers.webhook import sendCustomerWebhook
 from ..datamodels.RecurringTestingTrigger import RecurringTestingTrigger
 from datetime import datetime
 from flask_restful import Resource, reqparse, abort
+from flask import jsonify
 from pprint import pprint
 from dateutil.relativedelta import relativedelta
 from ..config.config import loadConfiguration
 import flask
 import json
 import stripe
+import stripe.error
 import logging
 import copy
 import requests
@@ -37,6 +39,7 @@ import hashlib
 import cv2
 import numpy
 from ..helpers.auth0 import getUserProfileFromId
+from ..helpers.stripe import attachPaymentMethodToUserAccountIfNeeded
 
 
 class ApplicationGroup(Resource):
@@ -100,10 +103,7 @@ class ApplicationGroup(Resource):
         elif newApplication.package == "monthly":
             customer = stripe.Customer.retrieve(stripeCustomerId)
 
-            stripe.PaymentMethod.attach(
-                data['billingPaymentMethod'],
-                customer=stripeCustomerId,
-            )
+            attachPaymentMethodToUserAccountIfNeeded(data['billingPaymentMethod'], stripeCustomerId)
 
             priceId = self.configData['stripe']['monthlyPriceId']
 
@@ -122,10 +122,7 @@ class ApplicationGroup(Resource):
         elif newApplication.package == "once":
             customer = stripe.Customer.retrieve(stripeCustomerId)
 
-            stripe.PaymentMethod.attach(
-                data['billingPaymentMethod'],
-                customer=stripeCustomerId,
-            )
+            attachPaymentMethodToUserAccountIfNeeded(data['billingPaymentMethod'], stripeCustomerId)
 
             invoice = stripe.Invoice.create(
                 customer=customer.id
@@ -641,3 +638,27 @@ class NewApplicationTestImage(Resource):
         response = flask.make_response(screenshotData)
         response.headers['content-type'] = 'image/png'
         return response
+
+
+class AttachCardToUser(Resource):
+    def __init__(self):
+        self.configData = loadConfiguration()
+
+    def post(self):
+        user, claims = authenticate(returnAllClaims=True)
+        if user is None:
+            abort(401)
+
+        data = flask.request.get_json()
+
+        stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
+
+        try:
+            attachPaymentMethodToUserAccountIfNeeded(data['billingPaymentMethod'], stripeCustomerId)
+            return {}
+        except stripe.error.CardError as e:
+            response = jsonify({
+                "message": str(e)[str(e).index(":") + 1:]
+            })
+            response.status_code = 400
+            return response
