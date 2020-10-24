@@ -34,9 +34,12 @@ from ..components.managers.TrainingManager import TrainingManager
 from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+import matplotlib.pyplot as plt
 import billiard as multiprocessing
+import numpy
 import os
 import os.path
+import scipy.signal
 import time
 import torch.cuda
 import traceback
@@ -168,6 +171,140 @@ def updateModelSymbols(config, testingStepId):
 
     agent.save()
 
+
+def averageRewardForTestingStep(config, testingStepId):
+    testingStep = TestingStep.loadFromDisk(testingStepId, config)
+
+    stepRewards = []
+    for sessionId in testingStep.executionSessions:
+        session = ExecutionSession.loadFromDisk(sessionId, config)
+        if session.status == "completed":
+            stepRewards.append(session.totalReward)
+
+    if len(stepRewards) > 0:
+        return numpy.mean(stepRewards)
+    else:
+        return None
+
+
+def generateRewardChart(config):
+    testingSteps = sorted(
+        [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"],
+        key=lambda step: step.startTime, reverse=False)
+
+    rewardValueFutures = []
+
+    pool = multiprocessing.Pool(8)
+
+    for step in testingSteps:
+        rewardValueFutures.append(pool.apply_async(averageRewardForTestingStep, [config, step.id]))
+
+    rewardValues = [future.get() for future in rewardValueFutures if future.get() is not None]
+
+    fig, ax = plt.subplots()
+
+    rewardValues = scipy.signal.medfilt(rewardValues, kernel_size=9)
+
+    ax.plot(range(len(rewardValues)), rewardValues, color='green')
+
+    ax.set_ylim(0, 15)
+
+    ax.set(xlabel='Testing Step #', ylabel='Reward',
+           title='Reward per session')
+    ax.grid()
+
+    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/reward_chart.png")
+
+
+def averageCoverageForTestingStep(config, testingStepId):
+    testingStep = TestingStep.loadFromDisk(testingStepId, config)
+
+    stepCoverage = []
+    for sessionId in testingStep.executionSessions:
+        session = ExecutionSession.loadFromDisk(sessionId, config)
+        if session.status == "completed":
+            lastTrace = ExecutionTrace.loadFromDisk(session.executionTraces[-1], config)
+            stepCoverage.append(lastTrace.cumulativeBranchCoverage)
+
+    if len(stepCoverage) > 0:
+        return numpy.mean(stepCoverage)
+    else:
+        return None
+
+def generateCoverageChart(config):
+    testingSteps = sorted(
+        [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"],
+        key=lambda step: step.startTime, reverse=False)
+
+    coverageValueFutures = []
+
+    pool = multiprocessing.Pool(8)
+
+    for step in testingSteps:
+        coverageValueFutures.append(pool.apply_async(averageCoverageForTestingStep, [config, step.id]))
+
+    coverageValues = [future.get() for future in coverageValueFutures if future.get() is not None]
+
+    coverageValues = scipy.signal.medfilt(coverageValues, kernel_size=9)
+
+    fig, ax = plt.subplots()
+
+    ax.plot(range(len(coverageValues)), coverageValues, color='green')
+
+    ax.set(xlabel='Testing Step #', ylabel='Coverage',
+           title='Code Coverage')
+    ax.grid()
+
+    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/coverage_chart.png")
+
+def loadAllTrainingSteps(config, applicationId=None):
+    trainStepsDir = config.getKwolaUserDataDirectory("training_steps")
+
+    if config['data_serialization_method']['default'] == 'mongo':
+        return list(TrainingStep.objects(applicationId=applicationId).no_dereference())
+    else:
+        trainingSteps = []
+
+        for fileName in os.listdir(trainStepsDir):
+            if ".lock" not in fileName:
+                stepId = fileName
+                stepId = stepId.replace(".json", "")
+                stepId = stepId.replace(".gz", "")
+                stepId = stepId.replace(".pickle", "")
+
+                trainingSteps.append(TrainingStep.loadFromDisk(stepId, config))
+
+        return trainingSteps
+
+def generateLossChart(config):
+    trainingSteps = sorted(
+        [step for step in loadAllTrainingSteps(config) if step.status == "completed"],
+        key=lambda step: step.startTime, reverse=False)
+
+    lossValues = []
+
+    for step in trainingSteps:
+        lossValues.append(step.averageLoss)
+
+    fig, ax = plt.subplots()
+
+    lossValues = scipy.signal.medfilt(lossValues, kernel_size=9)
+
+    ax.plot(range(len(lossValues)), lossValues, color='green')
+
+    ax.set_ylim(0, 1)
+
+    ax.set(xlabel='Training Step #', ylabel='Reward',
+           title='Loss of model')
+    ax.grid()
+
+    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/loss_chart.png")
+
+def generateCharts(config):
+    generateRewardChart(config)
+    generateLossChart(config)
+    generateCoverageChart(config)
+
 def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     stepsCompleted = 0
 
@@ -256,6 +393,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
         trainingSequence.trainingStepsCompleted += 1
         trainingSequence.averageTimePerStep = (datetime.now() - stepStartTime).total_seconds() / stepsCompleted
         trainingSequence.saveToDisk(config)
+        generateCharts(config)
 
 
 def trainAgent(configDir, exitOnFail=False):

@@ -122,6 +122,7 @@ def mountTestingRunStorageDrive(applicationId):
         "annotated_videos",
         "bug_zip_files",
         "bugs",
+        "charts",
         "chrome_cache",
         "execution_traces",
         "javascript",
