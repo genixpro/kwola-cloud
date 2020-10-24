@@ -262,7 +262,7 @@ class DeepLearningAgent:
         if config['enableRandomNumberCommand']:
             self.actions['typeNumber'] = lambda x, y: TypeAction(type="typeNumber", x=x, y=y, label="number", text=self.randomString('-.0123456789$%', random.randint(1, 5)))
             self.actionBaseWeights.append(config['random_weight_type_number'])
-            self.actionProbabilityBoostKeywords.append(["num", "count", "int", "float"])
+            self.actionProbabilityBoostKeywords.append(["num", "count", "int", "float", 'amount'])
             hasTypingAction = True
 
         # Only add in the double click action if the user configured it

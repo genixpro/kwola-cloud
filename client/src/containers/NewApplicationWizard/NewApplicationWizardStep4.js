@@ -20,6 +20,10 @@ import PaymentDetailsSection from "../NewTestingRun/PaymentDetailsSection";
 import "./main.scss";
 import DoneIcon from '@material-ui/icons/Done';
 import CloseIcon from '@material-ui/icons/Close';
+import Promise from "bluebird";
+import LoaderButton from "../../components/LoaderButton";
+import Snackbar from "../../components/uielements/snackbar";
+import SnackAlert from "@material-ui/lab/Alert";
 
 
 class NewApplicationWizardStep4 extends Component {
@@ -53,10 +57,35 @@ class NewApplicationWizardStep4 extends Component {
 
     nextPageClicked()
     {
-        if (this.props.onNextPageClicked)
+        return axios.post("/attach_card", {billingPaymentMethod: this.props.application.billingPaymentMethod}).then((response) =>
         {
-            this.props.onNextPageClicked();
-        }
+            if (this.props.onNextPageClicked)
+            {
+                this.props.onNextPageClicked();
+            }
+
+            return Promise.fulfilled();
+        }, (error) =>
+        {
+            if (error.response)
+            {
+                this.setState({
+                    alertBoxSeverity:"warning",
+                    alertBox:true,
+                    alertBoxText: `Your credit card number is invalid. ${error.response.data.message}`
+                });
+            }
+            else
+            {
+                this.setState({
+                    alertBoxSeverity:"warning",
+                    alertBox:true,
+                    alertBoxText:'Your credit card number is invalid. Please check over the details and try again.'
+                });
+            }
+
+            return Promise.rejected();
+        });
     }
 
     previousPageClicked()
@@ -121,6 +150,11 @@ class NewApplicationWizardStep4 extends Component {
         return true;
     }
 
+    closeSnackbar()
+    {
+        this.setState({alertBox: false});
+    }
+
     render()
     {
         const { result } = this.state;
@@ -170,17 +204,30 @@ class NewApplicationWizardStep4 extends Component {
                             <span>
                                 <NavigateBeforeIcon style={{"position": "relative", "top": "6px"}} /> Previous&nbsp;&nbsp;&nbsp;</span>
                         </Button>
-                        <Button variant="contained"
-                                size="medium"
-                                color={"primary"}
-                                className={"wizard-button"}
-                                title={"Next Step"}
-                                disabled={!this.isValid()}
-                                onClick={(event) => this.nextPageClicked(event)}>
+
+                        <LoaderButton onClick={() => this.nextPageClicked()}
+                                      className={"wizard-button"}
+                                      title={"Next Step"}
+                                      disabled={!this.isValid()}>
                             <span>&nbsp;&nbsp;&nbsp;Next <NavigateNextIcon style={{"position": "relative", "top": "6px"}} /></span>
-                        </Button>
+                        </LoaderButton>
                     </div>
                 </Row>
+                <Snackbar
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center',
+                    }}
+                    onClick={() => this.closeSnackbar()}
+                    onClose={() => this.closeSnackbar()}
+                    open={this.state.alertBox}
+                    autoHideDuration={9000}
+                    message={this.state.alertBoxText ?? ""}
+                >
+                    <SnackAlert severity={this.state.alertBoxSeverity}>
+                        {this.state.alertBoxText ?? ""}
+                    </SnackAlert>
+                </Snackbar>
             </Papersheet>
         );
     }
