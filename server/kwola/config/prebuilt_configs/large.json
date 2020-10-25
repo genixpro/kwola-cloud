@@ -11,7 +11,9 @@
   "batch_size": 32,
   "batches_per_iteration": 4,
   "chart_generation_workers": 4,
-  "chart_generation_dataload_workers": 8,
+  "chart_generation_dataload_workers": 16,
+  "chart_enable_cumulative_coverage_chart": true,
+  "chart_enable_cumulative_errors_chart": true,
   "custom_typing_action_strings": [],
   "data_compress_level": {
     "default": 0

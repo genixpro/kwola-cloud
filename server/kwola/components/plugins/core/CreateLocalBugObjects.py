@@ -145,6 +145,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
         bugsDir = self.config.getKwolaUserDataDirectory("bugs")
 
         bugs = []
+        bugIds = set()
 
         for fileName in os.listdir(bugsDir):
             if ".lock" not in fileName and ".txt" not in fileName and ".mp4" not in fileName:
@@ -153,10 +154,13 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                 bugId = bugId.replace(".gz", "")
                 bugId = bugId.replace(".pickle", "")
 
-                bug = BugModel.loadFromDisk(bugId, self.config)
+                if bugId not in bugIds:
+                    bugIds.add(bugId)
 
-                if bug is not None:
-                    bugs.append(bug)
+                    bug = BugModel.loadFromDisk(bugId, self.config)
+
+                    if bug is not None:
+                        bugs.append(bug)
 
         return bugs
 

@@ -257,7 +257,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
         trainingSequence.trainingStepsCompleted += 1
         trainingSequence.averageTimePerStep = (datetime.now() - stepStartTime).total_seconds() / stepsCompleted
         trainingSequence.saveToDisk(config)
-        generateAllCharts(config)
+        generateAllCharts(config, enableCumulativeCoverage=bool(stepsCompleted % 10 == 0))
 
 
 def trainAgent(configDir, exitOnFail=False):
