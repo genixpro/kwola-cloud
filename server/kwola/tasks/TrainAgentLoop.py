@@ -170,8 +170,6 @@ def updateModelSymbols(config, testingStepId):
     agent.save()
 
 def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
-    stepsCompleted = 0
-
     stepStartTime = datetime.now()
 
     testStepsLaunched = 0
@@ -179,7 +177,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
     numberOfTrainingStepsInParallel = max(1, torch.cuda.device_count())
 
-    while stepsCompleted < config['training_steps_needed']:
+    while trainingSequence.trainingStepsCompleted < config['training_steps_needed']:
         with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_step'] + numberOfTrainingStepsInParallel)) as executor:
             coordinatorTempFileName = "kwola_distributed_coordinator-" + str(random.randint(0, 1e8))
             coordinatorTempFilePath = "/tmp/" + coordinatorTempFileName
@@ -250,14 +248,12 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
             getLogger().info(f"[{os.getpid()}] Completed one parallel training & testing step! Hooray!")
 
-            stepsCompleted += 1
-
             time.sleep(3)
 
         trainingSequence.trainingStepsCompleted += 1
-        trainingSequence.averageTimePerStep = (datetime.now() - stepStartTime).total_seconds() / stepsCompleted
+        trainingSequence.averageTimePerStep = (datetime.now() - stepStartTime).total_seconds() / trainingSequence.trainingStepsCompleted
         trainingSequence.saveToDisk(config)
-        generateAllCharts(config, enableCumulativeCoverage=bool(stepsCompleted % 10 == 0))
+        generateAllCharts(config, enableCumulativeCoverage=bool(trainingSequence.trainingStepsCompleted % 10 == 0))
 
 
 def trainAgent(configDir, exitOnFail=False):
@@ -285,12 +281,22 @@ def trainAgent(configDir, exitOnFail=False):
     environment.shutdown()
     del environment
 
-    trainingSequence = TrainingSequence(id=CustomIDField.generateNewUUID(TrainingSequence, config))
+    files = [fileName for fileName in os.listdir(config.getKwolaUserDataDirectory("training_sequences")) if ".lock" not in fileName]
 
-    trainingSequence.startTime = datetime.now()
-    trainingSequence.status = "running"
-    trainingSequence.trainingStepsCompleted = 0
-    trainingSequence.saveToDisk(config)
+    if len(files) == 0:
+        trainingSequence = TrainingSequence(id=CustomIDField.generateNewUUID(TrainingSequence, config))
+
+        trainingSequence.startTime = datetime.now()
+        trainingSequence.status = "running"
+        trainingSequence.trainingStepsCompleted = 0
+        trainingSequence.saveToDisk(config)
+    else:
+        sequenceId = files[0]
+        sequenceId = sequenceId.replace(".pickle", "")
+        sequenceId = sequenceId.replace(".json", "")
+        sequenceId = sequenceId.replace(".gz", "")
+
+        trainingSequence = TrainingSequence.loadFromDisk(sequenceId, config)
 
     testingSteps = [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"]
     if len(testingSteps) == 0:
