@@ -31,15 +31,13 @@ from ..datamodels.TrainingStepModel import TrainingStep
 from ..datamodels.ExecutionSessionModel import ExecutionSession
 from ..datamodels.ExecutionTraceModel import ExecutionTrace
 from ..components.managers.TrainingManager import TrainingManager
+from ..components.utils.charts import generateAllCharts
 from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-import matplotlib.pyplot as plt
 import billiard as multiprocessing
-import numpy
 import os
 import os.path
-import scipy.signal
 import time
 import torch.cuda
 import traceback
@@ -171,171 +169,6 @@ def updateModelSymbols(config, testingStepId):
 
     agent.save()
 
-
-def averageRewardForTestingStep(config, testingStepId):
-    testingStep = TestingStep.loadFromDisk(testingStepId, config)
-
-    stepRewards = []
-    for sessionId in testingStep.executionSessions:
-        session = ExecutionSession.loadFromDisk(sessionId, config)
-        if session.status == "completed":
-            stepRewards.append(session.totalReward)
-
-    if len(stepRewards) > 0:
-        return numpy.mean(stepRewards)
-    else:
-        return None
-
-
-def generateRewardChart(config):
-    testingSteps = sorted(
-        [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"],
-        key=lambda step: step.startTime, reverse=False)
-
-    rewardValueFutures = []
-
-    pool = multiprocessing.Pool(8)
-
-    for step in testingSteps:
-        rewardValueFutures.append(pool.apply_async(averageRewardForTestingStep, [config, step.id]))
-
-    rewardValues = [future.get() for future in rewardValueFutures if future.get() is not None]
-
-    fig, ax = plt.subplots()
-
-    rewardValues = scipy.signal.medfilt(rewardValues, kernel_size=9)
-
-    ax.plot(range(len(rewardValues)), rewardValues, color='green')
-
-    ax.set_ylim(0, 15)
-
-    ax.set(xlabel='Testing Step #', ylabel='Reward',
-           title='Reward per session')
-    ax.grid()
-
-    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/reward_chart.png")
-
-    pool.close()
-    pool.join()
-
-
-def averageCoverageForTestingStep(config, testingStepId):
-    testingStep = TestingStep.loadFromDisk(testingStepId, config)
-
-    stepCoverage = []
-    for sessionId in testingStep.executionSessions:
-        session = ExecutionSession.loadFromDisk(sessionId, config)
-        if session.status == "completed":
-            lastTrace = ExecutionTrace.loadFromDisk(session.executionTraces[-1], config)
-            stepCoverage.append(lastTrace.cumulativeBranchCoverage)
-
-    if len(stepCoverage) > 0:
-        return numpy.mean(stepCoverage)
-    else:
-        return None
-
-def generateCoverageChart(config):
-    testingSteps = sorted(
-        [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"],
-        key=lambda step: step.startTime, reverse=False)
-
-    coverageValueFutures = []
-
-    pool = multiprocessing.Pool(8)
-
-    for step in testingSteps:
-        coverageValueFutures.append(pool.apply_async(averageCoverageForTestingStep, [config, step.id]))
-
-    coverageValues = [future.get() for future in coverageValueFutures if future.get() is not None]
-
-    coverageValues = scipy.signal.medfilt(coverageValues, kernel_size=9)
-
-    fig, ax = plt.subplots()
-
-    ax.plot(range(len(coverageValues)), coverageValues, color='green')
-
-    ax.set(xlabel='Testing Step #', ylabel='Coverage',
-           title='Code Coverage')
-    ax.grid()
-
-    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/coverage_chart.png")
-
-    pool.close()
-    pool.join()
-
-def findAllTrainingStepIds(config, applicationId=None):
-    trainStepsDir = config.getKwolaUserDataDirectory("training_steps")
-
-    if config['data_serialization_method']['default'] == 'mongo':
-        return [step.id for step in TrainingStep.objects(applicationId=applicationId).no_dereference().only("id")]
-    else:
-        trainingStepIds = []
-
-        for fileName in os.listdir(trainStepsDir):
-            if ".lock" not in fileName:
-                stepId = fileName
-                stepId = stepId.replace(".json", "")
-                stepId = stepId.replace(".gz", "")
-                stepId = stepId.replace(".pickle", "")
-
-                trainingStepIds.append(stepId)
-
-        return trainingStepIds
-
-def loadTrainingStepLossData(config, trainingStepId, attribute):
-    step = TrainingStep.loadFromDisk(trainingStepId, config)
-    losses = getattr(step, attribute)
-    if len(losses) > 0:
-        return numpy.mean(losses), step.startTime, step.status
-    else:
-        return 0, step.startTime, step.status
-
-def generateLossChart(config, attribute, title, fileName):
-    trainingStepIds = findAllTrainingStepIds(config)
-
-    pool = multiprocessing.Pool(8)
-
-    lossValueFutures = []
-    for id in trainingStepIds:
-        lossValueFutures.append(pool.apply_async(loadTrainingStepLossData, [config, id, attribute]))
-
-    lossValuesSorted = sorted(
-        [future.get() for future in lossValueFutures if future.get()[2] == "completed"],
-        key=lambda result: result[1], reverse=False)
-
-    lossValues = [result[0] for result in lossValuesSorted]
-
-    fig, ax = plt.subplots()
-
-    lossValues = scipy.signal.medfilt(lossValues, kernel_size=9)
-
-    ax.plot(range(len(lossValues)), lossValues, color='green')
-
-    ax.set_ylim(0, numpy.percentile(lossValues, 99))
-
-    ax.set(xlabel='Training Step #', ylabel='Reward', title=title)
-    ax.grid()
-
-    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/{fileName}")
-
-    pool.close()
-    pool.join()
-
-def generateCharts(config):
-    pool = multiprocessing.Pool(4)
-
-    pool.apply_async(generateRewardChart, [config])
-    pool.apply_async(generateCoverageChart, [config])
-    pool.apply_async(generateLossChart, [config, 'totalLosses', "Total Loss", 'total_loss_chart.png'])
-    pool.apply_async(generateLossChart, [config, 'presentRewardLosses', "Present Reward Loss", 'present_reward_loss_chart.png'])
-    pool.apply_async(generateLossChart, [config, 'discountedFutureRewardLosses', "Discounted Future Reward Loss", 'discounted_future_reward_loss_chart.png'])
-    pool.apply_async(generateLossChart, [config, 'stateValueLosses', "State Value Loss", 'state_value_loss_chart.png'])
-    pool.apply_async(generateLossChart, [config, 'advantageLosses', "Advantage Los", 'advantage_loss_chart.png'])
-    pool.apply_async(generateLossChart, [config, 'actionProbabilityLosses', "Action Probability Loss", 'action_probability_loss_chart.png'])
-
-    pool.close()
-    pool.join()
-
 def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     stepsCompleted = 0
 
@@ -347,6 +180,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     numberOfTrainingStepsInParallel = max(1, torch.cuda.device_count())
 
     while stepsCompleted < config['training_steps_needed']:
+        generateAllCharts(config)
         with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_step'] + numberOfTrainingStepsInParallel)) as executor:
             coordinatorTempFileName = "kwola_distributed_coordinator-" + str(random.randint(0, 1e8))
             coordinatorTempFilePath = "/tmp/" + coordinatorTempFileName
@@ -424,7 +258,6 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
         trainingSequence.trainingStepsCompleted += 1
         trainingSequence.averageTimePerStep = (datetime.now() - stepStartTime).total_seconds() / stepsCompleted
         trainingSequence.saveToDisk(config)
-        generateCharts(config)
 
 
 def trainAgent(configDir, exitOnFail=False):

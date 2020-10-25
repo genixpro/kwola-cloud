@@ -10,6 +10,8 @@
   "advantage_convolution_stride": 1,
   "batch_size": 8,
   "batches_per_iteration": 16,
+  "chart_generation_workers": 4,
+  "chart_generation_dataload_workers": 8,
   "custom_typing_action_strings": [],
   "data_compress_level": {
     "default": 0

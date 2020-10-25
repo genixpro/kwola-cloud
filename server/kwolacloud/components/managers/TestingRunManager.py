@@ -24,6 +24,7 @@ from kwola.components.utils.retry import autoretry
 from kwolacloud.components.utils.KubernetesJob import KubernetesJob
 from kwolacloud.helpers.slack import postToCustomerSlack, postToKwolaSlack
 from kwolacloud.helpers.webhook import sendCustomerWebhook
+from kwola.components.utils.charts import generateAllCharts
 from pprint import pformat
 import datetime
 import google
@@ -326,6 +327,8 @@ class TestingRunManager:
 
         self.run.save()
 
+        return len(jobsToRemove)
+
     def createTrainingStepKubeJob(self, referenceId):
         job = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
                                                data={
@@ -374,6 +377,7 @@ class TestingRunManager:
         logging.info(f"Training step has started with jobId {jobId}")
 
     def reviewRunningTrainingSteps(self):
+        didTrainingStepFinish = False
         if self.run.runningTrainingStepJobId is not None:
             job = self.createTrainingStepKubeJob(self.run.runningTrainingStepJobId)
 
@@ -389,10 +393,12 @@ class TestingRunManager:
                 self.run.runningTrainingStepJobId = None
                 self.run.runningTrainingStepStartTime = None
                 self.run.save()
+                didTrainingStepFinish = True
             elif job.ready():
                 logging.info(f"Finished a training step for run {self.run.id}")
                 self.run.runningTrainingStepJobId = None
                 self.run.runningTrainingStepStartTime = None
+                didTrainingStepFinish = True
 
                 if job.successful():
                     resultObj = job.getResult()
@@ -423,6 +429,7 @@ class TestingRunManager:
                 job.cleanup()
                 self.run.runningTrainingStepJobId = None
                 self.run.runningTrainingStepStartTime = None
+                didTrainingStepFinish = True
                 self.run.failedTrainingSteps += 1
             elif not job.ready() and job.getResult() is not None:
                 resultObj = job.getResult()
@@ -434,6 +441,7 @@ class TestingRunManager:
                 if timePassed > 60:
                     self.run.runningTrainingStepJobId = None
                     self.run.runningTrainingStepStartTime = None
+                    didTrainingStepFinish = True
 
                     if resultObj.result is None or not resultObj.result['success']:
                         errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. It also appears to have hung on exit and had to be forcibly shut down."
@@ -453,6 +461,8 @@ class TestingRunManager:
                     job.cleanup()
 
             self.run.save()
+
+        return int(didTrainingStepFinish)
 
     def isTestingFailureConditionsMet(self):
         failedSessions = self.run.failedTestingSteps * self.config['web_session_parallel_execution_sessions']
@@ -577,17 +587,20 @@ class TestingRunManager:
             while ((self.run.testingSessionsCompleted < self.run.configuration.totalTestingSessions
                     and not self.isTestingFailureConditionsMet())
                    or len(self.run.runningTestingStepJobIds) > 0) and not self.shouldExit:
+                countFinished = self.reviewRunningTestingSteps()
                 self.launchTestingStepsIfNeeded()
-                self.reviewRunningTestingSteps()
 
+                countFinished += self.reviewRunningTrainingSteps()
                 self.launchTrainingStepIfNeeded()
-                self.reviewRunningTrainingSteps()
 
                 self.updateModelSymbols(self.config, self.run.testingStepsNeedingSymbolProcessing)
                 self.run.testingStepsNeedingSymbolProcessing = []
 
                 # save on every step - just in case it was changed.
                 self.run.save()
+
+                if countFinished > 0:
+                    generateAllCharts(self.config, applicationId=self.run.applicationId)
 
                 time.sleep(60)
 
@@ -613,20 +626,26 @@ class TestingRunManager:
             self.updateModelSymbols(self.config, self.run.testingStepsNeedingSymbolProcessing)
             self.run.testingStepsNeedingSymbolProcessing = []
 
+            generateAllCharts(self.config, applicationId=self.run.applicationId)
+
             self.run.save()
 
             while ((self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded
                     and not self.isTrainingFailureConditionsMet())
                    or self.run.runningTrainingStepJobId is not None) and not self.shouldExit:
+                countFinished = self.reviewRunningTrainingSteps()
                 self.launchTrainingStepIfNeeded()
-                self.reviewRunningTrainingSteps()
 
                 # save on every step - just in case it was changed.
                 self.run.save()
 
+                if countFinished > 0:
+                    generateAllCharts(self.config, applicationId=self.run.applicationId)
+
                 time.sleep(60)
 
             self.reviewRunningTrainingSteps()
+            generateAllCharts(self.config, applicationId=self.run.applicationId)
 
             if self.isTrainingFailureConditionsMet():
                 self.run.didTrainingFail = True
