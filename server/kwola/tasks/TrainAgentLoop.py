@@ -215,6 +215,9 @@ def generateRewardChart(config):
 
     fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/reward_chart.png")
 
+    pool.close()
+    pool.join()
+
 
 def averageCoverageForTestingStep(config, testingStepId):
     testingStep = TestingStep.loadFromDisk(testingStepId, config)
@@ -257,13 +260,16 @@ def generateCoverageChart(config):
 
     fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/coverage_chart.png")
 
-def loadAllTrainingSteps(config, applicationId=None):
+    pool.close()
+    pool.join()
+
+def findAllTrainingStepIds(config, applicationId=None):
     trainStepsDir = config.getKwolaUserDataDirectory("training_steps")
 
     if config['data_serialization_method']['default'] == 'mongo':
-        return list(TrainingStep.objects(applicationId=applicationId).no_dereference())
+        return [step.id for step in TrainingStep.objects(applicationId=applicationId).no_dereference().only("id")]
     else:
-        trainingSteps = []
+        trainingStepIds = []
 
         for fileName in os.listdir(trainStepsDir):
             if ".lock" not in fileName:
@@ -272,19 +278,32 @@ def loadAllTrainingSteps(config, applicationId=None):
                 stepId = stepId.replace(".gz", "")
                 stepId = stepId.replace(".pickle", "")
 
-                trainingSteps.append(TrainingStep.loadFromDisk(stepId, config))
+                trainingStepIds.append(stepId)
 
-        return trainingSteps
+        return trainingStepIds
 
-def generateLossChart(config, attribute, fileName):
-    trainingSteps = sorted(
-        [step for step in loadAllTrainingSteps(config) if step.status == "completed"],
-        key=lambda step: step.startTime, reverse=False)
+def loadTrainingStepLossData(config, trainingStepId, attribute):
+    step = TrainingStep.loadFromDisk(trainingStepId, config)
+    losses = getattr(step, attribute)
+    if len(losses) > 0:
+        return numpy.mean(losses), step.startTime, step.status
+    else:
+        return 0, step.startTime, step.status
 
-    lossValues = []
+def generateLossChart(config, attribute, title, fileName):
+    trainingStepIds = findAllTrainingStepIds(config)
 
-    for step in trainingSteps:
-        lossValues.append(numpy.mean(getattr(step, attribute)))
+    pool = multiprocessing.Pool(8)
+
+    lossValueFutures = []
+    for id in trainingStepIds:
+        lossValueFutures.append(pool.apply_async(loadTrainingStepLossData, [config, id, attribute]))
+
+    lossValuesSorted = sorted(
+        [future.get() for future in lossValueFutures if future.get()[2] == "completed"],
+        key=lambda result: result[1], reverse=False)
+
+    lossValues = [result[0] for result in lossValuesSorted]
 
     fig, ax = plt.subplots()
 
@@ -294,21 +313,28 @@ def generateLossChart(config, attribute, fileName):
 
     ax.set_ylim(0, numpy.percentile(lossValues, 99))
 
-    ax.set(xlabel='Training Step #', ylabel='Reward',
-           title='Loss of model')
+    ax.set(xlabel='Training Step #', ylabel='Reward', title=title)
     ax.grid()
 
     fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/{fileName}")
 
+    pool.close()
+    pool.join()
+
 def generateCharts(config):
-    generateRewardChart(config)
-    generateCoverageChart(config)
-    generateLossChart(config, 'totalLosses', 'total_loss_chart.png')
-    generateLossChart(config, 'presentRewardLosses', 'present_reward_loss_chart.png')
-    generateLossChart(config, 'discountedFutureRewardLosses', 'discounted_future_reward_chart.png')
-    generateLossChart(config, 'stateValueLosses', 'state_value_loss_chart.png')
-    generateLossChart(config, 'advantageLosses', 'advantage_loss_chart.png')
-    generateLossChart(config, 'actionProbabilityLosses', 'action_probability_chart.png')
+    pool = multiprocessing.Pool(4)
+
+    pool.apply_async(generateRewardChart, [config])
+    pool.apply_async(generateCoverageChart, [config])
+    pool.apply_async(generateLossChart, [config, 'totalLosses', "Total Loss", 'total_loss_chart.png'])
+    pool.apply_async(generateLossChart, [config, 'presentRewardLosses', "Present Reward Loss", 'present_reward_loss_chart.png'])
+    pool.apply_async(generateLossChart, [config, 'discountedFutureRewardLosses', "Discounted Future Reward Loss", 'discounted_future_reward_loss_chart.png'])
+    pool.apply_async(generateLossChart, [config, 'stateValueLosses', "State Value Loss", 'state_value_loss_chart.png'])
+    pool.apply_async(generateLossChart, [config, 'advantageLosses', "Advantage Los", 'advantage_loss_chart.png'])
+    pool.apply_async(generateLossChart, [config, 'actionProbabilityLosses', "Action Probability Loss", 'action_probability_loss_chart.png'])
+
+    pool.close()
+    pool.join()
 
 def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     stepsCompleted = 0
