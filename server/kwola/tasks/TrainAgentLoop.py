@@ -180,7 +180,6 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     numberOfTrainingStepsInParallel = max(1, torch.cuda.device_count())
 
     while stepsCompleted < config['training_steps_needed']:
-        generateAllCharts(config)
         with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_step'] + numberOfTrainingStepsInParallel)) as executor:
             coordinatorTempFileName = "kwola_distributed_coordinator-" + str(random.randint(0, 1e8))
             coordinatorTempFilePath = "/tmp/" + coordinatorTempFileName
@@ -258,6 +257,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
         trainingSequence.trainingStepsCompleted += 1
         trainingSequence.averageTimePerStep = (datetime.now() - stepStartTime).total_seconds() / stepsCompleted
         trainingSequence.saveToDisk(config)
+        generateAllCharts(config)
 
 
 def trainAgent(configDir, exitOnFail=False):
