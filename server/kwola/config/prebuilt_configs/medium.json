@@ -166,7 +166,7 @@
   "reward_action_failure": -2e-2,
   "reward_action_success": 0,
   "reward_code_executed": 1e-3,
-  "reward_discount_rate": 0,
+  "reward_discount_rate": 0.85,
   "reward_impossible_action": -1e1,
   "reward_impossible_action_threshold": -9.9e0,
   "reward_log_output": 1e-3,
