@@ -6,9 +6,10 @@ from kwola.components.utils.debug_video import createDebugVideoSubProcess
 from kwola.components.plugins.base.TestingStepPluginBase import TestingStepPluginBase
 from kwolacloud.datamodels.id_utility import generateKwolaId
 from datetime import datetime
+from kwola.components.utils.file import loadKwolaFileData, saveKwolaFileData
 import atexit
 import concurrent.futures
-import multiprocessing
+import billiard as multiprocessing
 import os
 
 
@@ -109,9 +110,8 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
             if not duplicate:
                 bugVideoFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".mp4")
-                with open(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), "rb") as origFile:
-                    with open(bugVideoFilePath, 'wb') as cloneFile:
-                        cloneFile.write(origFile.read())
+                videoData = loadKwolaFileData(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), self.config)
+                saveKwolaFileData(bugVideoFilePath, videoData, self.config)
 
                 getLogger().info(f"\n\n[{os.getpid()}] Bug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
 

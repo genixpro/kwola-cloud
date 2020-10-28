@@ -22,7 +22,7 @@ from ..helpers.slack import SlackLogHandler
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from google.cloud import storage
 import json
-import multiprocessing
+import billiard as multiprocessing
 from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
 # Do not remove the following unused imports, as they are actually required

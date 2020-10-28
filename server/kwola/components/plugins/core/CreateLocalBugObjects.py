@@ -2,11 +2,12 @@ from kwola.config.logger import getLogger
 from kwola.datamodels.BugModel import BugModel
 from kwola.datamodels.CustomIDField import CustomIDField
 from ...utils.debug_video import createDebugVideoSubProcess
+from ...utils.file import loadKwolaFileData, saveKwolaFileData
 from ..base.TestingStepPluginBase import TestingStepPluginBase
 from datetime import datetime
 import atexit
 import concurrent.futures
-import multiprocessing
+import billiard as multiprocessing
 import os
 
 
@@ -103,13 +104,14 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                 bug.saveToDisk(self.config)
 
                 bugTextFile = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".txt")
-                with open(bugTextFile, "wb") as file:
-                    file.write(bytes(bug.generateBugText(), "utf8"))
+
+                saveKwolaFileData(bugTextFile, bytes(bug.generateBugText(), "utf8"), self.config)
 
                 bugVideoFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".mp4")
-                with open(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), "rb") as origFile:
-                    with open(bugVideoFilePath, 'wb') as cloneFile:
-                        cloneFile.write(origFile.read())
+                origVideoFilePath = os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4')
+                origVideoFileData = loadKwolaFileData(origVideoFilePath, self.config)
+
+                saveKwolaFileData(bugVideoFilePath, origVideoFileData, self.config)
 
                 getLogger().info(f"\n\n[{os.getpid()}] Bug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
 

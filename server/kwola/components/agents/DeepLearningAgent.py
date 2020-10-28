@@ -28,6 +28,7 @@ from ...datamodels.actions.TypeAction import TypeAction
 from ...datamodels.actions.ScrollingAction import ScrollingAction
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
+from ..utils.file import loadKwolaFileData, saveKwolaFileData
 from .TraceNet import TraceNet
 from ..utils.video import chooseBestFfmpegVideoCodec
 from pprint import pprint
@@ -35,6 +36,7 @@ from datetime import datetime
 import concurrent.futures
 import copy
 import cv2
+import io
 import random
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -61,7 +63,7 @@ import torch.nn as nn
 import torch.optim as optim
 import traceback
 import pickle
-import multiprocessing
+import billiard as multiprocessing
 import copy
 from ..utils.retry import autoretry
 from faker import Faker
@@ -384,12 +386,17 @@ class DeepLearningAgent:
         """
         self.loadSymbolMap()
 
-        # Only load the model if we actually see the file on disk.
-        if os.path.exists(self.modelPath):
+        fileData = loadKwolaFileData(self.modelPath, self.config, printErrorOnFailure=False)
+        if fileData is None:
+            # Initialize a fresh model if we are unable to load a model from disk.
+            self.model.initialize()
+        else:
+            buffer = io.BytesIO(fileData)
+
             # Depending on whether GPU is turned on, we try load the state dict
             # directly into GPU / CUDA memory.
             device = self.getTorchDevices()[0]
-            stateDict = torch.load(self.modelPath, map_location=device)
+            stateDict = torch.load(buffer, map_location=device)
 
             # Load the state dictionary into the model itself.
             self.model.load_state_dict(stateDict)
@@ -400,9 +407,6 @@ class DeepLearningAgent:
             # for the updates made to the main model.
             if self.targetNetwork is not None:
                 self.targetNetwork.load_state_dict(stateDict)
-        else:
-            # This is a fresh network, initialize it.
-            self.model.initialize()
 
     @autoretry()
     def save(self, saveName=""):
@@ -417,22 +421,24 @@ class DeepLearningAgent:
         if saveName:
             saveName = "_" + saveName
 
-        torch.save(self.model.state_dict(), self.modelPath + saveName)
+        buffer = io.BytesIO()
+        torch.save(self.model.state_dict(), buffer)
+
+        saveKwolaFileData(self.modelPath + saveName, buffer.getvalue(), self.config)
 
         self.saveSymbolMap()
 
-    @autoretry(ignoreFailure=True, onFailure=lambda self: getLogger().error(f"Failed to load symbol file for the deep learning agent. Tried path {self.symbolMapPath}. Got error: {traceback.format_exc()}"))
     def loadSymbolMap(self):
         # We also need to load the symbol map - this is the mapping between symbol strings
         # and their index values within the embedding structure
-        if os.path.exists(self.symbolMapPath):
-            with open(self.symbolMapPath, 'rb') as f:
-                (self.symbolMap, self.knownFiles, self.nextSymbolIndex) = pickle.load(f)
+        symbolMapData = loadKwolaFileData(self.symbolMapPath, self.config, printErrorOnFailure=True)
+        if symbolMapData is not None:
+            (self.symbolMap, self.knownFiles, self.nextSymbolIndex) = pickle.loads(symbolMapData)
 
     @autoretry()
     def saveSymbolMap(self):
-        with open(self.symbolMapPath, 'wb') as f:
-            pickle.dump((self.symbolMap, self.knownFiles, self.nextSymbolIndex), f, protocol=pickle.HIGHEST_PROTOCOL)
+        fileData = pickle.dumps((self.symbolMap, self.knownFiles, self.nextSymbolIndex), protocol=pickle.HIGHEST_PROTOCOL)
+        saveKwolaFileData(self.symbolMapPath, fileData, self.config)
 
     def getTorchDevices(self):
         """
@@ -1342,7 +1348,7 @@ class DeepLearningAgent:
         return discountedFutureRewards
 
     @staticmethod
-    def readVideoFrames(videoFilePath):
+    def readVideoFrames(videoFilePath, config):
         """
         This method reads a given video file into a numpy array of images that can then be further manipulated
 
@@ -1350,9 +1356,16 @@ class DeepLearningAgent:
         :return: A list containing numpy arrays, a single numpy array for each frame in the video.
         """
 
+        data = loadKwolaFileData(videoFilePath, config)
+        localTempDescriptor, localTemp = tempfile.mkstemp()
+        with open(localTempDescriptor, 'wb') as f:
+            f.write(data)
+
         # Use OpenCV to read the video file. The extra big dependency here is annoying but I haven't dug deeply
         # into other libraries that can load videos into numpy arrays
-        cap = cv2.VideoCapture(videoFilePath)
+        cap = cv2.VideoCapture(localTemp)
+
+        os.unlink(localTemp)
 
         rawImages = []
 
@@ -1408,7 +1421,7 @@ class DeepLearningAgent:
         """
         videoPath = self.config.getKwolaUserDataDirectory("videos")
 
-        rawImages = DeepLearningAgent.readVideoFrames(os.path.join(videoPath, f"{str(executionSession.id)}.mp4"))
+        rawImages = DeepLearningAgent.readVideoFrames(os.path.join(videoPath, f"{str(executionSession.id)}.mp4"), self.config)
 
         executionTraces = [ExecutionTrace.loadFromDisk(traceId, self.config, applicationId=executionSession.applicationId) for traceId in executionSession.executionTraces]
 
@@ -2335,8 +2348,8 @@ class DeepLearningAgent:
 
         # In this section, we load the video and all of the execution traces from the disk
         # at the same time.
-        videoPath = self.config.getKwolaUserDataDirectory("videos")
-        for rawImage, traceId in zip(DeepLearningAgent.readVideoFrames(os.path.join(videoPath, f'{str(executionSession.id)}.mp4')), executionSession.executionTraces):
+        videoPath = os.path.join(self.config.getKwolaUserDataDirectory("videos"), f'{str(executionSession.id)}.mp4')
+        for rawImage, traceId in zip(DeepLearningAgent.readVideoFrames(videoPath, self.config), executionSession.executionTraces):
             trace = ExecutionTrace.loadFromDisk(traceId, self.config, applicationId=executionSession.applicationId)
             # Occasionally if your doing a lot of R&D and killing the code a lot,
             # the software will save a broken file to disk. When this happens, you

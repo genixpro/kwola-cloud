@@ -7,9 +7,11 @@ from ...datamodels.ExecutionTraceModel import ExecutionTrace
 from ...datamodels.TrainingStepModel import TrainingStep
 from ...datamodels.BugModel import BugModel
 from ...config.logger import getLogger
+from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import numpy
 import os
 import scipy.signal
+import tempfile
 
 
 def averageRewardForTestingStep(config, testingStepId):
@@ -53,7 +55,13 @@ def generateRewardChart(config, applicationId):
            title='Reward per session')
     ax.grid()
 
-    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/reward_chart.png")
+    _, localFilePath = tempfile.mkstemp()
+    fig.savefig(localFilePath)
+    with open(localFilePath, 'rb') as f:
+        filePath = f"{config.getKwolaUserDataDirectory('charts')}/reward_chart.png"
+        saveKwolaFileData(filePath, f.read(), config)
+    os.unlink(localFilePath)
+
 
     pool.close()
     pool.join()
@@ -98,7 +106,12 @@ def generateCoverageChart(config, applicationId):
            title='Code Coverage')
     ax.grid()
 
-    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/coverage_chart.png")
+    _, localFilePath = tempfile.mkstemp()
+    fig.savefig(localFilePath)
+    with open(localFilePath, 'rb') as f:
+        filePath = f"{config.getKwolaUserDataDirectory('charts')}/coverage_chart.png"
+        saveKwolaFileData(filePath, f.read(), config)
+    os.unlink(localFilePath)
 
     pool.close()
     pool.join()
@@ -156,7 +169,12 @@ def generateLossChart(config, applicationId, attribute, title, fileName):
     ax.set(xlabel='Training Step #', ylabel='Reward', title=title)
     ax.grid()
 
-    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/{fileName}")
+    _, localFilePath = tempfile.mkstemp()
+    fig.savefig(localFilePath)
+    with open(localFilePath, 'rb') as f:
+        filePath = f"{config.getKwolaUserDataDirectory('charts')}/{fileName}"
+        saveKwolaFileData(filePath, f.read(), config)
+    os.unlink(localFilePath)
 
     pool.close()
     pool.join()
@@ -236,7 +254,12 @@ def generateCumulativeCoverageChart(config, applicationId=None):
     ax.set(xlabel='Testing Steps Completed (x1000)', ylabel='Cumulative Coverage', title="Cumulative Coverage Chart")
     ax.grid()
 
-    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/cumulative_coverage_chart.png")
+    _, localFilePath = tempfile.mkstemp()
+    fig.savefig(localFilePath)
+    with open(localFilePath, 'rb') as f:
+        filePath = f"{config.getKwolaUserDataDirectory('charts')}/cumulative_coverage_chart.png"
+        saveKwolaFileData(filePath, f.read(), config)
+    os.unlink(localFilePath)
 
     getLogger().info(f"Best Cumulative Coverage: {numpy.max(cumulativeCoverageValues)}")
 
@@ -295,7 +318,13 @@ def generateCumulativeErrorsFoundChart(config, applicationId):
     ax.set(xlabel='Testing Step #', ylabel='Total Errors Found', title='Cumulative Errors Found')
     ax.grid()
 
-    fig.savefig(f"{config.getKwolaUserDataDirectory('charts')}/errors_found.png")
+
+    _, localFilePath = tempfile.mkstemp()
+    fig.savefig(localFilePath)
+    with open(localFilePath, 'rb') as f:
+        filePath = f"{config.getKwolaUserDataDirectory('charts')}/errors_found.png"
+        saveKwolaFileData(filePath, f.read(), config)
+    os.unlink(localFilePath)
 
     pool.close()
     pool.join()

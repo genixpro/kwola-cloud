@@ -37,6 +37,7 @@ from kwola.components.plugins.core.LogSessionRewards import LogSessionRewards
 from kwola.components.plugins.core.PrecomputeSessionsForSampleCache import PrecomputeSessionsForSampleCache
 from kwola.components.plugins.core.RecordScreenshots import RecordScreenshots
 from kwola.errors import ProxyVerificationFailed
+from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import atexit
 import billiard as multiprocessing
 import numpy
@@ -65,6 +66,10 @@ class TestingStepManager:
         self.stepsRemaining = int(self.config['testing_sequence_length'])
 
         self.testStep = TestingStep.loadFromDisk(testingStepId, self.config)
+        # Make sure applicationId is set in the config and save it
+        if 'applicationId' not in self.config:
+            self.config['applicationId'] = self.testStep.applicationId
+            self.config.saveConfig()
 
         self.executionSessions = []
         self.executionSessionTraces = []
@@ -301,14 +306,14 @@ class TestingStepManager:
         getLogger().info(f"[{os.getpid()}] Creating movies for the execution sessions of this testing sequence.")
 
         moviePlugin = [plugin for plugin in self.environment.plugins if isinstance(plugin, RecordScreenshots)][0]
-        videoPaths = [moviePlugin.movieFilePath(executionSession) for executionSession in self.executionSessions]
+        localVideoPaths = [moviePlugin.movieFilePath(executionSession) for executionSession in self.executionSessions]
 
         kwolaVideoDirectory = self.config.getKwolaUserDataDirectory("videos")
 
-        for executionSession, sessionN, videoPath in zip(self.executionSessions, range(len(videoPaths)), videoPaths):
-            with open(videoPath, 'rb') as origFile:
-                with open(os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4'), "wb") as cloneFile:
-                    cloneFile.write(origFile.read())
+        for executionSession, sessionN, localVideoPath in zip(self.executionSessions, range(len(localVideoPaths)), localVideoPaths):
+            with open(localVideoPath, 'rb') as origFile:
+                filePath = os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4')
+                saveKwolaFileData(filePath, origFile.read(), self.config)
 
 
     def shutdownEnvironment(self):
@@ -335,8 +340,8 @@ class TestingStepManager:
 
         def preloadFile(fileName):
             nonlocal loadedPastExecutionTraces
-            with open(fileName, 'rb') as file:
-                loadedPastExecutionTraces[fileName] = pickle.load(file)
+            fileData = loadKwolaFileData(fileName, config)
+            loadedPastExecutionTraces[fileName] = pickle.loads(fileData)
 
         preloadStartTime = datetime.now()
         with concurrent.futures.ThreadPoolExecutor(max_workers=config['testing_trace_load_workers']) as loadExecutor:
@@ -365,10 +370,10 @@ class TestingStepManager:
                     if fileName in loadedPastExecutionTraces:
                         pastExecutionTraces[sessionN].append(loadedPastExecutionTraces[fileName])
                     else:
-                        with open(fileName, 'rb') as file:
-                            trace = pickle.load(file)
-                            pastExecutionTraces[sessionN].append(trace)
-                            loadedPastExecutionTraces[fileName] = trace
+                        fileData = loadKwolaFileData(fileName, config)
+                        trace = pickle.loads(fileData)
+                        pastExecutionTraces[sessionN].append(trace)
+                        loadedPastExecutionTraces[fileName] = trace
 
 
             os.unlink(inferenceBatchFileName)

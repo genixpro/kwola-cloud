@@ -84,6 +84,7 @@ class TestingRunManager:
 
         kwolaConfigData = getKwolaConfigurationData()
 
+        kwolaConfigData['applicationId'] = self.run.applicationId
         kwolaConfigData['url'] = runConfiguration.url
         kwolaConfigData['email'] = runConfiguration.email
         kwolaConfigData['password'] = runConfiguration.password

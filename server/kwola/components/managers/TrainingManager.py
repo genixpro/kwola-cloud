@@ -30,6 +30,7 @@ from ...datamodels.ExecutionSessionTraceWeights import ExecutionSessionTraceWeig
 from ...datamodels.TestingStepModel import TestingStep
 from ...datamodels.TrainingStepModel import TrainingStep
 from datetime import datetime
+from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import atexit
 import subprocess
 import concurrent.futures
@@ -65,6 +66,11 @@ class TrainingManager:
     def __init__(self, configDir, trainingSequenceId, trainingStepIndex, gpu=None, coordinatorTempFileName="kwola_distributed_coordinator", testingRunId=None, applicationId=None, gpuWorldSize=torch.cuda.device_count(), plugins=None):
         self.config = KwolaCoreConfiguration(configDir)
         self.configDir = configDir
+
+        # Make sure applicationId is set in the config and save it
+        if 'applicationId' not in self.config:
+            self.config['applicationId'] = applicationId
+            self.config.saveConfig()
 
         self.gpu = gpu
         self.coordinatorTempFileName = coordinatorTempFileName
@@ -419,7 +425,7 @@ class TrainingManager:
 
 
     @staticmethod
-    def writeSingleExecutionTrace(traceBatch, sampleCacheDir):
+    def writeSingleExecutionTracePreparedSampleData(traceBatch, sampleCacheDir, config):
         traceId = traceBatch['traceIds'][0]
 
         cacheFile = os.path.join(sampleCacheDir, traceId + "-sample.pickle.gz")
@@ -427,16 +433,7 @@ class TrainingManager:
         pickleBytes = pickle.dumps(traceBatch, protocol=pickle.HIGHEST_PROTOCOL)
         compressedPickleBytes = gzip.compress(pickleBytes)
 
-        # getLogger().info(f"Writing batch cache file {cacheFile}")
-        maxAttempts = 10
-        for attempt in range(maxAttempts):
-            try:
-                with open(cacheFile, 'wb') as file:
-                    file.write(compressedPickleBytes)
-                return
-            except OSError:
-                time.sleep(1.5 ** attempt)
-                continue
+        saveKwolaFileData(cacheFile, compressedPickleBytes, config)
 
     @staticmethod
     def addExecutionSessionToSampleCache(executionSessionId, config):
@@ -458,7 +455,7 @@ class TrainingManager:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
                     futures = []
                     for traceIndex, traceBatch in zip(range(len(executionSession.executionTraces) - 1), batches):
-                        futures.append(executor.submit(TrainingManager.writeSingleExecutionTrace, traceBatch, sampleCacheDir))
+                        futures.append(executor.submit(TrainingManager.writeSingleExecutionTracePreparedSampleData, traceBatch, sampleCacheDir, config))
                     for future in futures:
                         future.result()
                 getLogger().info(f"Finished adding {executionSessionId} to the sample cache.")
@@ -503,22 +500,16 @@ class TrainingManager:
             sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples", ensureExists=False)
             cacheFile = os.path.join(sampleCacheDir, executionTraceId + "-sample.pickle.gz")
 
-            # Just for compatibility with the old naming scheme
-            oldCacheFileName = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
-
-            # applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId + "-cache")
-            # blob = storage.Blob(os.path.join(executionTraceId + "-sample.pickle.gz"), applicationStorageBucket)
-
-            try:
-                with open(cacheFile, 'rb') as file:
-                    sampleBatch = pickle.loads(gzip.decompress(file.read()))
-                # sampleBatch = pickle.loads(gzip.decompress(blob.download_as_string()))
-                cacheHit = True
-            except FileNotFoundError:
+            fileData = loadKwolaFileData(cacheFile, config)
+            if fileData is None:
                 TrainingManager.addExecutionSessionToSampleCache(executionSessionId, config)
                 cacheHit = False
-                with open(cacheFile, 'rb') as file:
-                    sampleBatch = pickle.loads(gzip.decompress(file.read()))
+
+                fileData = loadKwolaFileData(cacheFile, config)
+                sampleBatch = pickle.loads(gzip.decompress(fileData))
+            else:
+                sampleBatch = pickle.loads(gzip.decompress(fileData))
+                cacheHit = True
 
             imageWidth = sampleBatch['processedImages'].shape[3]
             imageHeight = sampleBatch['processedImages'].shape[2]

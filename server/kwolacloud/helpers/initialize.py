@@ -7,7 +7,7 @@ import google
 import google.cloud
 import google.cloud.logging
 import logging
-import multiprocessing
+import billiard as multiprocessing
 import os
 import stripe
 
