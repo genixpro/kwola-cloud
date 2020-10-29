@@ -55,7 +55,7 @@ def generateRewardChart(config, applicationId):
            title='Reward per session')
     ax.grid()
 
-    _, localFilePath = tempfile.mkstemp()
+    _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
         filePath = f"{config.getKwolaUserDataDirectory('charts')}/reward_chart.png"
@@ -106,7 +106,7 @@ def generateCoverageChart(config, applicationId):
            title='Code Coverage')
     ax.grid()
 
-    _, localFilePath = tempfile.mkstemp()
+    _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
         filePath = f"{config.getKwolaUserDataDirectory('charts')}/coverage_chart.png"
@@ -169,7 +169,7 @@ def generateLossChart(config, applicationId, attribute, title, fileName):
     ax.set(xlabel='Training Step #', ylabel='Reward', title=title)
     ax.grid()
 
-    _, localFilePath = tempfile.mkstemp()
+    _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
         filePath = f"{config.getKwolaUserDataDirectory('charts')}/{fileName}"
@@ -254,7 +254,7 @@ def generateCumulativeCoverageChart(config, applicationId=None):
     ax.set(xlabel='Testing Steps Completed (x1000)', ylabel='Cumulative Coverage', title="Cumulative Coverage Chart")
     ax.grid()
 
-    _, localFilePath = tempfile.mkstemp()
+    _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
         filePath = f"{config.getKwolaUserDataDirectory('charts')}/cumulative_coverage_chart.png"
@@ -300,7 +300,8 @@ def generateCumulativeErrorsFoundChart(config, applicationId):
     }
 
     for bug in loadAllBugs(config, applicationId):
-        bugsByTestingStepId[bug.testingStepId] += 1
+        if bug.testingStepId in bugsByTestingStepId:
+            bugsByTestingStepId[bug.testingStepId] += 1
 
     cumulativeErrorsFound = []
 
@@ -319,7 +320,7 @@ def generateCumulativeErrorsFoundChart(config, applicationId):
     ax.grid()
 
 
-    _, localFilePath = tempfile.mkstemp()
+    _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
         filePath = f"{config.getKwolaUserDataDirectory('charts')}/errors_found.png"
