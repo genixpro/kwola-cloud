@@ -184,7 +184,7 @@ class ProxyProcess:
         while True:
             try:
                 port = ProxyProcess.findFreePort()
-                opts = options.Options(listen_port=port, http2=False)
+                opts = options.Options(listen_port=port, http2=False, ssl_insecure=True)
                 pconf = proxy.config.ProxyConfig(opts)
 
                 m = DumpMaster(opts, with_termlog=False, with_dumper=False)
