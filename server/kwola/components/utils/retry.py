@@ -35,7 +35,7 @@ def autoretry(onFailure=None, maxAttempts=5, ignoreFailure=False, logRetries=Tru
                         if not ignoreFailure:
                             raise
                     else:
-                        time.sleep(exponentialBackOffBase ** attempt * random.uniform(0.5, 1.5))
+                        time.sleep(exponentialBackOffBase ** (attempt + 1) * random.uniform(0.5, 1.5))
                         if logRetries:
                             getLogger().info(f"Had to autoretry the function {targetFunc.__name__} due to the following exception: {traceback.format_exc()}")
                         if onFailure is not None:
