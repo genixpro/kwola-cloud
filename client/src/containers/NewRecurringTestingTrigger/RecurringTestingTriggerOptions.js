@@ -27,13 +27,13 @@ class RecurringTestingTriggerOptions extends Component {
         repeatUnit: "days",
         hourOfDay: 3,
         daysOfWeekEnabled: {
-            "Sun": false,
-            "Mon": false,
-            "Tue": false,
-            "Wed": false,
-            "Thu": false,
-            "Fri": false,
-            "Sat": false
+            "0": false,
+            "1": false,
+            "2": false,
+            "3": false,
+            "4": false,
+            "5": false,
+            "6": false
         },
         datesOfMonthEnabled: {
             0: false,
