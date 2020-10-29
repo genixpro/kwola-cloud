@@ -16,7 +16,7 @@ def saveKwolaFileData(filePath, fileData, config):
 
         storageClient = storage.Client()
         applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + config.applicationId)
-        gcsFilePath = filePath[len(config.configurationDirectory):]
+        gcsFilePath = filePath[len(config.configurationDirectory)+1:]
         objectBlob = storage.Blob(gcsFilePath, applicationStorageBucket)
         objectBlob.upload_from_string(fileData)
     else:
