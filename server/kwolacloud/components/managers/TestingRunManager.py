@@ -260,6 +260,10 @@ class TestingRunManager:
             if not verifyStripeSubscription(self.run):
                 self.shouldExit = True
 
+            # Check if they deleted their application object, and if so, set code to exit.
+            if ApplicationModel.objects(Q(status__exists=False) | Q(status="active"), id=self.run.applicationId).count() == 0:
+                self.shouldExit = True
+
         jobsToRemove = []
         for jobId, startTime in zip(self.run.runningTestingStepJobIds, self.run.runningTestingStepStartTimes):
             timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
