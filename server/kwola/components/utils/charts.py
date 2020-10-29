@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import multiprocessing
+import billiard as multiprocessing
 from ...datamodels.TestingStepModel import TestingStep
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...components.managers.TrainingManager import TrainingManager

@@ -172,13 +172,10 @@ def updateModelSymbols(config, testingStepId):
 def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     stepStartTime = datetime.now()
 
-    testStepsLaunched = 0
-    trainingStepsLaunched = 0
-
     numberOfTrainingStepsInParallel = max(1, torch.cuda.device_count())
 
-    while trainingSequence.trainingStepsCompleted < config['training_steps_needed']:
-        with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_step'] + numberOfTrainingStepsInParallel)) as executor:
+    while trainingSequence.trainingLoopsCompleted < config['training_loops_needed']:
+        with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_loop'] + numberOfTrainingStepsInParallel)) as executor:
             coordinatorTempFileName = "kwola_distributed_coordinator-" + str(random.randint(0, 1e8))
             coordinatorTempFilePath = "/tmp/" + coordinatorTempFileName
             if os.path.exists(coordinatorTempFilePath):
@@ -190,23 +187,23 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
             if torch.cuda.device_count() > 0:
                 for gpu in range(numberOfTrainingStepsInParallel):
-                    trainingFuture = executor.submit(runTrainingSubprocess, config, trainingSequence, trainingStepIndex=trainingStepsLaunched, gpuNumber=gpu, coordinatorTempFileName=coordinatorTempFileName)
+                    trainingFuture = executor.submit(runTrainingSubprocess, config, trainingSequence, trainingStepIndex=trainingSequence.trainingStepsLaunched, gpuNumber=gpu, coordinatorTempFileName=coordinatorTempFileName)
                     allFutures.append(trainingFuture)
                     trainStepFutures.append(trainingFuture)
-                    trainingStepsLaunched += 1
+                    trainingSequence.trainingStepsLaunched += 1
             else:
-                trainingFuture = executor.submit(runTrainingSubprocess, config, trainingSequence, trainingStepIndex=trainingStepsLaunched, gpuNumber=None, coordinatorTempFileName=coordinatorTempFileName)
+                trainingFuture = executor.submit(runTrainingSubprocess, config, trainingSequence, trainingStepIndex=trainingSequence.trainingStepsLaunched, gpuNumber=None, coordinatorTempFileName=coordinatorTempFileName)
                 allFutures.append(trainingFuture)
                 trainStepFutures.append(trainingFuture)
-                trainingStepsLaunched += 1
+                trainingSequence.trainingStepsLaunched += 1
 
-            for testingStepNumber in range(config['testing_sequences_per_training_step']):
-                testStepIndex = testStepsLaunched + config['training_random_initialization_sequences']
+            for testingStepNumber in range(config['testing_sequences_per_training_loop']):
+                testStepIndex = trainingSequence.testingStepsLaunched + config['training_random_initialization_sequences']
                 future = executor.submit(runTestingSubprocess, config, trainingSequence, testStepIndex, generateDebugVideo=True if testingStepNumber == 0 else False)
                 allFutures.append(future)
                 testStepFutures.append(future)
                 time.sleep(3)
-                testStepsLaunched += 1
+                trainingSequence.testingStepsLaunched += 1
 
             wait(allFutures)
 
@@ -250,10 +247,10 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
             time.sleep(3)
 
-        trainingSequence.trainingStepsCompleted += 1
-        trainingSequence.averageTimePerStep = (datetime.now() - stepStartTime).total_seconds() / trainingSequence.trainingStepsCompleted
+        trainingSequence.trainingLoopsCompleted += 1
+        trainingSequence.averageTimePerStep = (datetime.now() - stepStartTime).total_seconds() / trainingSequence.trainingLoopsCompleted
         trainingSequence.saveToDisk(config)
-        generateAllCharts(config, enableCumulativeCoverage=bool(trainingSequence.trainingStepsCompleted % 10 == 0))
+        generateAllCharts(config, enableCumulativeCoverage=bool(trainingSequence.trainingLoopsCompleted % 10 == 0))
 
 
 def trainAgent(configDir, exitOnFail=False):
@@ -288,7 +285,9 @@ def trainAgent(configDir, exitOnFail=False):
 
         trainingSequence.startTime = datetime.now()
         trainingSequence.status = "running"
-        trainingSequence.trainingStepsCompleted = 0
+        trainingSequence.trainingLoopsCompleted = 0
+        trainingSequence.trainingStepsLaunched = 0
+        trainingSequence.testingStepsLaunched = 0
         trainingSequence.saveToDisk(config)
     else:
         sequenceId = files[0]
