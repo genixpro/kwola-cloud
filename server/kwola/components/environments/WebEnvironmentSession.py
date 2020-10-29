@@ -154,7 +154,7 @@ class WebEnvironmentSession:
                 self.driver.get(self.targetURL)
 
                 for error in self.proxy.getNetworkErrors():
-                    if error.url == self.targetURL:
+                    if error.url == self.targetURL and error.statusCode != 401 and error.statusCode != 403:
                         raise RuntimeError(f"Received a fatal network error while attempting to load the starting page.")
 
             except selenium.common.exceptions.TimeoutException:
