@@ -187,7 +187,7 @@ class ApplicationGroup(Resource):
                     newTrigger.repeatFrequency = 1
                     newTrigger.hourOfDay = data['hourOfDay']
                     newTrigger.daysOfWeekEnabled = {
-                        day: True if data['dayOfWeek'] == day else False
+                        str(day): True if data['dayOfWeek'] == day else False
                         for day in range(7)
                     }
                 elif data['launchMethod'] == 'date_of_month':
