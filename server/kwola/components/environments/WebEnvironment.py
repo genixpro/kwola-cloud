@@ -77,7 +77,7 @@ class WebEnvironment:
             session = WebEnvironmentSession(config, sessionNumber, self.plugins, self.executionSessions[sessionNumber])
             return session
 
-        @autoretry()
+        @autoretry(exponentialBackOffBase=2.5)
         def initializeSession(session):
             session.initialize()
 

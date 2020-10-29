@@ -24,7 +24,7 @@ import traceback
 from ...config.logger import getLogger
 import random
 
-def autoretry(onFailure=None, maxAttempts=5, ignoreFailure=False, logRetries=True):
+def autoretry(onFailure=None, maxAttempts=5, ignoreFailure=False, logRetries=True, exponentialBackOffBase=1.5):
     def internalAutoretry(targetFunc):
         def retryFunction(*args, **kwargs):
             for attempt in range(maxAttempts):
@@ -35,7 +35,7 @@ def autoretry(onFailure=None, maxAttempts=5, ignoreFailure=False, logRetries=Tru
                         if not ignoreFailure:
                             raise
                     else:
-                        time.sleep(1.5 ** attempt + random.uniform(-0.5, 0.5))
+                        time.sleep(exponentialBackOffBase ** attempt * random.uniform(0.5, 1.5))
                         if logRetries:
                             getLogger().info(f"Had to autoretry the function {targetFunc.__name__} due to the following exception: {traceback.format_exc()}")
                         if onFailure is not None:
