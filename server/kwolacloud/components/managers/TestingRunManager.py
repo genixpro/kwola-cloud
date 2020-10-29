@@ -565,11 +565,12 @@ class TestingRunManager:
             for executionSessionId in testingStep.executionSessions:
                 executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
-                traces = []
-                for executionTraceId in executionSession.executionTraces:
-                    traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
+                if executionSession.status == "completed":
+                    traces = []
+                    for executionTraceId in executionSession.executionTraces:
+                        traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
-                totalNewSymbols += agent.assignNewSymbols(traces)
+                    totalNewSymbols += agent.assignNewSymbols(traces)
 
         logging.info(f"[{os.getpid()}] Added {totalNewSymbols} new symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
 
