@@ -343,7 +343,7 @@ class RecurringTestingTriggerOptions extends Component {
                                         <div style={{"flexGrow": "1"}}>
                                             <HourOfDaySelector
                                                 value={this.state.hourOfDay}
-                                                onChange={(event) => this.hourOfDayChanged(event.target.value)} />
+                                                onChange={(newHour) => this.hourOfDayChanged(newHour)} />
                                         </div>
                                         : null
                                 }
