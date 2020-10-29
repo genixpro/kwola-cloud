@@ -49,7 +49,7 @@ class NetworkErrorTracer:
         if flow.response.status_code >= 400:
             if b"</html" in flow.response.data.content:
                 # Parse response as html
-                text = BeautifulSoup(flow.response.data.content).get_text()
+                text = BeautifulSoup(flow.response.data.content, features="html.parser").get_text()
             else:
                 try:
                     data = json.loads(flow.response.data.content)
