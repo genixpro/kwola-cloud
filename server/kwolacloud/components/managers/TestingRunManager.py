@@ -600,8 +600,11 @@ class TestingRunManager:
                 # save on every step - just in case it was changed.
                 self.run.save()
 
-                if countFinished > 0:
-                    generateAllCharts(self.config, applicationId=self.run.applicationId)
+                # Chart generation has been disabled for now until further notice. This is because we are
+                # having a lot of issues getting this working in the cloud environment. Its likely because
+                # creating the charts is using too much CPU & RAM for the manager processes.
+                # if countFinished > 0:
+                #     generateAllCharts(self.config, applicationId=self.run.applicationId)
 
                 time.sleep(60)
 
