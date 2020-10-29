@@ -147,7 +147,6 @@ class WebEnvironmentSession:
             """, self.config['web_session_width'], self.config['web_session_height'])
         self.driver.set_window_size(*window_size)
 
-    @autoretry(exponentialBackOffBase=3)
     def fetchTargetWebpage(self):
         maxAttempts = 3
         for attempt in range(maxAttempts):

@@ -80,7 +80,7 @@ class WebEnvironment:
         def onInitializeFailure(session):
             session.hasBrowserDied = True
 
-        @autoretry(ignoreFailure=True, onFailure=onInitializeFailure)
+        @autoretry(ignoreFailure=True, onFailure=onInitializeFailure, exponentialBackOffBase=2.5)
         def initializeSession(session):
             session.initialize()
 
