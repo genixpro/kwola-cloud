@@ -431,7 +431,7 @@ class DeepLearningAgent:
     def loadSymbolMap(self):
         # We also need to load the symbol map - this is the mapping between symbol strings
         # and their index values within the embedding structure
-        symbolMapData = loadKwolaFileData(self.symbolMapPath, self.config, printErrorOnFailure=True)
+        symbolMapData = loadKwolaFileData(self.symbolMapPath, self.config, printErrorOnFailure=False)
         if symbolMapData is not None:
             (self.symbolMap, self.knownFiles, self.nextSymbolIndex) = pickle.loads(symbolMapData)
 
