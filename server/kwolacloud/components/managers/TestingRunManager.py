@@ -174,6 +174,7 @@ class TestingRunManager:
             self.doInitialBrowserSession()
 
     def launchTestingStepsIfNeeded(self):
+        logging.info(f"Launching testing steps if needed. Number to launch: {self.calculateNumberOfTestingSessionsToStart()}")
         while self.calculateNumberOfTestingSessionsToStart() > 0:
             self.launchTestingStep()
 
@@ -239,6 +240,7 @@ class TestingRunManager:
         self.run.save()
 
     def reviewRunningTestingSteps(self):
+        logging.info(f"Reviewing the running testing steps. Number running: {len(self.run.runningTestingStepJobIds)}")
         trainingIterationsNeededPerSession = (self.config['iterations_per_sample'] * self.run.configuration.testingSequenceLength) / (self.config['batch_size'] * self.config['batches_per_iteration'])
 
         # This is only temporary, to be compatible with data that did not have runningTestingStepStartTimes.
@@ -352,6 +354,7 @@ class TestingRunManager:
 
 
     def launchTrainingStepIfNeeded(self):
+        logging.info(f"Checking if training step needs to be launched.")
         if self.run.trainingIterationsCompleted < self.run.trainingIterationsNeeded and \
                 self.run.runningTrainingStepJobId is None and \
                 not self.isTrainingFailureConditionsMet() and \
@@ -382,6 +385,7 @@ class TestingRunManager:
         logging.info(f"Training step has started with jobId {jobId}")
 
     def reviewRunningTrainingSteps(self):
+        logging.info(f"Reviewing the running training step. Job id: {self.run.runningTrainingStepJobId}")
         didTrainingStepFinish = False
         if self.run.runningTrainingStepJobId is not None:
             job = self.createTrainingStepKubeJob(self.run.runningTrainingStepJobId)
@@ -547,6 +551,8 @@ class TestingRunManager:
             sendCustomerWebhook(self.application, "testingRunFinishedWebhookURL", json.loads(self.run.to_json()))
 
     def updateModelSymbols(self, config, testingStepIdsToProcess):
+        logging.info(f"Updating the model symbols.")
+
         # Load and save the agent to make sure all training subprocesses are synced
         agent = DeepLearningAgent(config=config, whichGpu=None)
         agent.initialize(enableTraining=False)

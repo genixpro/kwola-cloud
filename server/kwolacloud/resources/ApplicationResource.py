@@ -66,13 +66,15 @@ class ApplicationGroup(Resource):
 
         data = flask.request.get_json()
 
+        runConfiguration = RunConfiguration(**data['defaultRunConfiguration'])
+
         newApplication = ApplicationModel(
             name=data['name'],
             url=data['url'],
             owner=user,
             id=generateKwolaId(modelClass=ApplicationModel, kwolaConfig=getKwolaConfiguration(), owner=user),
             creationDate=datetime.now(),
-            defaultRunConfiguration=data['defaultRunConfiguration'],
+            defaultRunConfiguration=runConfiguration,
             package=data['package'],
             promoCode=data.get('promoCode')
         )
