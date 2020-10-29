@@ -35,7 +35,7 @@ def loadKwolaFileData(filePath, config, printErrorOnFailure=True):
 
             storageClient = storage.Client()
             applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + config.applicationId)
-            gcsFilePath = filePath[len(config.configurationDirectory):]
+            gcsFilePath = filePath[len(config.configurationDirectory)+1:]
             objectBlob = storage.Blob(gcsFilePath, applicationStorageBucket)
             data = objectBlob.download_as_string()
             return data

@@ -7,6 +7,7 @@ from ...datamodels.ExecutionTraceModel import ExecutionTrace
 from ...datamodels.TrainingStepModel import TrainingStep
 from ...datamodels.BugModel import BugModel
 from ...config.logger import getLogger
+from ...config.config import KwolaCoreConfiguration
 from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import numpy
 import os
@@ -29,7 +30,9 @@ def averageRewardForTestingStep(config, testingStepId):
         return None
 
 
-def generateRewardChart(config, applicationId):
+def generateRewardChart(configDir, applicationId):
+    config = KwolaCoreConfiguration(configDir)
+
     testingSteps = sorted(
         [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
         key=lambda step: step.startTime, reverse=False)
@@ -82,7 +85,9 @@ def averageCoverageForTestingStep(config, testingStepId):
     else:
         return None
 
-def generateCoverageChart(config, applicationId):
+def generateCoverageChart(configDir, applicationId):
+    config = KwolaCoreConfiguration(configDir)
+
     testingSteps = sorted(
         [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
         key=lambda step: step.startTime, reverse=False)
@@ -143,7 +148,9 @@ def loadTrainingStepLossData(config, trainingStepId, attribute):
     else:
         return 0, step.startTime, step.status
 
-def generateLossChart(config, applicationId, attribute, title, fileName):
+def generateLossChart(configDir, applicationId, attribute, title, fileName):
+    config = KwolaCoreConfiguration(configDir)
+
     trainingStepIds = findAllTrainingStepIds(config, applicationId=applicationId)
 
     pool = multiprocessing.Pool(config['chart_generation_dataload_workers'])
@@ -232,7 +239,9 @@ def computeCumulativeCoverageForTestingSteps(testingStepIds, config):
     return float(executedAtleastOnce) / float(total)
 
 
-def generateCumulativeCoverageChart(config, applicationId=None):
+def generateCumulativeCoverageChart(configDir, applicationId=None):
+    config = KwolaCoreConfiguration(configDir)
+
     testingSteps = sorted(
         [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
         key=lambda step: step.startTime, reverse=False)
@@ -289,7 +298,9 @@ def loadAllBugs(config, applicationId=None):
 
         return bugs
 
-def generateCumulativeErrorsFoundChart(config, applicationId):
+def generateCumulativeErrorsFoundChart(configDir, applicationId):
+    config = KwolaCoreConfiguration(configDir)
+
     testingSteps = sorted(
         [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
         key=lambda step: step.startTime, reverse=False)
@@ -337,20 +348,20 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
     futures = []
 
     if config['chart_enable_cumulative_coverage_chart'] and enableCumulativeCoverage:
-        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config, applicationId]))
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.configurationDirectory, applicationId]))
 
-    futures.append(pool.apply_async(generateRewardChart, [config, applicationId]))
-    futures.append(pool.apply_async(generateCoverageChart, [config, applicationId]))
+    futures.append(pool.apply_async(generateRewardChart, [config.configurationDirectory, applicationId]))
+    futures.append(pool.apply_async(generateCoverageChart, [config.configurationDirectory, applicationId]))
 
     if config['chart_enable_cumulative_errors_chart']:
-        futures.append(pool.apply_async(generateCumulativeErrorsFoundChart, [config, applicationId]))
+        futures.append(pool.apply_async(generateCumulativeErrorsFoundChart, [config.configurationDirectory, applicationId]))
 
-    futures.append(pool.apply_async(generateLossChart, [config, applicationId, 'totalLosses', "Total Loss", 'total_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config, applicationId, 'presentRewardLosses', "Present Reward Loss", 'present_reward_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config, applicationId, 'discountedFutureRewardLosses', "Discounted Future Reward Loss", 'discounted_future_reward_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config, applicationId, 'stateValueLosses', "State Value Loss", 'state_value_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config, applicationId, 'advantageLosses', "Advantage Loss", 'advantage_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config, applicationId, 'actionProbabilityLosses', "Action Probability Loss", 'action_probability_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'totalLosses', "Total Loss", 'total_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'presentRewardLosses', "Present Reward Loss", 'present_reward_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'discountedFutureRewardLosses', "Discounted Future Reward Loss", 'discounted_future_reward_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'stateValueLosses', "State Value Loss", 'state_value_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'advantageLosses', "Advantage Loss", 'advantage_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'actionProbabilityLosses', "Action Probability Loss", 'action_probability_loss_chart.png']))
 
     for future in futures:
         future.get()
