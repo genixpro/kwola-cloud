@@ -153,6 +153,11 @@ class WebEnvironmentSession:
         for attempt in range(maxAttempts):
             try:
                 self.driver.get(self.targetURL)
+
+                for error in self.proxy.getNetworkErrors():
+                    if error.url == self.targetURL:
+                        raise RuntimeError(f"Received a fatal network error while attempting to load the starting page.")
+
             except selenium.common.exceptions.TimeoutException:
                 raise RuntimeError(f"The web-browser timed out while attempting to load the target URL {self.targetURL}")
 
