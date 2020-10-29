@@ -41,9 +41,13 @@ class NetworkErrorTracer:
         pass
 
     def responseheaders(self, flow):
+        pass
+
+
+    def response(self, flow):
         # Add this flow as an error if its 4xx or 5xx
         if flow.response.status_code >= 400:
-            if "</html" in flow.response.data.content:
+            if b"</html" in flow.response.data.content:
                 # Parse response as html
                 text = BeautifulSoup(flow.response.data.content).get_text()
             else:
@@ -54,11 +58,6 @@ class NetworkErrorTracer:
                     text = str(flow.response.data.content)
 
             self.errors.append(HttpError(type="http", path=flow.request.path, statusCode=flow.response.status_code, message=str(text), url=flow.request.url))
-
-
-
-    def response(self, flow):
-        pass
 
     def error(self, flow):
         pass
