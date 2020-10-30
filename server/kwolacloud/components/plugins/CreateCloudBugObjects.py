@@ -162,24 +162,19 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         return list(mutedErrors)
 
     def generateVideoFilesForBugs(self, testingStep, bugObjects):
-        debugVideoSubprocesses = []
+        pool = multiprocessing.Pool(self.config['video_generation_processes'], maxtasksperchild=1)
+        futures = []
 
         for bugIndex, bug in enumerate(bugObjects):
-            debugVideoSubprocess = multiprocessing.Process(target=createDebugVideoSubProcess, args=(
+            future = pool.apply_async(func=createDebugVideoSubProcess, args=(
                 self.config.configurationDirectory, str(bug.executionSessionId), f"{bug.id}_bug", False, False, bug.stepNumber,
                 bug.stepNumber + 3, "bugs"))
-            atexit.register(lambda: debugVideoSubprocess.terminate())
-            debugVideoSubprocesses.append(debugVideoSubprocess)
+            futures.append(future)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['video_generation_processes']) as executor:
-            futures = []
-            for debugVideoSubprocess in debugVideoSubprocesses:
-                futures.append(executor.submit(CreateCloudBugObjects.runAndJoinSubprocess, debugVideoSubprocess))
-            for future in futures:
-                future.result()
+        for future in futures:
+            future.get()
 
-    @staticmethod
-    def runAndJoinSubprocess(debugVideoSubprocess):
-        debugVideoSubprocess.start()
-        debugVideoSubprocess.join()
+        pool.close()
+        pool.join()
+
 
