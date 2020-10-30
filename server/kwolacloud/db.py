@@ -14,7 +14,7 @@ def connectToMongoWithRetries(alias=None, db=None):
             if db is None:
                 db = configData['mongo']['db']
 
-            if alias is not None:
+            if alias is None:
                 connect(db, host=configData['mongo']['uri'])
             else:
                 connect(db, host=configData['mongo']['uri'], alias=alias)

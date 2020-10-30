@@ -1,7 +1,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: kwola-demo-reset-__KWOLA_ENV__
+  name: kwola-db-reset-__KWOLA_ENV__
 spec:
   schedule: "0 0 * * *"
   jobTemplate:
