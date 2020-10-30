@@ -220,7 +220,7 @@ class DeepLearningAgent:
 
         # Only add in the random number action if the user configured it
         if 'enableRandomEmailCommand' in config and config['enableRandomEmailCommand']:
-            self.actions['typeRandomEmail'] = lambda x, y: TypeAction(type="typeRandomEmail", x=x, y=y, label="random_email", text=self.fakeStringGenerator.email())
+            self.actions['typeRandomEmail'] = lambda x, y: TypeAction(type="typeRandomEmail", x=x, y=y, label="random_email", text="testing_" + self.randomString('abcdefghijklmnopqrstuvwxyz', 20) + "@kwola.io" )
             self.actionBaseWeights.append(config['random_weight_type_random_email'])
             self.actionProbabilityBoostKeywords.append(["email", "user"])
             hasTypingAction = True
