@@ -32,6 +32,7 @@ from ...datamodels.errors.LogError import LogError
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
 from ..plugins.base.ProxyPluginBase import ProxyPluginBase
 from ..plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
+from ...errors import AutologinFailure
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -148,31 +149,26 @@ class WebEnvironmentSession:
         self.driver.set_window_size(*window_size)
 
     def fetchTargetWebpage(self):
-        maxAttempts = 3
-        for attempt in range(maxAttempts):
-            try:
-                self.driver.get(self.targetURL)
+        try:
+            self.driver.get(self.targetURL)
 
-                for error in self.proxy.getNetworkErrors():
-                    if error.url == self.targetURL and error.statusCode != 401 and error.statusCode != 403:
-                        raise RuntimeError(f"Received a fatal network error while attempting to load the starting page.")
+            for error in self.proxy.getNetworkErrors():
+                if error.url == self.targetURL and error.statusCode != 401 and error.statusCode != 403:
+                    raise RuntimeError(f"Received a fatal network error while attempting to load the starting page.")
 
-            except selenium.common.exceptions.TimeoutException:
-                raise RuntimeError(f"The web-browser timed out while attempting to load the target URL {self.targetURL}")
+        except selenium.common.exceptions.TimeoutException:
+            raise RuntimeError(f"The web-browser timed out while attempting to load the target URL {self.targetURL}")
 
-            time.sleep(2)
+        time.sleep(2)
 
-            self.waitUntilNoNetworkActivity()
+        self.waitUntilNoNetworkActivity()
 
-            time.sleep(6)
+        time.sleep(6)
 
-            # No action maps is a strong signal that the page has not loaded correctly.
-            actionMaps = self.getActionMaps()
-            if len(actionMaps) == 0:
-                time.sleep(2**attempt)
-                continue
-            else:
-                break
+        # No action maps is a strong signal that the page has not loaded correctly.
+        actionMaps = self.getActionMaps()
+        if len(actionMaps) == 0:
+            raise RuntimeError(f"Error: loading page {self.targetURL} lead to a page with no action maps.")
 
 
     def getHostRoot(self, url):
@@ -323,8 +319,7 @@ class WebEnvironmentSession:
                 hasTypedInEmail = True
 
             if (len(emailInputs) == 0 and not hasTypedInEmail) or len(passwordInputs) == 0 or len(loginButtons) == 0:
-                getLogger().warning(f"Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.")
-                return
+                raise AutologinFailure(f"Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.")
 
             if len(emailInputs) == 1:
                 # Find the login button that is closest to the email input while being below it
@@ -382,9 +377,9 @@ class WebEnvironmentSession:
                 if didURLChange:
                     getLogger().info(f"Heuristic autologin appears to have worked!")
                 else:
-                    getLogger().warning(f"Warning! Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change.")
+                    raise AutologinFailure(f"Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change.")
             else:
-                getLogger().warning(f"There was an error running one of the actions required for the heuristic auto login.")
+                raise AutologinFailure(f"There was an error running one of the actions required for the heuristic auto login.")
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
             return None
