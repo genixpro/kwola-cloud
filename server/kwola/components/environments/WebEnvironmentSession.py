@@ -711,11 +711,18 @@ class WebEnvironmentSession:
         except selenium.common.exceptions.TimeoutException:
             pass
 
-    def checkLoadFailure(self):
+    def checkLoadFailure(self, priorURL):
         try:
+            loadFailure = False
+
             if self.driver.current_url == "data:,":
+                loadFailure = True
+            elif len(self.getActionMaps()) == 0:
+                loadFailure = True
+
+            if loadFailure:
                 getLogger().warning(f"The browser session needed to be reset back to the origin url {self.targetURL}")
-                self.driver.get(self.targetURL)
+                self.driver.get(priorURL)
                 self.waitUntilNoNetworkActivity()
         except selenium.common.exceptions.TimeoutException:
             pass
@@ -765,7 +772,7 @@ class WebEnvironmentSession:
             actionExecutionTimes['checkOffsite-second'] = (datetime.now() - startTime).total_seconds()
 
             startTime = datetime.now()
-            self.checkLoadFailure()
+            self.checkLoadFailure(priorURL=executionTrace.startURL)
             actionExecutionTimes['checkLoadFailure'] = (datetime.now() - startTime).total_seconds()
 
             for plugin in self.plugins:
