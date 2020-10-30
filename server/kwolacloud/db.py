@@ -4,14 +4,20 @@ import time
 from .datamodels.ApplicationModel import ApplicationModel
 
 
-def connectToMongoWithRetries():
+def connectToMongoWithRetries(alias=None, db=None):
     configData = loadConfiguration()
 
     success = False
     lastError = None
     for attempts in range(10):
         try:
-            connect(configData['mongo']['db'], host=configData['mongo']['uri'])
+            if db is None:
+                db = configData['mongo']['db']
+
+            if alias is not None:
+                connect(db, host=configData['mongo']['uri'])
+            else:
+                connect(db, host=configData['mongo']['uri'], alias=alias)
             ApplicationModel.objects().count()
             success = True
             break

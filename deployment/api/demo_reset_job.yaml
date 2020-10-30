@@ -1,0 +1,24 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: kwola-demo-reset-__KWOLA_ENV__
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: kwola-cloud-sha256
+            image: gcr.io/kwola-cloud/kwola-api-__KWOLA_ENV__:__REVISION_ID__
+            command: [ "kwolacloud_load_demo_db" ]
+            resources:
+              requests:
+                cpu: 250m
+                memory: 512Mi
+          restartPolicy: OnFailure
+          priorityClassName: __KWOLA_ENV__-priority
+      backoffLimit: 4
+
+
+

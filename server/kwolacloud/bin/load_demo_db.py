@@ -19,8 +19,18 @@ from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionSessionTraceWeights import ExecutionSessionTraceWeights
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.datamodels.TrainingStepModel import TrainingStep
-from mongoengine import connect
 from ..db import connectToMongoWithRetries
+from mongoengine.context_managers import switch_db
+
+def transferModel(modelClass):
+    print(f"Transferring data for {modelClass.__name__}")
+
+    with switch_db(modelClass, "demo_backup") as backupModelClass:
+        backupObjs = backupModelClass.objects()
+
+    for backup in backupObjs:
+        obj = modelClass(backup)
+        obj.save()
 
 def main():
     connectToMongoWithRetries()
@@ -41,4 +51,22 @@ def main():
     RecurringTestingTrigger.objects().delete()
     TestingRun.objects().delete()
 
-    print("Kwola Mongo database is now cleared")
+    connectToMongoWithRetries(alias="demo_backup", db="demo_backup")
+
+    transferModel(ApplicationModel)
+    transferModel(CounterModel)
+    transferModel(FeedbackSubmission)
+    transferModel(KubernetesJobLogs)
+    transferModel(KubernetesJobResult)
+    transferModel(MutedError)
+    transferModel(RecurringTestingTrigger)
+    transferModel(TestingRun)
+    transferModel(BugModel)
+    transferModel(TrainingSequence)
+    transferModel(TestingStep)
+    transferModel(ExecutionSession)
+    transferModel(ExecutionSessionTraceWeights)
+    transferModel(ExecutionTrace)
+    transferModel(TrainingStep)
+
+    print("Kwola database has now been restored with all the demo data.")
