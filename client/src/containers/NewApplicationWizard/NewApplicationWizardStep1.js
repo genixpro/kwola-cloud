@@ -95,6 +95,7 @@ class NewApplicationWizardStep1 extends Component {
 
     nextPageClicked()
     {
+        this.validateMaxParallelSessions();
         if (this.props.onNextPageClicked)
         {
             this.props.onNextPageClicked();
@@ -105,6 +106,21 @@ class NewApplicationWizardStep1 extends Component {
     {
         let urlValid =  /^(ftp|http|https):\/\/[^ "]+$/.test(this.props.application.url);
         return this.props.application.name && urlValid;
+    }
+
+
+    maximumParallelSessionsChanged(newValue)
+    {
+        this.changeParentRunConfigurationField("maxParallelSessions", newValue);
+    }
+
+
+    validateMaxParallelSessions()
+    {
+        let changedValue = this.props.runConfiguration.maxParallelSessions;
+        changedValue = Math.max(changedValue, 10)
+        changedValue = Math.min(changedValue, 500)
+        this.changeParentRunConfigurationField("maxParallelSessions", changedValue);
     }
 
     render()
@@ -136,6 +152,20 @@ class NewApplicationWizardStep1 extends Component {
                             style={{"width": "100%"}}
                         />
                         <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>The page within your web application that Kwola will start on. Start with https://</span>
+                        <br/>
+                        <br/>
+                        <TextField
+                            id={"application-maximum-parallel-sessions"}
+                            label={"Maximum Parallel Web Browser Sessions"}
+                            value={this.props.runConfiguration.maxParallelSessions}
+                            type={"number"}
+                            onChange={(evt) => this.maximumParallelSessionsChanged(evt.target.value)}
+                            onBlur={(evt) => this.validateMaxParallelSessions()}
+                            onKeyDown={(evt) => {if (evt.keyCode === 13) {this.validateMaxParallelSessions()}}}
+                            margin="normal"
+                            style={{"width": "100%"}}
+                        />
+                        <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>The maximum number of web browsers to run at the same time interacting with your application. Lower this number if your environment has limited resources.</span>
                         <br/>
                         <br/>
                         <FormGroup row>

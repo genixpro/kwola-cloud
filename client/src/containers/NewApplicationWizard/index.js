@@ -35,10 +35,22 @@ class NewApplicationWizard extends Component {
 
         if (savedApplicationState && savedRunConfigurationState)
         {
-            this.setState({
-                application: JSON.parse(savedApplicationState),
-                runConfiguration: JSON.parse(savedRunConfigurationState)
-            })
+            const application = JSON.parse(savedApplicationState);
+            const runConfiguration = JSON.parse(savedRunConfigurationState);
+
+            // This is just to handle cases where the user visited the new-app page, but didn't type anything in
+            // and later we change the code, say, adding in new variables in the run configuration.
+            if (!application.url)
+            {
+                this.resetWizardState();
+            }
+            else
+            {
+                this.setState({
+                    application: application,
+                    runConfiguration: runConfiguration
+                })
+            }
         }
         else
         {
@@ -55,6 +67,9 @@ class NewApplicationWizard extends Component {
     {
         this.setState({
             runConfiguration: {
+                email: "",
+                password: "",
+                maxParallelSessions: 250,
                 enableDoubleClickCommand: false,
                 enableRightClickCommand: false,
                 enableRandomBracketCommand: false,
@@ -76,6 +91,8 @@ class NewApplicationWizard extends Component {
                 customTypingActionStrings: []
             },
             application: {
+                name: "",
+                url: "",
                 package: "monthly",
                 launchMethod: "weekly",
                 datesOfMonth: {},
