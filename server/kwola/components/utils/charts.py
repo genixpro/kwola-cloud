@@ -31,6 +31,8 @@ def averageRewardForTestingStep(config, testingStepId):
 
 
 def generateRewardChart(configDir, applicationId):
+    getLogger().info(f"Generating the reward chart")
+
     config = KwolaCoreConfiguration(configDir)
 
     testingSteps = sorted(
@@ -86,6 +88,8 @@ def averageCoverageForTestingStep(config, testingStepId):
         return None
 
 def generateCoverageChart(configDir, applicationId):
+    getLogger().info(f"Generating the coverage chart")
+
     config = KwolaCoreConfiguration(configDir)
 
     testingSteps = sorted(
@@ -149,6 +153,8 @@ def loadTrainingStepLossData(config, trainingStepId, attribute):
         return 0, step.startTime, step.status
 
 def generateLossChart(configDir, applicationId, attribute, title, fileName):
+    getLogger().info(f"Generating the loss chart for {attribute}")
+
     config = KwolaCoreConfiguration(configDir)
 
     trainingStepIds = findAllTrainingStepIds(config, applicationId=applicationId)
@@ -240,6 +246,8 @@ def computeCumulativeCoverageForTestingSteps(testingStepIds, config):
 
 
 def generateCumulativeCoverageChart(configDir, applicationId=None):
+    getLogger().info(f"Generating the cumulative coverage chart")
+
     config = KwolaCoreConfiguration(configDir)
 
     testingSteps = sorted(
@@ -299,6 +307,8 @@ def loadAllBugs(config, applicationId=None):
         return bugs
 
 def generateCumulativeErrorsFoundChart(configDir, applicationId):
+    getLogger().info(f"Generating the cumulative errors chart")
+
     config = KwolaCoreConfiguration(configDir)
 
     testingSteps = sorted(
@@ -343,6 +353,8 @@ def generateCumulativeErrorsFoundChart(configDir, applicationId):
 
 
 def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False):
+    getLogger().info(f"Generating charts based on results.")
+
     pool = multiprocessing.Pool(config['chart_generation_workers'])
 
     futures = []

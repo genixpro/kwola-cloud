@@ -34,6 +34,7 @@ import numpy
 import socket
 import time
 import os
+import traceback
 import psutil
 from ..utils.retry import autoretry
 from ..plugins.core.RecordAllPaths import RecordAllPaths
@@ -79,6 +80,7 @@ class WebEnvironment:
 
         def onInitializeFailure(session):
             session.hasBrowserDied = True
+            session.browserDeathReason = f"A fatal error occurred during session initialization: {traceback.format_exc()}"
 
         @autoretry(ignoreFailure=True, onFailure=onInitializeFailure, exponentialBackOffBase=2.5)
         def initializeSession(session):
@@ -192,6 +194,8 @@ class WebEnvironment:
 
         for sessionN, session in enumerate(self.sessions):
             if session.hasBrowserDied:
+                getLogger().warning(
+                    f"Removing web browser session at index {sessionN} because the browser has failed. Reason: {self.sessions[sessionN].browserDeathReason}")
                 del self.sessions[sessionN]
                 return sessionN
 

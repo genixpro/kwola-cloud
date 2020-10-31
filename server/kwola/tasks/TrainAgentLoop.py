@@ -243,7 +243,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
                     config['iterations_per_training_step'] = max(5, config['iterations_per_training_step'] - config['iterations_per_training_step_adjustment_size_per_loop'])
                 config.saveConfig()
 
-            getLogger().info(f"[{os.getpid()}] Completed one parallel training & testing step! Hooray!")
+            getLogger().info(f"Completed one parallel training & testing step! Hooray!")
 
             time.sleep(3)
 

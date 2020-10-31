@@ -178,8 +178,6 @@ class TestingStepManager:
     def removeBadSessions(self):
         sessionToRemove = self.environment.removeBadSessionIfNeeded()
         while sessionToRemove is not None:
-            getLogger().warning(f"[{os.getpid()}] Removing web browser session at index {sessionToRemove} because the browser has crashed!")
-
             session = self.executionSessions[sessionToRemove]
             session.status = "failed"
             session.endTime = datetime.now()

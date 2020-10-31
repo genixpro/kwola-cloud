@@ -42,6 +42,7 @@ from ..proxy.ProxyProcess import ProxyProcess
 from ..utils.retry import autoretry
 import cv2
 import hashlib
+import traceback
 import numpy
 import numpy as np
 import re
@@ -67,6 +68,7 @@ class WebEnvironmentSession:
         self.config = config
         self.targetURL = config['url']
         self.hasBrowserDied = False
+        self.browserDeathReason = None
 
         if plugins is None:
             self.plugins = []
@@ -380,14 +382,17 @@ class WebEnvironmentSession:
                     raise AutologinFailure(f"Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change.")
             else:
                 raise AutologinFailure(f"There was an error running one of the actions required for the heuristic auto login.")
-        except urllib3.exceptions.MaxRetryError:
+        except urllib3.exceptions.MaxRetryError as e:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during autologin: {traceback.format_exc()}"
             return None
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during autologin: {traceback.format_exc()}"
             return None
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during autologin: {traceback.format_exc()}"
             return None
 
     def getActionMaps(self):
@@ -567,12 +572,15 @@ class WebEnvironmentSession:
             return filteredActionMaps
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred while fetching action maps: {traceback.format_exc()}"
             return []
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred while fetching action maps: {traceback.format_exc()}"
             return []
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred while fetching action maps: {traceback.format_exc()}"
             return []
 
     def performActionInBrowser(self, action):
@@ -789,12 +797,15 @@ class WebEnvironmentSession:
             return executionTrace
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during runAction: {traceback.format_exc()}"
             return None
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during runAction: {traceback.format_exc()}"
             return None
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during runAction: {traceback.format_exc()}"
             return None
 
     def screenshotSize(self):
@@ -813,15 +824,19 @@ class WebEnvironmentSession:
             return image
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
         except AttributeError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
 
     def runSessionCompletedHooks(self):
