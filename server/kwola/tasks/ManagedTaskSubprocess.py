@@ -139,7 +139,7 @@ class ManagedTaskSubprocess:
 
     def extractResultFromOutput(self):
         if TaskProcess.resultStartString not in self.output or TaskProcess.resultFinishString not in self.output:
-            getLogger().error(f"[{os.getpid()}] Error! Unable to extract result from the subprocess. Its possible the subprocess may have died")
+            getLogger().error(f"Error! Unable to extract result from the subprocess. Its possible the subprocess may have died")
             return None
         else:
             resultStart = self.output.index(TaskProcess.resultStartString)
@@ -164,7 +164,7 @@ class ManagedTaskSubprocess:
             time.sleep(1)
 
         result = self.extractResultFromOutput()
-        getLogger().info(f"[{os.getpid()}] Task Subprocess finished and gave back result:\n{json.dumps(result, indent=4)}")
+        getLogger().info(f"Task Subprocess finished and gave back result:\n{json.dumps(result, indent=4)}")
 
         return result
 
@@ -187,7 +187,7 @@ class ManagedTaskSubprocess:
             else:
                 time.sleep(waitBetweenStdoutUpdates)
 
-        getLogger().info(f"[{os.getpid()}] Terminating task subprocess, task finished.")
+        getLogger().info(f"Terminating task subprocess, task finished.")
         self.alive = False
         self.stopProcessBothMethods()
 
@@ -199,7 +199,7 @@ class ManagedTaskSubprocess:
         while self.alive:
             elapsedSeconds = (datetime.now() - self.startTime).total_seconds()
             if elapsedSeconds > self.timeout:
-                getLogger().error(f"[{os.getpid()}] Killing Process due to too much time elapsed")
+                getLogger().error(f"Killing Process due to too much time elapsed")
                 self.stopProcessBothMethods()
 
             time.sleep(1)

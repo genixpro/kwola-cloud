@@ -54,7 +54,7 @@ from pprint import pformat
 
 class TestingStepManager:
     def __init__(self, configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False, plugins=None):
-        getLogger().info(f"[{os.getpid()}] Starting New Testing Sequence")
+        getLogger().info(f"Starting New Testing Sequence")
 
         self.generateDebugVideo = generateDebugVideo
         self.shouldBeRandom = shouldBeRandom
@@ -301,7 +301,7 @@ class TestingStepManager:
 
     @autoretry()
     def savePlainVideoFiles(self):
-        getLogger().info(f"[{os.getpid()}] Creating movies for the execution sessions of this testing sequence.")
+        getLogger().info(f"Creating movies for the execution sessions of this testing sequence.")
 
         moviePlugin = [plugin for plugin in self.environment.plugins if isinstance(plugin, RecordScreenshots)][0]
         localVideoPaths = [moviePlugin.movieFilePath(executionSession) for executionSession in self.executionSessions]
@@ -402,7 +402,7 @@ class TestingStepManager:
         trace.saveToDisk(config)
 
     def runTesting(self):
-        getLogger().info(f"[{os.getpid()}] Starting New Testing Sequence with configuration:\n{pformat(self.config.configData)}")
+        getLogger().info(f"Starting New Testing Sequence with configuration:\n{pformat(self.config.configData)}")
 
         resultValue = {'success': True}
 
@@ -490,21 +490,21 @@ class TestingStepManager:
             # with mitmproxy. Its not at all clear what causes it, but the system can't auto retry from it unless the whole container
             # is killed. So we just explicitly catch it here so we don't trigger an error level log message, which gets sent to slack.
             # The manager process will safely restart this testing step.
-            getLogger().warning(f"[{os.getpid()}] Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
+            getLogger().warning(f"Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
             resultValue['success'] = False
             resultValue['exception'] = traceback.format_exc()
         except ProxyVerificationFailed:
             # Handle this errors gracefully without an error level message. This happens more often when our own servers go down
             # then when the proxy is actually not functioning
-            getLogger().warning(f"[{os.getpid()}] Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
+            getLogger().warning(f"Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
             resultValue['success'] = False
             resultValue['exception'] = traceback.format_exc()
         except Exception as e:
-            getLogger().error(f"[{os.getpid()}] Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
+            getLogger().error(f"Unhandled exception occurred during testing sequence:\n{traceback.format_exc()}")
             resultValue['success'] = False
             resultValue['exception'] = traceback.format_exc()
 
         # This print statement will trigger the parent manager process to kill this process.
-        getLogger().info(f"[{os.getpid()}] Finished Running Testing Sequence!")
+        getLogger().info(f"Finished Running Testing Sequence!")
 
         return resultValue

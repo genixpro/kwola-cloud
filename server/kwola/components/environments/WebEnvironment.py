@@ -96,7 +96,7 @@ class WebEnvironment:
             else:
                 self.executionSessions = executionSessions
 
-            getLogger().info(f"[{os.getpid()}] Starting up {sessionCount} parallel browser sessions.")
+            getLogger().info(f"Starting up {sessionCount} parallel browser sessions.")
 
             self.sessions = [
                 createSession(sessionNumber)

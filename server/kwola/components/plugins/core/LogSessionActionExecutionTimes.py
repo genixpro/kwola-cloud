@@ -44,7 +44,7 @@ class LogSessionActionExecutionTimes(TestingStepPluginBase):
         self.listOfTotalLoopTimes.append(totalTime)
 
         if trace.traceNumber % self.config['testing_print_every'] == (self.config['testing_print_every'] - 1) or trace.traceNumber == 0:
-            msg = f"[{os.getpid()}] Finished {trace.traceNumber + 1} testing actions."
+            msg = f"Finished {trace.traceNumber + 1} testing actions."
             if len(self.listOfTimesForScreenshot):
                 msg += f"\n     Avg Screenshot time: {numpy.average(self.listOfTimesForScreenshot[-self.config['testing_print_every']:]):.4f}"
                 msg += f"\n     Avg Action Map Retrieval Time: {numpy.average(self.listOfTimesForActionMapRetrieval[-self.config['testing_print_every']:]):.4f}"
