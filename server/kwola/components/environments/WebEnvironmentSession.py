@@ -745,7 +745,7 @@ class WebEnvironmentSession:
             else:
                 return 0
         except selenium.common.exceptions.TimeoutException:
-            pass
+            return 0
 
     def checkLoadFailure(self, priorURL):
         try:
