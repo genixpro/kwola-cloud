@@ -215,6 +215,7 @@ class WebEnvironmentSession:
     def waitUntilDocumentReadyState(self):
         startTime = datetime.now()
         while self.driver.execute_script('return document.readyState;') != "complete":
+            time.sleep(0.10)
             elapsedTime = abs((datetime.now() - startTime).total_seconds())
             if elapsedTime > self.noActivityTimeout:
                 break
