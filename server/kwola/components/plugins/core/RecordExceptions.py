@@ -8,6 +8,7 @@ from .common import kwolaJSRewriteErrorDetectionStrings
 class RecordExceptions(WebEnvironmentPluginBase):
 
     def __init__(self):
+        self.allErrorHashes = set()
         self.errorHashes = {}
 
 
@@ -75,11 +76,12 @@ class RecordExceptions(WebEnvironmentPluginBase):
                 executionTrace.didErrorOccur = True
 
                 if errorHash not in self.errorHashes[executionSession.id]:
-                    logMsgString = f"[{os.getpid()}] An unhandled exception was detected in client application:\n"
-                    logMsgString += f"{msg} at line {lineno} column {colno} in {source}\n"
-                    logMsgString += f"{str(stack)}"
-
-                    getLogger().info(logMsgString)
+                    if errorHash not in self.allErrorHashes:
+                        logMsgString = f"[{os.getpid()}] An unhandled exception was detected in client application:\n"
+                        logMsgString += f"{msg} at line {lineno} column {colno} in {source}\n"
+                        logMsgString += f"{str(stack)}"
+                        getLogger().info(logMsgString)
+                        self.allErrorHashes.add(errorHash)
 
                     self.errorHashes[executionSession.id].add(errorHash)
                     executionTrace.didNewErrorOccur = True

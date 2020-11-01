@@ -4,6 +4,7 @@ from kwola.config.logger import getLogger
 
 class RecordNetworkErrors(WebEnvironmentPluginBase):
     def __init__(self):
+        self.allErrorHashes = set()
         self.errorHashes = {}
 
 
@@ -22,12 +23,13 @@ class RecordNetworkErrors(WebEnvironmentPluginBase):
             errorHash = networkError.computeHash()
 
             if errorHash not in self.errorHashes[executionSession.id]:
-                networkErrorMsgString = f"[{os.getpid()}] A network error was detected in client application:\n"
-                networkErrorMsgString += f"Path: {networkError.path}\n"
-                networkErrorMsgString += f"Status Code: {networkError.statusCode}\n"
-                networkErrorMsgString += f"Message: {networkError.message}\n"
-
-                getLogger().info(networkErrorMsgString)
+                if errorHash not in self.allErrorHashes:
+                    networkErrorMsgString = f"[{os.getpid()}] A network error was detected in client application:\n"
+                    networkErrorMsgString += f"Path: {networkError.path}\n"
+                    networkErrorMsgString += f"Status Code: {networkError.statusCode}\n"
+                    networkErrorMsgString += f"Message: {networkError.message}\n"
+                    getLogger().info(networkErrorMsgString)
+                    self.allErrorHashes.add(errorHash)
 
                 self.errorHashes[executionSession.id].add(errorHash)
                 executionTrace.didNewErrorOccur = True

@@ -10,6 +10,7 @@ class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):
     networkErrorRegex = re.compile(r"(\D[45]\d\d$)|(\D[45]\d\d\D)")
 
     def __init__(self, config):
+        self.allErrorHashes = set()
         self.errorHashes = {}
         self.startLogCounts = {}
         self.config = config
@@ -74,10 +75,11 @@ class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):
                     executionTrace.didErrorOccur = True
 
                     if errorHash not in self.errorHashes[executionSession.id]:
-                        logMsgString = f"[{os.getpid()}] A log error was detected in client application:\n"
-                        logMsgString += f"{message}\n"
-
-                        getLogger().info(logMsgString)
+                        if errorHash not in self.allErrorHashes:
+                            logMsgString = f"[{os.getpid()}] A log error was detected in client application:\n"
+                            logMsgString += f"{message}\n"
+                            getLogger().info(logMsgString)
+                            self.allErrorHashes.add(errorHash)
 
                         self.errorHashes[executionSession.id].add(errorHash)
                         executionTrace.didNewErrorOccur = True
