@@ -223,6 +223,8 @@ class WebEnvironmentSession:
         return elapsedTime
 
     def waitUntilNoNetworkActivity(self):
+        readyStateWaitTime = self.waitUntilDocumentReadyState()
+
         startTime = datetime.now()
         elapsedTime = 0
         startPaths = set(self.proxy.getPathTrace()['recent'])
@@ -245,7 +247,7 @@ class WebEnvironmentSession:
 
                 break
         elapsedTime = abs((datetime.now() - startTime).total_seconds())
-        return elapsedTime
+        return elapsedTime + readyStateWaitTime
 
     def findElementsForAutoLogin(self):
         actionMaps = self.getActionMaps()
