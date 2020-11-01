@@ -462,7 +462,10 @@ class TestingStepManager:
             # to conserve memory, since the environment is no longer needed after this point
             self.shutdownEnvironment()
 
-            self.testStep.status = "completed"
+            if len(self.executionSessions) == 0:
+                self.testStep.status = "failed"
+            else:
+                self.testStep.status = "completed"
             self.testStep.endTime = datetime.now()
             self.testStep.executionSessions = [session.id for session in self.executionSessions]
 

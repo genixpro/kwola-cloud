@@ -304,6 +304,8 @@ def trainAgent(configDir, exitOnFail=False):
 
     runMainTrainingLoop(config, trainingSequence, exitOnFail=exitOnFail)
 
+    generateAllCharts(config, enableCumulativeCoverage=True)
+
     trainingSequence.status = "completed"
     trainingSequence.endTime = datetime.now()
     trainingSequence.saveToDisk(config)
