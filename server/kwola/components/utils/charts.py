@@ -9,11 +9,12 @@ from ...datamodels.BugModel import BugModel
 from ...config.logger import getLogger
 from ...config.config import KwolaCoreConfiguration
 from ..utils.file import loadKwolaFileData, saveKwolaFileData
+import matplotlib
 import numpy
 import os
 import scipy.signal
 import tempfile
-
+matplotlib.use("Agg")
 
 def averageRewardForTestingStep(config, testingStepId):
     testingStep = TestingStep.loadFromDisk(testingStepId, config)

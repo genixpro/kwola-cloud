@@ -68,6 +68,7 @@ import copy
 from ..utils.retry import autoretry
 from faker import Faker
 from ...config.logger import setupLocalLogging
+mpl.use("Agg")
 
 
 class DeepLearningAgent:
