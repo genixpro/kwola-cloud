@@ -24,7 +24,7 @@ class RecordNetworkErrors(WebEnvironmentPluginBase):
 
             if errorHash not in self.errorHashes[executionSession.id]:
                 if errorHash not in self.allErrorHashes:
-                    networkErrorMsgString = f"[{os.getpid()}] A network error was detected in client application:\n"
+                    networkErrorMsgString = f"A network error was detected in client application:\n"
                     networkErrorMsgString += f"Path: {networkError.path}\n"
                     networkErrorMsgString += f"Status Code: {networkError.statusCode}\n"
                     networkErrorMsgString += f"Message: {networkError.message}\n"
