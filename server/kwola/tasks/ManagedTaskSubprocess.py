@@ -97,33 +97,43 @@ class ManagedTaskSubprocess:
             return data
 
 
-    def gracefullyTerminateProcess(self):
+    def gracefullyTerminateProcess(self, processes=None):
         self.alive = False
-        self.process.terminate()
+        if processes is None:
+            processes = self.getAllChildProcesses()
+        for p in processes:
+            try:
+                p.terminate()
+            except psutil.NoSuchProcess:
+                pass
 
 
-    def hardKillProcess(self):
+    def hardKillProcess(self, processes=None):
         self.alive = False
-        try:
-            parent = psutil.Process(self.process.pid)
-            children = parent.children(recursive=True)
-            children.append(parent)
-            for p in children:
+        if processes is None:
+            processes = self.getAllChildProcesses()
+        for p in processes:
+            try:
                 p.send_signal(9)
-        except psutil.NoSuchProcess:
-            pass
+            except psutil.NoSuchProcess:
+                pass
 
+    def getAllChildProcesses(self):
+        parent = psutil.Process(self.process.pid)
+        processes = parent.children(recursive=True)
+        processes.append(parent)
+        return processes
 
     def stopProcessBothMethods(self):
-        # First send it the terminate signal and hope it exits gracefully
+        processes = self.getAllChildProcesses()
+
+        # First send all the processes in the tree the terminate signal and hope they exit gracefully
         if self.process.returncode is None:
-            self.gracefullyTerminateProcess()
+            self.gracefullyTerminateProcess(processes)
             time.sleep(3)
 
-        # If it appears to still be running, give the entire tree of processes that this one touches a hard kill signal.
-        # this should get the job done.
-        if self.process.returncode is None:
-            self.hardKillProcess()
+            # Now give any processes still alive a hard kill signal.
+            self.hardKillProcess(processes)
             time.sleep(1)
 
 
