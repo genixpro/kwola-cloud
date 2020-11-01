@@ -34,8 +34,6 @@ class HttpError(BaseError):
 
     statusCode = IntField()
 
-    message = StringField()
-
     url = StringField()
 
     def computeHash(self):

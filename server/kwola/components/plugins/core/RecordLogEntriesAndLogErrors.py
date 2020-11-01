@@ -11,6 +11,7 @@ class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):
 
     def __init__(self, config):
         self.allErrorHashes = set()
+        self.allErrors = []
         self.errorHashes = {}
         self.startLogCounts = {}
         self.config = config
@@ -75,17 +76,24 @@ class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):
                     executionTrace.didErrorOccur = True
 
                     if errorHash not in self.errorHashes[executionSession.id]:
-                        if errorHash not in self.allErrorHashes:
+                        if errorHash not in self.allErrorHashes and not self.isDuplicate(error):
                             logMsgString = f"A log error was detected in client application:\n"
                             logMsgString += f"{message}\n"
                             getLogger().info(logMsgString)
                             self.allErrorHashes.add(errorHash)
+                            self.allErrors.append(error)
 
                         self.errorHashes[executionSession.id].add(errorHash)
                         executionTrace.didNewErrorOccur = True
 
         executionTrace.logOutput = "\n".join([str(log) for log in logEntries])
         executionTrace.hadLogOutput = bool(executionTrace.logOutput)
+
+    def isDuplicate(self, error):
+        for existingError in self.allErrors:
+            if error.isDuplicateOf(existingError):
+                return True
+        return False
 
     def browserSessionFinished(self, webDriver, proxy, executionSession):
         pass
