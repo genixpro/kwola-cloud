@@ -160,26 +160,34 @@ class WebEnvironment:
                 resultFutures.append(resultFuture)
 
         traces = [
-            resultFuture.result() for resultFuture in resultFutures
+            resultFuture.result()[0] for resultFuture in resultFutures
+        ]
+
+        actionExecutionTimes = [
+            resultFuture.result()[1] for resultFuture in resultFutures
         ]
 
         self.synchronizeNoActivityTimeouts()
 
         timeTaken = (datetime.now() - startTime).total_seconds()
-        subTimes = {}
         if timeTaken > 10:
+            timeList = []
+
             # Log data for all of the sub times
-            validTraces = [trace for trace in traces if trace is not None]
-            if len(validTraces) > 0:
-                for key in validTraces[0].actionExecutionTimes:
-                    subTimes[key] = {
-                        "min": numpy.min([trace.actionExecutionTimes[key] for trace in validTraces]),
-                        "max": numpy.max([trace.actionExecutionTimes[key] for trace in validTraces]),
-                        "mean": numpy.mean([trace.actionExecutionTimes[key] for trace in validTraces]),
-                        "median": numpy.median([trace.actionExecutionTimes[key] for trace in validTraces]),
-                        "std": numpy.std([trace.actionExecutionTimes[key] for trace in validTraces])
-                    }
-                getLogger().warning(f"Time taken to execute the actions in the browser was unusually long: {timeTaken} seconds. Here are the subtimes: {pformat(subTimes)}")
+            for key in actionExecutionTimes[0]:
+                timeList.append({
+                    "key": key,
+                    "min": numpy.min([times[key] for times in actionExecutionTimes if key in times]),
+                    "max": numpy.max([times[key] for times in actionExecutionTimes if key in times]),
+                    "mean": numpy.mean([times[key] for times in actionExecutionTimes if key in times]),
+                    "median": numpy.median([times[key] for times in actionExecutionTimes if key in times]),
+                    "std": numpy.std([times[key] for times in actionExecutionTimes if key in times])
+                })
+
+            timeList = sorted(timeList, key=lambda x: x['max'], reverse=True)
+            maxTimes = [(t['key'], t['max']) for t in timeList if t['max'] > 0.5]
+
+            getLogger().warning(f"Time taken to execute the actions in the browser was unusually long: {timeTaken} seconds. Here are the subtimes: {pformat(maxTimes)}")
 
         return traces
 
