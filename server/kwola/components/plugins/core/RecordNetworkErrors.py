@@ -24,7 +24,7 @@ class RecordNetworkErrors(WebEnvironmentPluginBase):
             errorHash = networkError.computeHash()
 
             if errorHash not in self.errorHashes[executionSession.id]:
-                if errorHash not in self.allErrorHashes and not self.isDuplicate(error):
+                if errorHash not in self.allErrorHashes and not self.isDuplicate(networkError):
                     networkErrorMsgString = f"A network error was detected in client application:\n"
                     networkErrorMsgString += f"Path: {networkError.path}\n"
                     networkErrorMsgString += f"Status Code: {networkError.statusCode}\n"
