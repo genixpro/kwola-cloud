@@ -232,9 +232,9 @@ class WebEnvironmentSession:
         while abs((self.proxy.getMostRecentNetworkActivityTimeAndPath()[0] - datetime.now()).total_seconds()) < self.config['web_session_no_network_activity_wait_time']:
             time.sleep(0.10)
             elapsedTime = abs((datetime.now() - startTime).total_seconds())
-            if elapsedTime > 2.0:
-                recent = self.proxy.getMostRecentNetworkActivityTimeAndPath()
-                print(elapsedTime, abs((recent[0] - datetime.now()).total_seconds()), recent[1], recent[2], flush=True)
+            # if elapsedTime > 2.0:
+            #     recent = self.proxy.getMostRecentNetworkActivityTimeAndPath()
+            #     print(elapsedTime, abs((recent[0] - datetime.now()).total_seconds()), recent[1], recent[2], flush=True)
 
             if elapsedTime > self.noActivityTimeout:
                 if self.noActivityTimeout > 1:
