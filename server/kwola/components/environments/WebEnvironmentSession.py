@@ -155,6 +155,8 @@ class WebEnvironmentSession:
               window.outerHeight - window.innerHeight + arguments[1]];
             """, self.config['web_session_width'], self.config['web_session_height'])
         self.driver.set_window_size(*window_size)
+        self.driver.set_script_timeout(30)
+        self.driver.set_page_load_timeout(30)
 
     def fetchTargetWebpage(self):
         try:

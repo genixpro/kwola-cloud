@@ -36,7 +36,8 @@ class LockedFile(object):
         if 'w' in self.mode:
             while True:
                 try:
-                    open(self.lockFile, "x")
+                    with open(self.lockFile, "x"):
+                        pass
                     break
                 except FileExistsError:
                     time.sleep(0.05)
