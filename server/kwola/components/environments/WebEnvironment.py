@@ -117,13 +117,14 @@ class WebEnvironment:
     def getImages(self):
         results = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
+            start = datetime.now()
             imageFutures = []
             for session in self.sessions:
                 resultFuture = executor.submit(session.getImage)
                 imageFutures.append(resultFuture)
             for future, session in zip(imageFutures, self.sessions):
                 try:
-                    result = future.result(timeout=self.config['testing_get_image_timeout'])
+                    result = future.result(timeout=max(self.config['testing_get_image_timeout'] - (datetime.now() - start).total_seconds(), 1))
                 except concurrent.futures.TimeoutError:
                     result = numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
                     session.hasBrowserDied = True
@@ -136,13 +137,14 @@ class WebEnvironment:
         results = []
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
+            start = datetime.now()
             actionMapFutures = []
             for session in self.sessions:
                 resultFuture = executor.submit(session.getActionMaps)
                 actionMapFutures.append(resultFuture)
             for future, session in zip(actionMapFutures, self.sessions):
                 try:
-                    result = future.result(timeout=self.config['testing_fetch_action_map_timeout'])
+                    result = future.result(timeout=max(self.config['testing_fetch_action_map_timeout'] - (datetime.now() - start).total_seconds(), 1))
                 except concurrent.futures.TimeoutError:
                     result = []
                     session.hasBrowserDied = True
@@ -167,12 +169,13 @@ class WebEnvironment:
 
         results = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
+            start = datetime.now()
             for tab, action in zip(self.sessions, actions):
                 resultFuture = executor.submit(tab.runAction, action)
                 resultFutures.append(resultFuture)
             for future, session in zip(resultFutures, self.sessions):
                 try:
-                    result = future.result(timeout=self.config['testing_run_action_timeout'])
+                    result = future.result(timeout=max(self.config['testing_run_action_timeout'] - (datetime.now() - start).total_seconds(), 1))
                 except concurrent.futures.TimeoutError:
                     result = (None, {})
                     session.hasBrowserDied = True

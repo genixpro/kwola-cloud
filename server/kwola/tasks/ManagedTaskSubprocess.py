@@ -104,6 +104,7 @@ class ManagedTaskSubprocess:
         for p in processes:
             try:
                 p.terminate()
+                # getLogger().info(f"Terminated child process {p.pid}")
             except psutil.NoSuchProcess:
                 pass
 
@@ -115,6 +116,7 @@ class ManagedTaskSubprocess:
         for p in processes:
             try:
                 p.send_signal(9)
+                # getLogger().info(f"Killed (signal 9) child process {p.pid}")
             except psutil.NoSuchProcess:
                 pass
 
@@ -126,6 +128,8 @@ class ManagedTaskSubprocess:
 
     def stopProcessBothMethods(self):
         processes = self.getAllChildProcesses()
+
+        getLogger().info(f"Stopping {len(processes)} processes for the task.")
 
         # First send all the processes in the tree the terminate signal and hope they exit gracefully
         if self.process.returncode is None:
@@ -187,13 +191,15 @@ class ManagedTaskSubprocess:
             else:
                 time.sleep(waitBetweenStdoutUpdates)
 
-        getLogger().info(f"Terminating task subprocess, task finished.")
+        getLogger().info(f"Terminating task subprocess {self.process.pid}, task finished.")
         self.alive = False
         self.stopProcessBothMethods()
 
         additionalOutput = self.getLatestLogOutput()
         if additionalOutput is not None:
             self.output += additionalOutput
+
+        getLogger().info(f"Monitoring thread has finished for {self.process.pid}")
 
     def timeoutMonitoringThread(self):
         while self.alive:

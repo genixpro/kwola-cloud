@@ -26,11 +26,22 @@ import fcntl
 class LockedFile(object):
     def __init__(self, filePath, mode):
         self.filePath = filePath
-        self.fileName = filePath.split("/")[-1]
-        self.folder = "/".join(filePath.split("/")[:-1])
 
-        self.lockFile = os.path.join(self.folder, "." + self.fileName + ".lock")
+        self.lockFile = LockedFile.getLockFilePath(filePath)
         self.mode = mode
+
+    @staticmethod
+    def getLockFilePath(filePath):
+        fileName = filePath.split("/")[-1]
+        folder = "/".join(filePath.split("/")[:-1])
+        lockFile = os.path.join(folder, "." + fileName + ".lock")
+        return lockFile
+
+    @staticmethod
+    def clearLockFile(filePath):
+        path = LockedFile.getLockFilePath(filePath)
+        if os.path.exists(path):
+            os.unlink(path)
 
     def __enter__(self):
         if 'w' in self.mode:

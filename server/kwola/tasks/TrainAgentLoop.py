@@ -32,6 +32,7 @@ from ..datamodels.ExecutionSessionModel import ExecutionSession
 from ..datamodels.ExecutionTraceModel import ExecutionTrace
 from ..components.managers.TrainingManager import TrainingManager
 from ..components.utils.charts import generateAllCharts
+from ..datamodels.LockedFile import LockedFile
 from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -45,23 +46,25 @@ import random
 
 
 def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
-    testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)))
-    testingStep.saveToDisk(config)
+    try:
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)))
+        testingStep.saveToDisk(config)
 
-    process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
-        "configDir": config.configurationDirectory,
-        "testingStepId": str(testingStep.id),
-        "shouldBeRandom": True
-    }, timeout=config['random_initialization_testing_sequence_timeout'], config=config, logId=testingStep.id)
-    process.start()
-    result = process.waitForProcessResult()
+        process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
+            "configDir": config.configurationDirectory,
+            "testingStepId": str(testingStep.id),
+            "shouldBeRandom": True
+        }, timeout=config['random_initialization_testing_sequence_timeout'], config=config, logId=testingStep.id)
+        process.start()
+        result = process.waitForProcessResult()
 
-    # Reload the testing sequence from the db. It will have been updated by the sub-process.
-    testingStep = TestingStep.loadFromDisk(testingStep.id, config)
-    trainingSequence.initializationTestingSteps.append(testingStep)
-    trainingSequence.saveToDisk(config)
+        # Reload the testing sequence from the db. It will have been updated by the sub-process.
+        trainingSequence.initializationTestingSteps.append(testingStep.id)
 
-    return result
+        return result
+    except Exception as e:
+        getLogger().error(f"Testing task subprocess appears to have failed. {traceback.format_exc()}")
+        raise
 
 
 def runRandomInitialization(config, trainingSequence, exitOnFail=True):
@@ -89,8 +92,6 @@ def runRandomInitialization(config, trainingSequence, exitOnFail=True):
 
             getLogger().info(f"Random Testing Sequence Completed")
 
-    # Save the training sequence with all the data on the initialization sequences
-    trainingSequence.saveToDisk(config)
     getLogger().info(f"Random initialization completed")
 
 
@@ -112,9 +113,7 @@ def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber
             result['finishTime'] = datetime.now()
 
             trainingStepId = str(result['trainingStepId'])
-            trainingStep = TrainingStep.loadFromDisk(trainingStepId, config)
-            trainingSequence.trainingSteps.append(trainingStep)
-            trainingSequence.saveToDisk(config)
+            trainingSequence.trainingSteps.append(trainingStepId)
         else:
             getLogger().error(f"Training task subprocess appears to have failed")
 
@@ -122,30 +121,38 @@ def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber
 
     except Exception as e:
         getLogger().error(f"Training task subprocess appears to have failed. {traceback.format_exc()}")
+        raise
 
 
 def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugVideo=False):
-    testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)))
-    testingStep.saveToDisk(config)
+    try:
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)))
+        testingStep.saveToDisk(config)
 
-    process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
-        "configDir": config.configurationDirectory,
-        "testingStepId": str(testingStep.id),
-        "shouldBeRandom": False,
-        "generateDebugVideo": generateDebugVideo and config['enable_debug_videos']
-    }, timeout=config['testing_step_timeout'], config=config, logId=testingStep.id)
-    process.start()
-    result = process.waitForProcessResult()
+        process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
+            "configDir": config.configurationDirectory,
+            "testingStepId": str(testingStep.id),
+            "shouldBeRandom": False,
+            "generateDebugVideo": generateDebugVideo and config['enable_debug_videos']
+        }, timeout=config['testing_step_timeout'], config=config, logId=testingStep.id)
+        process.start()
+        result = process.waitForProcessResult()
 
-    if result is not None and 'testingStepId' in result:
-        result['finishTime'] = datetime.now()
+        getLogger().info(f"Finished the testing step {testingStep.id} (1)")
 
-        # Reload the testing sequence from the db. It will have been updated by the sub-process.
-        testingStep = TestingStep.loadFromDisk(testingStep.id, config)
-        trainingSequence.testingSteps.append(testingStep)
-        trainingSequence.saveToDisk(config)
+        if result is not None and 'testingStepId' in result:
+            result['finishTime'] = datetime.now()
 
-    return result
+            # Reload the testing sequence from the db. It will have been updated by the sub-process.
+            trainingSequence.testingSteps.append(testingStep.id)
+
+        getLogger().info(f"Finished the testing step {testingStep.id} (2)")
+
+        return result
+
+    except Exception as e:
+        getLogger().error(f"Testing task subprocess appears to have failed. {traceback.format_exc()}")
+        raise
 
 def updateModelSymbols(config, testingStepId):
     # Load and save the agent to make sure all training subprocesses are synced
@@ -214,6 +221,8 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
                     anyFailures = True
                 elif 'success' in result and not result['success']:
                     anyFailures = True
+
+            getLogger().error(f"Finished waiting for all the result objects.")
 
             if anyFailures and exitOnFail:
                 raise RuntimeError("One of the testing / training loops failed and did not return successfully. Exiting the training loop.")
@@ -295,6 +304,7 @@ def trainAgent(configDir, exitOnFail=False):
         sequenceId = sequenceId.replace(".json", "")
         sequenceId = sequenceId.replace(".gz", "")
 
+        LockedFile.clearLockFile(os.path.join(config.getKwolaUserDataDirectory("training_sequences"), files[0]))
         trainingSequence = TrainingSequence.loadFromDisk(sequenceId, config)
 
     testingSteps = [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"]
