@@ -72,6 +72,8 @@ class RunConfiguration(EmbeddedDocument):
 
     hours = IntField()
 
+    maxParallelSessions = IntField(default=250)
+
     enable5xxError = BooleanField(default=True)
 
     enable400Error = BooleanField(default=True)

@@ -97,39 +97,49 @@ class ManagedTaskSubprocess:
             return data
 
 
-    def gracefullyTerminateProcess(self):
+    def gracefullyTerminateProcess(self, processes=None):
         self.alive = False
-        self.process.terminate()
+        if processes is None:
+            processes = self.getAllChildProcesses()
+        for p in processes:
+            try:
+                p.terminate()
+            except psutil.NoSuchProcess:
+                pass
 
 
-    def hardKillProcess(self):
+    def hardKillProcess(self, processes=None):
         self.alive = False
-        try:
-            parent = psutil.Process(self.process.pid)
-            children = parent.children(recursive=True)
-            children.append(parent)
-            for p in children:
+        if processes is None:
+            processes = self.getAllChildProcesses()
+        for p in processes:
+            try:
                 p.send_signal(9)
-        except psutil.NoSuchProcess:
-            pass
+            except psutil.NoSuchProcess:
+                pass
 
+    def getAllChildProcesses(self):
+        parent = psutil.Process(self.process.pid)
+        processes = parent.children(recursive=True)
+        processes.append(parent)
+        return processes
 
     def stopProcessBothMethods(self):
-        # First send it the terminate signal and hope it exits gracefully
+        processes = self.getAllChildProcesses()
+
+        # First send all the processes in the tree the terminate signal and hope they exit gracefully
         if self.process.returncode is None:
-            self.gracefullyTerminateProcess()
+            self.gracefullyTerminateProcess(processes)
             time.sleep(3)
 
-        # If it appears to still be running, give the entire tree of processes that this one touches a hard kill signal.
-        # this should get the job done.
-        if self.process.returncode is None:
-            self.hardKillProcess()
+            # Now give any processes still alive a hard kill signal.
+            self.hardKillProcess(processes)
             time.sleep(1)
 
 
     def extractResultFromOutput(self):
         if TaskProcess.resultStartString not in self.output or TaskProcess.resultFinishString not in self.output:
-            getLogger().error(f"[{os.getpid()}] Error! Unable to extract result from the subprocess. Its possible the subprocess may have died")
+            getLogger().error(f"Error! Unable to extract result from the subprocess. Its possible the subprocess may have died")
             return None
         else:
             resultStart = self.output.index(TaskProcess.resultStartString)
@@ -154,7 +164,7 @@ class ManagedTaskSubprocess:
             time.sleep(1)
 
         result = self.extractResultFromOutput()
-        getLogger().info(f"[{os.getpid()}] Task Subprocess finished and gave back result:\n{json.dumps(result, indent=4)}")
+        getLogger().info(f"Task Subprocess finished and gave back result:\n{json.dumps(result, indent=4)}")
 
         return result
 
@@ -177,7 +187,7 @@ class ManagedTaskSubprocess:
             else:
                 time.sleep(waitBetweenStdoutUpdates)
 
-        getLogger().info(f"[{os.getpid()}] Terminating task subprocess, task finished.")
+        getLogger().info(f"Terminating task subprocess, task finished.")
         self.alive = False
         self.stopProcessBothMethods()
 
@@ -189,7 +199,7 @@ class ManagedTaskSubprocess:
         while self.alive:
             elapsedSeconds = (datetime.now() - self.startTime).total_seconds()
             if elapsedSeconds > self.timeout:
-                getLogger().error(f"[{os.getpid()}] Killing Process due to too much time elapsed")
+                getLogger().error(f"Killing Process due to too much time elapsed")
                 self.stopProcessBothMethods()
 
             time.sleep(1)

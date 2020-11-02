@@ -97,8 +97,8 @@ class ProxyProcess:
     def resetPathTrace(self):
         self.commandQueue.put("resetPathTrace")
 
-    def getMostRecentNetworkActivityTime(self):
-        self.commandQueue.put("getMostRecentNetworkActivityTime")
+    def getMostRecentNetworkActivityTimeAndPath(self):
+        self.commandQueue.put("getMostRecentNetworkActivityTimeAndPath")
         return self.resultQueue.get()
 
     def getNetworkErrors(self):
@@ -157,8 +157,8 @@ class ProxyProcess:
             if message == "getNetworkErrors":
                 resultQueue.put(pickle.dumps(networkErrorTracer.errors, protocol=pickle.HIGHEST_PROTOCOL))
 
-            if message == "getMostRecentNetworkActivityTime":
-                resultQueue.put(pathTracer.mostRecentNetworkActivityTime)
+            if message == "getMostRecentNetworkActivityTimeAndPath":
+                resultQueue.put((pathTracer.mostRecentNetworkActivityTime, pathTracer.mostRecentNetworkActivityURL, pathTracer.mostRecentNetworkActivityEvent))
 
             if message == "exit":
                 exit(0)

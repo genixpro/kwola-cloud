@@ -58,7 +58,7 @@ class TestingRunManager:
             self.configDir = mountTestingRunStorageDrive(self.run.applicationId)
             if self.configDir is None:
                 errorMessage = f"{traceback.format_exc()}"
-                logging.error(f"[{os.getpid()}] {errorMessage}")
+                logging.error(f"{errorMessage}")
                 raise RuntimeError(f"Unable to mount the gcs storage drive for application id {self.run.applicationId}")
         else:
             if not os.path.exists("data"):
@@ -149,7 +149,7 @@ class TestingRunManager:
 
         if self.run is None:
             errorMessage = f"Error! {self.testingRunId} not found."
-            logging.error(f"[{os.getpid()}] {errorMessage}")
+            logging.error(f"{errorMessage}")
             raise RuntimeError(f"Unable to find the testing run object with id {self.testingRunId}")
 
         self.applicationStorageBucket = storage.Bucket(self.storageClient, "kwola-testing-run-data-" + self.run.applicationId)
@@ -175,7 +175,8 @@ class TestingRunManager:
 
     def launchTestingStepsIfNeeded(self):
         logging.info(f"Launching testing steps if needed. Number to launch: {self.calculateNumberOfTestingSessionsToStart()}")
-        while self.calculateNumberOfTestingSessionsToStart() > 0:
+        runningSessions = len(self.run.runningTestingStepJobIds) * self.config['web_session_parallel_execution_sessions']
+        while self.calculateNumberOfTestingSessionsToStart() > 0 and runningSessions < self.run.configuration.maxParallelSessions:
             self.launchTestingStep()
 
 
@@ -572,7 +573,7 @@ class TestingRunManager:
 
                     totalNewSymbols += agent.assignNewSymbols(traces)
 
-        logging.info(f"[{os.getpid()}] Added {totalNewSymbols} new symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
+        logging.info(f"Added {totalNewSymbols} new symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
 
         agent.saveSymbolMap()
 
@@ -685,7 +686,7 @@ class TestingRunManager:
 
         except Exception:
             errorMessage = f"Error in the primary RunTesting job for the testing run with id {self.run.id}:\n\n{traceback.format_exc()}"
-            logging.error(f"[{os.getpid()}] {errorMessage}")
+            logging.error(f"{errorMessage}")
             raise
         finally:
             unmountTestingRunStorageDrive(self.configDir)

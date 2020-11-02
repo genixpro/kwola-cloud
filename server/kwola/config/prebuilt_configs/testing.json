@@ -87,7 +87,7 @@
   "enable_unhandled_exception_error": true,
   "iterations_between_db_saves": 5,
   "iterations_per_training_step": 10,
-  "iterations_per_training_step_adjustment_size_per_loop": 5,
+  "iterations_per_training_step_adjustment_size_per_loop": 1,
   "layer_1_dilation": 1,
   "layer_1_kernel_size": 5,
   "layer_1_num_kernels": 16,

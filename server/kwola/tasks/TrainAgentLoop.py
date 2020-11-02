@@ -65,7 +65,7 @@ def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
 
 
 def runRandomInitialization(config, trainingSequence, exitOnFail=True):
-    getLogger().info(f"[{os.getpid()}] Starting random testing sequences for initialization")
+    getLogger().info(f"Starting random testing sequences for initialization")
 
     trainingSequence.initializationTestingSteps = []
 
@@ -87,11 +87,11 @@ def runRandomInitialization(config, trainingSequence, exitOnFail=True):
             else:
                 updateModelSymbols(config, result['testingStepId'])
 
-            getLogger().info(f"[{os.getpid()}] Random Testing Sequence Completed")
+            getLogger().info(f"Random Testing Sequence Completed")
 
     # Save the training sequence with all the data on the initialization sequences
     trainingSequence.saveToDisk(config)
-    getLogger().info(f"[{os.getpid()}] Random initialization completed")
+    getLogger().info(f"Random initialization completed")
 
 
 def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber, coordinatorTempFileName):
@@ -116,12 +116,12 @@ def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber
             trainingSequence.trainingSteps.append(trainingStep)
             trainingSequence.saveToDisk(config)
         else:
-            getLogger().error(f"[{os.getpid()}] Training task subprocess appears to have failed")
+            getLogger().error(f"Training task subprocess appears to have failed")
 
         return result
 
     except Exception as e:
-        getLogger().error(f"[{os.getpid()}] Training task subprocess appears to have failed. {traceback.format_exc()}")
+        getLogger().error(f"Training task subprocess appears to have failed. {traceback.format_exc()}")
 
 
 def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugVideo=False):
@@ -165,7 +165,7 @@ def updateModelSymbols(config, testingStepId):
 
         totalNewSymbols += agent.assignNewSymbols(traces)
 
-    getLogger().info(f"[{os.getpid()}] Added {totalNewSymbols} new symbols from testing step {testingStepId}")
+    getLogger().info(f"Added {totalNewSymbols} new symbols from testing step {testingStepId}")
 
     agent.save()
 
@@ -219,7 +219,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
                 raise RuntimeError("One of the testing / training loops failed and did not return successfully. Exiting the training loop.")
 
             if not anyFailures:
-                getLogger().info(f"[{os.getpid()}] Updating the symbols table")
+                getLogger().info(f"Updating the symbols table")
                 for future in testStepFutures:
                     result = future.result()
                     testingStepId = result['testingStepId']
@@ -243,7 +243,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
                     config['iterations_per_training_step'] = max(5, config['iterations_per_training_step'] - config['iterations_per_training_step_adjustment_size_per_loop'])
                 config.saveConfig()
 
-            getLogger().info(f"[{os.getpid()}] Completed one parallel training & testing step! Hooray!")
+            getLogger().info(f"Completed one parallel training & testing step! Hooray!")
 
             time.sleep(3)
 
@@ -303,6 +303,8 @@ def trainAgent(configDir, exitOnFail=False):
         trainingSequence.saveToDisk(config)
 
     runMainTrainingLoop(config, trainingSequence, exitOnFail=exitOnFail)
+
+    generateAllCharts(config, enableCumulativeCoverage=True)
 
     trainingSequence.status = "completed"
     trainingSequence.endTime = datetime.now()

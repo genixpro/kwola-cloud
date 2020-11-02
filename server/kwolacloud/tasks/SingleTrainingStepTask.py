@@ -26,7 +26,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
 
     if run is None:
         errorMessage = f"Error! {testingRunId} not found."
-        logging.error(f"[{os.getpid()}] {errorMessage}")
+        logging.error(f"{errorMessage}")
         return {"success": False, "exception": errorMessage}
 
     # Verify this subscription with stripe
@@ -37,7 +37,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         configDir = mountTestingRunStorageDrive(run.applicationId)
         if configDir is None:
             errorMessage = f"{traceback.format_exc()}"
-            logging.error(f"[{os.getpid()}] {errorMessage}")
+            logging.error(f"{errorMessage}")
             return {"success": False, "exception": errorMessage}
     else:
         configDir = os.path.join("data", run.applicationId)
@@ -51,7 +51,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         return result
     except Exception as e:
         errorMessage = f"{traceback.format_exc()}"
-        logging.error(f"[{os.getpid()}] {errorMessage}")
+        logging.error(f"{errorMessage}")
         return {"success": False, "exception": errorMessage}
     finally:
         # unmountTestingRunStorageDrive(configDir)

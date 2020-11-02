@@ -37,11 +37,17 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from ..proxy.ProxyProcess import ProxyProcess
 from ..utils.retry import autoretry
 import cv2
 import hashlib
+import traceback
 import numpy
 import numpy as np
 import re
@@ -67,6 +73,7 @@ class WebEnvironmentSession:
         self.config = config
         self.targetURL = config['url']
         self.hasBrowserDied = False
+        self.browserDeathReason = None
 
         if plugins is None:
             self.plugins = []
@@ -134,6 +141,7 @@ class WebEnvironmentSession:
 
         chrome_options.add_argument(f"--disable-gpu")
         chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
+        chrome_options.add_argument(f"--no-sandbox")
         chrome_options.add_argument(f"--temp-profile")
         chrome_options.add_argument(f"--proxy-server=localhost:{self.proxy.port}")
 
@@ -204,13 +212,30 @@ class WebEnvironmentSession:
 
             self.driver = None
 
+    def waitUntilDocumentReadyState(self):
+        startTime = datetime.now()
+        while self.driver.execute_script('return document.readyState;') != "complete":
+            time.sleep(0.10)
+            elapsedTime = abs((datetime.now() - startTime).total_seconds())
+            if elapsedTime > self.noActivityTimeout:
+                break
+
+        elapsedTime = abs((datetime.now() - startTime).total_seconds())
+        return elapsedTime
+
     def waitUntilNoNetworkActivity(self):
+        readyStateWaitTime = self.waitUntilDocumentReadyState()
+
         startTime = datetime.now()
         elapsedTime = 0
         startPaths = set(self.proxy.getPathTrace()['recent'])
-        while abs((self.proxy.getMostRecentNetworkActivityTime() - datetime.now()).total_seconds()) < self.config['web_session_no_network_activity_wait_time']:
+        while abs((self.proxy.getMostRecentNetworkActivityTimeAndPath()[0] - datetime.now()).total_seconds()) < self.config['web_session_no_network_activity_wait_time']:
             time.sleep(0.10)
             elapsedTime = abs((datetime.now() - startTime).total_seconds())
+            # if elapsedTime > 2.0:
+            #     recent = self.proxy.getMostRecentNetworkActivityTimeAndPath()
+            #     print(elapsedTime, abs((recent[0] - datetime.now()).total_seconds()), recent[1], recent[2], flush=True)
+
             if elapsedTime > self.noActivityTimeout:
                 if self.noActivityTimeout > 1:
                     getLogger().warning(f"Warning! There was a timeout while waiting for network activity from the browser to die down. Maybe it is causing non"
@@ -223,7 +248,7 @@ class WebEnvironmentSession:
 
                 break
         elapsedTime = abs((datetime.now() - startTime).total_seconds())
-        return elapsedTime
+        return elapsedTime + readyStateWaitTime
 
     def findElementsForAutoLogin(self):
         actionMaps = self.getActionMaps()
@@ -380,14 +405,17 @@ class WebEnvironmentSession:
                     raise AutologinFailure(f"Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change.")
             else:
                 raise AutologinFailure(f"There was an error running one of the actions required for the heuristic auto login.")
-        except urllib3.exceptions.MaxRetryError:
+        except urllib3.exceptions.MaxRetryError as e:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during autologin: {traceback.format_exc()}"
             return None
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during autologin: {traceback.format_exc()}"
             return None
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during autologin: {traceback.format_exc()}"
             return None
 
     def getActionMaps(self):
@@ -567,12 +595,15 @@ class WebEnvironmentSession:
             return filteredActionMaps
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred while fetching action maps: {traceback.format_exc()}"
             return []
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred while fetching action maps: {traceback.format_exc()}"
             return []
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred while fetching action maps: {traceback.format_exc()}"
             return []
 
     def performActionInBrowser(self, action):
@@ -687,10 +718,12 @@ class WebEnvironmentSession:
         try:
             # If the browser went off site and off site links are disabled, then we send it back to the url it started from
             if self.config['prevent_offsite_links']:
-                self.waitUntilNoNetworkActivity()
+                networkWaitTime = self.waitUntilNoNetworkActivity()
+
+                current_url = self.driver.current_url
 
                 offsite = False
-                if self.driver.current_url != "data:," and self.getHostRoot(self.driver.current_url) != self.targetHostRoot:
+                if current_url != "data:," and self.getHostRoot(current_url) != self.targetHostRoot:
                     offsite = True
 
                 whitelistMatched = False
@@ -698,18 +731,21 @@ class WebEnvironmentSession:
                     whitelistMatched = True
 
                 for regex in self.urlWhitelistRegexes:
-                    if regex.search(self.driver.current_url) is not None:
+                    if regex.search(current_url) is not None:
                         whitelistMatched = True
 
                 if not whitelistMatched:
                     offsite = True
 
                 if offsite:
-                    getLogger().info(f"The browser session went offsite (to {self.driver.current_url}) and going offsite is disabled. The browser is being reset back to the URL it was at prior to this action: {priorURL}")
+                    getLogger().info(f"The browser session went offsite (to {current_url}) and going offsite is disabled. The browser is being reset back to the URL it was at prior to this action: {priorURL}")
                     self.driver.get(priorURL)
-                    self.waitUntilNoNetworkActivity()
+                    networkWaitTime += self.waitUntilNoNetworkActivity()
+                return networkWaitTime
+            else:
+                return 0
         except selenium.common.exceptions.TimeoutException:
-            pass
+            return 0
 
     def checkLoadFailure(self, priorURL):
         try:
@@ -728,17 +764,18 @@ class WebEnvironmentSession:
             pass
 
     def runAction(self, action):
+        actionExecutionTimes = {}
         try:
             if self.hasBrowserDied:
-                return None
-
-            actionExecutionTimes = {}
+                return None, actionExecutionTimes
 
             startTime = datetime.now()
-            self.checkOffsite(priorURL=self.targetURL)
-            actionExecutionTimes['checkOffsite-first'] = (datetime.now() - startTime).total_seconds()
+            networkWaitTime = self.checkOffsite(priorURL=self.targetURL)
+            actionExecutionTimes['checkOffsite-first-networkWaitTime'] = networkWaitTime
+            actionExecutionTimes['checkOffsite-first-body'] = ((datetime.now() - startTime).total_seconds() - networkWaitTime)
 
             executionTrace = ExecutionTrace(id=str(self.executionSession.id) + "_trace_" + str(self.traceNumber))
+            executionTrace.actionExecutionTimes = actionExecutionTimes
             executionTrace.time = datetime.now()
             executionTrace.actionPerformed = action
             executionTrace.errorsDetected = []
@@ -768,8 +805,9 @@ class WebEnvironmentSession:
             executionTrace.didActionSucceed = success
 
             startTime = datetime.now()
-            self.checkOffsite(priorURL=executionTrace.startURL)
-            actionExecutionTimes['checkOffsite-second'] = (datetime.now() - startTime).total_seconds()
+            networkWaitTime = self.checkOffsite(priorURL=executionTrace.startURL)
+            actionExecutionTimes['checkOffsite-second-networkWaitTime'] = networkWaitTime
+            actionExecutionTimes['checkOffsite-second-body'] = ((datetime.now() - startTime).total_seconds() - networkWaitTime)
 
             startTime = datetime.now()
             self.checkLoadFailure(priorURL=executionTrace.startURL)
@@ -784,18 +822,19 @@ class WebEnvironmentSession:
 
             self.enforceMemoryLimits()
 
-            executionTrace.actionExecutionTimes = actionExecutionTimes
-
-            return executionTrace
+            return executionTrace, actionExecutionTimes
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
-            return None
+            self.browserDeathReason = f"Following fatal error occurred during runAction: {traceback.format_exc()}"
+            return None, actionExecutionTimes
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
-            return None
+            self.browserDeathReason = f"Following fatal error occurred during runAction: {traceback.format_exc()}"
+            return None, actionExecutionTimes
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
-            return None
+            self.browserDeathReason = f"Following fatal error occurred during runAction: {traceback.format_exc()}"
+            return None, actionExecutionTimes
 
     def screenshotSize(self):
         rect = self.driver.get_window_rect()
@@ -813,15 +852,19 @@ class WebEnvironmentSession:
             return image
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
         except AttributeError:
             self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
             return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
 
     def runSessionCompletedHooks(self):

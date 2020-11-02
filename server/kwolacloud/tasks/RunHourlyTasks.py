@@ -42,7 +42,7 @@ def runHourlyTasks():
     except Exception as e:
         errorMessage = f"Error in the hourly tasks job:\n\n{traceback.format_exc()}"
         print(errorMessage)
-        logging.error(f"[{os.getpid()}] {errorMessage}")
+        logging.error(f"{errorMessage}")
         return {"success": False, "exception": errorMessage}
     finally:
         pass

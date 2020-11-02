@@ -68,6 +68,7 @@ import copy
 from ..utils.retry import autoretry
 from faker import Faker
 from ...config.logger import setupLocalLogging
+mpl.use("Agg")
 
 
 class DeepLearningAgent:
@@ -1145,7 +1146,7 @@ class DeepLearningAgent:
 
             # We give the user a warning since this situation should be pretty rare. If its coming up a lot,
             # that would indicate something ver wrong.
-            getLogger().warning(f"[{os.getpid()}] Warning, there were no action maps to choose from when"
+            getLogger().warning(f"Warning, there were no action maps to choose from when"
                                                       " selecting a random action. Choosing a random x,y coordinate"
                                                       " completely at random, anywhere on the screen and choosing"
                                                       " any random action to execute at that coordinate. Its the"
@@ -2201,9 +2202,9 @@ class DeepLearningAgent:
             filePath = os.path.join(tempScreenshotDirectory, fileName)
             skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
             if includeNeuralNetworkCharts:
-                getLogger().info(f"[{os.getpid()}] Completed debug image {fileName}")
+                getLogger().info(f"Completed debug image {fileName}")
         except Exception:
-            getLogger().error(f"[{os.getpid()}] Failed to create debug image!\n{traceback.format_exc()}")
+            getLogger().error(f"Failed to create debug image!\n{traceback.format_exc()}")
 
     def createRewardPixelMask(self, processedImage, action):
         """
@@ -2843,22 +2844,22 @@ class DeepLearningAgent:
             # This else statement should only happen if there is a significant error in the neural network
             # itself that is leading to NaN values in the results. So here, we print out all of the loss
             # values for all of the batchs to help you track down where the error is.
-            message += f"[{os.getpid()}] ERROR! NaN detected in loss calculation. Skipping optimization step.\n"
+            message += f"ERROR! NaN detected in loss calculation. Skipping optimization step.\n"
             for batchIndex, batchResult in enumerate(batchResultTensors):
                 presentRewardLoss, discountedFutureRewardLoss, stateValueLoss, \
                 advantageLoss, actionProbabilityLoss, tracePredictionLoss, predictedExecutionFeaturesLoss, \
                 predictedCursorLoss, totalRewardLoss, totalLoss, totalRebalancedLoss, \
                 totalSampleLosses, batch = batchResult
 
-                message += f"[{os.getpid()}] Batch {batchIndex}\n"
-                message += f"[{os.getpid()}] presentRewardLoss {float(presentRewardLoss.data.item())}\n"
-                message += f"[{os.getpid()}] discountedFutureRewardLoss {float(discountedFutureRewardLoss.data.item())}\n"
-                message += f"[{os.getpid()}] stateValueLoss {float(stateValueLoss.data.item())}\n"
-                message += f"[{os.getpid()}] advantageLoss {float(advantageLoss.data.item())}\n"
-                message += f"[{os.getpid()}] actionProbabilityLoss {float(actionProbabilityLoss.data.item())}\n"
-                message += f"[{os.getpid()}] tracePredictionLoss {float(tracePredictionLoss.data.item())}\n"
-                message += f"[{os.getpid()}] predictedExecutionFeaturesLoss {float(predictedExecutionFeaturesLoss.data.item())}\n"
-                message += f"[{os.getpid()}] predictedCursorLoss {float(predictedCursorLoss.data.item())}\n"
+                message += f"Batch {batchIndex}\n"
+                message += f"presentRewardLoss {float(presentRewardLoss.data.item())}\n"
+                message += f"discountedFutureRewardLoss {float(discountedFutureRewardLoss.data.item())}\n"
+                message += f"stateValueLoss {float(stateValueLoss.data.item())}\n"
+                message += f"advantageLoss {float(advantageLoss.data.item())}\n"
+                message += f"actionProbabilityLoss {float(actionProbabilityLoss.data.item())}\n"
+                message += f"tracePredictionLoss {float(tracePredictionLoss.data.item())}\n"
+                message += f"predictedExecutionFeaturesLoss {float(predictedExecutionFeaturesLoss.data.item())}\n"
+                message += f"predictedCursorLoss {float(predictedCursorLoss.data.item())}\n"
 
             getLogger().critical(message)
 

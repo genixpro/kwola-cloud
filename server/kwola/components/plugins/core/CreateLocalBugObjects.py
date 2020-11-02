@@ -113,14 +113,14 @@ class CreateLocalBugObjects(TestingStepPluginBase):
 
                 saveKwolaFileData(bugVideoFilePath, origVideoFileData, self.config)
 
-                getLogger().info(f"\n\n[{os.getpid()}] Bug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
+                getLogger().info(f"\n\nBug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
 
                 existingBugs.append(bug)
                 bugObjects.append(bug)
 
-                getLogger().info(f"\n\n[{os.getpid()}] Bug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
+                getLogger().info(f"\n\nBug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
 
-        getLogger().info(f"[{os.getpid()}] Found {len(self.newErrorsThisTestingStep[testingStep.id])} new unique errors this session.")
+        getLogger().info(f"Found {len(self.newErrorsThisTestingStep[testingStep.id])} new unique errors this session.")
 
         testingStep.bugsFound = len(self.newErrorsThisTestingStep[testingStep.id])
         testingStep.errors = self.newErrorsThisTestingStep[testingStep.id]

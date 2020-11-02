@@ -49,10 +49,10 @@ class KubernetesJobProcess:
         initializeKwolaCloudProcess()
 
     def run(self):
-        logging.info(f"[{os.getpid()}] KubernetesJobProcess: Waiting for input from stdin")
+        logging.info(f"KubernetesJobProcess: Waiting for input from stdin")
         dataStr = sys.argv[1]
         module, referenceId, data = pickle.loads(base64.b64decode(dataStr, altchars=KubernetesJob.base64AltChars))
-        logging.info(f"[{os.getpid()}] Running process with following data:\n{json.dumps(data, indent=4)}")
+        logging.info(f"Running process with following data:\n{json.dumps(data, indent=4)}")
         result = self.targetFunc(**data)
         logging.info(f"Process finished with result:\n{json.dumps(result, indent=4)}")
 
