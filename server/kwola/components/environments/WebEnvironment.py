@@ -127,6 +127,7 @@ class WebEnvironment:
                 except concurrent.futures.TimeoutError:
                     result = numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
                     session.hasBrowserDied = True
+                    session.browserDeathReason = f"Following fatal error occurred during getImages: {traceback.format_exc()}"
                 results.append(result)
 
         return results
@@ -145,6 +146,7 @@ class WebEnvironment:
                 except concurrent.futures.TimeoutError:
                     result = []
                     session.hasBrowserDied = True
+                    session.browserDeathReason = f"Following fatal error occurred during getActionMaps: {traceback.format_exc()}"
                 results.append(result)
 
         return results
@@ -174,6 +176,8 @@ class WebEnvironment:
                 except concurrent.futures.TimeoutError:
                     result = (None, {})
                     session.hasBrowserDied = True
+                    session.browserDeathReason = f"Following fatal error occurred during runActions: {traceback.format_exc()}"
+
                 results.append(result)
 
 
