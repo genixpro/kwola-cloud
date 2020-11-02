@@ -138,15 +138,13 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         process.start()
         result = process.waitForProcessResult()
 
-        getLogger().info(f"Finished the testing step {testingStep.id} (1)")
-
         if result is not None and 'testingStepId' in result:
             result['finishTime'] = datetime.now()
 
             # Reload the testing sequence from the db. It will have been updated by the sub-process.
             trainingSequence.testingSteps.append(testingStep.id)
 
-        getLogger().info(f"Finished the testing step {testingStep.id} (2)")
+        getLogger().info(f"Finished the testing step {testingStep.id}")
 
         return result
 
