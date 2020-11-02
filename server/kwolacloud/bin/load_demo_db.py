@@ -24,24 +24,28 @@ from kwola.datamodels.ExecutionSessionTraceWeights import ExecutionSessionTraceW
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.datamodels.TrainingStepModel import TrainingStep
 from ..db import connectToMongoWithRetries
+from kwola.config.logger import getLogger
 from mongoengine.context_managers import switch_db
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
 def transferModel(modelClass):
-    print(f"Transferring data for {modelClass.__name__}")
+    getLogger().info(f"Transferring data for {modelClass.__name__}")
 
     with switch_db(modelClass, "demo_backup") as backupModelClass:
         backupObjs = backupModelClass.objects()
 
-    count = 0
-    for backup in backupObjs:
-        obj = modelClass.from_json(backup.to_json())
-        obj.save()
-        count += 1
-    print(f"Transferred {count} objects between the databases.")
+        count = 0
+        for backup in backupObjs:
+            obj = modelClass.from_json(backup.to_json())
+            obj.save()
+            count += 1
+            if count % 100 == 0:
+                getLogger().info(f"Transferred {count} objects so far.")
+        getLogger().info(f"Transferred {count} objects between the databases.")
 
 
 def main():
-    connectToMongoWithRetries()
+    initializeKwolaCloudProcess()
 
     ApplicationModel.objects().delete()
     TrainingSequence.objects().delete()
@@ -77,4 +81,4 @@ def main():
     transferModel(ExecutionTrace)
     transferModel(TrainingStep)
 
-    print("Kwola database has now been restored with all the demo data.")
+    getLogger().info("Kwola database has now been restored with all the demo data.")
