@@ -24,6 +24,8 @@ from datetime import datetime
 import json
 import sys
 import os
+import psutil
+import time
 
 class TaskProcess:
     """
@@ -45,5 +47,21 @@ class TaskProcess:
         data = json.loads(dataStr)
         getLogger().info(f"Running process with following data:\n{json.dumps(data, indent=4)}")
         result = self.targetFunc(**data)
+
+        p = psutil.Process(os.getpid())
+        for child in p.children(recursive=True):
+            try:
+                print(f"Terminating {child.pid}")
+                child.terminate()
+            except psutil.NoSuchProcess:
+                pass
+        time.sleep(1)
+        for child in p.children(recursive=True):
+            try:
+                print(f"Killing {child.pid}")
+                child.kill()
+            except psutil.NoSuchProcess:
+                pass
+
         print(TaskProcess.resultStartString + json.dumps(result) + TaskProcess.resultFinishString, flush=True)
         exit(0)

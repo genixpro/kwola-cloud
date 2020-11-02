@@ -1637,6 +1637,9 @@ class DeepLearningAgent:
 
         shutil.rmtree(tempScreenshotDirectory)
 
+        processingPool.close()
+        processingPool.join()
+
         return videoData
 
     def processDebugTraceThroughNeuralNetwork(self, trace, rawImage):

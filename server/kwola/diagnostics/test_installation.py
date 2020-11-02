@@ -52,6 +52,7 @@ def testInstallation(verbose=True):
     jsRewritingWorking = jsRewritingWorking.get()
 
     subprocessPool.close()
+    subprocessPool.join()
 
     if chromedriverWorking and ffmpegWorking and neuralNetworkWorking and jsRewritingWorking:
         if verbose:

@@ -115,30 +115,39 @@ class WebEnvironment:
         return self.sessions[0].screenshotSize()
 
     def getImages(self):
-        imageFutures = []
-
+        results = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
+            imageFutures = []
             for session in self.sessions:
                 resultFuture = executor.submit(session.getImage)
                 imageFutures.append(resultFuture)
+            for future, session in zip(imageFutures, self.sessions):
+                try:
+                    result = future.result(timeout=self.config['testing_get_image_timeout'])
+                except concurrent.futures.TimeoutError:
+                    result = numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+                    session.hasBrowserDied = True
+                results.append(result)
 
-        images = [
-            imageFuture.result() for imageFuture in imageFutures
-        ]
-        return images
+        return results
 
     def getActionMaps(self):
-        actionMapFutures = []
+        results = []
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
+            actionMapFutures = []
             for session in self.sessions:
                 resultFuture = executor.submit(session.getActionMaps)
                 actionMapFutures.append(resultFuture)
+            for future, session in zip(actionMapFutures, self.sessions):
+                try:
+                    result = future.result(timeout=self.config['testing_fetch_action_map_timeout'])
+                except concurrent.futures.TimeoutError:
+                    result = []
+                    session.hasBrowserDied = True
+                results.append(result)
 
-        actionMaps = [
-            imageFuture.result() for imageFuture in actionMapFutures
-        ]
-        return actionMaps
+        return results
 
     def numberParallelSessions(self):
         return len(self.sessions)
@@ -154,17 +163,26 @@ class WebEnvironment:
         startTime = datetime.now()
         resultFutures = []
 
+        results = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for tab, action in zip(self.sessions, actions):
                 resultFuture = executor.submit(tab.runAction, action)
                 resultFutures.append(resultFuture)
+            for future, session in zip(resultFutures, self.sessions):
+                try:
+                    result = future.result(timeout=self.config['testing_run_action_timeout'])
+                except concurrent.futures.TimeoutError:
+                    result = (None, {})
+                    session.hasBrowserDied = True
+                results.append(result)
+
 
         traces = [
-            resultFuture.result()[0] for resultFuture in resultFutures
+            result[0] for result in results
         ]
 
         actionExecutionTimes = [
-            resultFuture.result()[1] for resultFuture in resultFutures
+            result[1] for result in results
         ]
 
         self.synchronizeNoActivityTimeouts()
