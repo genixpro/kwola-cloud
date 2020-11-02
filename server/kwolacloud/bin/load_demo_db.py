@@ -13,6 +13,10 @@ from kwolacloud.datamodels.MutedError import MutedError
 from kwolacloud.datamodels.RecurringTestingTrigger import RecurringTestingTrigger
 from kwolacloud.datamodels.TestingRun import TestingRun
 from kwola.datamodels.BugModel import BugModel
+from kwola.datamodels.errors.LogError import LogError
+from kwola.datamodels.errors.BaseError import BaseError
+from kwola.datamodels.errors.ExceptionError import ExceptionError
+from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.TrainingSequenceModel import TrainingSequence
 from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
