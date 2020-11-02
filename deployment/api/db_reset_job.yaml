@@ -16,7 +16,7 @@ spec:
             resources:
               requests:
                 cpu: 1000m
-                memory: 1024Mi
+                memory: 4096Mi
           restartPolicy: OnFailure
           priorityClassName: __KWOLA_ENV__-priority
           schedulerName: default-scheduler

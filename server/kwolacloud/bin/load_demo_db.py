@@ -32,12 +32,12 @@ def transferModel(modelClass):
     with switch_db(modelClass, "demo_backup") as backupModelClass:
         backupObjs = backupModelClass.objects()
 
-    count = 0
-    for backup in backupObjs:
-        obj = modelClass.from_json(backup.to_json())
-        obj.save()
-        count += 1
-    print(f"Transferred {count} objects between the databases.")
+        count = 0
+        for backup in backupObjs:
+            obj = modelClass.from_json(backup.to_json())
+            obj.save()
+            count += 1
+        print(f"Transferred {count} objects between the databases.")
 
 
 def main():
