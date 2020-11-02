@@ -14,10 +14,11 @@ def connectToMongoWithRetries(alias=None, db=None):
             if db is None:
                 db = configData['mongo']['db']
 
+            uri = configData['mongo']['uri'].replace(configData['mongo']['db'], db)
             if alias is None:
-                connect(db, host=configData['mongo']['uri'])
+                connect(db, host=uri)
             else:
-                connect(db, host=configData['mongo']['uri'], alias=alias)
+                connect(db, host=uri, alias=alias)
             ApplicationModel.objects().count()
             success = True
             break

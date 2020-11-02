@@ -13,6 +13,10 @@ from kwolacloud.datamodels.MutedError import MutedError
 from kwolacloud.datamodels.RecurringTestingTrigger import RecurringTestingTrigger
 from kwolacloud.datamodels.TestingRun import TestingRun
 from kwola.datamodels.BugModel import BugModel
+from kwola.datamodels.errors.LogError import LogError
+from kwola.datamodels.errors.BaseError import BaseError
+from kwola.datamodels.errors.ExceptionError import ExceptionError
+from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.TrainingSequenceModel import TrainingSequence
 from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
@@ -28,9 +32,13 @@ def transferModel(modelClass):
     with switch_db(modelClass, "demo_backup") as backupModelClass:
         backupObjs = backupModelClass.objects()
 
+    count = 0
     for backup in backupObjs:
-        obj = modelClass(backup)
+        obj = modelClass.from_json(backup.to_json())
         obj.save()
+        count += 1
+    print(f"Transferred {count} objects between the databases.")
+
 
 def main():
     connectToMongoWithRetries()
