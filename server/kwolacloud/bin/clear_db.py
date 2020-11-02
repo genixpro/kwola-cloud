@@ -19,11 +19,12 @@ from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionSessionTraceWeights import ExecutionSessionTraceWeights
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.datamodels.TrainingStepModel import TrainingStep
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 from mongoengine import connect
 from ..db import connectToMongoWithRetries
 
 def main():
-    connectToMongoWithRetries()
+    initializeKwolaCloudProcess()
 
     ApplicationModel.objects().delete()
     TrainingSequence.objects().delete()

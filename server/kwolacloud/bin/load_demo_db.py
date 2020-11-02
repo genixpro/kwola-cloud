@@ -25,6 +25,7 @@ from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.datamodels.TrainingStepModel import TrainingStep
 from ..db import connectToMongoWithRetries
 from mongoengine.context_managers import switch_db
+from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
 def transferModel(modelClass):
     print(f"Transferring data for {modelClass.__name__}")
@@ -41,7 +42,7 @@ def transferModel(modelClass):
 
 
 def main():
-    connectToMongoWithRetries()
+    initializeKwolaCloudProcess()
 
     ApplicationModel.objects().delete()
     TrainingSequence.objects().delete()
