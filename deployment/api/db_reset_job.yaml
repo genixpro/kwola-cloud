@@ -11,13 +11,16 @@ spec:
           containers:
           - name: kwola-cloud-sha256
             image: gcr.io/kwola-cloud/kwola-api-__KWOLA_ENV__:__REVISION_ID__
+            imagePullPolicy: Always
             command: [ "kwolacloud_load_demo_db" ]
             resources:
               requests:
-                cpu: 250m
-                memory: 512Mi
+                cpu: 1000m
+                memory: 1024Mi
           restartPolicy: OnFailure
           priorityClassName: __KWOLA_ENV__-priority
+          schedulerName: default-scheduler
+          terminationGracePeriodSeconds: 15
       backoffLimit: 4
 
 
