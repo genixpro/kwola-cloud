@@ -44,7 +44,10 @@ def transferModel(modelClass):
             id = data['_id']
             del data['_id']
             obj = targetModelClass(**data)
-            obj.id = id
+            if isinstance(id, str):
+                obj.id = id
+            elif isinstance(id, dict):
+                obj.id = id['$oid']
             obj.save(validate=False)
         count += 1
         if count % 100 == 0:
