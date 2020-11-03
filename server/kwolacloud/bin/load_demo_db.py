@@ -25,6 +25,7 @@ from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.datamodels.TrainingStepModel import TrainingStep
 from ..db import connectToMongoWithRetries
 from kwola.config.logger import getLogger
+import json
 from mongoengine.context_managers import switch_db
 from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
@@ -39,8 +40,11 @@ def transferModel(modelClass):
         with switch_db(modelClass, "demo_backup") as backupModelClass:
             backup = backupModelClass.objects(id=backupId).first()
         with switch_db(modelClass, "default") as targetModelClass:
-            obj = targetModelClass.from_json(backup.to_json())
-            obj.save()
+            data = json.loads(backup.to_json())
+            id = data['_id']
+            obj = targetModelClass(**data)
+            obj.id = id
+            obj.save(validate=False)
         count += 1
         if count % 100 == 0:
             getLogger().info(f"Transferred {count} objects so far.")
