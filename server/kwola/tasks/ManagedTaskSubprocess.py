@@ -29,6 +29,7 @@ import subprocess
 import threading
 import time
 import tempfile
+import sys
 
 
 class ManagedTaskSubprocess:
@@ -68,12 +69,13 @@ class ManagedTaskSubprocess:
         self.processOutputFile.close()
 
     def start(self):
-        atexit.register(lambda: self.process.terminate())
+        self.process = subprocess.Popen(self.args, stdout=self.processOutputFile, stderr=sys.stderr, stdin=subprocess.PIPE)
 
-        self.process = subprocess.Popen(self.args, stdout=self.processOutputFile, stderr=None, stdin=subprocess.PIPE)
+        atexit.register(lambda: self.process.terminate())
 
         self.process.stdin.write(bytes(json.dumps(self.data) + "\n", "utf8"))
         self.process.stdin.flush()
+        self.process.stdin.close()
 
         self.monitorTimeoutProcess = threading.Thread(target=lambda: self.timeoutMonitoringThread(), daemon=True)
         self.monitorOutputProcess = threading.Thread(target=lambda: self.outputMonitoringThread(), daemon=True)
