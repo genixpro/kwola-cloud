@@ -36,7 +36,7 @@ def transferModel(modelClass):
 
         count = 0
         for backupId in backupObjIds:
-            backup = modelClass.objects(id=backupId).first()
+            backup = backupModelClass.objects(id=backupId).first()
             obj = modelClass.from_json(backup.to_json())
             obj.save()
             count += 1
