@@ -42,6 +42,7 @@ def transferModel(modelClass):
         with switch_db(modelClass, "default") as targetModelClass:
             data = json.loads(backup.to_json())
             id = data['_id']
+            del data['_id']
             obj = targetModelClass(**data)
             obj.id = id
             obj.save(validate=False)
