@@ -25,6 +25,7 @@ from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.datamodels.TrainingStepModel import TrainingStep
 from ..db import connectToMongoWithRetries
 from kwola.config.logger import getLogger
+import json
 from mongoengine.context_managers import switch_db
 from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
@@ -32,16 +33,24 @@ def transferModel(modelClass):
     getLogger().info(f"Transferring data for {modelClass.__name__}")
 
     with switch_db(modelClass, "demo_backup") as backupModelClass:
-        backupObjs = backupModelClass.objects()
+        backupObjIds = [o.id for o in backupModelClass.objects().only("id")]
 
-        count = 0
-        for backup in backupObjs:
-            obj = modelClass.from_json(backup.to_json())
-            obj.save()
-            count += 1
-            if count % 100 == 0:
-                getLogger().info(f"Transferred {count} objects so far.")
-        getLogger().info(f"Transferred {count} objects between the databases.")
+    count = 0
+    for backupId in backupObjIds:
+        with switch_db(modelClass, "demo_backup") as backupModelClass:
+            backup = backupModelClass.objects(id=backupId).first()
+        with switch_db(modelClass, "default") as targetModelClass:
+            data = json.loads(backup.to_json())
+            id = data['_id']
+            del data['_id']
+            obj = targetModelClass(**data)
+            if isinstance(id, str):
+                obj.id = id
+            obj.save(validate=False)
+        count += 1
+        if count % 100 == 0:
+            getLogger().info(f"Transferred {count} objects so far.")
+    getLogger().info(f"Transferred {count} objects between the databases.")
 
 
 def main():
@@ -66,19 +75,19 @@ def main():
     connectToMongoWithRetries(alias="demo_backup", db="demo_backup")
 
     transferModel(ApplicationModel)
-    transferModel(CounterModel)
-    transferModel(FeedbackSubmission)
-    transferModel(KubernetesJobLogs)
-    transferModel(KubernetesJobResult)
-    transferModel(MutedError)
-    transferModel(RecurringTestingTrigger)
+    transferModel(ExecutionTrace)
+    transferModel(ExecutionSession)
     transferModel(TestingRun)
     transferModel(BugModel)
+    transferModel(MutedError)
+    transferModel(RecurringTestingTrigger)
+    transferModel(KubernetesJobLogs)
+    transferModel(KubernetesJobResult)
+    transferModel(FeedbackSubmission)
+    transferModel(CounterModel)
     transferModel(TrainingSequence)
     transferModel(TestingStep)
-    transferModel(ExecutionSession)
     transferModel(ExecutionSessionTraceWeights)
-    transferModel(ExecutionTrace)
     transferModel(TrainingStep)
 
     getLogger().info("Kwola database has now been restored with all the demo data.")
