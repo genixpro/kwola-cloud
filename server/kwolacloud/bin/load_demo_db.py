@@ -34,15 +34,16 @@ def transferModel(modelClass):
     with switch_db(modelClass, "demo_backup") as backupModelClass:
         backupObjIds = [o.id for o in backupModelClass.objects().only("id")]
 
-        count = 0
-        for backupId in backupObjIds:
+    count = 0
+    for backupId in backupObjIds:
+        with switch_db(modelClass, "demo_backup") as backupModelClass:
             backup = backupModelClass.objects(id=backupId).first()
-            obj = modelClass.from_json(backup.to_json())
-            obj.save()
-            count += 1
-            if count % 100 == 0:
-                getLogger().info(f"Transferred {count} objects so far.")
-        getLogger().info(f"Transferred {count} objects between the databases.")
+        obj = modelClass.from_json(backup.to_json())
+        obj.save()
+        count += 1
+        if count % 100 == 0:
+            getLogger().info(f"Transferred {count} objects so far.")
+    getLogger().info(f"Transferred {count} objects between the databases.")
 
 
 def main():
