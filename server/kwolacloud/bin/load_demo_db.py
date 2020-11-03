@@ -38,8 +38,9 @@ def transferModel(modelClass):
     for backupId in backupObjIds:
         with switch_db(modelClass, "demo_backup") as backupModelClass:
             backup = backupModelClass.objects(id=backupId).first()
-        obj = modelClass.from_json(backup.to_json())
-        obj.save()
+        with switch_db(modelClass, "default") as targetModelClass:
+            obj = targetModelClass.from_json(backup.to_json())
+            obj.save()
         count += 1
         if count % 100 == 0:
             getLogger().info(f"Transferred {count} objects so far.")
