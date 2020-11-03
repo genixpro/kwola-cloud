@@ -231,7 +231,7 @@ class ViewTestingRun extends Component {
                                 <br/>
 
                                 {
-                                    this.state.isAdmin ?
+                                    this.state.isAdmin && process.env.REACT_APP_DISABLE_ADMIN_VIEW !== "true" ?
                                         <Papersheet title={`Admin`}>
                                             <Button variant="extended" color="primary"
                                                     onClick={() => this.restartTestingRunKubeJob()}>
