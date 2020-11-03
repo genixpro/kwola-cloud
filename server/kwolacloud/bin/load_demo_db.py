@@ -32,10 +32,11 @@ def transferModel(modelClass):
     getLogger().info(f"Transferring data for {modelClass.__name__}")
 
     with switch_db(modelClass, "demo_backup") as backupModelClass:
-        backupObjs = backupModelClass.objects()
+        backupObjIds = [o.id for o in backupModelClass.objects().only("id")]
 
         count = 0
-        for backup in backupObjs:
+        for backupId in backupObjIds:
+            backup = modelClass.objects(id=backupId).first()
             obj = modelClass.from_json(backup.to_json())
             obj.save()
             count += 1
