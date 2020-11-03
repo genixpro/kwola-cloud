@@ -130,6 +130,7 @@
   "prevent_offsite_links": true,
   "print_cache_hit_rate": false,
   "print_cache_hit_rate_moving_average_length": 100,
+  "print_configuration_on_startup": false,
   "print_loss_iterations": 10,
   "print_loss_moving_average_length": 50,
   "profile": "large",

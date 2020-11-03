@@ -154,7 +154,10 @@ class TrainingManager:
                 multiprocessing.set_start_method('spawn')
             except RuntimeError:
                 pass
-            getLogger().info(f"Starting Training Step with configuration:\n{pformat(self.config.configData)}")
+            if self.config['print_configuration_on_startup']:
+                getLogger().info(f"Starting Training Step with configuration:\n{pformat(self.config.configData)}")
+            else:
+                getLogger().info(f"Starting Training Step")
 
             self.initializeGPU()
             self.createTrainingStep()

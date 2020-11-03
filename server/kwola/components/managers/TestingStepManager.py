@@ -402,7 +402,10 @@ class TestingStepManager:
         trace.saveToDisk(config)
 
     def runTesting(self):
-        getLogger().info(f"Starting New Testing Sequence with configuration:\n{pformat(self.config.configData)}")
+        if self.config['print_configuration_on_startup']:
+            getLogger().info(f"Starting New Testing Sequence with configuration:\n{pformat(self.config.configData)}")
+        else:
+            getLogger().info(f"Starting New Testing Sequence")
 
         resultValue = {'success': True}
 
