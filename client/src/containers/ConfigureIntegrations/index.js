@@ -229,7 +229,7 @@ class ConfigureIntegrations extends Component {
                                 {
                                     !this.state.application.jiraAccessToken ?
                                         <div>
-                                            <a href={`https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=V5H8QVarAt0oytdolmjMzoIIrmRc1i41&scope=write%3Ajira-work%20read%3Ajira-work%20manage%3Ajira-configuration%20offline_access&redirect_uri=${encodeURIComponent(this.computeJIRARedirectURI())}&state=${this.getApplicationId()}&response_type=code&prompt=consent`}>
+                                            <a href={`https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${process.env.REACT_APP_ATLASSIAN_CLIENT_ID}&scope=write%3Ajira-work%20read%3Ajira-work%20manage%3Ajira-configuration%20offline_access&redirect_uri=${encodeURIComponent(this.computeJIRARedirectURI())}&state=${this.getApplicationId()}&response_type=code&prompt=consent`}>
                                                 <Button
                                                     variant="contained"
                                                     color="primary"
