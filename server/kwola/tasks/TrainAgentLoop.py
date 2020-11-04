@@ -186,6 +186,8 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     chartGenerationFuture = None
 
     while trainingSequence.trainingLoopsCompleted < config['training_loops_needed']:
+        getLogger().info(f"Starting a single training loop. Loops completed: {trainingSequence.trainingLoopsCompleted}")
+
         with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_loop'] + numberOfTrainingStepsInParallel)) as executor:
             coordinatorTempFileName = "kwola_distributed_coordinator-" + str(random.randint(0, 1e8))
             coordinatorTempFilePath = "/tmp/" + coordinatorTempFileName
@@ -275,7 +277,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
         chartGenerationFuture.wait()
 
     generateAllCharts(config, applicationId=None, enableCumulativeCoverage=True)
-F
+
 def trainAgent(configDir, exitOnFail=False):
     try:
         multiprocessing.set_start_method('spawn')
