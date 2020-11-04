@@ -33,6 +33,7 @@ from ..datamodels.ExecutionTraceModel import ExecutionTrace
 from ..components.managers.TrainingManager import TrainingManager
 from ..components.utils.charts import generateAllCharts
 from ..datamodels.LockedFile import LockedFile
+from ..components.utils.asyncthreadfuture import AsyncThreadFuture
 from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -60,6 +61,7 @@ def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
 
         # Reload the testing sequence from the db. It will have been updated by the sub-process.
         trainingSequence.initializationTestingSteps.append(testingStep.id)
+        trainingSequence.saveToDisk(config)
 
         return result
     except Exception as e:
@@ -114,6 +116,7 @@ def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber
 
             trainingStepId = str(result['trainingStepId'])
             trainingSequence.trainingSteps.append(trainingStepId)
+            trainingSequence.saveToDisk(config)
         else:
             getLogger().error(f"Training task subprocess appears to have failed")
 
@@ -143,6 +146,7 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
 
             # Reload the testing sequence from the db. It will have been updated by the sub-process.
             trainingSequence.testingSteps.append(testingStep.id)
+            trainingSequence.saveToDisk(config)
 
         getLogger().info(f"Finished the testing step {testingStep.id}")
 
@@ -179,6 +183,8 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
     numberOfTrainingStepsInParallel = max(1, torch.cuda.device_count())
 
+    chartGenerationFuture = None
+
     while trainingSequence.trainingLoopsCompleted < config['training_loops_needed']:
         with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_loop'] + numberOfTrainingStepsInParallel)) as executor:
             coordinatorTempFileName = "kwola_distributed_coordinator-" + str(random.randint(0, 1e8))
@@ -189,6 +195,8 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
             allFutures = []
             testStepFutures = []
             trainStepFutures = []
+
+            enableDebugVideosThisLoop = bool(trainingSequence.trainingLoopsCompleted % config['debug_video_generation_frequency'] == 0)
 
             if torch.cuda.device_count() > 0:
                 for gpu in range(numberOfTrainingStepsInParallel):
@@ -204,7 +212,10 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
             for testingStepNumber in range(config['testing_sequences_per_training_loop']):
                 testStepIndex = trainingSequence.testingStepsLaunched + config['training_random_initialization_sequences']
-                future = executor.submit(runTestingSubprocess, config, trainingSequence, testStepIndex, generateDebugVideo=True if testingStepNumber == 0 else False)
+                generateDebugVideo = False
+                if testingStepNumber == 0 and enableDebugVideosThisLoop:
+                    generateDebugVideo = True
+                future = executor.submit(runTestingSubprocess, config, trainingSequence, testStepIndex, generateDebugVideo=generateDebugVideo)
                 allFutures.append(future)
                 testStepFutures.append(future)
                 time.sleep(3)
@@ -250,14 +261,18 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
                     config['iterations_per_training_step'] = max(5, config['iterations_per_training_step'] - config['iterations_per_training_step_adjustment_size_per_loop'])
                 config.saveConfig()
 
-            getLogger().info(f"Completed one parallel training & testing step! Hooray!")
-
             time.sleep(3)
 
         trainingSequence.trainingLoopsCompleted += 1
         trainingSequence.averageTimePerStep = (datetime.now() - stepStartTime).total_seconds() / trainingSequence.trainingLoopsCompleted
         trainingSequence.saveToDisk(config)
-        generateAllCharts(config, enableCumulativeCoverage=bool(trainingSequence.trainingLoopsCompleted % 10 == 0))
+        if (trainingSequence.trainingLoopsCompleted % config['chart_generation_frequency']) == 0:
+            enableCumulativeCoverage = bool(trainingSequence.trainingLoopsCompleted % config['chart_generate_cumulative_coverage_frequency'] == 0)
+            chartGenerationFuture = AsyncThreadFuture(generateAllCharts, args=[config, None, enableCumulativeCoverage])
+        getLogger().info(f"Completed one parallel training & testing step! Hooray!")
+
+    if chartGenerationFuture is not None:
+        chartGenerationFuture.wait()
 
 
 def trainAgent(configDir, exitOnFail=False):

@@ -381,3 +381,4 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
 
     pool.close()
     pool.join()
+    getLogger().info(f"Completed generating all the charts.")

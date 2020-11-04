@@ -13,7 +13,7 @@ class AsyncThreadFuture:
         reliably. The performance isn't much of an issue unless you have a large number of AsyncThreadFuture's
         running in the same process, which in Kwola this is going to be like 10-20 at most. So not really an issue.
     """
-    def __init__(self, func, args, timeout):
+    def __init__(self, func, args, timeout=None):
         self.timeout = timeout
         self.func = func
         self.args = args
@@ -39,11 +39,12 @@ class AsyncThreadFuture:
     def wait(self):
         while not self.complete:
             elapsed = (datetime.datetime.now() - self.start).total_seconds()
-            if elapsed > self.timeout:
-                self.complete = True
-                raise TimeoutError()
-            else:
-                time.sleep(0.25)
+            if self.timeout is not None:
+                if elapsed > self.timeout:
+                    self.complete = True
+                    raise TimeoutError()
+                else:
+                    time.sleep(0.25)
 
     def result(self):
         self.wait()
