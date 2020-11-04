@@ -127,6 +127,8 @@
   "loss_state_value_weight": 0.1,
   "model_image_downscale_ratio": 0.70,
   "pixel_features": 24,
+  "precompute_sample_cache_single_threaded": false,
+  "precompute_sample_cache_num_workers": 4,
   "present_reward_convolution_kernel_size": 3,
   "present_reward_convolution_padding": 1,
   "present_reward_convolution_stride": 1,
