@@ -36,6 +36,7 @@ import time
 import os
 import traceback
 import psutil
+from kwola.components.utils.asyncthreadfuture import AsyncThreadFuture
 from ..utils.retry import autoretry
 from ..plugins.core.RecordAllPaths import RecordAllPaths
 from ..plugins.core.RecordBranchTrace import RecordBranchTrace
@@ -116,40 +117,40 @@ class WebEnvironment:
 
     def getImages(self):
         results = []
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            start = datetime.now()
-            imageFutures = []
-            for session in self.sessions:
-                resultFuture = executor.submit(session.getImage)
-                imageFutures.append(resultFuture)
-            for future, session in zip(imageFutures, self.sessions):
-                try:
-                    result = future.result(timeout=max(self.config['testing_get_image_timeout'] - (datetime.now() - start).total_seconds(), 1))
-                except concurrent.futures.TimeoutError:
-                    result = numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
-                    session.hasBrowserDied = True
-                    session.browserDeathReason = f"Following fatal error occurred during getImages: {traceback.format_exc()}"
-                results.append(result)
+        imageFutures = []
+        for session in self.sessions:
+            future = AsyncThreadFuture(session.getImage, [], timeout=self.config['testing_get_image_timeout'])
+            imageFutures.append(future)
+
+        for future, session in zip(imageFutures, self.sessions):
+            try:
+                result = future.result()
+            except TimeoutError:
+                getLogger().warning("Warning: timeout exceeded in WebEnvironment.getImages")
+                result = numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+                session.hasBrowserDied = True
+                session.browserDeathReason = f"The browser timed out while inside WebEnvironment.getImages"
+            results.append(result)
 
         return results
 
     def getActionMaps(self):
         results = []
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            start = datetime.now()
-            actionMapFutures = []
-            for session in self.sessions:
-                resultFuture = executor.submit(session.getActionMaps)
-                actionMapFutures.append(resultFuture)
-            for future, session in zip(actionMapFutures, self.sessions):
-                try:
-                    result = future.result(timeout=max(self.config['testing_fetch_action_map_timeout'] - (datetime.now() - start).total_seconds(), 1))
-                except concurrent.futures.TimeoutError:
-                    result = []
-                    session.hasBrowserDied = True
-                    session.browserDeathReason = f"Following fatal error occurred during getActionMaps: {traceback.format_exc()}"
-                results.append(result)
+        actionMapFutures = []
+        for session in self.sessions:
+            future = AsyncThreadFuture(session.getActionMaps, [], timeout=self.config['testing_fetch_action_map_timeout'])
+            actionMapFutures.append(future)
+
+        for future, session in zip(actionMapFutures, self.sessions):
+            try:
+                result = future.result()
+            except TimeoutError:
+                getLogger().warning("Warning: timeout exceeded in WebEnvironment.getActionMaps")
+                result = []
+                session.hasBrowserDied = True
+                session.browserDeathReason = f"The browser timed out while inside WebEnvironment.getActionMaps"
+            results.append(result)
 
         return results
 
@@ -168,21 +169,20 @@ class WebEnvironment:
         resultFutures = []
 
         results = []
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            start = datetime.now()
-            for tab, action in zip(self.sessions, actions):
-                resultFuture = executor.submit(tab.runAction, action)
-                resultFutures.append(resultFuture)
-            for future, session in zip(resultFutures, self.sessions):
-                try:
-                    result = future.result(timeout=max(self.config['testing_run_action_timeout'] - (datetime.now() - start).total_seconds(), 1))
-                except concurrent.futures.TimeoutError:
-                    result = (None, {})
-                    session.hasBrowserDied = True
-                    session.browserDeathReason = f"Following fatal error occurred during runActions: {traceback.format_exc()}"
+        for session, action in zip(self.sessions, actions):
+            future = AsyncThreadFuture(session.runAction, [action], timeout=self.config['testing_run_action_timeout'])
+            resultFutures.append(future)
 
-                results.append(result)
+        for session, future in zip(self.sessions, resultFutures):
+            try:
+                result = future.result()
+            except TimeoutError:
+                getLogger().warning("Warning: timeout exceeded in WebEnvironment.runActions")
+                result = (None, {})
+                session.hasBrowserDied = True
+                session.browserDeathReason = f"The browser timed out while inside WebEnvironment.runActions"
 
+            results.append(result)
 
         traces = [
             result[0] for result in results
