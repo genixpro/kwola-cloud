@@ -274,7 +274,8 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     if chartGenerationFuture is not None:
         chartGenerationFuture.wait()
 
-
+    generateAllCharts(config, applicationId=None, enableCumulativeCoverage=True)
+F
 def trainAgent(configDir, exitOnFail=False):
     try:
         multiprocessing.set_start_method('spawn')
