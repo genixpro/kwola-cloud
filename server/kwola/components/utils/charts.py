@@ -6,7 +6,7 @@ from ...components.managers.TrainingManager import TrainingManager
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
 from ...datamodels.TrainingStepModel import TrainingStep
 from ...datamodels.BugModel import BugModel
-from ...config.logger import getLogger
+from ...config.logger import getLogger, setupLocalLogging
 from ...config.config import KwolaCoreConfiguration
 from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import matplotlib
@@ -356,7 +356,7 @@ def generateCumulativeErrorsFoundChart(configDir, applicationId):
 def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False):
     getLogger().info(f"Generating charts based on results.")
 
-    pool = multiprocessing.Pool(config['chart_generation_workers'])
+    pool = multiprocessing.Pool(config['chart_generation_workers'], initializer=setupLocalLogging)
 
     futures = []
 
