@@ -212,10 +212,10 @@ class TestingRunManager:
                                },
                             referenceId=referenceId,
                             image="worker",
-                            cpuRequest="6000m",
-                            cpuLimit="8000m",
-                            memoryRequest="20.0Gi",
-                            memoryLimit="20.0Gi"
+                            cpuRequest="3500m",
+                            cpuLimit="4000m",
+                            memoryRequest="10.0Gi",
+                            memoryLimit="12.0Gi"
                             )
         return job
 
