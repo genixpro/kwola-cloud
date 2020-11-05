@@ -214,7 +214,7 @@ class TestingRunManager:
                             image="worker",
                             cpuRequest="3500m",
                             cpuLimit="4000m",
-                            memoryRequest="10.0Gi",
+                            memoryRequest="9.0Gi",
                             memoryLimit="12.0Gi"
                             )
         return job
