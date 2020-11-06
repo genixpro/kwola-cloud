@@ -46,7 +46,7 @@ def transferModel(modelClass):
             obj = targetModelClass.from_json(json.dumps(data))
             if isinstance(id, str):
                 obj.id = id
-            obj.save(validate=False)
+            obj.save(validate=False, force_insert=True)
         count += 1
         if count % 100 == 0:
             getLogger().info(f"Transferred {count} objects so far.")
