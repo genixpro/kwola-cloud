@@ -31,6 +31,8 @@ from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
 def transferModel(modelClass):
     getLogger().info(f"Transferring data for {modelClass.__name__}")
+    with switch_db(modelClass, "default") as targetModelClass:
+        targetModelClass.objects().delete()
 
     with switch_db(modelClass, "demo_backup") as backupModelClass:
         backupObjIds = [o.id for o in backupModelClass.objects().only("id")]
@@ -55,22 +57,6 @@ def transferModel(modelClass):
 
 def main():
     initializeKwolaCloudProcess()
-
-    ApplicationModel.objects().delete()
-    TrainingSequence.objects().delete()
-    TestingStep.objects().delete()
-    ExecutionSession.objects().delete()
-    ExecutionTrace.objects().delete()
-    TrainingStep.objects().delete()
-    BugModel.objects().delete()
-    CounterModel.objects().delete()
-    ExecutionSessionTraceWeights.objects().delete()
-    FeedbackSubmission.objects().delete()
-    KubernetesJobLogs.objects().delete()
-    KubernetesJobResult.objects().delete()
-    MutedError.objects().delete()
-    RecurringTestingTrigger.objects().delete()
-    TestingRun.objects().delete()
 
     connectToMongoWithRetries(alias="demo_backup", db="demo_backup")
 
