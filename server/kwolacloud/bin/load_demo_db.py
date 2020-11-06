@@ -43,7 +43,7 @@ def transferModel(modelClass):
             data = json.loads(backup.to_json())
             id = data['_id']
             del data['_id']
-            obj = targetModelClass.from_json(data)
+            obj = targetModelClass.from_json(json.dumps(data))
             if isinstance(id, str):
                 obj.id = id
             obj.save(validate=False)
