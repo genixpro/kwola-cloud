@@ -1,4 +1,4 @@
-``# This builds an all-in-one easy to install dockerfile
+# This builds an all-in-one easy to install dockerfile
 
 FROM ubuntu:18.04
 MAINTAINER Kwola <info@kwola.io>
