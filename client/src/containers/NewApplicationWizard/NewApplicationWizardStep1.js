@@ -151,7 +151,7 @@ class NewApplicationWizardStep1 extends Component {
                             margin="normal"
                             style={{"width": "100%"}}
                         />
-                        <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>The page within your web application that Kwola will start on. Start with https://</span>
+                        <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>The page within your web application that Kwola will start on. Start with https://. If you have a firewall, open traffic from IP 35.224.203.231</span>
                         <br/>
                         <br/>
                         <TextField
