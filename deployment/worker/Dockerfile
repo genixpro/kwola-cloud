@@ -184,16 +184,16 @@ ENV KWOLA_ENV=${KWOLA_ENV}
 ENV REVISION_ID=${REVISION_ID}
 ENV GOOGLE_APPLICATION_CREDENTIALS=/kwola/deployment/kwola-cloud-2d7937574924.json
 ENV CLOUDSDK_COMPUTE_ZONE=us-central1-c
-ENV CLOUDSDK_CONTAINER_CLUSTER=testing-workers-3
+ENV CLOUDSDK_CONTAINER_CLUSTER=testing-workers-2
 ENV NODE_OPTIONS=--max-old-space-size=8192
-RUN gcloud container clusters get-credentials testing-workers-3
+RUN gcloud container clusters get-credentials testing-workers-2
 
 ENV HOME=/home/kwola
 ENV KUBECONFIG=/home/kwola/kube_config
 RUN chown -R kwola:kwola /kwola && \
     chown -R kwola:kwola /home/kwola && \
     chmod +r+r+r -R /usr/lib/python3 && \
-    su kwola -c "gcloud container clusters get-credentials testing-workers-3" && \
+    su kwola -c "gcloud container clusters get-credentials testing-workers-2" && \
     su kwola -c "kubectl cluster-info" && \
     su kwola -c "kwola_install_proxy_cert 1" && \
     su kwola -c "mkdir -p /home/kwola/.pki" && \

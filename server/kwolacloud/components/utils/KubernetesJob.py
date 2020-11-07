@@ -40,7 +40,7 @@ class KubernetesJob:
 
     def refreshCredentials(self):
         subprocess.run(["gcloud", "auth", "activate-service-account", "kwola-288@kwola-cloud.iam.gserviceaccount.com", f"--key-file={os.getenv('GOOGLE_APPLICATION_CREDENTIALS')}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers-3"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["gcloud", "container", "clusters", "get-credentials", "testing-workers-2"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # subprocess.run(["kubectl", "cluster-info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def kubeJobName(self):
