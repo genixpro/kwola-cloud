@@ -19,7 +19,7 @@ steps:
   - 'cluster-info'
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain-2'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain-4'
   timeout: 30s
 - name: 'gcr.io/cloud-builders/gcloud'
   id: Update Deployment on Kubernetes
@@ -28,7 +28,7 @@ steps:
   - "./deployment/api/update_api_server.sh"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain-2'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain-4'
   - 'KWOLA_ENV=$_KWOLA_ENV'
   - 'REVISION_ID=$REVISION_ID'
   timeout: 600s
@@ -39,7 +39,7 @@ steps:
   - "./deployment/api/run_migration_job.sh"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain-2'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain-4'
   - 'KWOLA_ENV=$_KWOLA_ENV'
   - 'REVISION_ID=$REVISION_ID'
   timeout: 600s

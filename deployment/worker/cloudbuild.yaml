@@ -21,7 +21,7 @@ steps:
   - 'cluster-info'
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain-2'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=kwolacloudmain-4'
   timeout: 30s
 
 timeout: 15000s
