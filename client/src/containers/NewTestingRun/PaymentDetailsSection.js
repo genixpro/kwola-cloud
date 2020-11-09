@@ -6,6 +6,7 @@ import {PaymentRequestButtonElement, CardElement, useStripe, useElements, Elemen
 import Papersheet from "../../components/utility/papersheet";
 import stripePromise from "../../stripe";
 import Promise from "bluebird";
+import {getData} from "country-list";
 import axios from "axios";
 
 
@@ -13,7 +14,9 @@ class PaymentDetailsSection extends Component {
     state = {
         card: null,
         name: "",
-        address: ""
+        address: "",
+        city: "",
+        country: ""
     }
 
     updateParent() {
@@ -30,7 +33,11 @@ class PaymentDetailsSection extends Component {
                     card: cardElement,
                     billing_details: {
                         name: this.state.name,
-                        address: this.state.address
+                        address: {
+                            city: this.state.city,
+                            country: this.state.country,
+                            line1: this.state.address
+                        }
                     }
                 }).then((result) => {
                     if (result.error) {
@@ -38,6 +45,8 @@ class PaymentDetailsSection extends Component {
                     } else {
                         this.props.onChange({
                             billingName: this.state.name,
+                            billingCity: this.state.city,
+                            billingCountry: this.state.country,
                             billingAddress: this.state.address,
                             billingCard: this.state.card,
                             billingPaymentMethod: result.paymentMethod.id
@@ -51,6 +60,8 @@ class PaymentDetailsSection extends Component {
         {
             this.props.onChange({
                 billingName: this.state.name,
+                billingCity: this.state.city,
+                billingCountry: this.state.country,
                 billingAddress: this.state.address,
                 billingCard: this.state.card,
                 billingPaymentMethod: null
@@ -68,6 +79,8 @@ class PaymentDetailsSection extends Component {
         {
             this.setState({
                 name: this.props.value.billingName,
+                city: this.props.value.billingCity,
+                country: this.props.value.billingCountry,
                 address: this.props.value.billingAddress,
                 card: null
             }, () => this.updateParent());
@@ -96,6 +109,18 @@ class PaymentDetailsSection extends Component {
     nameChanged(newValue)
     {
         this.setState({name: newValue}, () => this.updateParent());
+    }
+
+
+    cityChanged(newValue)
+    {
+        this.setState({city: newValue}, () => this.updateParent());
+    }
+
+
+    countryChanged(newValue)
+    {
+        this.setState({country: newValue}, () => this.updateParent());
     }
 
 
@@ -152,7 +177,41 @@ class PaymentDetailsSection extends Component {
                             <br/>
                             <TextField
                                 id="address"
-                                label="Billing Address"
+                                label="Billing City"
+                                type={"text"}
+                                value={this.state.city}
+                                onChange={(event) => this.cityChanged(event.target.value)}
+                                margin="normal"
+                                style={{"width": "calc(min(100%, 800px))"}}
+                            />
+                            <br/>
+                            <TextField
+                                id="address"
+                                label="Billing Country"
+                                select
+                                value={this.state.country}
+                                onChange={(event) => this.countryChanged(event.target.value)}
+                                margin="normal"
+                                style={{"width": "calc(min(100%, 800px))"}}
+                                SelectProps={{
+                                    native: true,
+                                    MenuProps: {
+                                        className: 'menu',
+                                    },
+                                }}
+                            >
+                                {
+                                    getData().map((countryInfo) =>
+                                    {
+                                        return <option value={countryInfo.code}>{countryInfo.name}</option>
+                                    })
+                                }
+
+                            </TextField>
+                            <br/>
+                            <TextField
+                                id="address"
+                                label="Billing Street Address"
                                 type={"text"}
                                 value={this.state.address}
                                 onChange={(event) => this.addressChanged(event.target.value)}

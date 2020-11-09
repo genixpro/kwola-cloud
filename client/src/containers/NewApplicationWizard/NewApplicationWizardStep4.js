@@ -125,6 +125,8 @@ class NewApplicationWizardStep4 extends Component {
     {
         this.changeParentApplicationField("billingName", newValues.billingName)
         this.changeParentApplicationField("billingAddress", newValues.billingAddress)
+        this.changeParentApplicationField("billingCity", newValues.billingCity)
+        this.changeParentApplicationField("billingCountry", newValues.billingCountry)
         this.changeParentApplicationField("billingCard", newValues.billingCard)
         this.changeParentApplicationField("billingPaymentMethod", newValues.billingPaymentMethod)
     }
@@ -136,6 +138,14 @@ class NewApplicationWizardStep4 extends Component {
             return false;
         }
         if (!this.props.application.billingAddress)
+        {
+            return false;
+        }
+        if (!this.props.application.billingCity)
+        {
+            return false;
+        }
+        if (!this.props.application.billingCountry)
         {
             return false;
         }
