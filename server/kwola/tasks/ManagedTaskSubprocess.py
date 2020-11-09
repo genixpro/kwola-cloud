@@ -64,10 +64,6 @@ class ManagedTaskSubprocess:
         self.monitorTimeoutProcess = None
         self.monitorOutputProcess = None
 
-    def __del__(self):
-        self.process.terminate()
-        self.processOutputFile.close()
-
     def start(self):
         self.process = subprocess.Popen(self.args, stdout=self.processOutputFile, stderr=sys.stderr, stdin=subprocess.PIPE)
 
@@ -200,6 +196,9 @@ class ManagedTaskSubprocess:
         additionalOutput = self.getLatestLogOutput()
         if additionalOutput is not None:
             self.output += additionalOutput
+
+        self.process.terminate()
+        self.processOutputFile.close()
 
         getLogger().info(f"Monitoring thread has finished for {self.process.pid}")
 
