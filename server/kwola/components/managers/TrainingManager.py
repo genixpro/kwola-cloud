@@ -596,8 +596,7 @@ class TrainingManager:
                 # a single training step.
                 traceWeights = traceWeights + numpy.arange(0, config['training_trace_selection_cache_not_full_state_one_side_bias'], len(traceWeights))
 
-            traceWeightsSquared = traceWeights * traceWeights
-            traceProbabilities = numpy.array(traceWeightsSquared) / numpy.sum(traceWeightsSquared)
+            traceProbabilities = numpy.array(traceWeights) / numpy.sum(traceWeights)
             traceIds = [weight[1] for weight in tracesWithWeightObjects]
 
             chosenExecutionTraceIds = numpy.random.choice(traceIds, [config['batch_size']], p=traceProbabilities)
