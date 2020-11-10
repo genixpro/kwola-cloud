@@ -28,6 +28,19 @@ class SignIn extends Component {
     {
       Auth0.login(this.handleLogin);
     }
+    else
+    {
+      const returnToPath = window.localStorage.getItem("returnTo");
+      window.localStorage.setItem("returnTo", null);
+      if (returnToPath && returnToPath !== "null" && returnToPath !== "undefined")
+      {
+        this.props.history.push(returnToPath);
+      }
+      else
+      {
+        this.props.history.push('/app/dashboard/');
+      }
+    }
   }
 
 
