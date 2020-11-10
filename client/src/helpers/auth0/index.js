@@ -140,6 +140,11 @@ class Auth0Helper {
   }
 
   isAuthenticated() {
+    if (localStorage.getItem('expires_at') === null)
+    {
+      return false;
+    }
+
     // Check whether the current time is past the
     // access token's expiry time
     return (
