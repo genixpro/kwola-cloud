@@ -138,6 +138,8 @@ class ApplicationGroup(Resource):
 
             stripe.Invoice.pay(invoice.id)
 
+            newApplication.stripeSubscriptionId = None
+
         newApplication.save()
 
         runConfiguration = copy.deepcopy(newApplication.defaultRunConfiguration)

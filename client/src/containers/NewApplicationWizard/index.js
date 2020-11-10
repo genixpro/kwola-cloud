@@ -117,6 +117,18 @@ class NewApplicationWizard extends Component {
         {
             newPage = this.state.page + 2;
         }
+        // Skip the payment details page if the user is allowed free runs
+        else if (this.state.page === 2 && Auth.isUserAllowedFreeRuns())
+        {
+            if (this.state.application.package === "once")
+            {
+                newPage = this.state.page + 3;
+            }
+            else
+            {
+                newPage = this.state.page + 2;
+            }
+        }
         else
         {
             newPage = this.state.page + 1;
@@ -131,6 +143,18 @@ class NewApplicationWizard extends Component {
 
         // Skip the 5th page if this is a one off run
         if (this.state.page === 5 && this.state.application.package === "once")
+        {
+            if (Auth.isUserAllowedFreeRuns())
+            {
+                newPage = this.state.page - 3;
+            }
+            else
+            {
+                newPage = this.state.page - 2;
+            }
+        }
+        // Skip the payment details page if the user is allowed free runs
+        else if (this.state.page === 4 && Auth.isUserAllowedFreeRuns())
         {
             newPage = this.state.page - 2;
         }
