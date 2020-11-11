@@ -164,16 +164,20 @@ def updateModelSymbols(config, testingStepId):
 
     testingStep = TestingStep.loadFromDisk(testingStepId, config)
 
+    traces = []
     totalNewSymbols = 0
     for executionSessionId in testingStep.executionSessions:
         executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
-        traces = []
         for executionTraceId in executionSession.executionTraces:
             traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
-        totalNewSymbols += agent.assignNewSymbols(traces)
+        if len(traces) > 1000:
+            totalNewSymbols += agent.assignNewSymbols(traces)
+            traces = []
 
+    totalNewSymbols += agent.assignNewSymbols(traces)
+    traces = []
     getLogger().info(f"Added {totalNewSymbols} new symbols from testing step {testingStepId}")
 
     agent.save()

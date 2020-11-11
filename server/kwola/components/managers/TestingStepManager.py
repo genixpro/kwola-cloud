@@ -270,10 +270,10 @@ class TestingStepManager:
             self.executionSessionTraces[sessionN].append(trace)
             self.executionSessions[sessionN].totalReward = float(numpy.sum(DeepLearningAgent.computePresentRewards(self.executionSessionTraces[sessionN], self.config)))
 
-            self.agent.computeCachedCumulativeBranchTraces(self.executionSessionTraces[sessionN])
-            self.agent.computeCachedDecayingBranchTrace(self.executionSessionTraces[sessionN])
+            self.agent.symbolMapper.computeCachedCumulativeBranchTraces(self.executionSessionTraces[sessionN])
+            self.agent.symbolMapper.computeCachedDecayingBranchTrace(self.executionSessionTraces[sessionN])
             # Don't need to compute the future branch trace since it is only used in training and not at inference time
-            # self.agent.computeCachedDecayingFutureBranchTrace(self.executionSessionTraces[sessionN])
+            # self.agent.symbolMapper.computeCachedDecayingFutureBranchTrace(self.executionSessionTraces[sessionN])
 
             if self.config['testing_enable_prediction_subprocess']:
                 # We clear the actionMaps field on the trace object prior to saving the temporary pickle file. This is to reduce the amount of time
