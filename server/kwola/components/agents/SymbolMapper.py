@@ -1,11 +1,13 @@
 from ..utils.file import loadKwolaFileData, saveKwolaFileData
-import pickle
-import numpy
-import pprint
 import copy
-import traceback
+import io
+import numpy
 import os.path
-
+import pickle
+import pprint
+import torch
+import traceback
+import matplotlib.pyplot as plt
 
 class LineOfCodeSymbolMapping:
     def __init__(self, branchTrace, recentSymbolIndex, coverageSymbolIndex):
@@ -28,6 +30,7 @@ class SymbolMapper:
         self.knownFiles = set()
 
         self.nextSymbolIndex = 1
+        self.recycleSymbolIndexes = []
 
         self.symbolMap = {
 
@@ -35,6 +38,7 @@ class SymbolMapper:
 
         self.allSymbols = []
 
+        self.modelPath = os.path.join(config.getKwolaUserDataDirectory("models"), "deep_learning_model")
         self.symbolMapPath = os.path.join(config.getKwolaUserDataDirectory("models"), "symbol_mapper")
 
         self.config = config
@@ -52,10 +56,10 @@ class SymbolMapper:
         # and their index values within the embedding structure
         symbolMapData = loadKwolaFileData(self.symbolMapPath, self.config, printErrorOnFailure=False)
         if symbolMapData is not None:
-            (self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.allSymbols) = pickle.loads(symbolMapData)
+            (self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.recycleSymbolIndexes, self.allSymbols) = pickle.loads(symbolMapData)
 
     def save(self):
-        fileData = pickle.dumps((self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.allSymbols), protocol=pickle.HIGHEST_PROTOCOL)
+        fileData = pickle.dumps((self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.recycleSymbolIndexes, self.allSymbols), protocol=pickle.HIGHEST_PROTOCOL)
         saveKwolaFileData(self.symbolMapPath, fileData, self.config)
 
 
@@ -189,8 +193,17 @@ class SymbolMapper:
 
 
         """
+        fileData = loadKwolaFileData(self.modelPath, self.config, printErrorOnFailure=False)
+        buffer = io.BytesIO(fileData)
+
+        # Depending on whether GPU is turned on, we try load the state dict
+        # directly into GPU / CUDA memory.
+        stateDict = torch.load(buffer, map_location=torch.device('cpu'))
+        symbolEmbeddingTensor = numpy.array(stateDict['symbolEmbedding.weight'].data)
+        embeddingSize = symbolEmbeddingTensor.shape[1]
 
         newSymbolMaps = []
+        newSymbolMapAssociatedOriginalSymbolMaps = []
         removedSymbolMaps = []
 
         splitSymbolsCount = 0
@@ -252,12 +265,17 @@ class SymbolMapper:
                                 self.insertLOCSymbolMap(secondNewSymbolMap)
 
                                 if locSymbolMapping.recentSymbolIndex is None:
-                                    newSymbolMaps.remove(locSymbolMapping)
+                                    index = newSymbolMaps.index(locSymbolMapping)
+                                    del newSymbolMaps[index]
+                                    del newSymbolMapAssociatedOriginalSymbolMaps[index]
                                 else:
                                     removedSymbolMaps.append(locSymbolMapping)
 
                                 newSymbolMaps.append(firstNewSymbolMap)
                                 newSymbolMaps.append(secondNewSymbolMap)
+
+                                newSymbolMapAssociatedOriginalSymbolMaps.append(locSymbolMapping)
+                                newSymbolMapAssociatedOriginalSymbolMaps.append(locSymbolMapping)
                         else:
                             createNewLOCMap = True
 
@@ -280,22 +298,63 @@ class SymbolMapper:
                 self.insertLOCSymbolMap(newSymbolMap)
 
                 newSymbolMaps.append(newSymbolMap)
+                newSymbolMapAssociatedOriginalSymbolMaps.append(None)
 
 
-        for locSymbolMapping in newSymbolMaps:
-            locSymbolMapping.recentSymbolIndex = self.nextSymbolIndex
-            self.nextSymbolIndex += 1
+        for newLocSymbolMapping, oldLocSymbolMapping in zip(newSymbolMaps, newSymbolMapAssociatedOriginalSymbolMaps):
+            if len(self.recycleSymbolIndexes) == 0:
+                nextSymbolIndex = self.nextSymbolIndex
+                self.nextSymbolIndex += 1
+            else:
+                nextSymbolIndex = self.recycleSymbolIndexes.pop(0)
 
-            locSymbolMapping.coverageSymbolIndex = self.nextSymbolIndex
-            self.nextSymbolIndex += 1
+            if oldLocSymbolMapping is not None and oldLocSymbolMapping.recentSymbolIndex is not None:
+                # When splitting a symbol mapping, we base the new tensor on the original tensor, but add in 20% random noise
+                # so it can partially differentiate from the other child tensor. NOTE: We should actually test this at some
+                # point and measure whether its better to reset the tensor completely randomly or derive it like this.
+                origTensor = symbolEmbeddingTensor[oldLocSymbolMapping.recentSymbolIndex]
+                symbolEmbeddingTensor[nextSymbolIndex] = origTensor + numpy.random.normal(0, numpy.std(origTensor) * 0.2, size=embeddingSize)
+            else:
+                # Create a blank random tensor for the new symbol
+                symbolEmbeddingTensor[nextSymbolIndex] = numpy.random.normal(0, 1, size=embeddingSize)
 
-            for fileName in locSymbolMapping.branchTrace.keys():
+            newLocSymbolMapping.recentSymbolIndex = nextSymbolIndex
+
+            if len(self.recycleSymbolIndexes) == 0:
+                nextSymbolIndex = self.nextSymbolIndex
+                self.nextSymbolIndex += 1
+            else:
+                nextSymbolIndex = self.recycleSymbolIndexes.pop(0)
+
+            if oldLocSymbolMapping is not None and oldLocSymbolMapping.coverageSymbolIndex is not None:
+                # When splitting a symbol mapping, we base the new tensor on the original tensor, but add in 20% random noise
+                # so it can partially differentiate from the other child tensor. NOTE: We should actually test this at some
+                # point and measure whether its better to reset the tensor completely randomly or derive it like this.
+                origTensor = symbolEmbeddingTensor[oldLocSymbolMapping.coverageSymbolIndex]
+                symbolEmbeddingTensor[nextSymbolIndex] = origTensor + numpy.random.normal(0, numpy.std(origTensor) * 0.2, size=embeddingSize)
+            else:
+                # Create a blank random tensor for the new symbol
+                symbolEmbeddingTensor[nextSymbolIndex] = numpy.random.normal(0, 1, size=embeddingSize)
+
+            newLocSymbolMapping.coverageSymbolIndex = nextSymbolIndex
+
+            for fileName in newLocSymbolMapping.branchTrace.keys():
                 self.knownFiles.add(fileName)
 
-            self.allSymbols.append(locSymbolMapping)
+            self.allSymbols.append(newLocSymbolMapping)
 
-        for locSymbolMapping in removedSymbolMaps:
-            self.allSymbols.remove(locSymbolMapping)
+
+        for newLocSymbolMapping in removedSymbolMaps:
+            self.allSymbols.remove(newLocSymbolMapping)
+
+            self.recycleSymbolIndexes.append(newLocSymbolMapping.recentSymbolIndex)
+            self.recycleSymbolIndexes.append(newLocSymbolMapping.coverageSymbolIndex)
+
+        stateDict['symbolEmbedding.weight'] = torch.tensor(symbolEmbeddingTensor, dtype=stateDict['symbolEmbedding.weight'].dtype)
+
+        buffer = io.BytesIO()
+        torch.save(stateDict, buffer)
+        saveKwolaFileData(self.modelPath, buffer.getvalue(), self.config)
 
         self.validateSymbolMaps()
 
