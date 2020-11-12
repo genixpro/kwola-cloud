@@ -371,7 +371,7 @@ class TrainingManager:
                     break
 
             batchFetchStartTime = datetime.now()
-            batch, cacheHitRate = self.batchFutures.pop(chosenBatchIndex).result()
+            batch, cacheHitRate = self.batchFutures.pop(chosenBatchIndex).result(timeout=self.config['training_batch_fetch_timeout'])
             batchFetchFinishTime = datetime.now()
 
             fetchTime = (batchFetchFinishTime - batchFetchStartTime).total_seconds()
@@ -460,7 +460,7 @@ class TrainingManager:
                     for traceIndex, traceBatch in zip(range(len(executionSession.executionTraces) - 1), batches):
                         futures.append(executor.submit(TrainingManager.writeSingleExecutionTracePreparedSampleData, traceBatch, sampleCacheDir, config))
                     for future in futures:
-                        future.result()
+                        future.result(timeout=config['training_write_prepared_sample_timeout'])
                 getLogger().info(f"Finished adding {executionSessionId} to the sample cache.")
                 break
             except Exception as e:
@@ -617,7 +617,7 @@ class TrainingManager:
             cacheHits = []
             samples = []
             for future in futures:
-                batchFilename, cacheHit = future.get()
+                batchFilename, cacheHit = future.get(timeout=config['training_prepare_batches_for_execution_trace_timeout'])
                 cacheHits.append(float(cacheHit))
 
                 with open(batchFilename, 'rb') as batchFile:
@@ -732,7 +732,7 @@ class TrainingManager:
                             executionSessionIds.append(str(sessionId))
                             executionSessionFutures.append(executor.submit(TrainingManager.loadExecutionSession, sessionId, config))
 
-                executionSessions = [future.result() for future in executionSessionFutures]
+                executionSessions = [future.result(timeout=config['training_execution_session_fetch_timeout']) for future in executionSessionFutures]
 
             getLogger().info(f"Found {len(executionSessionIds)} total execution sessions that can be learned.")
 
@@ -839,7 +839,12 @@ class TrainingManager:
                     if needToResetPool and lastProcessPool is None:
                         needToResetPool = False
 
-                        cacheRates = [future.result() for future in cacheRateFutures[-config['training_cache_full_state_moving_average_length']:] if future.done()]
+                        timeout = config['training_batch_fetch_timeout']
+                        cacheRates = [
+                            future.result(timeout=timeout)
+                            for future in cacheRateFutures[-config['training_cache_full_state_moving_average_length']:]
+                            if future.done()
+                        ]
 
                         # If the cache is full and the main process isn't starved for batches, we shrink the process pool down to a smaller size.
                         if numpy.mean(cacheRates) > config['training_cache_full_state_min_cache_hit_rate'] and not starved:
