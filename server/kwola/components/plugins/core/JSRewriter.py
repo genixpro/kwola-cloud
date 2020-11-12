@@ -22,7 +22,7 @@ class JSRewriter(ProxyPluginBase):
     def __init__(self, config):
         self.config = config
 
-        self.multipleBranchesCheckingRegex = re.compile(b"globalKwolaCounter_\\d{1,6}\\[1\\] \\+= 1;")
+        self.multipleBranchesCheckingRegex = re.compile(b"globalKwolaCounter_\\d{1,8}\\[1\\] \\+= 1;")
 
     def willRewriteFile(self, url, contentType, fileData):
         jsMimeTypes = [
@@ -58,18 +58,7 @@ class JSRewriter(ProxyPluginBase):
             if fileData.startswith(b"<html>"):
                 return False
 
-            ignoreKeyword = self.findMatchingJavascriptFilenameIgnoreKeyword(cleanedFileName)
-            if ignoreKeyword is None:
-                return True
-            else:
-                getLogger().info(
-                    f"Warning: Ignoring the javascript file '{cleanedFileName}' because it matches the javascript ignore keyword '{ignoreKeyword}'. "
-                    f"This means that no learnings will take place on the code in this file. If this file is actually part of your "
-                    f"application and should be learned on, then please modify your config file kwola.json and remove the ignore "
-                    f"keyword '{ignoreKeyword}' from the variable 'web_session_ignored_javascript_file_keywords'. This file will be "
-                    f"cached without Kwola line counting installed. Its faster to install line counting only in the files that need "
-                    f"it.")
-                return False
+            return True
         else:
             return False
 
@@ -107,14 +96,32 @@ class JSRewriter(ProxyPluginBase):
 
         fileNameForBabel = shortFileHash + "_" + cleanedFileName
 
+        environment = dict(os.environ)
+
+        environment['KWOLA_ENABLE_LINE_COUNTING'] = 'true'
+        environment['KWOLA_ENABLE_EVENT_HANDLER_TRACKING'] = 'true'
+
+        noLineCountingKeyword = self.findMatchingJavascriptFilenameNoLineCountingKeyword(cleanedFileName)
+        if noLineCountingKeyword is not None:
+            environment['KWOLA_ENABLE_LINE_COUNTING'] = 'false'
+
+            getLogger().info(
+                f"Warning: Not installing line counting in the javascript file '{cleanedFileName}' because it matches the "
+                f"javascript no line counting keyword '{noLineCountingKeyword}'. Event handler tracking will still be installed."
+                f"This means that no learnings will take place on the code in this file. If this file is actually part of your "
+                f"application and should be learned on, then please modify your config file kwola.json and remove the ignore "
+                f"keyword '{noLineCountingKeyword}' from the variable 'web_session_no_line_counting_javascript_file_keywords'. This file will be "
+                f"cached without Kwola line counting installed. Its faster to install line counting only in the files that need "
+                f"it.")
+
         result = subprocess.run(
             ['babel', '-f', fileNameForBabel, '--plugins', 'babel-plugin-kwola', '--retain-lines', '--source-type',
-             "script"], input=jsFileContents, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+             "script"], input=jsFileContents, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment)
 
         if result.returncode != 0 and "'import' and 'export' may appear only with" in str(result.stderr, 'utf8'):
             result = subprocess.run(
                 ['babel', '-f', fileNameForBabel, '--plugins', 'babel-plugin-kwola', '--retain-lines', '--source-type',
-                 "module"], input=jsFileContents, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                 "module"], input=jsFileContents, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment)
 
         if result.returncode != 0:
             cutoffLength = 250
@@ -143,7 +150,7 @@ class JSRewriter(ProxyPluginBase):
             return fileData
         else:
             # Check to see if the resulting file object had multiple branches
-            if not self.checkIfRewrittenJSFileHasMultipleBranches(result.stdout):
+            if noLineCountingKeyword is None and not self.checkIfRewrittenJSFileHasMultipleBranches(result.stdout):
                 getLogger().warning(f"Ignoring the javascript file {url} because it looks like a JSONP-style request, or some other javascript "
                                     f"file without a significant number of code branches.")
                 return fileData
@@ -157,8 +164,8 @@ class JSRewriter(ProxyPluginBase):
 
             return transformed
 
-    def findMatchingJavascriptFilenameIgnoreKeyword(self, fileName):
-        for ignoreKeyword in self.config['web_session_ignored_javascript_file_keywords']:
+    def findMatchingJavascriptFilenameNoLineCountingKeyword(self, fileName):
+        for ignoreKeyword in self.config['web_session_no_line_counting_javascript_file_keywords']:
             if ignoreKeyword in fileName:
                 return ignoreKeyword
 

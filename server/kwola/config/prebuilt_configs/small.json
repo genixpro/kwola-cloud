@@ -284,7 +284,7 @@
     "net::ERR_SSL",
     "Failed to find a valid digest in the 'integrity' attribute for resource"
   ],
-  "web_session_ignored_javascript_file_keywords": [
+  "web_session_no_line_counting_javascript_file_keywords": [
     "angular",
     "anime",
     "aurelia",

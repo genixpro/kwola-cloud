@@ -3,6 +3,6 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "babel-plugin-kwola": "^0.0.14"
+    "babel-plugin-kwola": "^0.0.16"
   }
 }
