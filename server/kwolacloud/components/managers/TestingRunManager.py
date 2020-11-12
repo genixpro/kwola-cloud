@@ -178,6 +178,7 @@ class TestingRunManager:
         runningSessions = len(self.run.runningTestingStepJobIds) * self.config['web_session_parallel_execution_sessions']
         while self.calculateNumberOfTestingSessionsToStart() > 0 and runningSessions < self.run.configuration.maxParallelSessions:
             self.launchTestingStep()
+            runningSessions += 1
 
 
     def calculateTestingSessionsNeeded(self):
