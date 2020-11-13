@@ -54,10 +54,14 @@ class ProxyProcess:
         else:
             self.plugins = plugins
 
-        self.plugins = [
-            JSRewriter(config),
-            HTMLRewriter(config)
-        ] + self.plugins
+        builtinPlugins = []
+        if config['web_session_enable_js_rewriting']:
+            builtinPlugins.append(JSRewriter(config))
+
+        if config['web_session_enable_html_rewriting']:
+            builtinPlugins.append(HTMLRewriter(config))
+
+        self.plugins = builtinPlugins + self.plugins
 
         self.config = config
         self.commandQueue = ProxyProcess.sharedMultiprocessingContext.Queue()

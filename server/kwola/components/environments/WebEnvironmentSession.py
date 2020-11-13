@@ -41,7 +41,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from ..utils.video import chooseBestFfmpegVideoCodec
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from ..proxy.ProxyProcess import ProxyProcess
 from ..utils.retry import autoretry
@@ -171,11 +171,9 @@ class WebEnvironmentSession:
         except selenium.common.exceptions.TimeoutException:
             raise RuntimeError(f"The web-browser timed out while attempting to load the target URL {self.targetURL}")
 
-        time.sleep(2)
-
         self.waitUntilNoNetworkActivity()
 
-        time.sleep(6)
+        time.sleep(self.config['web_session_initial_fetch_sleep_time'])
 
         # No action maps is a strong signal that the page has not loaded correctly.
         actionMaps = self.getActionMaps()
@@ -292,13 +290,47 @@ class WebEnvironmentSession:
 
         return emailInputs, passwordInputs, loginButtons
 
-    def runAutoLogin(self):
+    def runAutoLogin(self, createLoginVideo=False):
         """
             This method is used to perform the automatic heuristic based login.
         """
         try:
-            time.sleep(2)
+            screenshotIndex = 0
+            autologinMoviePath = None
+            screenshotDirectory = None
+
+            if createLoginVideo:
+                screenshotDirectory = tempfile.mkdtemp()
+
+            def addLoginVideoFrame():
+                nonlocal screenshotIndex
+                if createLoginVideo:
+                    filePath = os.path.join(screenshotDirectory, f"kwola-screenshot-{screenshotIndex}.png")
+                    self.driver.save_screenshot(filePath)
+                    screenshotIndex += 1
+
+            def renderAutologinVideo():
+                nonlocal autologinMoviePath
+                if createLoginVideo:
+                    autologinMoviePath = os.path.join(screenshotDirectory, "autologin.mp4")
+
+                    result = subprocess.run(['ffmpeg', '-f', 'image2', "-r", "1", '-i', 'kwola-screenshot-%01d.png', '-vcodec',
+                                             chooseBestFfmpegVideoCodec(), '-pix_fmt', 'yuv420p', '-crf', '15', '-preset',
+                                             'veryslow', autologinMoviePath],
+                                            cwd=screenshotDirectory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                    if result.returncode != 0:
+                        errorMsg = f"Error! Attempted to create a movie using ffmpeg and the process exited with exit-code {result.returncode}. The following output was observed:\n"
+                        errorMsg += str(result.stdout, 'utf8') + "\n"
+                        errorMsg += str(result.stderr, 'utf8') + "\n"
+                        getLogger().error(errorMsg)
+
+            addLoginVideoFrame()
+
+            time.sleep(self.config['web_session_autologin_sleep_times'])
             self.waitUntilNoNetworkActivity()
+
+            addLoginVideoFrame()
 
             emailInputs, passwordInputs, loginButtons = self.findElementsForAutoLogin()
 
@@ -318,6 +350,8 @@ class WebEnvironmentSession:
 
                 loginButtons = list(filter(lambda button: button.keywords != loginTriggerButton.keywords, loginButtons))
 
+                addLoginVideoFrame()
+
             hasTypedInEmail = False
 
             # check to see if this is an "email first" login
@@ -330,6 +364,8 @@ class WebEnvironmentSession:
                                              type="typeEmail")
 
                 success1, networkWaitTime = self.performActionInBrowser(emailTypeAction)
+
+                addLoginVideoFrame()
 
                 loginTriggerButton = loginButtons[0]
 
@@ -347,8 +383,11 @@ class WebEnvironmentSession:
 
                 hasTypedInEmail = True
 
+                addLoginVideoFrame()
+
             if (len(emailInputs) == 0 and not hasTypedInEmail) or len(passwordInputs) == 0 or len(loginButtons) == 0:
-                raise AutologinFailure(f"Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.")
+                renderAutologinVideo()
+                raise AutologinFailure(f"Error! Did not detect the all of the necessary HTML elements to perform an autologin. Found: {len(emailInputs)} email looking elements, {len(passwordInputs)} password looking elements, and {len(loginButtons)} submit looking elements. Kwola will be proceeding without automatically logging in.", autologinMoviePath)
 
             if len(emailInputs) == 1:
                 # Find the login button that is closest to the email input while being below it
@@ -394,21 +433,33 @@ class WebEnvironmentSession:
             if not hasTypedInEmail:
                 success1, networkWaitTime = self.performActionInBrowser(emailTypeAction)
 
+            addLoginVideoFrame()
+
             success2, networkWaitTime = self.performActionInBrowser(passwordTypeAction)
+
+            addLoginVideoFrame()
+
             success3, networkWaitTime = self.performActionInBrowser(loginClickAction)
 
-            time.sleep(2)
+            addLoginVideoFrame()
+
+            time.sleep(self.config['web_session_autologin_sleep_times'])
             self.waitUntilNoNetworkActivity()
+
+            addLoginVideoFrame()
+
+            renderAutologinVideo()
 
             didURLChange = bool(startURL != self.driver.current_url)
 
             if success1 and success2 and success3:
                 if didURLChange:
                     getLogger().info(f"Heuristic autologin appears to have worked!")
+                    return autologinMoviePath
                 else:
-                    raise AutologinFailure(f"Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change.")
+                    raise AutologinFailure(f"Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change.", autologinMoviePath)
             else:
-                raise AutologinFailure(f"There was an error running one of the actions required for the heuristic auto login.")
+                raise AutologinFailure(f"There was an error running one of the actions required for the heuristic auto login.", autologinMoviePath)
         except urllib3.exceptions.MaxRetryError as e:
             self.hasBrowserDied = True
             self.browserDeathReason = f"Following fatal error occurred during autologin: {traceback.format_exc()}"

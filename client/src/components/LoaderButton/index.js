@@ -104,7 +104,7 @@ class LoaderButton extends Component {
                 {this.props.children}
                 {
                     this.state.isPerformingAction ?
-                        <span style={{"paddingLeft": "20px"}}><CircularProgress size={14} color="white"/></span> : null
+                        <span style={{"paddingLeft": "20px"}}><CircularProgress size={14} style={{"color": "white"}}/></span> : null
                 }
                 {
                     this.state.isShowingSuccessIcon ?

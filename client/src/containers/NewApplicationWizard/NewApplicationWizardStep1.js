@@ -15,11 +15,18 @@ import {Button} from "../UiElements/Button/button.style";
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import "./main.scss";
+import LoaderButton from "../../components/LoaderButton";
+import DoneIcon from "@material-ui/icons/Done";
+import Promise from "bluebird";
+import Plyr from 'plyr'
+import 'plyr/dist/plyr.css'
+import FastForwardIcon from "@material-ui/icons/FastForward";
 
 
 class NewApplicationWizardStep1 extends Component {
     state = {
-        applicationTestImageURL: ""
+        applicationTestImageURL: "",
+        showingAutologinVideo: false
     };
 
     componentDidMount()
@@ -123,6 +130,69 @@ class NewApplicationWizardStep1 extends Component {
         this.changeParentRunConfigurationField("maxParallelSessions", changedValue);
     }
 
+    testAutologin()
+    {
+        this.setState({
+            showingAutologinVideo: false,
+            autologinVideoURL: null
+        });
+
+        const dataObject = {
+            "email": this.props.runConfiguration.email,
+            "password": this.props.runConfiguration.password,
+            "url": this.props.runConfiguration.url
+        }
+
+        return axios({
+            url: "/test_autologin",
+            method: "post",
+            data: dataObject,
+            responseType: 'blob', // important
+        }).then((response) =>
+        {
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+
+            this.setState({
+                showingAutologinVideo: true,
+                autologinVideoURL: url
+            }, () =>
+            {
+                const player = new Plyr('#player',{
+                    tooltips: {
+                        controls: false,
+                    },
+                    storage:{ enabled: true, key: 'plyr' },
+                    //seekTime:this.state.bug.stepNumber,
+                });
+
+                player.source = {
+                    type: 'video',
+                    sources: [
+                        {
+                            src: url,
+                            type: 'video/mp4',
+                            //size: 576,
+                        },
+                    ],
+
+                }
+
+                this.setState({player: player})
+            })
+
+            return Promise.fulfilled();
+        }, (error) =>
+        {
+            this.setState({
+                alertBoxSeverity:"warning",
+                alertBox:true,
+                alertBoxText:'Internal error while attempting to verify the automatic login.'
+            });
+
+            return Promise.rejected();
+        });
+    }
+
     render()
     {
         const { result } = this.state;
@@ -212,10 +282,44 @@ class NewApplicationWizardStep1 extends Component {
                     </Column>
                     <Column xs={6}>
                         {
-                            this.state.applicationTestImageURL ?
-                                <SingleCard src={this.state.applicationTestImageURL} grid/>
+                            this.state.applicationTestImageURL && !(this.props.runConfiguration.autologin && this.state.showingAutologinVideo) ?
+                                <SingleCard src={this.state.applicationTestImageURL} grid className={"screenshot-area"}/>
                                 : null
                         }
+                        {
+                            !this.state.applicationTestImageURL && !(this.props.runConfiguration.autologin && this.state.showingAutologinVideo) ?
+                                <div className={"screenshot-blank-area"}>
+
+                                </div>
+                                : null
+                        }
+                        {
+                            this.props.runConfiguration.autologin && this.state.showingAutologinVideo ?
+                                <Papersheet>
+                                    <video id="player" controls style={{"width": "100%"}}>
+                                        <source  type="video/mp4" />
+                                        <span>Your browser does not support the video tag.</span>
+                                    </video>
+                                </Papersheet>
+
+                                : null
+                        }
+
+                        {
+                            this.props.runConfiguration.autologin ?
+                                <LoaderButton onClick={() => this.testAutologin()} className={"test-login-button"}>
+                                    <span>Test Automatic Login</span>
+                                </LoaderButton> : null
+                        }
+
+                        {
+                            this.props.runConfiguration.autologin && this.state.showingAutologinVideo ? <div className={"autologin-info-text"}>
+                                <span>Please review the above video footage to see if Kwola was able to log into
+                                your system successfully. If there are any problems, please contact Kwola
+                                customer support at support@kwola.io</span>
+                            </div> : null
+                        }
+
                     </Column>
                 </Row>
 

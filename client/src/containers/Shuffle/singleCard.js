@@ -13,7 +13,7 @@ export default class SingleCard extends Component {
     return (
       <SingleCardWrapper
         id={this.props.id}
-        className={`${grid ? 'grid' : list ? 'list' : ''} ${CardClass}`}
+        className={`${grid ? 'grid' : list ? 'list' : ''} ${CardClass} ${this.props.className}`}
         style={style}
       >
         <div className="cardImage">

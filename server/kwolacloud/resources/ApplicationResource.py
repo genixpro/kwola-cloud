@@ -14,6 +14,8 @@ from ..helpers.auth0 import updateUserProfileMetadataValue
 from ..helpers.slack import postToKwolaSlack, postToCustomerSlack
 from ..helpers.webhook import sendCustomerWebhook
 from ..datamodels.RecurringTestingTrigger import RecurringTestingTrigger
+from kwola.config.config import KwolaCoreConfiguration
+from kwola.errors import AutologinFailure
 from datetime import datetime
 from flask_restful import Resource, reqparse, abort
 from flask import jsonify
@@ -26,6 +28,8 @@ import stripe
 import stripe.error
 import logging
 import copy
+import os
+import tempfile
 import requests
 from mongoengine.queryset.visitor import Q
 import selenium
@@ -34,6 +38,9 @@ from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.chrome.options import Options
 import selenium.common.exceptions
+from kwola.components.environments.WebEnvironmentSession import WebEnvironmentSession
+from kwolacloud.config.config import loadConfiguration, getKwolaConfiguration, getKwolaConfigurationData
+import shutil
 from google.cloud import storage
 import hashlib
 import cv2
@@ -666,3 +673,58 @@ class AttachCardToUser(Resource):
             })
             response.status_code = 400
             return response
+
+
+class TestAutoLogin(Resource):
+    def __init__(self):
+        self.configData = loadConfiguration()
+
+    def post(self):
+        user, claims = authenticate(returnAllClaims=True)
+        if user is None:
+            abort(401)
+
+        data = flask.request.get_json()
+
+        dir = tempfile.mkdtemp()
+
+        kwolaConfigData = getKwolaConfigurationData()
+        kwolaConfigData['url'] = data['url']
+        kwolaConfigData['email'] = data['email']
+        kwolaConfigData['password'] = data['password']
+        kwolaConfigData['data_file_storage_method'] = "local"
+        kwolaConfigData['web_session_enable_js_rewriting'] = False
+        kwolaConfigData['web_session_enable_html_rewriting'] = False
+        kwolaConfigData['data_file_storage_method'] = "local"
+        kwolaConfigData['web_session_initial_fetch_sleep_time'] = 3
+        kwolaConfigData['web_session_autologin_sleep_times'] = 1
+        kwolaConfigData['web_session_no_network_activity_wait_time'] = 1
+
+        with open(os.path.join(dir, "kwola.json"), 'wt') as f:
+            json.dump(kwolaConfigData, f)
+
+        config = KwolaCoreConfiguration(configurationDirectory=dir)
+
+        session = WebEnvironmentSession(config, tabNumber=0)
+        session.fetchTargetWebpage()
+
+        try:
+            autologinVideoPath = session.runAutoLogin(createLoginVideo=True)
+        except AutologinFailure as e:
+            autologinVideoPath = e.autologinMoviePath
+        finally:
+            shutil.rmtree(dir)
+
+        if autologinVideoPath is not None:
+            with open(autologinVideoPath, 'rb') as f:
+                videoData = f.read()
+
+            response = flask.make_response(videoData)
+            response.headers['content-type'] = 'video/mp4'
+
+            os.unlink(autologinVideoPath)
+
+            return response
+        else:
+            return abort(500)
+
