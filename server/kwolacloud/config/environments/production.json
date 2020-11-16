@@ -36,5 +36,9 @@
     "enableRuns": true,
     "localRuns": false,
     "enableSupportOfferEmailsOnUsers": true
+  },
+  "jira": {
+    "clientId": "V5H8QVarAt0oytdolmjMzoIIrmRc1i41",
+    "clientSecret": "rNzHZLKqiB1DNp0Mv3bw7nQ_DngMepAt6vTViWJEA6ekf1f904whaWPNxhR0C3Ji"
   }
 }
