@@ -29,17 +29,19 @@ class BugActionList extends Component {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {(this.props.bug.actionsPerformed || []).map((action,actionIndex) => {
+                        {(this.props.bug.actionsPerformed.slice(0).reverse() || []).map((action,actionIndex) => {
+                            const reverseActionIndex = this.props.bug.actionsPerformed.length - actionIndex - 1;
+
                             return (
-                                <TableRow key={actionIndex} hover={true} className={`${actionIndex === this.props.bug.stepNumber ? "hilighted-bug-row": ""}`}>
-                                    <TableCell>{actionIndex + 1}</TableCell>
+                                <TableRow key={actionIndex} hover={true} className={`${reverseActionIndex === this.props.bug.stepNumber ? "hilighted-bug-row": ""}`}>
+                                    <TableCell>{reverseActionIndex + 1}</TableCell>
                                     <TableCell>{action.type.toString()}</TableCell>
                                     <TableCell>
                                         <div className={"frame-sprite-wrapper"}>
                                             <img
                                                 className={"frame-sprite-image"}
                                                 src={this.state.spriteSheetImageURL}
-                                                style={{"top": `${actionIndex * -150}px`}}
+                                                style={{"top": `${reverseActionIndex * -150}px`}}
                                             />
                                         </div>
                                     </TableCell>
