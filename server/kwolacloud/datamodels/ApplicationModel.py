@@ -6,6 +6,7 @@ from kwola.datamodels.DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from kwolacloud.datamodels.RunConfiguration import RunConfiguration
 from kwolacloud.datamodels.TestingRun import TestingRun
 from kwola.components.utils.file import getSharedGCSStorageClient
+from kwolacloud.config.config import loadConfiguration
 from mongoengine import *
 from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
@@ -146,11 +147,13 @@ class ApplicationModel(Document):
             return screenshotData
 
     def refreshJiraAccessToken(self):
+        config = loadConfiguration()
+
         response = requests.post("https://auth.atlassian.com/oauth/token", {
             "refresh_token": self.jiraRefreshToken,
             "grant_type": "refresh_token",
-            "client_id": "V5H8QVarAt0oytdolmjMzoIIrmRc1i41",
-            "client_secret": "rNzHZLKqiB1DNp0Mv3bw7nQ_DngMepAt6vTViWJEA6ekf1f904whaWPNxhR0C3Ji"
+            "client_id": config['jira']['clientId'],
+            "client_secret": config['jira']['clientSecret']
         })
 
         if response.status_code != 200:
