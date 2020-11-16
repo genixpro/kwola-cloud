@@ -25,6 +25,7 @@ from kwolacloud.components.utils.KubernetesJob import KubernetesJob
 from kwolacloud.helpers.slack import postToCustomerSlack, postToKwolaSlack
 from kwolacloud.helpers.webhook import sendCustomerWebhook
 from kwola.components.utils.charts import generateAllCharts
+from kwola.components.utils.file import getSharedGCSStorageClient
 from pprint import pformat
 import datetime
 import google
@@ -49,7 +50,7 @@ class TestingRunManager:
         self.configDir = None
         self.config = None
         self.shouldExit = False
-        self.storageClient = storage.Client()
+        self.storageClient = getSharedGCSStorageClient()
         self.applicationStorageBucket = None
 
 

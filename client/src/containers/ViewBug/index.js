@@ -16,6 +16,7 @@ import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 import FeedbackWidget from "../FeedbackWidget";
 import FastForwardIcon from '@material-ui/icons/FastForward';
+import BugActionList from "./BugActionList";
 
 
 class ViewBug extends Component {
@@ -23,6 +24,8 @@ class ViewBug extends Component {
         result: '',
         loadingVideo:true,
         loader:false,
+        executionSession: null,
+        spriteSheetImageURL: null
     };
 
     componentDidMount()
@@ -32,13 +35,18 @@ class ViewBug extends Component {
             this.setState({bug: response.data.bug})
             
             const player = new Plyr('#player',{
-            tooltips: {
-                controls: false,
-            },
-            storage:{ enabled: true, key: 'plyr' },
-            //seekTime:this.state.bug.stepNumber,
-        });
-        this.loadVideo(player) 
+                tooltips: {
+                    controls: false,
+                },
+                storage:{ enabled: true, key: 'plyr' },
+                //seekTime:this.state.bug.stepNumber,
+            });
+            this.loadVideo(player)
+
+            // axios.get(`/execution_sessions/${response.data.bug.executionSessionId}`).then((response) =>
+            // {
+            //     this.setState({executionSession: response.data.executionSession})
+            // });
         });
         
     }
@@ -117,6 +125,11 @@ class ViewBug extends Component {
                                         <span>Skip to bug frame in video</span>
                                         <FastForwardIcon />
                                     </Button>
+                                </Papersheet>
+                                <br/>
+                                <img src={this.state.spriteSheetImageURL} />
+                                <Papersheet title={"Actions Performed"}>
+                                    <BugActionList bug={this.state.bug} />
                                 </Papersheet>
                             </HalfColumn>
 

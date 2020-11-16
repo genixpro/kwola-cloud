@@ -21,7 +21,9 @@ import flask
 import json
 import stripe
 import os
-from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from google.cloud import storage
+import google.cloud.exceptions
+from kwola.components.utils.file import getSharedGCSStorageClient
 
 
 class TestingRunsGroup(Resource):
@@ -220,23 +222,20 @@ class TestingRunsDownloadZip(Resource):
         if testingRun is None:
             return abort(404)
 
-        if not self.configData['features']['localRuns']:
-            configDir = mountTestingRunStorageDrive(testingRun.applicationId)
-        else:
-            configDir = os.path.join("data", testingRun.applicationId)
-
         try:
-            with open(os.path.join(configDir, "bug_zip_files", testingRun.id + ".zip"), 'rb') as f:
-                zipData = f.read()
+            storageClient = getSharedGCSStorageClient()
+            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + testingRun.applicationId)
+            objectPath = f"bug_zip_files/{testingRun.id}.zip"
+            objectBlob = storage.Blob(objectPath, applicationStorageBucket)
+
+            zipData = objectBlob.download_as_string()
 
             response = flask.make_response(zipData)
             response.headers['content-type'] = 'application/zip'
             response.headers['content-disposition'] = f'attachment; filename="{testingRun.id}.zip"'
 
             return response
-        except FileNotFoundError:
+        except google.cloud.exceptions.NotFound:
             abort(404)
-        finally:
-            if not self.configData['features']['localRuns']:
-                unmountTestingRunStorageDrive(configDir)
+
 

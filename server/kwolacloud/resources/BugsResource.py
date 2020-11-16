@@ -18,8 +18,10 @@ from ..config.config import getKwolaConfiguration, loadConfiguration
 import flask
 from kwola.config.config import KwolaCoreConfiguration
 import os.path
-from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from ..auth import authenticate, isAdmin
+from kwola.components.utils.file import loadKwolaFileData, saveKwolaFileData, getSharedGCSStorageClient
+from google.cloud import storage
+import google.cloud.exceptions
 
 class BugsGroup(Resource):
     def __init__(self):
@@ -125,29 +127,111 @@ class BugVideo(Resource):
         if bug is None:
             return abort(404)
 
-        configData = loadConfiguration()
-        if not configData['features']['localRuns']:
-            configDir = mountTestingRunStorageDrive(bug.applicationId)
-        else:
-            configDir = os.path.join("data", bug.applicationId)
+        videoFilePath = os.path.join("bugs", f'{str(bug_id)}_bug_{str(bug.executionSessionId)}.mp4')
 
-        config = KwolaCoreConfiguration(configDir)
+        storageClient = getSharedGCSStorageClient()
+        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + bug.applicationId)
+        objectBlob = storage.Blob(videoFilePath, applicationStorageBucket)
 
-        videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), f'{str(bug_id)}_bug_{str(bug.executionSessionId)}.mp4')
+        try:
+            videoData = objectBlob.download_as_string()
 
-        if os.path.exists(videoFilePath):
-            with open(videoFilePath, 'rb') as videoFile:
-                videoData = videoFile.read()
-        else:
-            logging.error(f"Error! Missing bug video: {videoFilePath}")
+            response = flask.make_response(videoData)
+            response.headers['content-type'] = 'video/mp4'
+
+            return response
+        except google.cloud.exceptions.NotFound:
+            logging.error(f"Error! Missing bug video file: {videoFilePath}")
+            return abort(404)
+        finally:
+            pass
+
+
+
+class BugFrameSpriteSheet(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+        # self.postParser.add_argument('version', help='This field cannot be blank', required=True)
+        # self.postParser.add_argument('startTime', help='This field cannot be blank', required=True)
+        # self.postParser.add_argument('endTime', help='This field cannot be blank', required=True)
+        # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=True)
+        # self.postParser.add_argument('status', help='This field cannot be blank', required=True)
+
+    @cache.cached(timeout=36000)
+    def get(self, bug_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": bug_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        bug = BugModel.objects(**queryParams).first()
+
+        if bug is None:
             return abort(404)
 
-        response = flask.make_response(videoData)
-        response.headers['content-type'] = 'video/mp4'
+        spriteFilePath = os.path.join("bug_frame_sprite_sheets", f'{str(bug_id)}.jpg')
 
-        if not configData['features']['localRuns']:
-            unmountTestingRunStorageDrive(configDir)
+        storageClient = getSharedGCSStorageClient()
+        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + bug.applicationId)
+        objectBlob = storage.Blob(spriteFilePath, applicationStorageBucket)
 
-        return response
+        try:
+            imageData = objectBlob.download_as_string()
+
+            response = flask.make_response(imageData)
+            response.headers['content-type'] = 'image/jpeg'
+
+            return response
+        except google.cloud.exceptions.NotFound:
+            logging.error(f"Error! Missing bug stripe sheet file: {spriteFilePath}")
+            return abort(404)
+        finally:
+            pass
 
 
+
+class BugErrorFrame(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+        # self.postParser.add_argument('version', help='This field cannot be blank', required=True)
+        # self.postParser.add_argument('startTime', help='This field cannot be blank', required=True)
+        # self.postParser.add_argument('endTime', help='This field cannot be blank', required=True)
+        # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=True)
+        # self.postParser.add_argument('status', help='This field cannot be blank', required=True)
+
+    @cache.cached(timeout=36000)
+    def get(self, bug_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": bug_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        bug = BugModel.objects(**queryParams).first()
+
+        if bug is None:
+            return abort(404)
+
+        errorFrameFilePath = os.path.join("bug_error_frames", f'{str(bug_id)}.jpg')
+
+        storageClient = getSharedGCSStorageClient()
+        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + bug.applicationId)
+        objectBlob = storage.Blob(errorFrameFilePath, applicationStorageBucket)
+
+        try:
+            imageData = objectBlob.download_as_string()
+
+            response = flask.make_response(imageData)
+            response.headers['content-type'] = 'image/jpeg'
+
+            return response
+        except google.cloud.exceptions.NotFound:
+            logging.error(f"Error! Missing bug error frame file: {errorFrameFilePath}")
+            return abort(404)
+        finally:
+            pass

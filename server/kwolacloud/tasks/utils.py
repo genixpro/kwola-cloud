@@ -16,6 +16,7 @@ import shutil
 import time
 import google.api_core.exceptions
 from kwola.components.utils.retry import autoretry
+from kwola.components.utils.file import getSharedGCSStorageClient
 
 
 def bucketNamesForApplication(applicationId):
@@ -28,7 +29,7 @@ def bucketNamesForApplication(applicationId):
 def createMainStorageBucketIfNeeded(applicationId):
     bucketName, cacheBucketName = bucketNamesForApplication(applicationId)
 
-    storage_client = storage.Client()
+    storage_client = getSharedGCSStorageClient()
 
     bucket = storage_client.lookup_bucket(bucketName)
     if bucket is None:
@@ -45,7 +46,7 @@ def createMainStorageBucketIfNeeded(applicationId):
 def createCacheBucketIfNeeded(applicationId):
     bucketName, cacheBucketName = bucketNamesForApplication(applicationId)
 
-    storage_client = storage.Client()
+    storage_client = getSharedGCSStorageClient()
 
     cacheBucket = storage_client.lookup_bucket(cacheBucketName)
     if cacheBucket is None:
@@ -121,6 +122,8 @@ def mountTestingRunStorageDrive(applicationId):
     mainStorageFolders = [
         "annotated_videos",
         "bug_zip_files",
+        "bug_frame_sprite_sheets",
+        "bug_error_frames",
         "bugs",
         "charts",
         "chrome_cache",

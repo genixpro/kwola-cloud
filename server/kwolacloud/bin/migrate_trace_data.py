@@ -24,6 +24,7 @@ from google.cloud import storage
 import json
 import billiard as multiprocessing
 from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
+from kwola.components.utils.file import getSharedGCSStorageClient
 
 # Do not remove the following unused imports, as they are actually required
 # For the migration script to function correctly.
@@ -119,7 +120,7 @@ def processSession(sessionId):
 
         logging.info(f"Finished trace saving for session {session.id}")
 
-        storageClient = storage.Client()
+        storageClient = getSharedGCSStorageClient()
         applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + session.applicationId)
         configFileBlob = storage.Blob("kwola.json", applicationStorageBucket)
         configFileBlob.upload_from_string(json.dumps(config.configData))

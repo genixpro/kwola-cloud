@@ -31,6 +31,7 @@ from google.cloud import storage
 import google
 import google.cloud
 from ..components.utils.retry import autoretry
+from ..components.utils.file import getSharedGCSStorageClient
 
 
 def getDataFormatAndCompressionForClass(modelClass, config, overrideSaveFormat=None, overrideCompression=None):
@@ -93,7 +94,7 @@ def saveObjectToDisk(targetObject, folder, config, overrideSaveFormat=None, over
         targetObject.save()
 
     elif dataFormat == "gcs":
-        storageClient = storage.Client()
+        storageClient = getSharedGCSStorageClient()
         applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + targetObject.applicationId)
         objectPath = f"{folder}/{targetObject.id}.json.gz"
         objectBlob = storage.Blob(objectPath, applicationStorageBucket)
@@ -115,7 +116,7 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True,
             if applicationId is None:
                 raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
 
-            storageClient = storage.Client()
+            storageClient = getSharedGCSStorageClient()
             applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId)
             objectPath = f"{folder}/{id}.json.gz"
             objectBlob = storage.Blob(objectPath, applicationStorageBucket)

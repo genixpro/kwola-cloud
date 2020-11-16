@@ -18,10 +18,12 @@ import flask
 from kwola.config.config import KwolaCoreConfiguration
 from kwolacloud.config.config import loadConfiguration
 import os.path
-from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, getSharedGCSStorageClient
 from ..auth import authenticate, isAdmin
 import concurrent.futures
+from google.cloud import storage
 from mongoengine.queryset.visitor import Q
+import google.cloud.exceptions
 
 
 class ExecutionSessionGroup(Resource):
@@ -108,29 +110,21 @@ class ExecutionSessionVideo(Resource):
         if executionSession is None:
             return abort(404)
 
-        configData = loadConfiguration()
-        if not configData['features']['localRuns']:
-            configDir = mountTestingRunStorageDrive(executionSession.applicationId)
-        else:
-            configDir = os.path.join("data", executionSession.applicationId)
+        storageClient = getSharedGCSStorageClient()
+        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + executionSession.applicationId)
+        objectPath = f"annotated_videos/{str(execution_session_id)}.mp4"
+        objectBlob = storage.Blob(objectPath, applicationStorageBucket)
 
-        config = KwolaCoreConfiguration(configDir)
+        try:
+            videoData = objectBlob.download_as_string()
 
-        videoFilePath = os.path.join(config.getKwolaUserDataDirectory("annotated_videos"), f'{str(execution_session_id)}.mp4')
+            response = flask.make_response(videoData)
+            response.headers['content-type'] = 'video/mp4'
 
-        if os.path.exists(videoFilePath):
-            with open(videoFilePath, 'rb') as videoFile:
-                videoData = videoFile.read()
-        else:
-            logging.error(f"Error! Missing execution session video: {videoFilePath}")
+            return response
+        except google.cloud.exceptions.NotFound:
+            logging.error(f"Error! Missing execution session video: {objectPath}")
             return abort(404)
-
-        response = flask.make_response(videoData)
-        response.headers['content-type'] = 'video/mp4'
-
-        unmountTestingRunStorageDrive(configDir)
-
-        return response
 
 
 class ExecutionSessionTraces(Resource):

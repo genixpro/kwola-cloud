@@ -10,6 +10,8 @@ import Button from "../../components/uielements/button";
 import VolumeOffIcon from '@material-ui/icons/VolumeOff';
 import axios from "axios";
 import Promise from "bluebird";
+import Auth from "../../helpers/auth0";
+import "./bugsTable.scss"
 
 class BugsTable extends Component{
 	state = {
@@ -147,14 +149,20 @@ class BugsTable extends Component{
                 <MaterialTable
                   columns={[ 
                     { title: 'id', field: '_id', hidden:true },
-                    { title: 'CLS', field: '_cls',
-                        width:'30%',
+                    {
+                        title: 'Bug Screenshot',
+                        field: 'image',
+                        width:'20%',
+                        render: (rowData) => <img className={"bugs-table-bug-screenshot"} alt={"Bug Screenshot"} src={`${process.env.REACT_APP_BACKEND_API_URL}bugs/${rowData._id}/error_frame?token=${Auth.getQueryParameterToken()}`} />
+                    },
+                    { title: 'Type', field: '_cls',
+                        width:'15%',
                         cellStyle: {
                           //width:'20%'
                         },
                      },
                     { title: 'Message', field: 'message',
-                        width:'70%',
+                        width:'65%',
                         cellStyle: {
                           maxWidth:100,
                           overflow: 'hidden',

@@ -5,6 +5,7 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.datamodels.DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from kwolacloud.datamodels.RunConfiguration import RunConfiguration
 from kwolacloud.datamodels.TestingRun import TestingRun
+from kwola.components.utils.file import getSharedGCSStorageClient
 from mongoengine import *
 from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
@@ -113,7 +114,7 @@ class ApplicationModel(Document):
 
 
     def fetchScreenshot(self):
-        storage_client = storage.Client()
+        storage_client = getSharedGCSStorageClient()
 
         bucket = storage_client.lookup_bucket("kwola-application-screenshots")
         blob = bucket.blob(self.id)

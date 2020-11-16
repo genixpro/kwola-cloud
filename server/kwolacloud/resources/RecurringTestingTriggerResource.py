@@ -23,7 +23,6 @@ import logging
 import json
 import stripe
 import os
-from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
 
 class RecurringTestingTriggerGroup(Resource):

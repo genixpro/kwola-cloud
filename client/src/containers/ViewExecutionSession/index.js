@@ -24,6 +24,7 @@ import {Table} from "../ListApplications/materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielements/table";
 import { Line } from "react-chartjs-2";
 import Auth from "../../helpers/auth0/index"
+import ActionList from "../ActionList/index";
 import axios from "axios";
 
 class ViewExecutionSession extends Component {
@@ -38,7 +39,7 @@ class ViewExecutionSession extends Component {
             this.setState({executionSession: response.data.executionSession})
         });
 
-        axios.get(`/execution_sessions/${this.props.match.params.id}/traces`).then((response) =>
+        axios.get(`/execution_sessions/${this.props.executionSessionId}/traces`).then((response) =>
         {
             this.setState({executionTraces: response.data.executionTraces})
         });
@@ -82,32 +83,7 @@ class ViewExecutionSession extends Component {
                         <Row>
                             <FullColumn>
                                 <Papersheet title={"Execution Traces"}>
-                                    <Table style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word"}}>
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>Frame</TableCell>
-                                                <TableCell>Action Type</TableCell>
-                                                <TableCell>Action X</TableCell>
-                                                <TableCell>Action Y</TableCell>
-                                                <TableCell>Cumulative Branch Coverage</TableCell>
-                                                <TableCell>New Branch Executed</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {(this.state.executionTraces || []).map(trace => {
-                                                return (
-                                                    <TableRow key={trace._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/execution_sessions/${this.props.match.params.id}/execution_traces/${trace._id}`)} >
-                                                        <TableCell>{trace.frameNumber}</TableCell>
-                                                        <TableCell>{trace.actionPerformed.x.toString()}</TableCell>
-                                                        <TableCell>{trace.actionPerformed.y.toString()}</TableCell>
-                                                        <TableCell>{trace.actionPerformed.type.toString()}</TableCell>
-                                                        <TableCell>{(trace.cumulativeBranchCoverage * 100).toFixed(3)}%</TableCell>
-                                                        <TableCell>{trace.didNewBranchesExecute.toString()}</TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
+                                    <ActionList executionTraces={this.state.executionTraces} />
                                 </Papersheet>
                             </FullColumn>
                         </Row>

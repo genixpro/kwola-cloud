@@ -47,6 +47,7 @@ import cv2
 import numpy
 from ..helpers.auth0 import getUserProfileFromId
 from ..helpers.stripe import attachPaymentMethodToUserAccountIfNeeded
+from kwola.components.utils.file import getSharedGCSStorageClient
 
 
 class ApplicationGroup(Resource):
@@ -609,7 +610,7 @@ class NewApplicationTestImage(Resource):
         urlHash.update(bytes(url, 'utf8'))
         urlCacheId = "new-application-screenshot-" + urlHash.hexdigest()
 
-        storage_client = storage.Client()
+        storage_client = getSharedGCSStorageClient()
 
         bucket = storage_client.lookup_bucket("kwola-application-screenshots")
         blob = bucket.blob(urlCacheId)

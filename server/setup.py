@@ -64,6 +64,8 @@ setup(
             'kwola_website_check = kwola.bin.website_check:main',
             'kwolacloud_run_hourly_tasks = kwolacloud.bin.run_hourly_tasks:main',
             'kwolacloud_migrate_trace_data = kwolacloud.bin.migrate_trace_data:main',
+            'kwolacloud_migrate_bug_objects = kwolacloud.bin.migrate_bug_objects:main',
+            'kwolacloud_run_migrations = kwolacloud.bin.run_migrations:main',
             'kwolacloud_load_demo_db = kwolacloud.bin.load_demo_db:main'
         ]
     },

@@ -20,6 +20,7 @@
 
 
 from .errors.BaseError import BaseError
+from .actions.BaseAction import BaseAction
 from .CustomIDField import CustomIDField
 from .DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from mongoengine import *
@@ -41,6 +42,8 @@ class BugModel(Document):
     creationDate = DateField()
 
     stepNumber = IntField()
+
+    actionsPerformed = EmbeddedDocumentListField(BaseAction)
 
     error = EmbeddedDocumentField(BaseError)
 

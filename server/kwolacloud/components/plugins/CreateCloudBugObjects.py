@@ -4,6 +4,12 @@ from kwola.datamodels.BugModel import BugModel
 from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.components.utils.debug_video import createDebugVideoSubProcess
 from kwola.components.plugins.base.TestingStepPluginBase import TestingStepPluginBase
+from kwola.components.agents.DeepLearningAgent import DeepLearningAgent
+import numpy
+import skimage.io
+import skimage.draw
+import io
+import tempfile
 from kwolacloud.datamodels.id_utility import generateKwolaId
 from datetime import datetime
 from kwola.components.utils.file import loadKwolaFileData, saveKwolaFileData
@@ -24,6 +30,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         self.newErrorsThisTestingStep = {}
         self.newErrorOriginalExecutionSessionIds = {}
         self.newErrorOriginalStepNumbers = {}
+        self.executionSessionTraces = {}
 
 
     def testingStepStarted(self, testingStep, executionSessions):
@@ -33,6 +40,9 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         self.newErrorOriginalStepNumbers[testingStep.id] = []
 
         self.loadKnownErrorHashes(testingStep)
+
+        for session in executionSessions:
+            self.executionSessionTraces[session.id] = []
 
 
     def beforeActionsRun(self, testingStep, executionSessions, actions):
@@ -52,6 +62,8 @@ class CreateCloudBugObjects(TestingStepPluginBase):
                     self.newErrorsThisTestingStep[testingStep.id].append(error)
                     self.newErrorOriginalExecutionSessionIds[testingStep.id].append(str(executionSession.id))
                     self.newErrorOriginalStepNumbers[testingStep.id].append(trace.traceNumber)
+
+            self.executionSessionTraces[executionSession.id].append(trace)
 
     def testingStepFinished(self, testingStep, executionSessions):
         kwolaVideoDirectory = self.config.getKwolaUserDataDirectory("videos")
@@ -84,7 +96,6 @@ class CreateCloudBugObjects(TestingStepPluginBase):
                     continue # Skip this error
 
             bug = BugModel()
-            bug.id = generateKwolaId(BugModel, testingStep.owner, self.config)
             bug.owner = testingStep.owner
             bug.applicationId = testingStep.applicationId
             bug.testingStepId = testingStep.id
@@ -93,6 +104,9 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             bug.stepNumber = stepNumber
             bug.error = error
             bug.testingRunId = testingStep.testingRunId
+            bug.actionsPerformed = [
+                trace.actionPerformed for trace in self.executionSessionTraces[executionSessionId]
+            ][:(bug.stepNumber + 2)]
 
             duplicate = False
             for existingBug in existingBugs:
@@ -109,6 +123,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
                     mutedError.saveToDisk(self.config)
 
             if not duplicate:
+                bug.id = generateKwolaId(BugModel, testingStep.owner, self.config)
                 bugVideoFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".mp4")
                 videoData = loadKwolaFileData(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), self.config)
                 saveKwolaFileData(bugVideoFilePath, videoData, self.config)
@@ -126,6 +141,8 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         testingStep.errors = self.newErrorsThisTestingStep[testingStep.id]
 
         self.generateVideoFilesForBugs(testingStep, bugObjects)
+        self.generateFrameSpriteSheetsForBugs(bugObjects)
+
         # We save the bug objects after generating the video files
         # Just to ensure that any bugs which get shown on the frontend
         # actually had their associated video files and don't cause
@@ -145,6 +162,8 @@ class CreateCloudBugObjects(TestingStepPluginBase):
                 del self.newErrorOriginalExecutionSessionIds[testingStep.id][n]
             else:
                 n += 1
+
+        del self.executionSessionTraces[executionSession.id]
 
 
     def loadKnownErrorHashes(self, testingStep):
@@ -178,3 +197,78 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         pool.join()
 
 
+    def generateFrameSpriteSheetsForBugs(self, bugObjects):
+        cropWidth = 300
+        cropHeight = 300
+
+        for bug in bugObjects:
+            videoPath = self.config.getKwolaUserDataDirectory("videos")
+
+            rawImages = DeepLearningAgent.readVideoFrames(os.path.join(videoPath, f"{str(bug.executionSessionId)}.mp4"), self.config)
+
+            sprite = numpy.ones([cropHeight * (bug.stepNumber + 3), cropWidth, 3], dtype=numpy.uint8) * 255
+
+            errorFrame = None
+
+            for imageIndex, image, action in zip(range(len(rawImages)), rawImages, bug.actionsPerformed):
+                if imageIndex < (bug.stepNumber + 3):
+                    cropped = self.cropImageAroundAction(image, action, cropWidth, cropHeight)
+
+                    if imageIndex == bug.stepNumber:
+                        errorFrame = cropped
+
+                    sprite[imageIndex * cropHeight : (imageIndex + 1) * cropHeight, 0:cropWidth, :] = cropped
+
+            spriteFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bug_frame_sprite_sheets"), f"{bug.id}.jpg")
+            errorFrameFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bug_error_frames"), f"{bug.id}.jpg")
+
+            localTempDescriptor, localTemp = tempfile.mkstemp(suffix=".jpg")
+            skimage.io.imsave(localTemp, sprite)
+            with open(localTempDescriptor, 'rb') as f:
+                data = f.read()
+            os.unlink(localTemp)
+            saveKwolaFileData(spriteFilePath, data, self.config)
+
+
+            localTempDescriptor, localTemp = tempfile.mkstemp(suffix=".jpg")
+            skimage.io.imsave(localTemp, errorFrame)
+            with open(localTempDescriptor, 'rb') as f:
+                data = f.read()
+            os.unlink(localTemp)
+            saveKwolaFileData(errorFrameFilePath, data, self.config)
+
+    def cropImageAroundAction(self, image, action, cropWidth, cropHeight):
+        left = int(action.x - cropWidth/2)
+        top = int(action.y - cropHeight/2)
+
+        if left < 0:
+            left = 0
+        if left >= (image.shape[1] - cropWidth):
+            left = (image.shape[1] - cropWidth - 1)
+
+        if top < 0:
+            top = 0
+        if top >= (image.shape[0] - cropHeight):
+            top = (image.shape[0] - cropHeight - 1)
+
+        right = left + cropWidth
+        bottom = top + cropHeight
+
+        cropped = numpy.copy(image[top:bottom, left:right])
+
+        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 5, shape=[cropHeight, cropWidth])
+        cropped[centerCoords] = (255, 0, 0)
+
+        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 10, shape=[cropHeight, cropWidth])
+        cropped[centerCoords] = (255, 0, 0)
+
+        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 15, shape=[cropHeight, cropWidth])
+        cropped[centerCoords] = (255, 0, 0)
+
+        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 20, shape=[cropHeight, cropWidth])
+        cropped[centerCoords] = (255, 0, 0)
+
+        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 25, shape=[cropHeight, cropWidth])
+        cropped[centerCoords] = (255, 0, 0)
+
+        return cropped

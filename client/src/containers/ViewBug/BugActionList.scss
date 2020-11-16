@@ -1,0 +1,26 @@
+
+
+.frame-sprite-wrapper
+{
+  position: relative;
+  width: 150px;
+  height: 150px;
+  overflow: hidden;
+}
+
+.frame-sprite-image
+{
+  width: 150px;
+  position: absolute;
+  left: 0;
+}
+
+.hilighted-bug-row
+{
+  background-color: #ff6666;
+  &:hover
+  {
+    background-color: #ff0000 !important;
+  }
+}
+
