@@ -65,4 +65,4 @@ class BugModel(Document):
         return self.error.generateErrorDescription()
 
     def isDuplicateOf(self, otherBug):
-        return self.error.isDuplicateOf(otherBug.error) >= 0.80
+        return self.error.isDuplicateOf(otherBug.error)

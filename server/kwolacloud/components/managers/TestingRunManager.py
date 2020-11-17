@@ -502,6 +502,7 @@ class TestingRunManager:
             bugAnnotatedVideoFilePath = f"bugs/{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4"
 
             bugsZip.writestr(f"bug_{bugIndex+1}.json", bytes(bug.to_json(), 'utf8'))
+            bugsZip.writestr(f"bug_{bugIndex+1}.txt", bytes(bug.error.message, 'utf8'))
 
             try:
                 bugRawVideoFile = storage.Blob(bugRawVideoFilePath, self.applicationStorageBucket)
