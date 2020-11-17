@@ -31,12 +31,16 @@ from ..plugins.base.ProxyPluginBase import ProxyPluginBase
 from ..utils.file import loadKwolaFileData, saveKwolaFileData
 
 class RewriteProxy:
-    def __init__(self, config, plugins):
+    def __init__(self, config, plugins, testingRunId=None, testingStepId=None, executionSessionId=None):
         self.config = config
 
         self.memoryCache = {}
         self.originalRewriteItemsBySize = {}
         self.plugins = plugins
+        self.testingRunId = testingRunId
+        self.testingStepId = testingStepId
+        self.executionSessionId = executionSessionId
+        self.executionTraceId = None
 
     def getCacheFileName(self, fileHash, fileURL):
         fileName = ProxyPluginBase.getCleanedFileName(fileURL)
@@ -76,6 +80,25 @@ class RewriteProxy:
 
     def request(self, flow):
         flow.request.headers['Accept-Encoding'] = 'identity'
+
+        # Add in a bunch of Kwola related headers to the request. This makes it possible for upstream
+        # systems to identify kwola related requests and separate them 
+        flow.request.headers['X-Kwola'] = 'true'
+
+        if 'applicationId' in self.config and self.config['applicationId'] is not None:
+            flow.request.headers['X-Kwola-Application-Id'] = self.config['applicationId']
+
+        if self.testingRunId is not None:
+            flow.request.headers['X-Kwola-Testing-Run-Id'] = self.testingRunId
+
+        if self.testingStepId is not None:
+            flow.request.headers['X-Kwola-Testing-Step-Id'] = self.testingStepId
+
+        if self.executionSessionId is not None:
+            flow.request.headers['X-Kwola-Execution-Session-Id'] = self.executionSessionId
+
+        if self.executionTraceId is not None:
+            flow.request.headers['X-Kwola-Execution-Trace-Id'] = self.executionTraceId
 
 
     @concurrent

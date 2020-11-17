@@ -106,7 +106,15 @@ class WebEnvironmentSession:
         self.shutdown()
 
     def initializeProxy(self):
-        self.proxy = ProxyProcess(self.config, plugins=self.proxyPlugins)
+        testingRunId = None
+        testingStepId = None
+        executionSessionId = None
+        if self.executionSession is not None:
+            testingRunId = self.executionSession.testingRunId
+            testingStepId = self.executionSession.testingStepId
+            executionSessionId = self.executionSession.id
+
+        self.proxy = ProxyProcess(self.config, plugins=self.proxyPlugins, testingRunId=testingRunId, testingStepId=testingStepId, executionSessionId=executionSessionId)
 
     def initialize(self):
         self.fetchTargetWebpage()
@@ -846,6 +854,11 @@ class WebEnvironmentSession:
             executionTrace.isScreenshotNew = False
             executionTrace.tabNumber = self.tabNumber
             executionTrace.traceNumber = self.traceNumber
+
+            # Set the execution trace id in the proxy. The proxy will add on headers
+            # to all http requests sent by the browser with information identifying
+            # which execution trace that particular request is associated with
+            self.proxy.setExecutionTraceId(executionTrace.id)
 
             for plugin in self.plugins:
                 startTime = datetime.now()

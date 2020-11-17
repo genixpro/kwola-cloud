@@ -48,7 +48,7 @@ class ProxyProcess:
 
     sharedMultiprocessingContext = multiprocessing.get_context('spawn')
 
-    def __init__(self, config, plugins=None):
+    def __init__(self, config, plugins=None, testingRunId=None, testingStepId=None, executionSessionId=None):
         if plugins is None:
             self.plugins = []
         else:
@@ -67,7 +67,7 @@ class ProxyProcess:
         self.commandQueue = ProxyProcess.sharedMultiprocessingContext.Queue()
         self.resultQueue = ProxyProcess.sharedMultiprocessingContext.Queue()
 
-        self.proxyProcess = ProxyProcess.sharedMultiprocessingContext.Process(target=self.runProxyServerSubprocess, args=(self.config, self.commandQueue, self.resultQueue, pickle.dumps(self.plugins, protocol=pickle.HIGHEST_PROTOCOL)), daemon=True)
+        self.proxyProcess = ProxyProcess.sharedMultiprocessingContext.Process(target=self.runProxyServerSubprocess, args=(self.config, self.commandQueue, self.resultQueue, pickle.dumps(self.plugins, protocol=pickle.HIGHEST_PROTOCOL), testingRunId, testingStepId, executionSessionId), daemon=True)
         try:
             self.proxyProcess.start()
         except BrokenPipeError:
@@ -112,6 +112,11 @@ class ProxyProcess:
     def resetNetworkErrors(self):
         self.commandQueue.put("resetNetworkErrors")
 
+    def setExecutionTraceId(self, traceId):
+        self.commandQueue.put("setExecutionTraceId")
+        self.commandQueue.put(traceId)
+        return self.resultQueue.get()
+
     @autoretry(logRetries=False)
     def checkProxyFunctioning(self):
         proxies = {
@@ -129,12 +134,12 @@ class ProxyProcess:
 
 
     @staticmethod
-    def runProxyServerSubprocess(config, commandQueue, resultQueue, plugins):
+    def runProxyServerSubprocess(config, commandQueue, resultQueue, plugins, testingRunId, testingStepId, executionSessionId):
         setupLocalLogging()
 
         plugins = pickle.loads(plugins)
 
-        codeRewriter = RewriteProxy(config, plugins)
+        codeRewriter = RewriteProxy(config, plugins, testingRunId=testingRunId, testingStepId=testingStepId, executionSessionId=executionSessionId)
         pathTracer = PathTracer()
         networkErrorTracer = NetworkErrorTracer()
 
@@ -163,6 +168,11 @@ class ProxyProcess:
 
             if message == "getMostRecentNetworkActivityTimeAndPath":
                 resultQueue.put((pathTracer.mostRecentNetworkActivityTime, pathTracer.mostRecentNetworkActivityURL, pathTracer.mostRecentNetworkActivityEvent))
+
+            if message == "setExecutionTraceId":
+                traceId = commandQueue.get()
+                codeRewriter.executionTraceId = traceId
+                resultQueue.put(None)
 
             if message == "exit":
                 exit(0)
