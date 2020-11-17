@@ -66,6 +66,7 @@ ENV NVIDIA_REQUIRE_CUDA "cuda>=10.1 brand=tesla,driver>=384,driver<385 brand=tes
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
     chromium-browser=86* \
+    firefox \
     ffmpeg \
     freetype* \
     fuse \
@@ -121,6 +122,15 @@ RUN wget https://chromedriver.storage.googleapis.com/86.0.4240.22/chromedriver_l
     chmod +x /usr/bin/chromedriver && \
     rm -rf chromedriver && \
     rm -rf chromedriver_linux64.zip
+
+# Download and install Geckodriver
+RUN wget https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-linux64.tar.gz && \
+    tar -xzf geckodriver-v0.28.0-linux64.tar.gz && \
+    cp geckodriver /usr/bin/ && \
+    chmod 644 /usr/bin/geckodriver && \
+    chmod +x /usr/bin/geckodriver && \
+    rm -rf geckodriver && \
+    rm -rf geckodriver-v0.28.0-linux64.tar.gz
 
 # Installing babel and the kwola babel plugin globally using npm
 RUN sudo npm install @babel/cli -g && \
