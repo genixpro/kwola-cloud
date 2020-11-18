@@ -55,6 +55,10 @@ class ExecutionSession(Document):
 
     totalReward = FloatField()
 
+    browser = StringField()
+
+    userAgent = StringField()
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "execution_sessions", config)
 

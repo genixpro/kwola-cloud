@@ -123,6 +123,8 @@ class TestingRunManager:
         kwolaConfigData['enable_404_error'] = runConfiguration.enable404Error
         kwolaConfigData['enable_javascript_console_error'] = runConfiguration.enableJavascriptConsoleError
         kwolaConfigData['enable_unhandled_exception_error'] = runConfiguration.enableUnhandledExceptionError
+        kwolaConfigData['web_session_enable_chrome'] = runConfiguration.enableChrome
+        kwolaConfigData['web_session_enable_firefox'] = runConfiguration.enableFirefox
 
         if not self.cloudConfigData['features']['localRuns']:
             # We have to write directly to the google cloud storage bucket because of the way that the storage
@@ -210,7 +212,7 @@ class TestingRunManager:
         job = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
                                data={
                                     "testingRunId": self.run.id,
-                                    "testingStepsCompleted": completedTestingSteps + len(self.run.runningTestingStepJobIds)
+                                    "testingStepIndex": completedTestingSteps + len(self.run.runningTestingStepJobIds)
                                },
                             referenceId=referenceId,
                             image="worker",
@@ -231,7 +233,7 @@ class TestingRunManager:
         if self.cloudConfigData['features']['localRuns']:
             job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTestingStepTaskLocal"], {
                 "testingRunId": self.run.id,
-                "testingStepsCompleted": completedTestingSteps + len(self.run.runningTestingStepJobIds)
+                "testingStepIndex": completedTestingSteps + len(self.run.runningTestingStepJobIds)
             }, timeout=7200, config=getKwolaConfiguration(), logId=None)
         else:
             job = self.createTestingStepKubeJob(jobId)

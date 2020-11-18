@@ -17,6 +17,7 @@ import 'plyr/dist/plyr.css'
 import FeedbackWidget from "../FeedbackWidget";
 import FastForwardIcon from '@material-ui/icons/FastForward';
 import BugActionList from "./BugActionList";
+import {Check} from "@material-ui/icons";
 
 
 class ViewBug extends Component {
@@ -141,6 +142,19 @@ class ViewBug extends Component {
                                     <span>Bug Type: {this.state.bug.error._cls || "Unknown"}</span><br/><br/>
                                     <span>Log Level: {this.state.bug.error.logLevel || "Unknown"}</span><br/><br/>
                                     <span>URL: {this.state.bug.error.page || "Unknown"}</span><br/><br/>
+                                    {
+                                        this.state.bug.browser === "chrome" ?
+                                            <span>Browser: <i className="devicon-chrome-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Chrome<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.bug.browser === "firefox" ?
+                                            <span>Browser: <i className="devicon-firefox-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Firefox<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.bug.userAgent ?
+                                            <span>User Agent: {this.state.bug.userAgent}<br/><br/></span> : null
+                                    }
+
                                     <span>Message:</span><br/>
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message}</pre>
 

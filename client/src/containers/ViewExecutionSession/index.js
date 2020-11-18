@@ -76,6 +76,18 @@ class ViewExecutionSession extends Component {
                                             <span>End Time: {moment(this.state.executionSession.endTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
                                             : <span>End Time: N/A<br/></span>
                                     }
+                                    {
+                                        this.state.executionSession.browser === "chrome" ?
+                                            <span>Browser: <i className="devicon-chrome-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Chrome<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.executionSession.browser === "firefox" ?
+                                            <span>Browser: <i className="devicon-firefox-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Firefox<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.executionSession.userAgent ?
+                                            <span>User Agent: {this.state.executionSession.userAgent}<br/><br/></span> : null
+                                    }
                                 </Papersheet>
                             </HalfColumn>
                         </Row>

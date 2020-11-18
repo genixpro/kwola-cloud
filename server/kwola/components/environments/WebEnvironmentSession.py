@@ -35,7 +35,9 @@ from ..plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
 from ...errors import AutologinFailure
 from datetime import datetime
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.common.proxy import Proxy
 from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -71,9 +73,10 @@ class WebEnvironmentSession:
         This class represents a single tab in the web environment.
     """
 
-    def __init__(self, config, tabNumber, plugins=None, executionSession=None):
+    def __init__(self, config, tabNumber, plugins=None, executionSession=None, browser=None):
         self.config = config
         self.targetURL = config['url']
+        self.browser = browser
         self.hasBrowserDied = False
         self.browserDeathReason = None
 
@@ -130,6 +133,11 @@ class WebEnvironmentSession:
 
         self.enforceMemoryLimits()
 
+        # Set the browser and user agent on the execution session
+        if self.executionSession is not None:
+            self.executionSession.browser = self.browser
+            self.executionSession.userAgent = self.proxy.getUserAgent()
+
     def enforceMemoryLimits(self):
         if self.driver.service.process.returncode is not None:
             try:
@@ -143,30 +151,55 @@ class WebEnvironmentSession:
                 pass
 
     def initializeWebBrowser(self):
-        chrome_options = Options()
-        chrome_options.headless = self.config['web_session_headless']
-        if self.config['web_session_enable_shared_chrome_cache']:
-            chrome_options.add_argument(f"--disk-cache-dir={self.config.getKwolaUserDataDirectory('chrome_cache')}")
-            chrome_options.add_argument(f"--disk-cache-size={1024*1024*1024}")
+        if self.browser is None or self.browser == "chrome":
+            chrome_options = ChromeOptions()
+            chrome_options.headless = self.config['web_session_headless']
+            if self.config['web_session_enable_shared_chrome_cache']:
+                chrome_options.add_argument(f"--disk-cache-dir={self.config.getKwolaUserDataDirectory('chrome_cache')}")
+                chrome_options.add_argument(f"--disk-cache-size={1024*1024*1024}")
 
-        chrome_options.add_argument(f"--disable-gpu")
-        chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
-        chrome_options.add_argument(f"--no-sandbox")
-        chrome_options.add_argument(f"--temp-profile")
-        chrome_options.add_argument(f"--proxy-server=localhost:{self.proxy.port}")
+            chrome_options.add_argument(f"--disable-gpu")
+            chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
+            chrome_options.add_argument(f"--no-sandbox")
+            chrome_options.add_argument(f"--temp-profile")
+            chrome_options.add_argument(f"--proxy-server=localhost:{self.proxy.port}")
 
-        capabilities = webdriver.DesiredCapabilities.CHROME
-        capabilities['loggingPrefs'] = {'browser': 'ALL'}
+            capabilities = webdriver.DesiredCapabilities.CHROME
+            capabilities['loggingPrefs'] = {'browser': 'ALL'}
 
-        self.driver = webdriver.Chrome(desired_capabilities=capabilities, chrome_options=chrome_options)
+            self.driver = webdriver.Chrome(desired_capabilities=capabilities, options=chrome_options)
 
-        window_size = self.driver.execute_script("""
-            return [window.outerWidth - window.innerWidth + arguments[0],
-              window.outerHeight - window.innerHeight + arguments[1]];
-            """, self.config['web_session_width'], self.config['web_session_height'])
-        self.driver.set_window_size(*window_size)
-        self.driver.set_script_timeout(30)
-        self.driver.set_page_load_timeout(30)
+            window_size = self.driver.execute_script("""
+                return [window.outerWidth - window.innerWidth + arguments[0],
+                  window.outerHeight - window.innerHeight + arguments[1]];
+                """, self.config['web_session_width'], self.config['web_session_height'])
+            self.driver.set_window_size(*window_size)
+            self.driver.set_script_timeout(30)
+            self.driver.set_page_load_timeout(30)
+        else:
+            firefox_options = FirefoxOptions()
+            firefox_options.headless = self.config['web_session_headless']
+
+            proxy = Proxy()
+            proxy.http_proxy = f"localhost:{self.proxy.port}"
+            firefox_options.proxy = proxy
+
+            firefox_options.log.level = "info"
+
+            capabilities = webdriver.DesiredCapabilities.FIREFOX
+            capabilities['loggingPrefs'] = {'browser': 'ALL'}
+
+            self.driver = webdriver.Firefox(desired_capabilities=capabilities,
+                                            options=firefox_options,
+                                            service_log_path="/home/bradley/test_log")
+
+            window_size = self.driver.execute_script("""
+                return [window.outerWidth - window.innerWidth + arguments[0],
+                  window.outerHeight - window.innerHeight + arguments[1]];
+                """, self.config['web_session_width'], self.config['web_session_height'])
+            self.driver.set_window_size(*window_size)
+            self.driver.set_script_timeout(30)
+            self.driver.set_page_load_timeout(30)
 
     def fetchTargetWebpage(self):
         try:
@@ -716,7 +749,7 @@ class WebEnvironmentSession:
 
             if isinstance(action, ScrollingAction):
                 if self.config['web_session_print_every_action']:
-                    getLogger().info(f"Scrolling {action.direction} at {action.x} {action.y}")
+                    getLogger().info(f"Scrolling {action.direction} at {action.x} {action.y} from {action.source}")
 
                 if action.direction == "down":
                     self.driver.execute_script("window.scrollTo(0, window.scrollY + 400)")
@@ -854,6 +887,8 @@ class WebEnvironmentSession:
             executionTrace.isScreenshotNew = False
             executionTrace.tabNumber = self.tabNumber
             executionTrace.traceNumber = self.traceNumber
+            executionTrace.browser = self.browser
+            executionTrace.userAgent = self.proxy.getUserAgent()
 
             # Set the execution trace id in the proxy. The proxy will add on headers
             # to all http requests sent by the browser with information identifying

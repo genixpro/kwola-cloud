@@ -87,3 +87,7 @@ class RunConfiguration(EmbeddedDocument):
     enableJavascriptConsoleError = BooleanField(default=True)
 
     enableUnhandledExceptionError = BooleanField(default=True)
+
+    enableChrome = BooleanField(default=True)
+
+    enableFirefox = BooleanField(default=True)

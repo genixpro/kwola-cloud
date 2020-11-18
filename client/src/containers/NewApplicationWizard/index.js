@@ -88,7 +88,9 @@ class NewApplicationWizard extends Component {
                 enableRandomDateTimeCommand: true,
                 enableRandomCreditCardCommand: true,
                 enableRandomURLCommand: false,
-                customTypingActionStrings: []
+                customTypingActionStrings: [],
+                enableChrome: true,
+                enableFirefox: true
             },
             application: {
                 name: "",

@@ -21,6 +21,9 @@ import Promise from "bluebird";
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 import FastForwardIcon from "@material-ui/icons/FastForward";
+import {Check} from "@material-ui/icons";
+import "devicon/devicon.css"
+import "devicon/devicon-colors.css"
 
 
 class NewApplicationWizardStep1 extends Component {
@@ -112,7 +115,7 @@ class NewApplicationWizardStep1 extends Component {
     areFieldsValid()
     {
         let urlValid =  /^(ftp|http|https):\/\/[^ "]+$/.test(this.props.application.url);
-        return this.props.application.name && urlValid;
+        return this.props.application.name && urlValid && (this.props.runConfiguration.enableChrome || this.props.runConfiguration.enableFirefox);
     }
 
 
@@ -193,6 +196,28 @@ class NewApplicationWizardStep1 extends Component {
         });
     }
 
+    toggleEnableChrome()
+    {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
+        const newValue = !this.props.runConfiguration.enableChrome;
+        this.changeParentRunConfigurationField("enableChrome", newValue);
+    }
+
+    toggleEnableFirefox()
+    {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
+        const newValue = !this.props.runConfiguration.enableFirefox;
+        this.changeParentRunConfigurationField("enableFirefox", newValue);
+    }
+
     render()
     {
         const { result } = this.state;
@@ -222,6 +247,36 @@ class NewApplicationWizardStep1 extends Component {
                             style={{"width": "100%"}}
                         />
                         <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>The page within your web application that Kwola will start on. Start with https://. If you have a firewall, open traffic from IP 35.224.203.231</span>
+                        <br/>
+                        <br/>
+                        <label style={{"fontSize": "12px", "color": "grey", "fontFamily": "\"Roboto\", \"Helvetica\", \"Arial\", sans-serif"}}>Web Browsers</label>
+                        <div>
+                            <Button variant="contained"
+                                    size="medium"
+                                    color={this.props.runConfiguration.enableChrome ? "primary" : "default"}
+                                    className={"browser-selection-button"}
+                                    title={"Enable Chrome?"}
+                                    onClick={() => this.toggleEnableChrome()}
+                            >
+                                <i className="devicon-chrome-plain" />
+                                {
+                                    this.props.runConfiguration.enableChrome ? <span className={"check-span"}>&nbsp;&nbsp;<Check /></span> : null
+                                }
+                            </Button>
+                            <Button variant="contained"
+                                    size="medium"
+                                    color={this.props.runConfiguration.enableFirefox ? "primary" : "default"}
+                                    className={"browser-selection-button"}
+                                    title={"Enable Firefox?"}
+                                    onClick={() => this.toggleEnableFirefox()}
+                            >
+                                <i className="devicon-firefox-plain" />
+                                {
+                                    this.props.runConfiguration.enableFirefox ? <span className={"check-span"}>&nbsp;&nbsp;<Check /></span> : null
+                                }
+                            </Button>
+                        </div>
+                        <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>Select which web browsers you want to test with. Edge & Safari coming soon.</span>
                         <br/>
                         <br/>
                         <TextField

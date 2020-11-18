@@ -31,7 +31,7 @@ import os
 import traceback
 
 
-def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
+def runOneTestingStepForRun(testingRunId, testingStepIndex):
     logging.info(f"Starting testing step for testing run {testingRunId}")
 
     run = TestingRun.objects(id=testingRunId).first()
@@ -62,11 +62,20 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         config = KwolaCoreConfiguration(configDir)
 
         shouldBeRandom = False
-        if testingStepsCompleted < (config['training_random_initialization_sequences']):
+        if testingStepIndex < (config['training_random_initialization_sequences']):
             shouldBeRandom = True
 
+        browsers = []
+        if config['web_session_enable_chrome']:
+            browsers.append('chrome')
+
+        if config['web_session_enable_firefox']:
+            browsers.append('firefox')
+
+        chosenBrowser = browsers[testingStepIndex % len(browsers)]
+
         newID = generateKwolaId(modelClass=TestingStep, kwolaConfig=config, owner=run.owner)
-        testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId)
+        testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId, browser=chosenBrowser)
         testingStep.saveToDisk(config)
 
         logging.info(f"This testing step was given the id: {newID}")
@@ -87,7 +96,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
             SendExecutionSessionWebhooks(config, application)
         ]
 
-        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins)
+        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins, browser=chosenBrowser)
 
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
         bugs = BugModel.objects(owner=run.owner, testingStepId=newID, isMuted=False)

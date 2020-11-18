@@ -20,6 +20,7 @@
 
 from ...components.proxy.RewriteProxy import RewriteProxy
 from ...components.proxy.PathTracer import PathTracer
+from ...components.proxy.UserAgentTracer import UserAgentTracer
 from ...components.proxy.NetworkErrorTracer import NetworkErrorTracer
 from ...config.logger import getLogger, setupLocalLogging
 from ..plugins.core.JSRewriter import JSRewriter
@@ -117,6 +118,10 @@ class ProxyProcess:
         self.commandQueue.put(traceId)
         return self.resultQueue.get()
 
+    def getUserAgent(self):
+        self.commandQueue.put("getUserAgent")
+        return self.resultQueue.get()
+
     @autoretry(logRetries=False)
     def checkProxyFunctioning(self):
         proxies = {
@@ -141,6 +146,7 @@ class ProxyProcess:
 
         codeRewriter = RewriteProxy(config, plugins, testingRunId=testingRunId, testingStepId=testingStepId, executionSessionId=executionSessionId)
         pathTracer = PathTracer()
+        userAgentTracer = UserAgentTracer()
         networkErrorTracer = NetworkErrorTracer()
 
         proxyThread = Thread(target=ProxyProcess.runProxyServerThread, args=(codeRewriter, pathTracer, networkErrorTracer, resultQueue), daemon=True)
@@ -173,6 +179,9 @@ class ProxyProcess:
                 traceId = commandQueue.get()
                 codeRewriter.executionTraceId = traceId
                 resultQueue.put(None)
+
+            if message == "getUserAgent":
+                resultQueue.put(userAgentTracer.lastUserAgent)
 
             if message == "exit":
                 exit(0)

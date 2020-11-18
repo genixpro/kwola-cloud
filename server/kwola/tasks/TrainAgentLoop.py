@@ -44,17 +44,63 @@ import time
 import torch.cuda
 import traceback
 import random
+import subprocess
 
+def getAvailableBrowsers(config):
+    browsers = []
+    if config['web_session_enable_chrome']:
+        try:
+            result = subprocess.run(['chromedriver', '-v'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result = None
+
+        try:
+            result2 = subprocess.run(['chromium-browser', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result2 = None
+
+        try:
+            result3 = subprocess.run(['google-chrome', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result3 = None
+
+        if result is not None and (result2 is not None or result3 is not None):
+            browsers.append("chrome")
+        else:
+            getLogger().error(f"The Chrome browser is enabled in the configuration, but the executables for either chromedriver or google-chrome/chromium-browser can not be found in $PATH. PATH is:\n{os.getenv('PATH')}")
+
+    if config['web_session_enable_firefox']:
+        try:
+            result = subprocess.run(['geckodriver', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result = None
+
+        try:
+            result2 = subprocess.run(['firefox', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result2 = None
+
+        if result is not None and result2 is not None:
+            browsers.append("firefox")
+        else:
+            getLogger().error(f"The Firefox browser is enabled in the configuration, but the executables for either geckodriver or firefox can not be found in $PATH. PATH is:\n{os.getenv('PATH')}")
+
+    return browsers
 
 def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
     try:
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)))
+        browsers = getAvailableBrowsers(config)
+        chosenBrowser = browsers[testStepIndex % len(browsers)]
+
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
             "configDir": config.configurationDirectory,
             "testingStepId": str(testingStep.id),
-            "shouldBeRandom": True
+            "shouldBeRandom": True,
+            "generateDebugVideo": False,
+            "browser": chosenBrowser
         }, timeout=config['random_initialization_testing_sequence_timeout'], config=config, logId=testingStep.id)
         process.start()
         result = process.waitForProcessResult()
@@ -129,14 +175,18 @@ def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber
 
 def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugVideo=False):
     try:
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)))
+        browsers = getAvailableBrowsers(config)
+        chosenBrowser = browsers[testStepIndex % len(browsers)]
+
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
             "configDir": config.configurationDirectory,
             "testingStepId": str(testingStep.id),
             "shouldBeRandom": False,
-            "generateDebugVideo": generateDebugVideo and config['enable_debug_videos']
+            "generateDebugVideo": generateDebugVideo and config['enable_debug_videos'],
+            "browser": chosenBrowser
         }, timeout=config['testing_step_timeout'], config=config, logId=testingStep.id)
         process.start()
         result = process.waitForProcessResult()
@@ -300,10 +350,12 @@ def trainAgent(configDir, exitOnFail=False):
     agent.save()
     del agent
 
+    browsers = getAvailableBrowsers(config)
+
     # Create and destroy an environment, which forces a lot of the initial javascript in the application
     # to be loaded and translated. It also just verifies that the system can access the target URL prior
     # to trying to run a full sequence
-    environment = WebEnvironment(config, sessionLimit=1)
+    environment = WebEnvironment(config, sessionLimit=1, browser=browsers[0])
     environment.shutdown()
     del environment
 

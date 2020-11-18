@@ -54,7 +54,7 @@ class WebEnvironment:
         with the software.
     """
 
-    def __init__(self, config, sessionLimit=None, plugins=None, executionSessions=None):
+    def __init__(self, config, sessionLimit=None, plugins=None, executionSessions=None, browser=None):
         self.config = config
 
         defaultPlugins = [
@@ -76,7 +76,7 @@ class WebEnvironment:
 
         @autoretry()
         def createSession(sessionNumber):
-            session = WebEnvironmentSession(config, sessionNumber, self.plugins, self.executionSessions[sessionNumber])
+            session = WebEnvironmentSession(config, sessionNumber, self.plugins, self.executionSessions[sessionNumber], browser=browser)
             return session
 
         def onInitializeFailure(session):
