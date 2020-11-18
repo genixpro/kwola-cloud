@@ -27,6 +27,7 @@ import traceback
 import gzip
 import filetype
 import re
+from pprint import pformat
 from ..plugins.base.ProxyPluginBase import ProxyPluginBase
 from ..utils.file import loadKwolaFileData, saveKwolaFileData
 
@@ -81,8 +82,11 @@ class RewriteProxy:
     def request(self, flow):
         flow.request.headers['Accept-Encoding'] = 'identity'
 
+    def requestheaders(self, flow):
+        flow.request.headers['Accept-Encoding'] = 'identity'
+
         # Add in a bunch of Kwola related headers to the request. This makes it possible for upstream
-        # systems to identify kwola related requests and separate them 
+        # systems to identify kwola related requests and separate them
         flow.request.headers['X-Kwola'] = 'true'
 
         if 'applicationId' in self.config and self.config['applicationId'] is not None:
@@ -100,6 +104,13 @@ class RewriteProxy:
         if self.executionTraceId is not None:
             flow.request.headers['X-Kwola-Execution-Trace-Id'] = self.executionTraceId
 
+        # Add the word "Kwola" to the user agent string
+        if 'User-Agent' in flow.request.headers:
+            flow.request.headers['User-Agent'] = flow.request.headers['User-Agent'] + " Kwola"
+        elif 'user-agent' in flow.request.headers:
+            flow.request.headers['user-agent'] = flow.request.headers['user-agent'] + " Kwola"
+        else:
+            flow.request.headers['User-Agent'] = "Kwola"
 
     @concurrent
     def responseheaders(self, flow):
