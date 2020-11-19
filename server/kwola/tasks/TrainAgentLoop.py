@@ -101,8 +101,7 @@ def getAvailableBrowsers(config):
         else:
             getLogger().error(f"The Microsoft Edge browser is enabled in the configuration, but the executables for either msedgedriver or microsoft-edge can not be found in $PATH. PATH is:\n{os.getenv('PATH')}")
 
-    # return browsers
-    return ['edge']
+    return browsers
 
 def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
     try:
@@ -372,7 +371,7 @@ def trainAgent(configDir, exitOnFail=False):
     # Create and destroy an environment, which forces a lot of the initial javascript in the application
     # to be loaded and translated. It also just verifies that the system can access the target URL prior
     # to trying to run a full sequence
-    environment = WebEnvironment(config, sessionLimit=1, browser="edge")
+    environment = WebEnvironment(config, sessionLimit=1, browser=browsers[0])
     environment.shutdown()
     del environment
 
