@@ -109,7 +109,7 @@ RUN apt-get update && apt-get install \
     rm -rf /var/lib/apt/lists/*
 
 RUN wget https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-dev/microsoft-edge-dev_88.0.702.0-1_amd64.deb && \
-    dpkg -i microsoft-edge-dev_88.0.702.0-1_amd64.deb && \
+    apt install ./microsoft-edge-dev_88.0.702.0-1_amd64.deb && \
     rm -rf microsoft-edge-dev_88.0.702.0-1_amd64.deb
 
 # Install kubectl, used for controlling Kubernetes workers
