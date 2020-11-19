@@ -522,12 +522,14 @@ class ApplicationIntegrateWithJIRA(Resource):
         if application is not None:
             data = flask.request.get_json()
 
+            config = loadConfiguration()
+
             response = requests.post("https://auth.atlassian.com/oauth/token", {
                 "code": data['code'],
                 "redirect_uri": data['redirect_uri'],
                 "grant_type": "authorization_code",
-                "client_id": "V5H8QVarAt0oytdolmjMzoIIrmRc1i41",
-                "client_secret": "rNzHZLKqiB1DNp0Mv3bw7nQ_DngMepAt6vTViWJEA6ekf1f904whaWPNxhR0C3Ji"
+                "client_id": config['jira']['clientId'],
+                "client_secret": config['jira']['clientSecret']
             })
 
             if response.status_code != 200:
