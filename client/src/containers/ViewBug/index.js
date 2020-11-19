@@ -152,7 +152,7 @@ class ViewBug extends Component {
                                             <span>Browser: <i className="devicon-firefox-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Firefox<br/><br/></span> : null
                                     }
                                     {
-                                        this.state.bug.browser !== "edge" ?
+                                        this.state.bug.browser === "edge" ?
                                             <span>Browser: <img src={edgeBlackSquare}  style={{"width":"20px", "position": "relative", "top": "3px"}} /> Edge<br/><br/></span> : null
                                     }
                                     {

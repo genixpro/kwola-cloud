@@ -86,7 +86,7 @@ class ViewExecutionSession extends Component {
                                             <span>Browser: <i className="devicon-firefox-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Firefox<br/><br/></span> : null
                                     }
                                     {
-                                        this.state.executionSession.browser !== "edge" ?
+                                        this.state.executionSession.browser === "edge" ?
                                             <span>Browser: <img src={edgeBlackSquare}  style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Edge<br/><br/></span> : null
                                     }
                                     {
