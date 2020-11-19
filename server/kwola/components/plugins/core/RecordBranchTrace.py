@@ -3,7 +3,7 @@ import selenium.common.exceptions
 from kwola.config.logger import getLogger
 import numpy
 import os
-from selenium.webdriver import Firefox, Chrome
+from selenium.webdriver import Firefox, Chrome, Edge
 
 
 
@@ -95,7 +95,7 @@ class RecordBranchTrace(WebEnvironmentPluginBase):
                 '    return null;'
                 '}'
             )
-        elif isinstance(webDriver, Chrome):
+        elif isinstance(webDriver, Chrome) or isinstance(webDriver, Edge):
             injected_javascript = (
                 'return window.kwolaCounters;'
             )

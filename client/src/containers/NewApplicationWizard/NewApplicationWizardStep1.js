@@ -24,6 +24,8 @@ import FastForwardIcon from "@material-ui/icons/FastForward";
 import {Check} from "@material-ui/icons";
 import "devicon/devicon.css"
 import "devicon/devicon-colors.css"
+import edgeBlackSquare from "../../images/edge-black-square.png";
+import edgeWhiteSquare from "../../images/edge-white-square.png";
 
 
 class NewApplicationWizardStep1 extends Component {
@@ -115,7 +117,7 @@ class NewApplicationWizardStep1 extends Component {
     areFieldsValid()
     {
         let urlValid =  /^(ftp|http|https):\/\/[^ "]+$/.test(this.props.application.url);
-        return this.props.application.name && urlValid && (this.props.runConfiguration.enableChrome || this.props.runConfiguration.enableFirefox);
+        return this.props.application.name && urlValid && (this.props.runConfiguration.enableChrome || this.props.runConfiguration.enableFirefox || this.props.runConfiguration.enableEdge);
     }
 
 
@@ -218,6 +220,17 @@ class NewApplicationWizardStep1 extends Component {
         this.changeParentRunConfigurationField("enableFirefox", newValue);
     }
 
+    toggleEnableEdge()
+    {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
+        const newValue = !this.props.runConfiguration.enableEdge;
+        this.changeParentRunConfigurationField("enableEdge", newValue);
+    }
+
     render()
     {
         const { result } = this.state;
@@ -273,6 +286,30 @@ class NewApplicationWizardStep1 extends Component {
                                 <i className="devicon-firefox-plain" />
                                 {
                                     this.props.runConfiguration.enableFirefox ? <span className={"check-span"}>&nbsp;&nbsp;<Check /></span> : null
+                                }
+                            </Button>
+                            <Button variant="contained"
+                                    size="medium"
+                                    color={this.props.runConfiguration.enableEdge ? "primary" : "default"}
+                                    className={"browser-selection-button"}
+                                    title={"Enable Microsoft Edge?"}
+                                    onClick={() => this.toggleEnableEdge()}
+                            >
+                                {
+                                    !this.props.runConfiguration.enableEdge ?
+                                        <img src={edgeBlackSquare}
+                                             style={{"width": "26px"}}/>
+                                        : null
+                                }
+                                {
+                                    this.props.runConfiguration.enableEdge ?
+                                        <img src={edgeWhiteSquare}
+                                             style={{"width": "26px"}}/>
+                                        : null
+                                }
+
+                                {
+                                    this.props.runConfiguration.enableEdge ? <span className={"check-span"}>&nbsp;&nbsp;<Check /></span> : null
                                 }
                             </Button>
                         </div>

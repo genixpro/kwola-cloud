@@ -25,6 +25,7 @@ import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielem
 import { Line } from "react-chartjs-2";
 import Auth from "../../helpers/auth0/index"
 import ActionList from "../ActionList/index";
+import edgeBlackSquare from "../../images/edge-black-square.png"
 import axios from "axios";
 
 class ViewExecutionSession extends Component {
@@ -83,6 +84,10 @@ class ViewExecutionSession extends Component {
                                     {
                                         this.state.executionSession.browser === "firefox" ?
                                             <span>Browser: <i className="devicon-firefox-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Firefox<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.executionSession.browser !== "edge" ?
+                                            <span>Browser: <img src={edgeBlackSquare}  style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Edge<br/><br/></span> : null
                                     }
                                     {
                                         this.state.executionSession.userAgent ?

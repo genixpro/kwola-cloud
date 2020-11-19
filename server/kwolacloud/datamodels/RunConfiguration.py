@@ -91,3 +91,5 @@ class RunConfiguration(EmbeddedDocument):
     enableChrome = BooleanField(default=True)
 
     enableFirefox = BooleanField(default=True)
+
+    enableEdge = BooleanField(default=True)

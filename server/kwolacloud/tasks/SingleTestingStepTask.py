@@ -72,6 +72,9 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
         if config['web_session_enable_firefox']:
             browsers.append('firefox')
 
+        if config['web_session_enable_edge']:
+            browsers.append('edge')
+
         chosenBrowser = browsers[testingStepIndex % len(browsers)]
 
         newID = generateKwolaId(modelClass=TestingStep, kwolaConfig=config, owner=run.owner)

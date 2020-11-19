@@ -85,7 +85,24 @@ def getAvailableBrowsers(config):
         else:
             getLogger().error(f"The Firefox browser is enabled in the configuration, but the executables for either geckodriver or firefox can not be found in $PATH. PATH is:\n{os.getenv('PATH')}")
 
-    return browsers
+    if config['web_session_enable_edge']:
+        try:
+            result = subprocess.run(['msedgedriver', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result = None
+
+        try:
+            result2 = subprocess.run(['microsoft-edge', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result2 = None
+
+        if result is not None and result2 is not None:
+            browsers.append("edge")
+        else:
+            getLogger().error(f"The Microsoft Edge browser is enabled in the configuration, but the executables for either msedgedriver or microsoft-edge can not be found in $PATH. PATH is:\n{os.getenv('PATH')}")
+
+    # return browsers
+    return ['edge']
 
 def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
     try:
@@ -355,7 +372,7 @@ def trainAgent(configDir, exitOnFail=False):
     # Create and destroy an environment, which forces a lot of the initial javascript in the application
     # to be loaded and translated. It also just verifies that the system can access the target URL prior
     # to trying to run a full sequence
-    environment = WebEnvironment(config, sessionLimit=1, browser=browsers[0])
+    environment = WebEnvironment(config, sessionLimit=1, browser="edge")
     environment.shutdown()
     del environment
 

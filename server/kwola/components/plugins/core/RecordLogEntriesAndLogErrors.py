@@ -5,7 +5,7 @@ from kwola.config.logger import getLogger
 import re
 from kwola.datamodels.errors.LogError import LogError
 from .common import kwolaJSRewriteErrorDetectionStrings
-from selenium.webdriver import Firefox, Chrome
+from selenium.webdriver import Firefox, Chrome, Edge
 
 class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):
     networkErrorRegex = re.compile(r"(\D[45]\d\d$)|(\D[45]\d\d\D)")
@@ -50,7 +50,7 @@ class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):
                     window.console = new Proxy(window.console, handler);
                 }
             """)
-        elif isinstance(webDriver, Chrome):
+        elif isinstance(webDriver, Chrome) or isinstance(webDriver, Edge):
             startLogCount = len(webDriver.get_log('browser'))
             self.startLogCounts[executionSession.id] = startLogCount
         else:
@@ -69,7 +69,7 @@ class RecordLogEntriesAndLogErrors(WebEnvironmentPluginBase):
                         "message": " ".join([str(m) for m in entry[1]])
                     })
 
-        elif isinstance(webDriver, Chrome):
+        elif isinstance(webDriver, Chrome) or isinstance(webDriver, Edge):
             logEntries = webDriver.get_log('browser')[self.startLogCounts[executionSession.id]:]
         else:
             raise RuntimeError("Unrecognized web driver class")

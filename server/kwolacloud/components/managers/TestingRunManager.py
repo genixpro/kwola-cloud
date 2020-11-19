@@ -125,6 +125,7 @@ class TestingRunManager:
         kwolaConfigData['enable_unhandled_exception_error'] = runConfiguration.enableUnhandledExceptionError
         kwolaConfigData['web_session_enable_chrome'] = runConfiguration.enableChrome
         kwolaConfigData['web_session_enable_firefox'] = runConfiguration.enableFirefox
+        kwolaConfigData['web_session_enable_edge'] = runConfiguration.enableEdge
 
         if not self.cloudConfigData['features']['localRuns']:
             # We have to write directly to the google cloud storage bucket because of the way that the storage

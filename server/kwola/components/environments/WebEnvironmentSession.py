@@ -37,6 +37,7 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.common.proxy import Proxy
 from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
@@ -97,6 +98,8 @@ class WebEnvironmentSession:
 
         self.proxy = None
         self.driver = None
+
+        self.edgeUserDataDir = None
 
         self.tabNumber = tabNumber
         self.traceNumber = 0
@@ -168,15 +171,24 @@ class WebEnvironmentSession:
             capabilities['loggingPrefs'] = {'browser': 'ALL'}
 
             self.driver = webdriver.Chrome(desired_capabilities=capabilities, options=chrome_options)
+        elif self.browser == "edge":
+            edge_options = EdgeOptions()
+            edge_options.use_chromium = True
+            edge_options.headless = self.config['web_session_headless']
+            if self.config['web_session_enable_shared_edge_cache']:
+                edge_options.add_argument(f"--disk-cache-dir={self.config.getKwolaUserDataDirectory('edge_cache')}")
+                edge_options.add_argument(f"--disk-cache-size={1024*1024*1024}")
 
-            window_size = self.driver.execute_script("""
-                return [window.outerWidth - window.innerWidth + arguments[0],
-                  window.outerHeight - window.innerHeight + arguments[1]];
-                """, self.config['web_session_width'], self.config['web_session_height'])
-            self.driver.set_window_size(*window_size)
-            self.driver.set_script_timeout(30)
-            self.driver.set_page_load_timeout(30)
-        else:
+            self.edgeUserDataDir = tempfile.mkdtemp()
+            edge_options.add_argument(f"--user-data-dir={self.edgeUserDataDir}")
+
+            edge_options.add_argument(f"--proxy-server=localhost:{self.proxy.port}")
+
+            capabilities = webdriver.DesiredCapabilities.EDGE
+            capabilities['loggingPrefs'] = {'browser': 'ALL'}
+
+            self.driver = webdriver.Edge(capabilities=capabilities, options=edge_options)
+        elif self.browser == 'firefox':
             firefox_options = FirefoxOptions()
             firefox_options.headless = self.config['web_session_headless']
 
@@ -192,14 +204,16 @@ class WebEnvironmentSession:
             self.driver = webdriver.Firefox(desired_capabilities=capabilities,
                                             options=firefox_options,
                                             service_log_path="/home/bradley/test_log")
+        else:
+            raise ValueError(f"Unsupported value for browser '{self.browser}'. Valid values are 'firefox', 'chrome' or 'edge'.")
 
-            window_size = self.driver.execute_script("""
-                return [window.outerWidth - window.innerWidth + arguments[0],
-                  window.outerHeight - window.innerHeight + arguments[1]];
-                """, self.config['web_session_width'], self.config['web_session_height'])
-            self.driver.set_window_size(*window_size)
-            self.driver.set_script_timeout(30)
-            self.driver.set_page_load_timeout(30)
+        window_size = self.driver.execute_script("""
+            return [window.outerWidth - window.innerWidth + arguments[0],
+              window.outerHeight - window.innerHeight + arguments[1]];
+            """, self.config['web_session_width'], self.config['web_session_height'])
+        self.driver.set_window_size(*window_size)
+        self.driver.set_script_timeout(30)
+        self.driver.set_page_load_timeout(30)
 
     def fetchTargetWebpage(self):
         try:
@@ -254,6 +268,11 @@ class WebEnvironmentSession:
                     pass
 
             self.driver = None
+
+        if hasattr(self, "edgeUserDataDir"):
+            if self.edgeUserDataDir is not None:
+                shutil.rmtree(self.edgeUserDataDir)
+                self.edgeUserDataDir = None
 
     def waitUntilDocumentReadyState(self):
         startTime = datetime.now()

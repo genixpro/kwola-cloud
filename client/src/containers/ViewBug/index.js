@@ -18,6 +18,7 @@ import FeedbackWidget from "../FeedbackWidget";
 import FastForwardIcon from '@material-ui/icons/FastForward';
 import BugActionList from "./BugActionList";
 import {Check} from "@material-ui/icons";
+import edgeBlackSquare from "../../images/edge-black-square.png";
 
 
 class ViewBug extends Component {
@@ -149,6 +150,10 @@ class ViewBug extends Component {
                                     {
                                         this.state.bug.browser === "firefox" ?
                                             <span>Browser: <i className="devicon-firefox-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Firefox<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.bug.browser !== "edge" ?
+                                            <span>Browser: <img src={edgeBlackSquare}  style={{"width":"20px", "position": "relative", "top": "3px"}} /> Edge<br/><br/></span> : null
                                     }
                                     {
                                         this.state.bug.userAgent ?

@@ -90,7 +90,8 @@ class NewApplicationWizard extends Component {
                 enableRandomURLCommand: false,
                 customTypingActionStrings: [],
                 enableChrome: true,
-                enableFirefox: true
+                enableFirefox: true,
+                enableEdge: true
             },
             application: {
                 name: "",
