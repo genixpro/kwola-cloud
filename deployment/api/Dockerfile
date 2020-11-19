@@ -56,7 +56,7 @@ RUN apt-get update && apt-get install \
 
 # Install the linux build of Microsoft Edge
 RUN wget https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-dev/microsoft-edge-dev_88.0.702.0-1_amd64.deb && \
-    dpkg -i microsoft-edge-dev_88.0.702.0-1_amd64.deb && \
+    apt install -f ./microsoft-edge-dev_88.0.702.0-1_amd64.deb && \
     rm -rf microsoft-edge-dev_88.0.702.0-1_amd64.deb
 
 # Install kubectl, used for controlling Kubernetes workers
