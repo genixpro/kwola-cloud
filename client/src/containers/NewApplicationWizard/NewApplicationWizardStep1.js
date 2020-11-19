@@ -313,7 +313,7 @@ class NewApplicationWizardStep1 extends Component {
                                 }
                             </Button>
                         </div>
-                        <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>Select which web browsers you want to test with. Edge & Safari coming soon.</span>
+                        <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>Select which web browsers you want to test with. Safari support coming soon.</span>
                         <br/>
                         <br/>
                         <TextField
