@@ -69,6 +69,7 @@ RUN apt-get update && apt-get install \
     firefox \
     ffmpeg \
     freetype* \
+    fonts-liberation \
     fuse \
     fuse-dbg \
     g++ \
@@ -88,6 +89,8 @@ RUN apt-get update && apt-get install \
     libssl-dev \
     libxext6 \
     libxml2-dev \
+    libu2f-udev \
+    libvulkan1 \
     mime-support \
     libxrender-dev \
     mime-support \
@@ -137,7 +140,7 @@ RUN wget https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckod
     rm -rf geckodriver-v0.28.0-linux64.tar.gz
 
 # Download and install Edgedriver
-RUN https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver/88.0.702.0/edgedriver_linux64.zip && \
+RUN wget https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver/88.0.702.0/edgedriver_linux64.zip && \
     unzip edgedriver_linux64.zip && \
     cp msedgedriver /usr/bin/ && \
     chmod 644 /usr/bin/msedgedriver && \
