@@ -126,17 +126,19 @@ class ApplicationGroup(Resource):
 
             attachPaymentMethodToUserAccountIfNeeded(data['billingPaymentMethod'], stripeCustomerId)
 
+            invoiceItem = stripe.InvoiceItem.create(
+                customer=customer.id,
+                price=self.configData['stripe']['oneOffRunPriceId']
+            )
+
             invoice = stripe.Invoice.create(
                 customer=customer.id
             )
 
-            invoiceItem = stripe.InvoiceItem.create(
-                customer=customer.id,
-                invoice=invoice.id,
-                price=self.configData['stripe']['oneOffRunPriceId']
-            )
-
-            stripe.Invoice.pay(invoice.id)
+            try:
+                stripe.Invoice.pay(invoice.id)
+            except stripe.error.InvalidRequestError:
+                pass
 
             newApplication.stripeSubscriptionId = None
 
