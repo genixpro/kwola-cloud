@@ -30,7 +30,6 @@ class SymbolMapper:
         self.knownFiles = set()
 
         self.nextSymbolIndex = 1
-        self.recycleSymbolIndexes = []
 
         self.symbolMap = {
 
@@ -56,10 +55,10 @@ class SymbolMapper:
         # and their index values within the embedding structure
         symbolMapData = loadKwolaFileData(self.symbolMapPath, self.config, printErrorOnFailure=False)
         if symbolMapData is not None:
-            (self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.recycleSymbolIndexes, self.allSymbols) = pickle.loads(symbolMapData)
+            (self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.allSymbols) = pickle.loads(symbolMapData)
 
     def save(self):
-        fileData = pickle.dumps((self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.recycleSymbolIndexes, self.allSymbols), protocol=pickle.HIGHEST_PROTOCOL)
+        fileData = pickle.dumps((self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.allSymbols), protocol=pickle.HIGHEST_PROTOCOL)
         saveKwolaFileData(self.symbolMapPath, fileData, self.config)
 
 
@@ -302,11 +301,8 @@ class SymbolMapper:
 
 
         for newLocSymbolMapping, oldLocSymbolMapping in zip(newSymbolMaps, newSymbolMapAssociatedOriginalSymbolMaps):
-            if len(self.recycleSymbolIndexes) == 0:
-                nextSymbolIndex = self.nextSymbolIndex
-                self.nextSymbolIndex += 1
-            else:
-                nextSymbolIndex = self.recycleSymbolIndexes.pop(0)
+            nextSymbolIndex = self.nextSymbolIndex
+            self.nextSymbolIndex += 1
 
             if oldLocSymbolMapping is not None and oldLocSymbolMapping.recentSymbolIndex is not None:
                 # When splitting a symbol mapping, we base the new tensor on the original tensor, but add in 20% random noise
@@ -320,11 +316,8 @@ class SymbolMapper:
 
             newLocSymbolMapping.recentSymbolIndex = nextSymbolIndex
 
-            if len(self.recycleSymbolIndexes) == 0:
-                nextSymbolIndex = self.nextSymbolIndex
-                self.nextSymbolIndex += 1
-            else:
-                nextSymbolIndex = self.recycleSymbolIndexes.pop(0)
+            nextSymbolIndex = self.nextSymbolIndex
+            self.nextSymbolIndex += 1
 
             if oldLocSymbolMapping is not None and oldLocSymbolMapping.coverageSymbolIndex is not None:
                 # When splitting a symbol mapping, we base the new tensor on the original tensor, but add in 20% random noise
@@ -346,9 +339,6 @@ class SymbolMapper:
 
         for newLocSymbolMapping in removedSymbolMaps:
             self.allSymbols.remove(newLocSymbolMapping)
-
-            self.recycleSymbolIndexes.append(newLocSymbolMapping.recentSymbolIndex)
-            self.recycleSymbolIndexes.append(newLocSymbolMapping.coverageSymbolIndex)
 
         stateDict['symbolEmbedding.weight'] = torch.tensor(symbolEmbeddingTensor, dtype=stateDict['symbolEmbedding.weight'].dtype)
 
