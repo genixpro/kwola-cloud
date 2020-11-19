@@ -259,6 +259,7 @@
   "training_trace_selection_minimum_weight": 0.1,
   "training_update_target_network_every": 250,
   "training_write_prepared_sample_timeout": 60,
+  "train_agent_loop_delete_folders_on_finish": [],
   "web_session_action_map_max_keyword_size": 1024,
   "web_session_autologin_sleep_times": 2,
   "web_session_enable_chrome": true,

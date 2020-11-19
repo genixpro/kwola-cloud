@@ -34,7 +34,7 @@
     "enableGoogleCloudLogging": false,
     "enableSlackLogging": false,
     "enableRuns": true,
-    "localRuns": false,
+    "localRuns": true,
     "enableSupportOfferEmailsOnUsers": false
   },
   "jira": {

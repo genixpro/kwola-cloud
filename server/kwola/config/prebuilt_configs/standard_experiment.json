@@ -247,7 +247,7 @@
   "training_random_initialization_workers": 3,
   "training_reset_workers_every_n_batches": 100,
   "training_reward_normalizer_fit_population_size": 1000,
-  "training_save_model_checkpoints": true,
+  "training_save_model_checkpoints": false,
   "training_step_timeout": 1800,
   "training_surplus_batches": 10,
   "training_trace_selection_cache_not_full_state_one_side_bias": 0.5,
@@ -256,6 +256,11 @@
   "training_trace_selection_minimum_weight": 0.1,
   "training_update_target_network_every": 250,
   "training_write_prepared_sample_timeout": 60,
+  "train_agent_loop_delete_folders_on_finish": [
+    "execution_traces",
+    "prepared_samples",
+    "videos"
+  ],
   "web_session_action_map_max_keyword_size": 1024,
   "web_session_autologin_sleep_times": 2,
   "web_session_enable_chrome": true,

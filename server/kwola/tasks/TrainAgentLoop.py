@@ -41,6 +41,7 @@ import billiard as multiprocessing
 import os
 import os.path
 import time
+import shutil
 import torch.cuda
 import traceback
 import random
@@ -407,3 +408,7 @@ def trainAgent(configDir, exitOnFail=False):
     trainingSequence.status = "completed"
     trainingSequence.endTime = datetime.now()
     trainingSequence.saveToDisk(config)
+
+    for folder in config['train_agent_loop_delete_folders_on_finish']:
+        fullPath = config.getKwolaUserDataDirectory(folder)
+        shutil.rmtree(fullPath)
