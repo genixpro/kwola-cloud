@@ -202,8 +202,7 @@ class WebEnvironmentSession:
             capabilities['loggingPrefs'] = {'browser': 'ALL'}
 
             self.driver = webdriver.Firefox(desired_capabilities=capabilities,
-                                            options=firefox_options,
-                                            service_log_path="/home/bradley/test_log")
+                                            options=firefox_options)
         else:
             raise ValueError(f"Unsupported value for browser '{self.browser}'. Valid values are 'firefox', 'chrome' or 'edge'.")
 
