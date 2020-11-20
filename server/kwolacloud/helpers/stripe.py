@@ -21,3 +21,8 @@ def attachPaymentMethodToUserAccountIfNeeded(paymentMethodId, stripeCustomerId):
             paymentMethodId,
             customer=stripeCustomerId,
         )
+
+        stripe.Customer.modify(
+          stripeCustomerId,
+          invoice_settings={"default_payment_method": paymentMethodId}
+        )
