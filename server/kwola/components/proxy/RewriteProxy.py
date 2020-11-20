@@ -44,7 +44,7 @@ class RewriteProxy:
         fileNameSplit = fileName.split("_")
 
         if len(fileNameSplit) > 1:
-            extension = "." + fileNameSplit[-1]
+            extension = fileNameSplit[-1]
             fileNameRoot = "_".join(fileNameSplit[:-1])
         else:
             extension = ""
@@ -52,13 +52,14 @@ class RewriteProxy:
 
         badChars = "%=~`!@#$^&*(){}[]\\|'\":;,<>/?+"
         for char in badChars:
+            extension = extension.replace(char, "-")
             fileNameRoot = fileNameRoot.replace(char, "-")
 
         # Replace all unicode characters with -CODE-, with CODE being replaced by the unicode character code
         fileNameRoot = str(fileNameRoot.encode('ascii', 'xmlcharrefreplace'), 'ascii').replace("&#", "-").replace(";", "-")
         extension = str(extension.encode('ascii', 'xmlcharrefreplace'), 'ascii').replace("&#", "-").replace(";", "-")
 
-        cacheFileName = os.path.join(self.config.getKwolaUserDataDirectory("proxy_cache"), fileNameRoot[:100] + "_" + fileHash + extension)
+        cacheFileName = os.path.join(self.config.getKwolaUserDataDirectory("proxy_cache"), fileNameRoot[:100] + "_" + fileHash + "." + extension)
 
         return cacheFileName
 
