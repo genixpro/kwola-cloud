@@ -220,9 +220,11 @@ class WebEnvironmentSession:
 
             for error in self.proxy.getNetworkErrors():
                 if error.url == self.targetURL and error.statusCode != 401 and error.statusCode != 403:
+                    self.driver.get("data:,")
                     raise RuntimeError(f"Received a fatal network error while attempting to load the starting page.")
 
         except selenium.common.exceptions.TimeoutException:
+            self.driver.get("data:,")
             raise RuntimeError(f"The web-browser timed out while attempting to load the target URL {self.targetURL}")
 
         self.waitUntilNoNetworkActivity()
@@ -232,6 +234,7 @@ class WebEnvironmentSession:
         # No action maps is a strong signal that the page has not loaded correctly.
         actionMaps = self.getActionMaps()
         if len(actionMaps) == 0:
+            self.driver.get("data:,")
             raise RuntimeError(f"Error: loading page {self.targetURL} lead to a page with no action maps.")
 
 
