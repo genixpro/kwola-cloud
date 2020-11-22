@@ -7,7 +7,7 @@
 import google
 import google.cloud
 import google.cloud.logging
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 import stripe
 from kwola.config.logger import getLogger
 from ..db import connectToMongoWithRetries

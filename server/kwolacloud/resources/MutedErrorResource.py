@@ -5,7 +5,7 @@
 
 from ..auth import authenticate, isAdmin
 from ..config.config import getKwolaConfiguration
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from ..datamodels.id_utility import generateKwolaId
 from ..datamodels.MutedError import MutedError
 from flask_restful import Resource, reqparse, abort
@@ -17,7 +17,7 @@ class MutedErrorsGroup(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
 
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def get(self):
         user = authenticate()

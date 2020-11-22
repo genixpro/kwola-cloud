@@ -4,7 +4,7 @@
 #
 
 
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from ..datamodels.id_utility import generateKwolaId
 from ..datamodels.TestingRun import TestingRun
 from ..helpers.jira import postBugToCustomerJIRA
@@ -38,7 +38,7 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
 
     logging.info(f"Testing run obj: {pformat(json.loads(run.to_json()))}")
 
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     if run is None:
         errorMessage = f"Error! {testingRunId} not found."

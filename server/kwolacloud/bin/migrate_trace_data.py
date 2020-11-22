@@ -7,7 +7,7 @@
 import google
 import google.cloud
 import google.cloud.logging
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from kwola.config.config import KwolaCoreConfiguration
 import traceback
 import stripe

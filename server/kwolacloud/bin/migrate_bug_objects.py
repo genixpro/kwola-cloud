@@ -7,7 +7,7 @@
 import google
 import google.cloud
 import google.cloud.logging
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from kwola.config.config import KwolaCoreConfiguration
 import traceback
 import stripe
@@ -56,7 +56,7 @@ def processBug(bugId):
 
         executionSession = ExecutionSession.objects(id=bug.executionSessionId).first()
 
-        configData = loadConfiguration()
+        configData = loadCloudConfiguration()
         if not configData['features']['localRuns']:
             configDir = mountTestingRunStorageDrive(bug.applicationId)
         else:

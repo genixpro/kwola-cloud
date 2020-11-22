@@ -10,7 +10,7 @@ import os
 import stripe
 import stripe.error
 from ..auth import authenticate, isAdmin
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 
 class BillingURLResource(Resource):
     def __init__(self):

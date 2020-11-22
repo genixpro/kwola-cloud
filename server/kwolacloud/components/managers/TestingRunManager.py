@@ -5,7 +5,7 @@
 
 
 from ...config.config import getKwolaConfigurationData
-from ...config.config import loadConfiguration, getKwolaConfiguration
+from ...config.config import loadCloudConfiguration, getKwolaConfiguration
 from ...datamodels.ApplicationModel import ApplicationModel
 from ...datamodels.TestingRun import TestingRun
 from ...helpers.email import sendFinishTestingRunEmail
@@ -46,7 +46,7 @@ class TestingRunManager:
 
         self.testingRunId = testingRunId
         self.run = None
-        self.cloudConfigData = loadConfiguration()
+        self.cloudConfigData = loadCloudConfiguration()
         self.configDir = None
         self.config = None
         self.shouldExit = False

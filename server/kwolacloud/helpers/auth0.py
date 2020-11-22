@@ -1,6 +1,6 @@
 from auth0.v3.authentication import GetToken
 from auth0.v3.management import Auth0
-from kwolacloud.config.config import loadConfiguration
+from kwolacloud.config.config import loadCloudConfiguration
 import time
 import datetime
 from dateutil.relativedelta import relativedelta
@@ -11,7 +11,7 @@ authService = None
 def loadAuth0Service():
     global authService
 
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     domain = configData['auth0']['domain'].replace("https://", "")
 
@@ -52,7 +52,7 @@ def updateUserProfileMetadataValue(ownerId, key, value):
 
             user = authService.users.get(ownerId)
 
-            metadata = user['user_metadata']
+            metadata = user.get('user_metadata', {})
             metadata[key] = value
 
             authService.users.update(ownerId, {"user_metadata": metadata})

@@ -16,7 +16,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from ..helpers.email import sendOfferSupportEmail, sendRequestFeedbackEmail
 from ..helpers.auth0 import loadAuth0Service, updateUserProfileMetadataValue
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 import subprocess
 from mongoengine.queryset.visitor import Q
 
@@ -24,7 +24,7 @@ def runHourlyTasks():
     try:
         now = datetime.now()
 
-        config = loadConfiguration()
+        config = loadCloudConfiguration()
 
         logging.info(f"Starting the hourly task job at {now.isoformat()}")
 

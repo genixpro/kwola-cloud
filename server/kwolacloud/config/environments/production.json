@@ -10,10 +10,16 @@
   },
   "stripe": {
     "apiKey": "sk_live_2qBMcLyNWmrhhkvGVp1WoW0B00R9A3LK71",
-    "monthlyPriceId": "price_1Hb8bfIblHdmFFAotwMIFbHE",
-    "monthlyExtraPriceId": "price_1HbBKrIblHdmFFAoMXAbtwBD",
-    "oneOffRunPriceId": "price_1Hb9AsIblHdmFFAop1AEtQ22",
-    "productId": "prod_HaMORiE1sMu6bP"
+    "monthlyPriceId": "price_1HqPHAIblHdmFFAo41DbhJdi",
+    "monthlyExtraPriceId": "price_1HqPGHIblHdmFFAouR2ZaWPo",
+    "oneOffRunPriceId": "price_1HqPGcIblHdmFFAoRgGmqrmd",
+    "oldPackages": {
+      "package_100": {
+        "monthlyPriceId": "price_1Hb8bfIblHdmFFAotwMIFbHE",
+        "monthlyExtraPriceId": "price_1HbBKrIblHdmFFAoMXAbtwBD",
+        "oneOffRunPriceId": "price_1Hb9AsIblHdmFFAop1AEtQ22"
+      }
+    }
   },
   "auth0": {
     "apiUrl": "https://app.kwola.io/api/",

@@ -9,7 +9,7 @@ import json
 import os
 import stripe
 from ..auth import authenticate, isAdmin
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 import flask
 
 class PromoCodes(Resource):

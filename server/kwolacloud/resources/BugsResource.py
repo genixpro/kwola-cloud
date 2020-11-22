@@ -14,7 +14,7 @@ import json
 import logging
 import bson
 from kwola.datamodels.CustomIDField import CustomIDField
-from ..config.config import getKwolaConfiguration, loadConfiguration
+from ..config.config import getKwolaConfiguration, loadCloudConfiguration
 import flask
 from kwola.config.config import KwolaCoreConfiguration
 import os.path
