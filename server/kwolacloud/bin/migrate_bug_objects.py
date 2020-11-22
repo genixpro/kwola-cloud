@@ -56,6 +56,9 @@ def processBug(bugId):
 
         executionSession = ExecutionSession.objects(id=bug.executionSessionId).first()
 
+        if bug.applicationId is None:
+            bug.applicationId = executionSession.applicationId
+
         configData = loadCloudConfiguration()
         if not configData['features']['localRuns']:
             configDir = mountTestingRunStorageDrive(bug.applicationId)
