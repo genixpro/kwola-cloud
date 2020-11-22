@@ -49,7 +49,7 @@ class BugsGroup(Resource):
 
         queryParams["isMuted"] = False
 
-        bugs = BugModel.objects(**queryParams).no_dereference().order_by("-startTime")
+        bugs = BugModel.objects(**queryParams).no_dereference().order_by("-startTime").only("id", "error")
 
         return {"bugs": json.loads(bugs.to_json())}
 
