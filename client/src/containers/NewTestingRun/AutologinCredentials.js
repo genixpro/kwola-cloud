@@ -116,7 +116,7 @@ class AutologinCredentials extends Component {
                             <TextField
                                 id="password"
                                 label="Password"
-                                type={"text"}
+                                type={"password"}
                                 value={this.state.password}
                                 onChange={(event) => this.passwordChanged(event.target.value)}
                                 margin="normal"

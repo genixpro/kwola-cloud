@@ -363,7 +363,7 @@ class NewApplicationWizardStep1 extends Component {
                                 <TextField
                                     id="password"
                                     label="Password"
-                                    type={"text"}
+                                    type={"password"}
                                     value={this.props.runConfiguration.password}
                                     onChange={(event) => this.passwordChanged(event.target.value)}
                                     margin="normal"
