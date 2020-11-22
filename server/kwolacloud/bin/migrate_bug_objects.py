@@ -56,6 +56,9 @@ def processBug(bugId):
 
         executionSession = ExecutionSession.objects(id=bug.executionSessionId).first()
 
+        if executionSession is None:
+            return
+
         if bug.applicationId is None:
             bug.applicationId = executionSession.applicationId
 
