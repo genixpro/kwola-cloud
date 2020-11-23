@@ -209,14 +209,7 @@ class NewApplicationWizard extends Component {
 
             this.resetWizardState();
 
-            if (this.state.application.package === "once")
-            {
-                this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
-            }
-            else if(this.state.application.package === "monthly")
-            {
-                this.props.history.push(`/app/dashboard/applications/${response.data.applicationId}`);
-            }
+            this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
 
             return Promise.fulfilled();
         }, (error) =>
