@@ -341,6 +341,11 @@ class ApplicationSingle(Resource):
 
         if application is not None:
             application.status = "deleted"
+
+            if application.stripeSubscriptionId is not None:
+                stripe.Subscription.delete(application.stripeSubscriptionId)
+                application.stripeSubscriptionId = None
+
             application.save()
         else:
             abort(404)
