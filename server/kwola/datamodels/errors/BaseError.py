@@ -20,7 +20,7 @@
 
 
 from mongoengine import *
-from ...components.utils.regex import sharedUrlRegex, sharedHexUuidRegex, sharedMongoObjectIdRegex, sharedISO8601DateRegex, sharedStandardBase64Regex, sharedAlphaNumericalCodeRegex, sharedISO8601TimeRegex, sharedIPAddressRegex
+from ...components.utils.regex import sharedNonJavascriptCodeUrlRegex, sharedHexUuidRegex, sharedMongoObjectIdRegex, sharedISO8601DateRegex, sharedStandardBase64Regex, sharedAlphaNumericalCodeRegex, sharedISO8601TimeRegex, sharedIPAddressRegex, sharedLongNumberRegex
 import re
 import datetime
 import functools
@@ -47,12 +47,13 @@ class BaseError(EmbeddedDocument):
     @functools.lru_cache(maxsize=1024)
     def computeReducedErrorComparisonMessage(message):
         deduplicationIgnoreRegexes = [
-            sharedUrlRegex,
+            sharedNonJavascriptCodeUrlRegex,
             sharedHexUuidRegex,
             sharedMongoObjectIdRegex,
             sharedISO8601DateRegex,
             sharedISO8601TimeRegex,
             sharedIPAddressRegex,
+            sharedLongNumberRegex,
             sharedStandardBase64Regex,
             sharedAlphaNumericalCodeRegex
         ]

@@ -8,6 +8,15 @@ sharedUrlRegex = re.compile(
     r'(?::\d+)?'  # optional port
     r'(?:[/?]\S+|/?)', re.IGNORECASE)
 
+sharedNonJavascriptCodeUrlRegex = re.compile(
+    r'(?:http|ftp|ws)s?://'  # http:// or https://
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+    r'localhost|'  # localhost...
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+    r'(?::\d+)?'  # optional port
+    r'(?!\S+\.js)'  # Don't match anything that is .js
+    r'(?:[/?]\S+|/?)', re.IGNORECASE)
+
 
 sharedHexUuidRegex = re.compile(
     r'[a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12}',
@@ -15,7 +24,7 @@ sharedHexUuidRegex = re.compile(
 
 
 sharedMongoObjectIdRegex = re.compile(
-    r'(5[a-f0-9]{23})|(5[a-f0-9]{15})',
+    r'(5(?=\d{0,22}[a-f])[a-f0-9]{23})|(5(?=\d{0,14}[a-f])[a-f0-9]{15})',
     re.IGNORECASE)
 
 
@@ -43,5 +52,9 @@ sharedAlphaNumericalCodeRegex = re.compile(
 
 sharedIPAddressRegex = re.compile(
     r'\D\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?=\D)')
+
+
+sharedLongNumberRegex = re.compile(
+    r'\d{8,}')
 
 

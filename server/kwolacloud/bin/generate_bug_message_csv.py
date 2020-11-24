@@ -8,7 +8,7 @@ import traceback
 import logging
 from kwola.datamodels.BugModel import BugModel
 from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
-from kwola.components.utils.regex import sharedUrlRegex, sharedHexUuidRegex, sharedMongoObjectIdRegex, sharedISO8601DateRegex, sharedStandardBase64Regex, sharedAlphaNumericalCodeRegex,sharedISO8601TimeRegex, sharedIPAddressRegex
+from kwola.components.utils.regex import sharedNonJavascriptCodeUrlRegex, sharedHexUuidRegex, sharedMongoObjectIdRegex, sharedISO8601DateRegex, sharedStandardBase64Regex, sharedAlphaNumericalCodeRegex,sharedISO8601TimeRegex, sharedIPAddressRegex, sharedLongNumberRegex
 import re
 from pprint import pprint
 
@@ -41,17 +41,19 @@ def main():
             'DATE': set(),
             'TIME': set(),
             'IP': set(),
+            'NUM': set(),
             'BASE64': set(),
             'CODE': set()
         }
 
         regexes = [
-            (sharedUrlRegex, 'URL'),
+            (sharedNonJavascriptCodeUrlRegex, 'URL'),
             (sharedHexUuidRegex, 'UUID'),
             (sharedMongoObjectIdRegex, 'MONGO'),
             (sharedISO8601DateRegex, 'DATE'),
             (sharedISO8601TimeRegex, 'TIME'),
             (sharedIPAddressRegex, 'IP'),
+            (sharedLongNumberRegex, 'NUM'),
             (sharedStandardBase64Regex, 'BASE64'),
             (sharedAlphaNumericalCodeRegex, 'CODE')
         ]
