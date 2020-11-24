@@ -147,6 +147,13 @@ class TestingRunManager:
         environment.shutdown()
         del environment
 
+    def ensureAgentModelExists(self):
+        # Load and save the agent to make sure all training subprocesses are synced
+        agent = DeepLearningAgent(config=self.config, whichGpu=None)
+        agent.initialize(enableTraining=False)
+        agent.load()
+        agent.save()
+        del agent
 
     def loadTestingRun(self):
         self.run = TestingRun.objects(id=self.testingRunId).first()
@@ -176,6 +183,7 @@ class TestingRunManager:
             self.config = KwolaCoreConfiguration(self.configDir)
 
             self.doInitialBrowserSession()
+            self.ensureAgentModelExists()
 
     def launchTestingStepsIfNeeded(self):
         logging.info(f"Launching testing steps if needed. Number to launch: {self.calculateNumberOfTestingSessionsToStart()}")
