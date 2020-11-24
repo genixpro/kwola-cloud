@@ -489,7 +489,10 @@ class TestingStepManager:
 
             self.testStep.saveToDisk(self.config)
             resultValue['successfulExecutionSessions'] = len(self.testStep.executionSessions)
-            resultValue['success'] = True
+            if len(self.testStep.executionSessions) == 0:
+                resultValue['success'] = False
+            else:
+                resultValue['success'] = True
 
             for traceList in self.executionSessionTraceLocalPickleFiles:
                 for fileName in traceList:
