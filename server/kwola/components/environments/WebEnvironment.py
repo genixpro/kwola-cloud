@@ -83,7 +83,7 @@ class WebEnvironment:
             session.hasBrowserDied = True
             session.browserDeathReason = f"A fatal error occurred during session initialization: {traceback.format_exc()}"
 
-        @autoretry(ignoreFailure=True, onFailure=onInitializeFailure, exponentialBackOffBase=2.5)
+        @autoretry(ignoreFailure=True, onFinalFailure=onInitializeFailure, exponentialBackOffBase=2.5)
         def initializeSession(session):
             session.initialize()
 

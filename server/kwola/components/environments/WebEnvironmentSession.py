@@ -520,7 +520,10 @@ class WebEnvironmentSession:
                     getLogger().info(f"Heuristic autologin appears to have worked!")
                     return autologinMoviePath
                 else:
-                    raise AutologinFailure(f"Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change.", autologinMoviePath)
+                    message = f"Unable to verify that the heuristic login worked. The login actions were performed but the URL did not change."
+                    # raise AutologinFailure(message, autologinMoviePath)
+                    getLogger().warning(message)
+                    return autologinMoviePath
             else:
                 raise AutologinFailure(f"There was an error running one of the actions required for the heuristic auto login.", autologinMoviePath)
         except urllib3.exceptions.MaxRetryError as e:
