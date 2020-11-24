@@ -33,10 +33,10 @@ scipy
 selenium
 sendgrid
 slack-webhook
-StringDist
 stripe
 testtools
 torch
 wheel
 giturlparse
 Faker
+edlib
