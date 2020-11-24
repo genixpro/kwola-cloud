@@ -113,6 +113,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             ][:(bug.stepNumber + 2)]
             bug.browser = executionSessionsById[executionSessionId].browser
             bug.userAgent = executionSessionsById[executionSessionId].userAgent
+            bug.windowSize = executionSessionsById[executionSessionId].windowSize
 
             duplicate = False
             for existingBug in existingBugs:

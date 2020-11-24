@@ -104,12 +104,32 @@ def getAvailableBrowsers(config):
 
     return browsers
 
+
+def getAvailableWindowSizes(config):
+    windowSizes = []
+
+    if config['web_session_enable_window_size_desktop']:
+        windowSizes.append("desktop")
+    if config['web_session_enable_window_size_tablet']:
+        windowSizes.append("tablet")
+    if config['web_session_enable_window_size_mobile']:
+        windowSizes.append("mobile")
+
+    if len(windowSizes) == 0:
+        raise RuntimeError("Error! There are no enabled window sizes. Please set web_session_enable_window_size_desktop or web_session_enable_window_size_tablet or web_session_enable_window_size_mobile")
+
+    return windowSizes
+
 def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
     try:
         browsers = getAvailableBrowsers(config)
-        chosenBrowser = browsers[testStepIndex % len(browsers)]
+        windowSizes = getAvailableWindowSizes(config)
 
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser)
+        choiceIndex = testStepIndex % (len(browsers) * len(windowSizes))
+        chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
+        chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
+
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
@@ -117,7 +137,8 @@ def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
             "testingStepId": str(testingStep.id),
             "shouldBeRandom": True,
             "generateDebugVideo": False,
-            "browser": chosenBrowser
+            "browser": chosenBrowser,
+            "windowSize": chosenWindowSize
         }, timeout=config['random_initialization_testing_sequence_timeout'], config=config, logId=testingStep.id)
         process.start()
         result = process.waitForProcessResult()
@@ -193,9 +214,13 @@ def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber
 def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugVideo=False):
     try:
         browsers = getAvailableBrowsers(config)
-        chosenBrowser = browsers[testStepIndex % len(browsers)]
+        windowSizes = getAvailableWindowSizes(config)
 
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser)
+        choiceIndex = testStepIndex % (len(browsers) * len(windowSizes))
+        chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
+        chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
+
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
@@ -203,7 +228,8 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
             "testingStepId": str(testingStep.id),
             "shouldBeRandom": False,
             "generateDebugVideo": generateDebugVideo and config['enable_debug_videos'],
-            "browser": chosenBrowser
+            "browser": chosenBrowser,
+            "windowSize": chosenWindowSize
         }, timeout=config['testing_step_timeout'], config=config, logId=testingStep.id)
         process.start()
         result = process.waitForProcessResult()

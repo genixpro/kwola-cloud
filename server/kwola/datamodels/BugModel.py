@@ -57,6 +57,8 @@ class BugModel(Document):
 
     userAgent = StringField()
 
+    windowSize = StringField()
+
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
         saveObjectToDisk(self, "bugs", config, overrideSaveFormat=overrideSaveFormat, overrideCompression=overrideCompression)
 

@@ -75,10 +75,22 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
         if config['web_session_enable_edge']:
             browsers.append('edge')
 
-        chosenBrowser = browsers[testingStepIndex % len(browsers)]
+        windowSizes = []
+        if config['web_session_enable_window_size_desktop']:
+            windowSizes.append("desktop")
+
+        if config['web_session_enable_window_size_tablet']:
+            windowSizes.append("tablet")
+
+        if config['web_session_enable_window_size_mobile']:
+            windowSizes.append("mobile")
+
+        choiceIndex = testingStepIndex % (len(browsers) * len(windowSizes))
+        chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
+        chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
 
         newID = generateKwolaId(modelClass=TestingStep, kwolaConfig=config, owner=run.owner)
-        testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId, browser=chosenBrowser)
+        testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId, browser=chosenBrowser, windowSize=chosenWindowSize)
         testingStep.saveToDisk(config)
 
         logging.info(f"This testing step was given the id: {newID}")
@@ -99,7 +111,7 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
             SendExecutionSessionWebhooks(config, application)
         ]
 
-        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins, browser=chosenBrowser)
+        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins, browser=chosenBrowser, windowSize=chosenWindowSize)
 
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
         bugs = BugModel.objects(owner=run.owner, testingStepId=newID, isMuted=False)

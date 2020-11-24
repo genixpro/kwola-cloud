@@ -159,6 +159,10 @@ class ViewBug extends Component {
                                         this.state.bug.userAgent ?
                                             <span>User Agent: {this.state.bug.userAgent}<br/><br/></span> : null
                                     }
+                                    {
+                                        this.state.bug.windowSize ?
+                                            <span>Window Size: {this.state.bug.windowSize}<br/><br/></span> : null
+                                    }
 
                                     <span>Message:</span><br/>
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message}</pre>

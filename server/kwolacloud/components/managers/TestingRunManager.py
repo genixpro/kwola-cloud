@@ -126,6 +126,9 @@ class TestingRunManager:
         kwolaConfigData['web_session_enable_chrome'] = runConfiguration.enableChrome
         kwolaConfigData['web_session_enable_firefox'] = runConfiguration.enableFirefox
         kwolaConfigData['web_session_enable_edge'] = runConfiguration.enableEdge
+        kwolaConfigData['web_session_enable_window_size_desktop'] = runConfiguration.enableWindowSizeDesktop
+        kwolaConfigData['web_session_enable_window_size_tablet'] = runConfiguration.enableWindowSizeTablet
+        kwolaConfigData['web_session_enable_window_size_mobile'] = runConfiguration.enableWindowSizeMobile
 
         if not self.cloudConfigData['features']['localRuns']:
             # We have to write directly to the google cloud storage bucket because of the way that the storage

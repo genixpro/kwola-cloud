@@ -26,7 +26,9 @@ import "devicon/devicon.css"
 import "devicon/devicon-colors.css"
 import edgeBlackSquare from "../../images/edge-black-square.png";
 import edgeWhiteSquare from "../../images/edge-white-square.png";
-
+import DesktopMacIcon from '@material-ui/icons/DesktopMac';
+import TabletMacIcon from '@material-ui/icons/TabletMac';
+import SmartphoneIcon from '@material-ui/icons/Smartphone';
 
 class NewApplicationWizardStep1 extends Component {
     state = {
@@ -231,6 +233,39 @@ class NewApplicationWizardStep1 extends Component {
         this.changeParentRunConfigurationField("enableEdge", newValue);
     }
 
+    toggleEnableWindowSizeDesktop()
+    {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
+        const newValue = !this.props.runConfiguration.enableWindowSizeDesktop;
+        this.changeParentRunConfigurationField("enableWindowSizeDesktop", newValue);
+    }
+
+    toggleEnableWindowSizeTablet()
+    {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
+        const newValue = !this.props.runConfiguration.enableWindowSizeTablet;
+        this.changeParentRunConfigurationField("enableWindowSizeTablet", newValue);
+    }
+
+    toggleEnableWindowSizeMobile()
+    {
+        if (this.props.disabled)
+        {
+            return;
+        }
+
+        const newValue = !this.props.runConfiguration.enableWindowSizeMobile;
+        this.changeParentRunConfigurationField("enableWindowSizeMobile", newValue);
+    }
+
     render()
     {
         const { result } = this.state;
@@ -314,6 +349,48 @@ class NewApplicationWizardStep1 extends Component {
                             </Button>
                         </div>
                         <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>Select which web browsers you want to test with. Safari support coming soon.</span>
+                        <br/>
+                        <br/>
+                        <label style={{"fontSize": "12px", "color": "grey", "fontFamily": "\"Roboto\", \"Helvetica\", \"Arial\", sans-serif"}}>Window Sizes</label>
+                        <div>
+                            <Button variant="contained"
+                                    size="medium"
+                                    color={this.props.runConfiguration.enableWindowSizeDesktop ? "primary" : "default"}
+                                    className={"browser-selection-button"}
+                                    title={"Enable desktop window sizes?"}
+                                    onClick={() => this.toggleEnableWindowSizeDesktop()}
+                            >
+                                <DesktopMacIcon/>
+                                {
+                                    this.props.runConfiguration.enableWindowSizeDesktop ? <span className={"check-span"}>&nbsp;&nbsp;<Check /></span> : null
+                                }
+                            </Button>
+                            <Button variant="contained"
+                                    size="medium"
+                                    color={this.props.runConfiguration.enableWindowSizeTablet ? "primary" : "default"}
+                                    className={"browser-selection-button"}
+                                    title={"Enable tablet window sizes?"}
+                                    onClick={() => this.toggleEnableWindowSizeTablet()}
+                            >
+                                <TabletMacIcon />
+                                {
+                                    this.props.runConfiguration.enableWindowSizeTablet ? <span className={"check-span"}>&nbsp;&nbsp;<Check /></span> : null
+                                }
+                            </Button>
+                            <Button variant="contained"
+                                    size="medium"
+                                    color={this.props.runConfiguration.enableWindowSizeMobile ? "primary" : "default"}
+                                    className={"browser-selection-button"}
+                                    title={"Enable mobile window sizes?"}
+                                    onClick={() => this.toggleEnableWindowSizeMobile()}
+                            >
+                                <SmartphoneIcon />
+                                {
+                                    this.props.runConfiguration.enableWindowSizeMobile ? <span className={"check-span"}>&nbsp;&nbsp;<Check /></span> : null
+                                }
+                            </Button>
+                        </div>
+                        <span style={{"fontSize": "12px", "color": "grey", "fontStyle": "italic"}}>Select which window sizes you want to test with? This allows you to test the mobile and tablet versions of your website.</span>
                         <br/>
                         <br/>
                         <TextField

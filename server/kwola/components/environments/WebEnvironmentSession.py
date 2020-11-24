@@ -74,10 +74,16 @@ class WebEnvironmentSession:
         This class represents a single tab in the web environment.
     """
 
-    def __init__(self, config, tabNumber, plugins=None, executionSession=None, browser=None):
+    def __init__(self, config, tabNumber, plugins=None, executionSession=None, browser=None, windowSize=None):
         self.config = config
         self.targetURL = config['url']
         self.browser = browser
+
+        if windowSize is None:
+            self.windowSize = "desktop"
+        else:
+            self.windowSize = windowSize
+
         self.hasBrowserDied = False
         self.browserDeathReason = None
 
@@ -138,6 +144,7 @@ class WebEnvironmentSession:
 
         # Set the browser and user agent on the execution session
         if self.executionSession is not None:
+            self.executionSession.windowSize = self.windowSize
             self.executionSession.browser = self.browser
             self.executionSession.userAgent = self.proxy.getUserAgent()
 
@@ -209,7 +216,8 @@ class WebEnvironmentSession:
         window_size = self.driver.execute_script("""
             return [window.outerWidth - window.innerWidth + arguments[0],
               window.outerHeight - window.innerHeight + arguments[1]];
-            """, self.config['web_session_width'], self.config['web_session_height'])
+            """, self.config['web_session_width'][self.windowSize], self.config['web_session_height'][self.windowSize])
+
         self.driver.set_window_size(*window_size)
         self.driver.set_script_timeout(30)
         self.driver.set_page_load_timeout(30)
@@ -912,6 +920,7 @@ class WebEnvironmentSession:
             executionTrace.traceNumber = self.traceNumber
             executionTrace.browser = self.browser
             executionTrace.userAgent = self.proxy.getUserAgent()
+            executionTrace.windowSize = self.windowSize
 
             # Set the execution trace id in the proxy. The proxy will add on headers
             # to all http requests sent by the browser with information identifying
@@ -970,7 +979,7 @@ class WebEnvironmentSession:
     def getImage(self):
         try:
             if self.hasBrowserDied:
-                return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+                return numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
 
             image = cv2.imdecode(numpy.frombuffer(self.driver.get_screenshot_as_png(), numpy.uint8), -1)
 
@@ -980,19 +989,19 @@ class WebEnvironmentSession:
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
             self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
-            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+            return numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
         except selenium.common.exceptions.WebDriverException:
             self.hasBrowserDied = True
             self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
-            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+            return numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
         except urllib3.exceptions.ProtocolError:
             self.hasBrowserDied = True
             self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
-            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+            return numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
         except AttributeError:
             self.hasBrowserDied = True
             self.browserDeathReason = f"Following fatal error occurred during getImage: {traceback.format_exc()}"
-            return numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+            return numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
 
     def runSessionCompletedHooks(self):
         if self.hasBrowserDied:

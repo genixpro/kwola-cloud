@@ -552,8 +552,8 @@ class TrainingManager:
             sampleBatch['nextPixelActionMaps'] = sampleBatch['nextPixelActionMaps'][:, :, nextStateCropTop:nextStateCropBottom, nextStateCropLeft:nextStateCropRight]
 
             # Add augmentation to the processed images. This is done at this stage
-            # so that we don't store the augmented version in the redis cache.
-            # Instead, we want the pure version in the redis cache and create a
+            # so that we don't store the augmented version in the cache.
+            # Instead, we want the pure version in the cache and create a
             # new augmentation every time we load it.
             processedImage = sampleBatch['processedImages'][0]
             augmentedImage = agent.augmentProcessedImageForTraining(processedImage)
@@ -712,6 +712,8 @@ class TrainingManager:
             testingSteps = sorted([step for step in TrainingManager.loadAllTestingSteps(config, applicationId) if step.status == "completed"], key=lambda step: step.startTime, reverse=True)
             testingSteps = list(testingSteps)[:int(config['training_number_of_recent_testing_sequences_to_use'])]
 
+            allWindowSizes = list(set([step.windowSize for step in testingSteps]))
+
             if len(testingSteps) == 0:
                 getLogger().warning(f"Error, no test sequences to train on for training step.")
                 subProcessBatchResultQueue.put("error")
@@ -735,18 +737,22 @@ class TrainingManager:
 
             getLogger().info(f"Starting loading of execution trace weight datas.")
 
-            executionSessionTraceWeightDatas = []
+            executionSessionTraceWeightDatasBySize = {
+                windowSize: []
+                for windowSize in allWindowSizes
+            }
             executionSessionTraceWeightDataIdMap = {}
 
             initialDataLoadProcessPool = multiprocessingpool.Pool(processes=int(config['training_max_initialization_workers'] / config['training_batch_prep_subprocesses']), initializer=setupLocalLogging)
 
             executionSessionTraceWeightFutures = []
             for session in executionSessions:
-                executionSessionTraceWeightFutures.append(initialDataLoadProcessPool.apply_async(TrainingManager.loadExecutionSessionTraceWeights, [session.id, session.executionTraces[:-1], configDir]))
+                future = initialDataLoadProcessPool.apply_async(TrainingManager.loadExecutionSessionTraceWeights, [session.id, session.executionTraces[:-1], configDir])
+                executionSessionTraceWeightFutures.append((future, session))
 
             completed = 0
             totalTraces = 0
-            for weightFuture in executionSessionTraceWeightFutures:
+            for weightFuture, executionSession in executionSessionTraceWeightFutures:
                 traceWeightData = None
                 try:
                     traceWeightDataStr = weightFuture.get(timeout=60)
@@ -756,7 +762,7 @@ class TrainingManager:
                     pass
 
                 if traceWeightData is not None:
-                    executionSessionTraceWeightDatas.append(traceWeightData)
+                    executionSessionTraceWeightDatasBySize[executionSession.windowSize].append(traceWeightData)
                     for traceId in traceWeightData.weights:
                         executionSessionTraceWeightDataIdMap[str(traceId)] = traceWeightData
                     totalTraces += len(traceWeightData.weights)
@@ -768,12 +774,12 @@ class TrainingManager:
             initialDataLoadProcessPool.join()
             del initialDataLoadProcessPool
 
-            getLogger().info(f"Finished loading of weight datas for {len(executionSessionTraceWeightDatas)} execution sessions with {totalTraces} combined traces.")
+            getLogger().info(f"Finished loading of weight datas for {len(executionSessions)} execution sessions with {totalTraces} combined traces.")
 
             del testingSteps, executionSessionIds, executionSessionFutures, executionSessions, executionSessionTraceWeightFutures
             getLogger().info(f"Finished initialization for batch preparation sub process.")
 
-            if len(executionSessionTraceWeightDatas) == 0:
+            if len(executionSessionTraceWeightDataIdMap) == 0:
                 subProcessBatchResultQueue.put("error")
                 raise RuntimeError("There are no execution sessions to process in the algorithm.")
 
@@ -811,7 +817,9 @@ class TrainingManager:
                         if batchCount % config['training_reset_workers_every_n_batches'] == (config['training_reset_workers_every_n_batches'] - 1):
                             needToResetPool = True
 
-                        future = threadExecutor.submit(TrainingManager.prepareAndLoadSingleBatchForSubprocess, config, executionSessionTraceWeightDatas,
+                        windowSize = random.choice(allWindowSizes)
+
+                        future = threadExecutor.submit(TrainingManager.prepareAndLoadSingleBatchForSubprocess, config, executionSessionTraceWeightDatasBySize[windowSize],
                                                        executionSessionTraceWeightDataIdMap, batchDirectory, cacheFullState, processPool, subProcessCommandQueue,
                                                        subProcessBatchResultQueue, applicationId)
                         cacheRateFutures.append(future)

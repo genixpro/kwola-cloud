@@ -58,6 +58,8 @@ class TestingStep(Document):
 
     userAgent = StringField()
 
+    windowSize = StringField()
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "testing_steps", config)
 

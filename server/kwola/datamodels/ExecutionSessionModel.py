@@ -59,6 +59,8 @@ class ExecutionSession(Document):
 
     userAgent = StringField()
 
+    windowSize = StringField()
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "execution_sessions", config)
 

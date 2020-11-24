@@ -93,6 +93,10 @@ class ViewExecutionSession extends Component {
                                         this.state.executionSession.userAgent ?
                                             <span>User Agent: {this.state.executionSession.userAgent}<br/><br/></span> : null
                                     }
+                                    {
+                                        this.state.executionSession.windowSize ?
+                                            <span>Window Size: {this.state.executionSession.windowSize}<br/><br/></span> : null
+                                    }
                                 </Papersheet>
                             </HalfColumn>
                         </Row>

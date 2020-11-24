@@ -91,7 +91,10 @@ class NewApplicationWizard extends Component {
                 customTypingActionStrings: [],
                 enableChrome: true,
                 enableFirefox: true,
-                enableEdge: true
+                enableEdge: true,
+                enableWindowSizeDesktop: true,
+                enableWindowSizeTablet: false,
+                enableWindowSizeMobile: false
             },
             application: {
                 name: "",

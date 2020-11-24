@@ -53,7 +53,7 @@ from pprint import pformat
 
 
 class TestingStepManager:
-    def __init__(self, configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False, plugins=None, browser=None):
+    def __init__(self, configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False, plugins=None, browser=None, windowSize=None):
         getLogger().info(f"Starting New Testing Sequence")
 
         self.generateDebugVideo = generateDebugVideo
@@ -61,6 +61,7 @@ class TestingStepManager:
         self.configDir = configDir
         self.config = KwolaCoreConfiguration(configDir)
         self.browser = browser
+        self.windowSize = windowSize
 
         self.environment = None
 
@@ -131,7 +132,9 @@ class TestingStepManager:
                 startTime=datetime.now(),
                 endTime=None,
                 tabNumber=sessionN,
-                executionTraces=[]
+                executionTraces=[],
+                browser=self.browser,
+                windowSize=self.windowSize
             )
             for sessionN in range(self.config['web_session_parallel_execution_sessions'])
         ]
@@ -429,7 +432,7 @@ class TestingStepManager:
             for plugin in self.testingStepPlugins:
                 plugin.testingStepStarted(self.testStep, self.executionSessions)
 
-            self.environment = WebEnvironment(config=self.config, executionSessions=self.executionSessions, plugins=self.webEnvironmentPlugins, browser=self.browser)
+            self.environment = WebEnvironment(config=self.config, executionSessions=self.executionSessions, plugins=self.webEnvironmentPlugins, browser=self.browser, windowSize=self.windowSize)
 
             self.loopTime = datetime.now()
             while self.stepsRemaining > 0:
