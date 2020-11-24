@@ -20,9 +20,10 @@
 
 
 from mongoengine import *
-from ...components.utils.regex import sharedUrlRegex, sharedHexUuidRegex, sharedMongoObjectIdRegex, sharedISO8601DateRegex
+from ...components.utils.regex import sharedUrlRegex, sharedHexUuidRegex, sharedMongoObjectIdRegex, sharedISO8601DateRegex, sharedStandardBase64Regex, sharedAlphaNumericalCodeRegex, sharedISO8601TimeRegex, sharedIPAddressRegex
 import re
 import datetime
+import functools
 import edlib
 
 class BaseError(EmbeddedDocument):
@@ -43,17 +44,28 @@ class BaseError(EmbeddedDocument):
         raise NotImplementedError()
 
     @staticmethod
-    def computeErrorMessageSimilarity(message, otherMessage):
+    @functools.lru_cache(maxsize=1024)
+    def computeReducedErrorComparisonMessage(message):
         deduplicationIgnoreRegexes = [
             sharedUrlRegex,
             sharedHexUuidRegex,
             sharedMongoObjectIdRegex,
-            sharedISO8601DateRegex
+            sharedISO8601DateRegex,
+            sharedISO8601TimeRegex,
+            sharedIPAddressRegex,
+            sharedStandardBase64Regex,
+            sharedAlphaNumericalCodeRegex
         ]
 
         for regex in deduplicationIgnoreRegexes:
             message = re.sub(regex, "", message)
-            otherMessage = re.sub(regex, "", otherMessage)
+
+        return message
+
+    @staticmethod
+    def computeErrorMessageSimilarity(message, otherMessage):
+        message = BaseError.computeReducedErrorComparisonMessage(message)
+        otherMessage = BaseError.computeReducedErrorComparisonMessage(otherMessage)
 
         distanceScore = edlib.align(message, otherMessage)['editDistance'] / max(len(message), len(otherMessage))
         return 1.0 - distanceScore
