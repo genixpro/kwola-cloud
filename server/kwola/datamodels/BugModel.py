@@ -24,7 +24,6 @@ from .actions.BaseAction import BaseAction
 from .CustomIDField import CustomIDField
 from .DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from mongoengine import *
-import stringdist
 
 class BugModel(Document):
     id = CustomIDField()
