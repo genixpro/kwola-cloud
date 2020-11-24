@@ -23,7 +23,7 @@ from mongoengine import *
 from ...components.utils.regex import sharedUrlRegex, sharedHexUuidRegex, sharedMongoObjectIdRegex, sharedISO8601DateRegex
 import re
 import datetime
-import stringdist
+import edlib
 
 class BaseError(EmbeddedDocument):
     """
@@ -42,10 +42,8 @@ class BaseError(EmbeddedDocument):
     def computeHash(self):
         raise NotImplementedError()
 
-    def computeSimilarity(self, otherError):
-        message = self.message
-        otherMessage = otherError.message
-
+    @staticmethod
+    def computeErrorMessageSimilarity(message, otherMessage):
         deduplicationIgnoreRegexes = [
             sharedUrlRegex,
             sharedHexUuidRegex,
@@ -57,8 +55,14 @@ class BaseError(EmbeddedDocument):
             message = re.sub(regex, "", message)
             otherMessage = re.sub(regex, "", otherMessage)
 
-        distanceScore = stringdist.levenshtein(message, otherMessage) / max(len(message), len(otherMessage))
+        distanceScore = edlib.align(message, otherMessage)['editDistance'] / max(len(message), len(otherMessage))
         return 1.0 - distanceScore
+
+    def computeSimilarity(self, otherError):
+        message = self.message
+        otherMessage = otherError.message
+
+        return BaseError.computeErrorMessageSimilarity(message, otherMessage)
 
     def isDuplicateOf(self, otherError):
         return self.computeSimilarity(otherError) >= 0.90
