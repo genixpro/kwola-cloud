@@ -171,7 +171,7 @@ class BugsTable extends Component{
                           maxWidth: "500px",
                           overflow: "hidden"
                         },
-                        render: (rowData) => <div style={{"maxHeight": "90px", "overflow": "hidden"}}><span style={{"whiteSpace": 'pre-wrap'}}>{rowData.message}</span></div>
+                        render: (rowData) => <div style={{"maxHeight": "90px", "overflow": "hidden"}}><span style={{"whiteSpace": 'pre-wrap'}}>{rowData.message.trim()}</span></div>
                      },
                   {
                       field: 'url',
