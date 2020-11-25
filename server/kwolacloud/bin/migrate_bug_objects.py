@@ -95,7 +95,7 @@ def main():
 
         ctx = multiprocessing.get_context('spawn')
 
-        pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess, maxtasksperchild=25)
+        pool = ctx.Pool(processes=2, initializer=initializeKwolaCloudProcess, maxtasksperchild=None)
 
         bugIdsToProcess = set()
         for bug in BugModel.objects().only('id', 'actionsPerformed'):
