@@ -65,6 +65,7 @@ setup(
             'kwolacloud_run_hourly_tasks = kwolacloud.bin.run_hourly_tasks:main',
             'kwolacloud_migrate_trace_data = kwolacloud.bin.migrate_trace_data:main',
             'kwolacloud_migrate_bug_objects = kwolacloud.bin.migrate_bug_objects:main',
+            'kwolacloud_migrate_bug_severity_score = kwolacloud.bin.migrate_bug_object_severity_score:main',
             'kwolacloud_migrate_user_subscriptions = kwolacloud.bin.migrate_user_subscriptions:main',
             'kwolacloud_run_migrations = kwolacloud.bin.run_migrations:main',
             'kwolacloud_load_demo_db = kwolacloud.bin.load_demo_db:main',
