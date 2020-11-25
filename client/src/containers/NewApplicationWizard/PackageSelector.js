@@ -97,12 +97,12 @@ class PackageSelector extends Component {
 
         let oneOffPrice = "$99.99";
         let monthlyPrice = "$199.99 / month";
-        let extraRunPrice = "$14.99";
+        let extraRunPrice = "$29.99";
         if (this.state.grandfatheredPackage === 'package_100')
         {
             oneOffPrice = "$49.99";
             monthlyPrice = "$99.99 / month"
-            extraRunPrice = "$29.99"
+            extraRunPrice = "$14.99"
         }
 
         return (
