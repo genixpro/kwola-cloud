@@ -63,7 +63,7 @@ class BugModel(Document):
 
     isJavascriptError = BooleanField()
 
-    severityScore = StringField()
+    severityScore = IntField()
 
     severityLevel = StringField()
 
@@ -83,6 +83,7 @@ class BugModel(Document):
 
     def recomputeBugQualitativeFeatures(self):
         self.recomputeIsJavascriptError()
+        self.recomputeSeverityScore()
 
     def recomputeIsJavascriptError(self):
         self.isJavascriptError = False
