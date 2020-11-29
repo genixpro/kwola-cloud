@@ -10,7 +10,7 @@ from .RunConfiguration import RunConfiguration
 from mongoengine import *
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from ..config.config import getKwolaConfiguration
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 
 
 
@@ -99,7 +99,7 @@ class TestingRun(Document):
     def runJob(self):
         from kwolacloud.components.utils.KubernetesJob import KubernetesJob
         
-        configData = loadConfiguration()
+        configData = loadCloudConfiguration()
 
         if configData['features']['localRuns']:
             job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.RunTestingLocal"], {

@@ -1,6 +1,6 @@
 import stripe
-
-
+from .auth0 import getUserProfileFromId
+from ..config.config import loadCloudConfiguration
 
 
 def attachPaymentMethodToUserAccountIfNeeded(paymentMethodId, stripeCustomerId):
@@ -21,3 +21,17 @@ def attachPaymentMethodToUserAccountIfNeeded(paymentMethodId, stripeCustomerId):
             paymentMethodId,
             customer=stripeCustomerId,
         )
+
+        stripe.Customer.modify(
+          stripeCustomerId,
+          invoice_settings={"default_payment_method": paymentMethodId}
+        )
+
+def getPriceIdForUser(userId, priceField):
+    profile_data = getUserProfileFromId(userId)
+    config = loadCloudConfiguration()
+
+    if 'user_metadata' in profile_data and 'subscriptionPackageMode' in profile_data['user_metadata']:
+        return config['stripe']['oldPackages'][profile_data['user_metadata']['subscriptionPackageMode']][priceField]
+    else:
+        return config['stripe'][priceField]

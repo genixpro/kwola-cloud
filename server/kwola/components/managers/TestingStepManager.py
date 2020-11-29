@@ -53,13 +53,15 @@ from pprint import pformat
 
 
 class TestingStepManager:
-    def __init__(self, configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False, plugins=None):
+    def __init__(self, configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False, plugins=None, browser=None, windowSize=None):
         getLogger().info(f"Starting New Testing Sequence")
 
         self.generateDebugVideo = generateDebugVideo
         self.shouldBeRandom = shouldBeRandom
         self.configDir = configDir
         self.config = KwolaCoreConfiguration(configDir)
+        self.browser = browser
+        self.windowSize = windowSize
 
         self.environment = None
 
@@ -130,7 +132,9 @@ class TestingStepManager:
                 startTime=datetime.now(),
                 endTime=None,
                 tabNumber=sessionN,
-                executionTraces=[]
+                executionTraces=[],
+                browser=self.browser,
+                windowSize=self.windowSize
             )
             for sessionN in range(self.config['web_session_parallel_execution_sessions'])
         ]
@@ -428,7 +432,7 @@ class TestingStepManager:
             for plugin in self.testingStepPlugins:
                 plugin.testingStepStarted(self.testStep, self.executionSessions)
 
-            self.environment = WebEnvironment(config=self.config, executionSessions=self.executionSessions, plugins=self.webEnvironmentPlugins)
+            self.environment = WebEnvironment(config=self.config, executionSessions=self.executionSessions, plugins=self.webEnvironmentPlugins, browser=self.browser, windowSize=self.windowSize)
 
             self.loopTime = datetime.now()
             while self.stepsRemaining > 0:
@@ -469,6 +473,9 @@ class TestingStepManager:
                 self.testStep.status = "failed"
             else:
                 self.testStep.status = "completed"
+                self.testStep.browser = self.browser
+                self.testStep.userAgent = self.executionSessions[0].userAgent
+
             self.testStep.endTime = datetime.now()
             self.testStep.executionSessions = [session.id for session in self.executionSessions]
 
@@ -482,7 +489,10 @@ class TestingStepManager:
 
             self.testStep.saveToDisk(self.config)
             resultValue['successfulExecutionSessions'] = len(self.testStep.executionSessions)
-            resultValue['success'] = True
+            if len(self.testStep.executionSessions) == 0:
+                resultValue['success'] = False
+            else:
+                resultValue['success'] = True
 
             for traceList in self.executionSessionTraceLocalPickleFiles:
                 for fileName in traceList:

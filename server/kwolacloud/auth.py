@@ -2,13 +2,13 @@ from jwcrypto.jws import JWS, JWSHeaderRegistry, JWK, InvalidJWSSignature, Inval
 from jwcrypto.jwt import JWT
 from jwcrypto.common import base64url_encode, base64url_decode, \
                             json_encode, json_decode
-from .config.config import loadConfiguration
+from .config.config import loadCloudConfiguration
 import json
 import pkg_resources
 import flask
 
 def authenticate(returnAllClaims=False):
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     if 'WWW-Authenticate' in flask.request.headers:
         token = flask.request.headers['WWW-Authenticate']

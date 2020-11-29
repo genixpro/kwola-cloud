@@ -4,7 +4,7 @@
 #
 
 
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from ..datamodels.id_utility import generateKwolaId
 from ..datamodels.TestingRun import TestingRun
 from ..helpers.jira import postBugToCustomerJIRA
@@ -31,14 +31,14 @@ import os
 import traceback
 
 
-def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
+def runOneTestingStepForRun(testingRunId, testingStepIndex):
     logging.info(f"Starting testing step for testing run {testingRunId}")
 
     run = TestingRun.objects(id=testingRunId).first()
 
     logging.info(f"Testing run obj: {pformat(json.loads(run.to_json()))}")
 
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     if run is None:
         errorMessage = f"Error! {testingRunId} not found."
@@ -62,11 +62,35 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
         config = KwolaCoreConfiguration(configDir)
 
         shouldBeRandom = False
-        if testingStepsCompleted < (config['training_random_initialization_sequences']):
+        if testingStepIndex < (config['training_random_initialization_sequences']):
             shouldBeRandom = True
 
+        browsers = []
+        if config['web_session_enable_chrome']:
+            browsers.append('chrome')
+
+        if config['web_session_enable_firefox']:
+            browsers.append('firefox')
+
+        if config['web_session_enable_edge']:
+            browsers.append('edge')
+
+        windowSizes = []
+        if config['web_session_enable_window_size_desktop']:
+            windowSizes.append("desktop")
+
+        if config['web_session_enable_window_size_tablet']:
+            windowSizes.append("tablet")
+
+        if config['web_session_enable_window_size_mobile']:
+            windowSizes.append("mobile")
+
+        choiceIndex = testingStepIndex % (len(browsers) * len(windowSizes))
+        chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
+        chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
+
         newID = generateKwolaId(modelClass=TestingStep, kwolaConfig=config, owner=run.owner)
-        testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId)
+        testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId, browser=chosenBrowser, windowSize=chosenWindowSize)
         testingStep.saveToDisk(config)
 
         logging.info(f"This testing step was given the id: {newID}")
@@ -87,7 +111,7 @@ def runOneTestingStepForRun(testingRunId, testingStepsCompleted):
             SendExecutionSessionWebhooks(config, application)
         ]
 
-        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins)
+        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins, browser=chosenBrowser, windowSize=chosenWindowSize)
 
         application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
         bugs = BugModel.objects(owner=run.owner, testingStepId=newID, isMuted=False)

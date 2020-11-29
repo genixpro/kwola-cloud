@@ -17,6 +17,13 @@ from kwola.datamodels.errors.LogError import LogError
 from kwola.datamodels.errors.BaseError import BaseError
 from kwola.datamodels.errors.ExceptionError import ExceptionError
 from kwola.datamodels.errors.HttpError import HttpError
+from kwola.datamodels.ActionMapModel import ActionMap
+from kwola.datamodels.actions.ClickTapAction import ClickTapAction
+from kwola.datamodels.actions.ClearFieldAction import ClearFieldAction
+from kwola.datamodels.actions.RightClickAction import RightClickAction
+from kwola.datamodels.actions.TypeAction import TypeAction
+from kwola.datamodels.actions.ScrollingAction import ScrollingAction
+from kwola.datamodels.actions.BaseAction import BaseAction
 from kwola.datamodels.TrainingSequenceModel import TrainingSequence
 from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession

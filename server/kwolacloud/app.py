@@ -1,4 +1,4 @@
-from .config.config import loadConfiguration
+from .config.config import loadCloudConfiguration
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -51,6 +51,7 @@ from .resources.HomeResource import Home
 from .resources.MutedErrorResource import MutedErrorsGroup, MutedErrorsSingle
 from .resources.FeedbackSubmissionResource import FeedbackSubmissionsGroup, FeedbackSubmissionSingle
 from .resources.RecurringTestingTriggerResource import RecurringTestingTriggerGroup, RecurringTestingTriggerSingle
+from .resources.InternalSlackNotification import InternalSlackNotification
 
 api.add_resource(ApplicationGroup, '/api/application')
 api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
@@ -112,6 +113,7 @@ api.add_resource(FeedbackSubmissionSingle, '/api/feedback_submission/<string:fee
 
 api.add_resource(RecurringTestingTriggerGroup, '/api/recurring_testing_trigger')
 api.add_resource(RecurringTestingTriggerSingle, '/api/recurring_testing_trigger/<string:recurring_testing_trigger_id>')
+api.add_resource(InternalSlackNotification, '/api/internal_slack_notification')
 
 # api.add_resource(resources.TokenRefresh, '/refresh')
 # api.add_resource(resources.SecretResource, '/api/secret/test')

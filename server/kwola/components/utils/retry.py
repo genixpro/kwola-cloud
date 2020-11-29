@@ -24,7 +24,7 @@ import traceback
 from ...config.logger import getLogger
 import random
 
-def autoretry(onFailure=None, maxAttempts=5, ignoreFailure=False, logRetries=True, exponentialBackOffBase=1.5):
+def autoretry(onFailure=None, maxAttempts=5, ignoreFailure=False, logRetries=True, exponentialBackOffBase=1.5, onFinalFailure=None):
     def internalAutoretry(targetFunc):
         def retryFunction(*args, **kwargs):
             stackMsg = "".join(traceback.format_stack()[:-1])
@@ -33,6 +33,8 @@ def autoretry(onFailure=None, maxAttempts=5, ignoreFailure=False, logRetries=Tru
                     return targetFunc(*args, **kwargs)
                 except Exception as e:
                     if attempt == maxAttempts - 1:
+                        if onFinalFailure is not None:
+                            onFinalFailure(*args, **kwargs)
                         if not ignoreFailure:
                             raise
                     else:

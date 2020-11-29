@@ -152,23 +152,26 @@ class BugsTable extends Component{
                     {
                         title: 'Bug Screenshot',
                         field: 'image',
-                        width:'20%',
-                        render: (rowData) => <img className={"bugs-table-bug-screenshot"} alt={"Bug Screenshot"} src={`${process.env.REACT_APP_BACKEND_API_URL}bugs/${rowData._id}/error_frame?token=${Auth.getQueryParameterToken()}`} />
+                        width:'15%',
+                        render: (rowData) => <img className={"bugs-table-bug-screenshot"} alt={"Bug Screenshot"} src={`${process.env.REACT_APP_BACKEND_API_URL}bugs/${rowData._id}/error_frame?token=${Auth.getQueryParameterToken()}`} />,
+                        cellStyle: {
+                            width:'15%'
+                        }
                     },
                     { title: 'Type', field: '_cls',
-                        width:'15%',
+                        width:'10%',
                         cellStyle: {
-                          //width:'20%'
+                          width:'10%'
                         },
                      },
                     { title: 'Message', field: 'message',
-                        width:'65%',
+                        width: "60%",
                         cellStyle: {
-                          maxWidth:100,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
+                          width: "60%",
+                          maxWidth: "500px",
+                          overflow: "hidden"
                         },
+                        render: (rowData) => <div style={{"maxHeight": "90px", "overflow": "hidden"}}><span style={{"whiteSpace": 'pre-wrap'}}>{rowData.message.trim()}</span></div>
                      },
                   {
                       field: 'url',
@@ -179,7 +182,11 @@ class BugsTable extends Component{
                                                             title={!this.state.muted[rowData._id] ? "Mute this error" : "Unmute this error"}
                                                             onClick={(evt) => this.toggleMuteError(evt, rowData)}>
                           <VolumeOffIcon />
-                      </Button>
+                      </Button>,
+                      width:'15%',
+                      cellStyle: {
+                          width: '15%'
+                      }
                   }
                   ]}
                   data={tableData}

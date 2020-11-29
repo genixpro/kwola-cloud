@@ -66,6 +66,10 @@ class CreateLocalBugObjects(TestingStepPluginBase):
 
         bugObjects = []
 
+        executionSessionsById = {}
+        for session in executionSessions:
+            executionSessionsById[session.id] = session
+
         for errorIndex, error, executionSessionId, stepNumber in zip(range(len(self.newErrorsThisTestingStep[testingStep.id])),
                                                                      self.newErrorsThisTestingStep[testingStep.id],
                                                                      self.newErrorOriginalExecutionSessionIds[testingStep.id],
@@ -99,7 +103,10 @@ class CreateLocalBugObjects(TestingStepPluginBase):
             bug.testingRunId = testingStep.testingRunId
             bug.actionsPerformed = [
                 trace.actionPerformed for trace in self.executionSessionTraces[executionSessionId]
-            ]
+            ][:(bug.stepNumber + 2)]
+            bug.browser = executionSessionsById[executionSessionId].browser
+            bug.userAgent = executionSessionsById[executionSessionId].userAgent
+            bug.windowSize = executionSessionsById[executionSessionId].windowSize
 
             duplicate = False
             for existingBug in existingBugs:

@@ -27,6 +27,7 @@
     "connected-react-router": "^6.5.2",
     "country-list": "^2.2.0",
     "date-fns": "^2.4.1",
+    "devicon": "^2.2.0",
     "file-loader": "4.2.0",
     "firebase": "^7.14.4",
     "formik": "^1.5.8",

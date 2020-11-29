@@ -1,0 +1,50 @@
+{
+  "name": "demobackup",
+  "environmentCode": "d",
+  "userCodeSalt": "IshVegNowlEijhuwuIfwesecmiptibwywobsIgJivguworegH",
+  "mongo": {
+    "uri": "mongodb+srv://application:FzwsIyK5knft5IuE@kwolacloud-pri.ktl2x.gcp.mongodb.net/demo_backup?retryWrites=true&w=majority",
+    "db": "demo_backup",
+    "username": "application",
+    "password": "FzwsIyK5knft5IuE"
+  },
+  "stripe": {
+    "apiKey": "sk_test_WHeVtPF7ILpuTA4JhGhKleHA00EghhZOTM",
+    "monthlyPriceId": "price_1HqPFUIblHdmFFAof7eLi0i7",
+    "monthlyExtraPriceId": "price_1HqPClIblHdmFFAoYi6rbs7W",
+    "oneOffRunPriceId": "price_1HqPDuIblHdmFFAoeoQ4eha7",
+    "oldPackages": {
+      "package_100": {
+        "monthlyPriceId": "price_1Hb8ngIblHdmFFAobmKEiq1u",
+        "monthlyExtraPriceId": "price_1HbBIdIblHdmFFAo8Ueu3M6h",
+        "oneOffRunPriceId": "price_1Hb97XIblHdmFFAo6b5VHZ8C"
+      }
+    }
+  },
+  "auth0": {
+    "apiUrl": "https://demo.kwola.io/api/",
+    "domain": "https://kwola.auth0.com",
+    "keyFile": "config/keys/demo_key.json",
+    "clientId": "qezZtqHcLEvYUzEWljPld69ZwdVb2Yos",
+    "clientSecret": "LG48c8eXA99Aadnx9aH8j-sqmET_nY8P5X0e8e10nWa10m5RfEafo9KOqS1TRU65",
+    "mgmtClientId": "L9agfUGCP4EEiZi6EiSFrqsYC2yg2wa1",
+    "mgmtClientSecret": "Rh_r5h-PDp7kMXprVPh0saN53x5VeFbk0AP0w08sDbogU4YArstHT4wt7cXWGm7W"
+  },
+  "sendgrid": {
+    "apiKey": "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"
+  },
+  "frontend": {
+    "url": "https://demo.kwola.io/"
+  },
+  "features": {
+    "enableGoogleCloudLogging": true,
+    "enableSlackLogging": false,
+    "enableRuns": false,
+    "localRuns": false,
+    "enableSupportOfferEmailsOnUsers": false
+  },
+  "jira": {
+    "clientId": "0g00M2lOv62zEy7EP9GBzZUH0i3lLLEC",
+    "clientSecret": "hHwh7YGqHExN3CY_y4bA2DS0lxb5FUvNDQd61qUvIFMIPfixQv_byA3cUiNYOP1k"
+  }
+}

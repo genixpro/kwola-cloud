@@ -11,7 +11,7 @@ from .ApplicationModel import ApplicationModel
 from mongoengine import *
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from ..config.config import getKwolaConfiguration
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from .id_utility import generateKwolaId
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -102,7 +102,7 @@ class RecurringTestingTrigger(Document):
 
         application = ApplicationModel.objects(id=self.applicationId).first()
 
-        configData = loadConfiguration()
+        configData = loadCloudConfiguration()
 
         newTestingRun = TestingRun(
             id=generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=self.owner),

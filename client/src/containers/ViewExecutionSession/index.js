@@ -25,6 +25,7 @@ import {TableBody, TableCell, TableHead, TableRow} from "../../components/uielem
 import { Line } from "react-chartjs-2";
 import Auth from "../../helpers/auth0/index"
 import ActionList from "../ActionList/index";
+import edgeBlackSquare from "../../images/edge-black-square.png"
 import axios from "axios";
 
 class ViewExecutionSession extends Component {
@@ -75,6 +76,26 @@ class ViewExecutionSession extends Component {
                                         this.state.executionSession.endTime ?
                                             <span>End Time: {moment(this.state.executionSession.endTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
                                             : <span>End Time: N/A<br/></span>
+                                    }
+                                    {
+                                        this.state.executionSession.browser === "chrome" ?
+                                            <span>Browser: <i className="devicon-chrome-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Chrome<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.executionSession.browser === "firefox" ?
+                                            <span>Browser: <i className="devicon-firefox-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Firefox<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.executionSession.browser === "edge" ?
+                                            <span>Browser: <img src={edgeBlackSquare}  style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Edge<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.executionSession.userAgent ?
+                                            <span>User Agent: {this.state.executionSession.userAgent}<br/><br/></span> : null
+                                    }
+                                    {
+                                        this.state.executionSession.windowSize ?
+                                            <span>Window Size: {this.state.executionSession.windowSize}<br/><br/></span> : null
                                     }
                                 </Papersheet>
                             </HalfColumn>

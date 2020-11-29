@@ -41,20 +41,104 @@ import billiard as multiprocessing
 import os
 import os.path
 import time
+import shutil
 import torch.cuda
 import traceback
 import random
+import subprocess
 
+def getAvailableBrowsers(config):
+    browsers = []
+    if config['web_session_enable_chrome']:
+        try:
+            result = subprocess.run(['chromedriver', '-v'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result = None
+
+        try:
+            result2 = subprocess.run(['chromium-browser', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result2 = None
+
+        try:
+            result3 = subprocess.run(['google-chrome', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result3 = None
+
+        if result is not None and (result2 is not None or result3 is not None):
+            browsers.append("chrome")
+        else:
+            getLogger().error(f"The Chrome browser is enabled in the configuration, but the executables for either chromedriver or google-chrome/chromium-browser can not be found in $PATH. PATH is:\n{os.getenv('PATH')}")
+
+    if config['web_session_enable_firefox']:
+        try:
+            result = subprocess.run(['geckodriver', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result = None
+
+        try:
+            result2 = subprocess.run(['firefox', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result2 = None
+
+        if result is not None and result2 is not None:
+            browsers.append("firefox")
+        else:
+            getLogger().error(f"The Firefox browser is enabled in the configuration, but the executables for either geckodriver or firefox can not be found in $PATH. PATH is:\n{os.getenv('PATH')}")
+
+    if config['web_session_enable_edge']:
+        try:
+            result = subprocess.run(['msedgedriver', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result = None
+
+        try:
+            result2 = subprocess.run(['microsoft-edge', '--version'], stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            result2 = None
+
+        if result is not None and result2 is not None:
+            browsers.append("edge")
+        else:
+            getLogger().error(f"The Microsoft Edge browser is enabled in the configuration, but the executables for either msedgedriver or microsoft-edge can not be found in $PATH. PATH is:\n{os.getenv('PATH')}")
+
+    return browsers
+
+
+def getAvailableWindowSizes(config):
+    windowSizes = []
+
+    if config['web_session_enable_window_size_desktop']:
+        windowSizes.append("desktop")
+    if config['web_session_enable_window_size_tablet']:
+        windowSizes.append("tablet")
+    if config['web_session_enable_window_size_mobile']:
+        windowSizes.append("mobile")
+
+    if len(windowSizes) == 0:
+        raise RuntimeError("Error! There are no enabled window sizes. Please set web_session_enable_window_size_desktop or web_session_enable_window_size_tablet or web_session_enable_window_size_mobile")
+
+    return windowSizes
 
 def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
     try:
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)))
+        browsers = getAvailableBrowsers(config)
+        windowSizes = getAvailableWindowSizes(config)
+
+        choiceIndex = testStepIndex % (len(browsers) * len(windowSizes))
+        chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
+        chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
+
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
             "configDir": config.configurationDirectory,
             "testingStepId": str(testingStep.id),
-            "shouldBeRandom": True
+            "shouldBeRandom": True,
+            "generateDebugVideo": False,
+            "browser": chosenBrowser,
+            "windowSize": chosenWindowSize
         }, timeout=config['random_initialization_testing_sequence_timeout'], config=config, logId=testingStep.id)
         process.start()
         result = process.waitForProcessResult()
@@ -129,14 +213,23 @@ def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber
 
 def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugVideo=False):
     try:
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)))
+        browsers = getAvailableBrowsers(config)
+        windowSizes = getAvailableWindowSizes(config)
+
+        choiceIndex = testStepIndex % (len(browsers) * len(windowSizes))
+        chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
+        chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
+
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
             "configDir": config.configurationDirectory,
             "testingStepId": str(testingStep.id),
             "shouldBeRandom": False,
-            "generateDebugVideo": generateDebugVideo and config['enable_debug_videos']
+            "generateDebugVideo": generateDebugVideo and config['enable_debug_videos'],
+            "browser": chosenBrowser,
+            "windowSize": chosenWindowSize
         }, timeout=config['testing_step_timeout'], config=config, logId=testingStep.id)
         process.start()
         result = process.waitForProcessResult()
@@ -300,10 +393,12 @@ def trainAgent(configDir, exitOnFail=False):
     agent.save()
     del agent
 
+    browsers = getAvailableBrowsers(config)
+
     # Create and destroy an environment, which forces a lot of the initial javascript in the application
     # to be loaded and translated. It also just verifies that the system can access the target URL prior
     # to trying to run a full sequence
-    environment = WebEnvironment(config, sessionLimit=1)
+    environment = WebEnvironment(config, sessionLimit=1, browser=browsers[0])
     environment.shutdown()
     del environment
 
@@ -339,3 +434,7 @@ def trainAgent(configDir, exitOnFail=False):
     trainingSequence.status = "completed"
     trainingSequence.endTime = datetime.now()
     trainingSequence.saveToDisk(config)
+
+    for folder in config['train_agent_loop_delete_folders_on_finish']:
+        fullPath = config.getKwolaUserDataDirectory(folder)
+        shutil.rmtree(fullPath)

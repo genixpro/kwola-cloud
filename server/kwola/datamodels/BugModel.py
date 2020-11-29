@@ -20,11 +20,13 @@
 
 
 from .errors.BaseError import BaseError
+from .errors.ExceptionError import ExceptionError
+from .errors.HttpError import HttpError
+from .errors.LogError import LogError
 from .actions.BaseAction import BaseAction
 from .CustomIDField import CustomIDField
 from .DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from mongoengine import *
-import stringdist
 
 class BugModel(Document):
     id = CustomIDField()
@@ -53,6 +55,18 @@ class BugModel(Document):
 
     reproductionTraces = ListField(StringField())
 
+    browser = StringField()
+
+    userAgent = StringField()
+
+    windowSize = StringField()
+
+    isJavascriptError = BooleanField()
+
+    severityScore = IntField()
+
+    severityLevel = StringField()
+
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
         saveObjectToDisk(self, "bugs", config, overrideSaveFormat=overrideSaveFormat, overrideCompression=overrideCompression)
 
@@ -65,4 +79,44 @@ class BugModel(Document):
         return self.error.generateErrorDescription()
 
     def isDuplicateOf(self, otherBug):
-        return self.error.isDuplicateOf(otherBug.error) >= 0.80
+        return self.error.isDuplicateOf(otherBug.error)
+
+    def recomputeBugQualitativeFeatures(self):
+        self.recomputeIsJavascriptError()
+        self.recomputeSeverityScore()
+
+    def recomputeIsJavascriptError(self):
+        self.isJavascriptError = False
+        if isinstance(self.error, ExceptionError):
+            self.isJavascriptError = True
+        elif isinstance(self.error, LogError):
+
+            javascriptErrorTexts = [
+                'null',
+                'RangeError',
+                'ReferenceError',
+                'SyntaxError',
+                'TypeError',
+                'undefined',
+                'URIError',
+                'Exception'
+            ]
+
+            for text in javascriptErrorTexts:
+                if text in self.error.message:
+                    self.isJavascriptError = True
+                    break
+
+    def recomputeSeverityScore(self):
+        if self.isJavascriptError:
+            self.severityScore = 10
+        elif isinstance(self.error, HttpError) and self.error.statusCode >= 500:
+            self.severityScore = 9
+        elif isinstance(self.error, HttpError) and (self.error.statusCode == 403 or self.error.statusCode == 401):
+            self.severityScore = 8
+        elif isinstance(self.error, HttpError) and self.error.statusCode == 404:
+            self.severityScore = 5
+        elif isinstance(self.error, LogError):
+            self.severityScore = 4
+        else:
+            self.severityScore = 0

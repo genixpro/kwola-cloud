@@ -15,7 +15,9 @@ RUN apt-get update && apt-get install gnupg2 gnupg1 gnupg curl -y && \
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
     chromium-browser=86* \
+    firefox \
     ffmpeg \
+    fonts-liberation \
     freetype* \
     fuse \
     fuse-dbg \
@@ -35,6 +37,8 @@ RUN apt-get update && apt-get install \
     libssl-dev \
     libxext6 \
     libxml2-dev \
+    libu2f-udev \
+    libvulkan1 \
     mime-support \
     libxrender-dev \
     mime-support \
@@ -53,6 +57,11 @@ RUN apt-get update && apt-get install \
      -y && \
     rm -rf /var/lib/apt/lists/*
 
+# Install the linux build of Microsoft Edge
+RUN wget https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-dev/microsoft-edge-dev_88.0.702.0-1_amd64.deb && \
+    apt install -f ./microsoft-edge-dev_88.0.702.0-1_amd64.deb && \
+    rm -rf microsoft-edge-dev_88.0.702.0-1_amd64.deb
+
 # Install kubectl, used for controlling Kubernetes workers
 RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && \
     chmod +x ./kubectl && \
@@ -67,6 +76,25 @@ RUN wget https://chromedriver.storage.googleapis.com/86.0.4240.22/chromedriver_l
     chmod +x /usr/bin/chromedriver && \
     rm -rf chromedriver && \
     rm -rf chromedriver_linux64.zip
+
+# Download and install Geckodriver
+RUN wget https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-linux64.tar.gz && \
+    tar -xzf geckodriver-v0.28.0-linux64.tar.gz && \
+    cp geckodriver /usr/bin/ && \
+    chmod 644 /usr/bin/geckodriver && \
+    chmod +x /usr/bin/geckodriver && \
+    rm -rf geckodriver && \
+    rm -rf geckodriver-v0.28.0-linux64.tar.gz
+
+# Download and install Edgedriver
+RUN wget https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver/88.0.702.0/edgedriver_linux64.zip && \
+    unzip edgedriver_linux64.zip && \
+    cp msedgedriver /usr/bin/ && \
+    chmod 644 /usr/bin/msedgedriver && \
+    chmod +x /usr/bin/msedgedriver && \
+    rm -rf msedgedriver && \
+    rm -rf Driver_Notes && \
+    rm -rf edgedriver_linux64.zip
 
 # Installing babel and the kwola babel plugin globally using npm
 RUN sudo npm install @babel/cli -g && \

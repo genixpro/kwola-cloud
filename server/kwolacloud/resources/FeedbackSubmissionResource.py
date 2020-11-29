@@ -5,7 +5,7 @@
 
 from ..auth import authenticate, isAdmin
 from ..config.config import getKwolaConfiguration
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from ..datamodels.id_utility import generateKwolaId
 from ..datamodels.FeedbackSubmission import FeedbackSubmission
 from ..helpers.slack import postToKwolaSlack
@@ -18,7 +18,7 @@ class FeedbackSubmissionsGroup(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
 
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def post(self):
         user, claims = authenticate(returnAllClaims=True)

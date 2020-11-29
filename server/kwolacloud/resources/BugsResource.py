@@ -14,7 +14,7 @@ import json
 import logging
 import bson
 from kwola.datamodels.CustomIDField import CustomIDField
-from ..config.config import getKwolaConfiguration, loadConfiguration
+from ..config.config import getKwolaConfiguration, loadCloudConfiguration
 import flask
 from kwola.config.config import KwolaCoreConfiguration
 import os.path
@@ -49,7 +49,7 @@ class BugsGroup(Resource):
 
         queryParams["isMuted"] = False
 
-        bugs = BugModel.objects(**queryParams).no_dereference().order_by("-startTime")
+        bugs = BugModel.objects(**queryParams).no_dereference().order_by("-severityScore").only("id", "error")
 
         return {"bugs": json.loads(bugs.to_json())}
 

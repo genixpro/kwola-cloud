@@ -2,10 +2,10 @@ from slack_webhook import Slack
 import logging
 import requests
 import json
-from ..config.config import loadConfiguration, getKwolaConfiguration
+from ..config.config import loadCloudConfiguration, getKwolaConfiguration
 
 slackErrors = Slack(url='https://hooks.slack.com/services/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')
-config = loadConfiguration()
+config = loadCloudConfiguration()
 
 slackGeneral = Slack(url="https://hooks.slack.com/services/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")
 

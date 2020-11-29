@@ -1,6 +1,6 @@
 import logging
 import requests
-from ..config.config import loadConfiguration, getKwolaConfiguration
+from ..config.config import loadCloudConfiguration, getKwolaConfiguration
 from kwola.config.config import KwolaCoreConfiguration
 import os.path
 from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
@@ -48,7 +48,7 @@ def postBugToCustomerJIRA(bug, application):
     else:
         issueId = jiraAPIResponse.json()['id']
 
-        configData = loadConfiguration()
+        configData = loadCloudConfiguration()
         if not configData['features']['localRuns']:
             configDir = mountTestingRunStorageDrive(bug.applicationId)
         else:

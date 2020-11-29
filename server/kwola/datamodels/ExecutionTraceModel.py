@@ -103,6 +103,12 @@ class ExecutionTrace(Document):
 
     cursor = StringField()
 
+    browser = StringField()
+
+    userAgent = StringField()
+
+    windowSize = StringField()
+
     # This field is stores the execution trace for this round.
     # The dictionary maps file names to lists which then contain the line execution counts for that file
     # It is transparently compressed and decompressed on the fly

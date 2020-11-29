@@ -156,7 +156,7 @@ class JSRewriter(ProxyPluginBase):
                 return fileData
 
             getLogger().info(
-                f"Successfully translated {url} with Kwola branch counting and event tracing.")
+                f"Successfully translated {url} with Kwola modifications.")
             transformed = wrapperStart + result.stdout + wrapperEnd
 
             if strictMode:

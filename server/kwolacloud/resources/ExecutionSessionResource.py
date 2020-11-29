@@ -16,7 +16,7 @@ import os
 import logging
 import flask
 from kwola.config.config import KwolaCoreConfiguration
-from kwolacloud.config.config import loadConfiguration
+from kwolacloud.config.config import loadCloudConfiguration
 import os.path
 from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, getSharedGCSStorageClient
 from ..auth import authenticate, isAdmin
@@ -146,7 +146,7 @@ class ExecutionSessionTraces(Resource):
         if executionSession is None:
             return abort(404)
 
-        configData = loadConfiguration()
+        configData = loadCloudConfiguration()
         if not configData['features']['localRuns']:
             configDir = mountTestingRunStorageDrive(executionSession.applicationId)
         else:
@@ -182,7 +182,7 @@ class ExecutionSessionSingleTrace(Resource):
         if executionSession is None:
             return abort(404)
 
-        configData = loadConfiguration()
+        configData = loadCloudConfiguration()
         if not configData['features']['localRuns']:
             configDir = mountTestingRunStorageDrive(executionSession.applicationId)
         else:

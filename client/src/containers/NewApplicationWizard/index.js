@@ -88,7 +88,13 @@ class NewApplicationWizard extends Component {
                 enableRandomDateTimeCommand: true,
                 enableRandomCreditCardCommand: true,
                 enableRandomURLCommand: false,
-                customTypingActionStrings: []
+                customTypingActionStrings: [],
+                enableChrome: true,
+                enableFirefox: true,
+                enableEdge: true,
+                enableWindowSizeDesktop: true,
+                enableWindowSizeTablet: false,
+                enableWindowSizeMobile: false
             },
             application: {
                 name: "",
@@ -133,6 +139,20 @@ class NewApplicationWizard extends Component {
         {
             newPage = this.state.page + 1;
         }
+
+        if (newPage === 2)
+        {
+            this.sendInternalSlackNotification("I've reached the package selection screen.")
+        }
+        if (newPage === 3)
+        {
+            this.sendInternalSlackNotification("I've reached the credit card / checkout screen.")
+        }
+        if (this.state.page === 3)
+        {
+            this.sendInternalSlackNotification("I've passed the credit card / checkout screen.")
+        }
+
         this.props.history.push(`/app/dashboard/new-application/${newPage + 1}`)
         this.setState({page: newPage});
     }
@@ -206,14 +226,7 @@ class NewApplicationWizard extends Component {
 
             this.resetWizardState();
 
-            if (this.state.application.package === "once")
-            {
-                this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
-            }
-            else if(this.state.application.package === "monthly")
-            {
-                this.props.history.push(`/app/dashboard/applications/${response.data.applicationId}`);
-            }
+            this.props.history.push(`/app/dashboard/testing_runs/${response.data.testingRunId}`);
 
             return Promise.fulfilled();
         }, (error) =>
@@ -231,6 +244,15 @@ class NewApplicationWizard extends Component {
     closeSnackbar()
     {
         this.setState({alertBox: false});
+    }
+
+    sendInternalSlackNotification(message)
+    {
+        const messageData = {
+            "message": message
+        }
+
+        axios.post("/internal_slack_notification", messageData);
     }
 
     render()

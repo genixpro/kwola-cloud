@@ -17,7 +17,7 @@ def determineEnvironment():
     return environment
 
 cachedConfig = None
-def loadConfiguration():
+def loadCloudConfiguration():
     global cachedConfig
 
     if cachedConfig is not None:
@@ -39,7 +39,7 @@ def getKwolaConfigurationData():
 
     data = json.loads(pkg_resources.resource_string("kwolacloud", configFilePath))
 
-    mainConfig = loadConfiguration()
+    mainConfig = loadCloudConfiguration()
 
     data['mongo_uri'] = mainConfig['mongo']['uri']
 

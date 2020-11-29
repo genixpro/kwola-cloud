@@ -7,7 +7,7 @@
 import google
 import google.cloud
 import google.cloud.logging
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from kwola.config.config import KwolaCoreConfiguration
 import traceback
 import stripe
@@ -56,7 +56,13 @@ def processBug(bugId):
 
         executionSession = ExecutionSession.objects(id=bug.executionSessionId).first()
 
-        configData = loadConfiguration()
+        if executionSession is None:
+            return
+
+        if bug.applicationId is None:
+            bug.applicationId = executionSession.applicationId
+
+        configData = loadCloudConfiguration()
         if not configData['features']['localRuns']:
             configDir = mountTestingRunStorageDrive(bug.applicationId)
         else:
@@ -89,7 +95,7 @@ def main():
 
         ctx = multiprocessing.get_context('spawn')
 
-        pool = ctx.Pool(processes=8, initializer=initializeKwolaCloudProcess, maxtasksperchild=25)
+        pool = ctx.Pool(processes=2, initializer=initializeKwolaCloudProcess, maxtasksperchild=None)
 
         bugIdsToProcess = set()
         for bug in BugModel.objects().only('id', 'actionsPerformed'):

@@ -127,6 +127,7 @@ def mountTestingRunStorageDrive(applicationId):
         "bugs",
         "charts",
         "chrome_cache",
+        "edge_cache",
         "execution_traces",
         "javascript",
         "models",

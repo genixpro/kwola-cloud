@@ -3,6 +3,7 @@ import {connect, Provider} from 'react-redux';
 import Papersheet, { DemoWrapper } from '../../components/utility/papersheet';
 import { FullColumn , HalfColumn, OneThirdColumn, TwoThirdColumn, Row, Column} from '../../components/utility/rowColumn';
 import axios from "axios";
+import Auth from "../../helpers/auth0";
 import 'plyr/dist/plyr.css'
 import {Button} from "../UiElements/Button/button.style";
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
@@ -68,12 +69,13 @@ class PackageInfo extends Component
 
 class PackageSelector extends Component {
     state = {
-
+        grandfatheredPackage: null
     };
 
     componentDidMount()
     {
-
+        const userData = Auth.getUserInfo();
+        this.setState({grandfatheredPackage: userData['https://kwola.io/package']})
     }
 
     setSelected(packageName)
@@ -93,13 +95,23 @@ class PackageSelector extends Component {
     {
         const { result } = this.state;
 
+        let oneOffPrice = "$99.99";
+        let monthlyPrice = "$199.99 / month";
+        let extraRunPrice = "$29.99";
+        if (this.state.grandfatheredPackage === 'package_100')
+        {
+            oneOffPrice = "$49.99";
+            monthlyPrice = "$99.99 / month"
+            extraRunPrice = "$14.99"
+        }
+
         return (
             <div className={"package-selector"}>
                 {
                     !this.props.hideOneTime ?
                         <PackageInfo
                             title={"One-off Testing Run"}
-                            pricing={"$49.99"}
+                            pricing={oneOffPrice}
                             pricingSubText={"One time"}
                             packageDescriptions={[
                                 "Use Kwola before a major client meeting or big release",
@@ -112,8 +124,8 @@ class PackageSelector extends Component {
                 }
                 <PackageInfo
                     title={"Recurring Testing"}
-                    pricing={"$99.99 / month"}
-                    pricingSubText={<span>Extra runs for $14.99</span>}
+                    pricing={monthlyPrice}
+                    pricingSubText={<span>Extra runs for {extraRunPrice}</span>}
                     packageDescriptions={[
                         "Get 5 testing runs each month included",
                         "Launch Kwola every week, on specific dates of the month, manually through the UI, or based on API calls",

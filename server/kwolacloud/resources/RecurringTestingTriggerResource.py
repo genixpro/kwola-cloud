@@ -6,7 +6,7 @@
 from ..auth import authenticate, isAdmin
 from kwolacloud.components.utils.KubernetesJob import KubernetesJob
 from ..config.config import getKwolaConfiguration
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from ..datamodels.ApplicationModel import ApplicationModel
 from ..datamodels.id_utility import generateKwolaId
 import random
@@ -28,7 +28,7 @@ import os
 class RecurringTestingTriggerGroup(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def get(self):
         user = authenticate()

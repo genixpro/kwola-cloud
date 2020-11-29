@@ -1,7 +1,7 @@
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import To, Mail, From, Attachment, FileContent, FileName, FileType, Disposition, ContentId
 import base64
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 import logging
 import os.path
 from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
@@ -17,7 +17,7 @@ def sendStartTestingRunEmail(application):
 
     logging.info(f"Sending the 'testing run started' email to {email} for application {application.id}")
 
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     message = Mail(
         from_email=From('admin@kwola.io', 'Kwola'),
@@ -47,7 +47,7 @@ def sendBugFoundNotification(application, bug):
 
     logging.info(f"Sending the 'new bug found' email to {email} for application {application.id} and bug {bug.id}")
 
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     message = Mail(
         from_email=From('admin@kwola.io', 'Kwola'),
@@ -95,7 +95,7 @@ def sendFinishTestingRunEmail(application, testingRun, bugCount):
 
     logging.info(f"Sending the 'testing run finished' email to {email} for testing run {testingRun.id}")
 
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     message = Mail(
         from_email=From('admin@kwola.io', 'Kwola'),
@@ -125,7 +125,7 @@ def sendOfferSupportEmail(application=None, email=None):
 
     logging.info(f"Sending the 'offer support' email to {email}")
 
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     message = Mail(
         from_email=From('brad@kwola.io', 'Brad from Kwola'),
@@ -144,7 +144,7 @@ def sendRequestFeedbackEmail(owner):
 
     logging.info(f"Sending the 'request feedback' email to {email}")
 
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     message = Mail(
         from_email=From('brad@kwola.io', 'Brad from Kwola'),

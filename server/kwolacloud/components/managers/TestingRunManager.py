@@ -5,7 +5,7 @@
 
 
 from ...config.config import getKwolaConfigurationData
-from ...config.config import loadConfiguration, getKwolaConfiguration
+from ...config.config import loadCloudConfiguration, getKwolaConfiguration
 from ...datamodels.ApplicationModel import ApplicationModel
 from ...datamodels.TestingRun import TestingRun
 from ...helpers.email import sendFinishTestingRunEmail
@@ -46,7 +46,7 @@ class TestingRunManager:
 
         self.testingRunId = testingRunId
         self.run = None
-        self.cloudConfigData = loadConfiguration()
+        self.cloudConfigData = loadCloudConfiguration()
         self.configDir = None
         self.config = None
         self.shouldExit = False
@@ -123,6 +123,12 @@ class TestingRunManager:
         kwolaConfigData['enable_404_error'] = runConfiguration.enable404Error
         kwolaConfigData['enable_javascript_console_error'] = runConfiguration.enableJavascriptConsoleError
         kwolaConfigData['enable_unhandled_exception_error'] = runConfiguration.enableUnhandledExceptionError
+        kwolaConfigData['web_session_enable_chrome'] = runConfiguration.enableChrome
+        kwolaConfigData['web_session_enable_firefox'] = runConfiguration.enableFirefox
+        kwolaConfigData['web_session_enable_edge'] = runConfiguration.enableEdge
+        kwolaConfigData['web_session_enable_window_size_desktop'] = runConfiguration.enableWindowSizeDesktop
+        kwolaConfigData['web_session_enable_window_size_tablet'] = runConfiguration.enableWindowSizeTablet
+        kwolaConfigData['web_session_enable_window_size_mobile'] = runConfiguration.enableWindowSizeMobile
 
         if not self.cloudConfigData['features']['localRuns']:
             # We have to write directly to the google cloud storage bucket because of the way that the storage
@@ -144,6 +150,13 @@ class TestingRunManager:
         environment.shutdown()
         del environment
 
+    def ensureAgentModelExists(self):
+        # Load and save the agent to make sure all training subprocesses are synced
+        agent = DeepLearningAgent(config=self.config, whichGpu=None)
+        agent.initialize(enableTraining=False)
+        agent.load()
+        agent.save()
+        del agent
 
     def loadTestingRun(self):
         self.run = TestingRun.objects(id=self.testingRunId).first()
@@ -173,6 +186,7 @@ class TestingRunManager:
             self.config = KwolaCoreConfiguration(self.configDir)
 
             self.doInitialBrowserSession()
+            self.ensureAgentModelExists()
 
     def launchTestingStepsIfNeeded(self):
         logging.info(f"Launching testing steps if needed. Number to launch: {self.calculateNumberOfTestingSessionsToStart()}")
@@ -210,7 +224,7 @@ class TestingRunManager:
         job = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
                                data={
                                     "testingRunId": self.run.id,
-                                    "testingStepsCompleted": completedTestingSteps + len(self.run.runningTestingStepJobIds)
+                                    "testingStepIndex": completedTestingSteps + len(self.run.runningTestingStepJobIds)
                                },
                             referenceId=referenceId,
                             image="worker",
@@ -231,7 +245,7 @@ class TestingRunManager:
         if self.cloudConfigData['features']['localRuns']:
             job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTestingStepTaskLocal"], {
                 "testingRunId": self.run.id,
-                "testingStepsCompleted": completedTestingSteps + len(self.run.runningTestingStepJobIds)
+                "testingStepIndex": completedTestingSteps + len(self.run.runningTestingStepJobIds)
             }, timeout=7200, config=getKwolaConfiguration(), logId=None)
         else:
             job = self.createTestingStepKubeJob(jobId)
@@ -502,6 +516,7 @@ class TestingRunManager:
             bugAnnotatedVideoFilePath = f"bugs/{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4"
 
             bugsZip.writestr(f"bug_{bugIndex+1}.json", bytes(bug.to_json(), 'utf8'))
+            bugsZip.writestr(f"bug_{bugIndex+1}.txt", bytes(bug.error.message, 'utf8'))
 
             try:
                 bugRawVideoFile = storage.Blob(bugRawVideoFilePath, self.applicationStorageBucket)

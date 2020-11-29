@@ -1,4 +1,4 @@
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from ..db import connectToMongoWithRetries
 from ..helpers.slack import SlackLogHandler
 from kwola.config.logger import getLogger
@@ -18,7 +18,7 @@ def initializeKwolaCloudProcess():
     except RuntimeError:
         pass
 
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     if configData['features']['enableGoogleCloudLogging']:
         # Setup logging with google cloud

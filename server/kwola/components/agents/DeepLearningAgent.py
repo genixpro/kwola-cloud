@@ -2289,12 +2289,12 @@ class DeepLearningAgent:
 
         # Here we make sure that the left and top positions actually fit within the image, and we adjust them
         # so that the cropped image stays within the bounds of the overall image
-        cropLeft = max(0, cropLeft)
         cropLeft = min(imageWidth - cropWidth, cropLeft)
+        cropLeft = max(0, cropLeft)
         cropLeft = int(cropLeft)
 
-        cropTop = max(0, cropTop)
         cropTop = min(imageHeight - cropHeight, cropTop)
+        cropTop = max(0, cropTop)
         cropTop = int(cropTop)
 
         # Right and bottom coordinates are a cinch once we know left and top

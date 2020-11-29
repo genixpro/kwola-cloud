@@ -5,10 +5,10 @@ import datetime
 import hashlib
 import random
 from .Counter import CounterModel
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 
 def generateKwolaId(modelClass, owner, kwolaConfig, groupIndex=None):
-    serverConfig = loadConfiguration()
+    serverConfig = loadCloudConfiguration()
 
     prefix = generateModelNameShorthand(modelClass) + "-" + \
              generateRandomLowercaseLetter() + \

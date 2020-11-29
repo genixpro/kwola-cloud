@@ -6,7 +6,7 @@
 from ..auth import authenticate, isAdmin
 from kwolacloud.components.utils.KubernetesJob import KubernetesJob
 from ..config.config import getKwolaConfiguration
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
 from ..datamodels.ApplicationModel import ApplicationModel
 from ..datamodels.id_utility import generateKwolaId
 import random
@@ -24,6 +24,7 @@ import os
 from google.cloud import storage
 import google.cloud.exceptions
 from kwola.components.utils.file import getSharedGCSStorageClient
+from ..helpers.stripe import getPriceIdForUser
 
 
 class TestingRunsGroup(Resource):
@@ -35,17 +36,17 @@ class TestingRunsGroup(Resource):
         # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=False)
         # self.postParser.add_argument('status', help='This field cannot be blank', required=False)
 
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def get(self):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             return abort(401)
 
         queryParams = {}
 
         if not isAdmin():
-            queryParams['owner'] = user
+            queryParams['owner'] = userId
 
 
         applicationId = flask.request.args.get('applicationId')
@@ -61,15 +62,15 @@ class TestingRunsGroup(Resource):
         return {"testingRuns": json.loads(testingRuns)}
 
     def post(self):
-        user, claims = authenticate(returnAllClaims=True)
-        if user is None:
+        userId, claims = authenticate(returnAllClaims=True)
+        if userId is None:
             return abort(401)
 
         data = flask.request.get_json()
 
         query = {"id": data['applicationId']}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -107,9 +108,11 @@ class TestingRunsGroup(Resource):
         newTestingRun.runJob()
 
         if application.package == "monthly" and application.countTestingRunsLaunchedThisMonth() > 5 and application.stripeSubscriptionId is not None:
+            priceId = getPriceIdForUser(userId, 'monthlyExtraPriceId')
+
             stripe.InvoiceItem.create(
                 customer=stripeCustomerId,
-                price=self.configData['stripe']['monthlyExtraPriceId'],
+                price=priceId,
                 subscription=application.stripeSubscriptionId
             )
 
@@ -118,13 +121,13 @@ class TestingRunsGroup(Resource):
 
 class TestingRunsSingle(Resource):
     def get(self, testing_run_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             return abort(401)
 
         queryParams = {"id": testing_run_id}
         if not isAdmin():
-            queryParams['owner'] = user
+            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
@@ -136,13 +139,13 @@ class TestingRunsSingle(Resource):
 
 class TestingRunsRestart(Resource):
     def post(self, testing_run_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             return abort(401)
 
         queryParams = {"id": testing_run_id}
         if not isAdmin():
-            queryParams['owner'] = user
+            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
@@ -163,16 +166,16 @@ class TestingRunsRestartTraining(Resource):
         # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=False)
         # self.postParser.add_argument('status', help='This field cannot be blank', required=False)
 
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def post(self, testing_run_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             return abort(401)
 
         queryParams = {"id": testing_run_id}
         if not isAdmin():
-            queryParams['owner'] = user
+            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
@@ -206,16 +209,16 @@ class TestingRunsRestartTraining(Resource):
 
 class TestingRunsDownloadZip(Resource):
     def __init__(self):
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def get(self, testing_run_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             return abort(401)
 
         queryParams = {"id": testing_run_id}
         if not isAdmin():
-            queryParams['owner'] = user
+            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 

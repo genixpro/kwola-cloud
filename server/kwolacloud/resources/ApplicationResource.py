@@ -21,7 +21,8 @@ from flask_restful import Resource, reqparse, abort
 from flask import jsonify
 from pprint import pprint
 from dateutil.relativedelta import relativedelta
-from ..config.config import loadConfiguration
+from ..config.config import loadCloudConfiguration
+from ..helpers.stripe import getPriceIdForUser
 import flask
 import json
 import stripe
@@ -39,7 +40,7 @@ from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.chrome.options import Options
 import selenium.common.exceptions
 from kwola.components.environments.WebEnvironmentSession import WebEnvironmentSession
-from kwolacloud.config.config import loadConfiguration, getKwolaConfiguration, getKwolaConfigurationData
+from kwolacloud.config.config import loadCloudConfiguration, getKwolaConfiguration, getKwolaConfigurationData
 import shutil
 from google.cloud import storage
 import hashlib
@@ -52,7 +53,7 @@ from kwola.components.utils.file import getSharedGCSStorageClient
 
 class ApplicationGroup(Resource):
     def __init__(self):
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def get(self):
         user = authenticate()
@@ -68,8 +69,8 @@ class ApplicationGroup(Resource):
         return {"applications": json.loads(applications)}
 
     def post(self):
-        user, claims = authenticate(returnAllClaims=True)
-        if user is None:
+        userId, claims = authenticate(returnAllClaims=True)
+        if userId is None:
             abort(401)
 
         data = flask.request.get_json()
@@ -79,8 +80,8 @@ class ApplicationGroup(Resource):
         newApplication = ApplicationModel(
             name=data['name'],
             url=data['url'],
-            owner=user,
-            id=generateKwolaId(modelClass=ApplicationModel, kwolaConfig=getKwolaConfiguration(), owner=user),
+            owner=userId,
+            id=generateKwolaId(modelClass=ApplicationModel, kwolaConfig=getKwolaConfiguration(), owner=userId),
             creationDate=datetime.now(),
             defaultRunConfiguration=runConfiguration,
             package=data['package'],
@@ -115,7 +116,7 @@ class ApplicationGroup(Resource):
 
             attachPaymentMethodToUserAccountIfNeeded(data['billingPaymentMethod'], stripeCustomerId)
 
-            priceId = self.configData['stripe']['monthlyPriceId']
+            priceId = getPriceIdForUser(userId, 'monthlyPriceId')
 
             # Update this to the new product with price attached
             subscription = stripe.Subscription.create(
@@ -134,17 +135,21 @@ class ApplicationGroup(Resource):
 
             attachPaymentMethodToUserAccountIfNeeded(data['billingPaymentMethod'], stripeCustomerId)
 
+            priceId = getPriceIdForUser(userId, 'oneOffRunPriceId')
+
+            invoiceItem = stripe.InvoiceItem.create(
+                customer=customer.id,
+                price=priceId
+            )
+
             invoice = stripe.Invoice.create(
                 customer=customer.id
             )
 
-            invoiceItem = stripe.InvoiceItem.create(
-                customer=customer.id,
-                invoice=invoice.id,
-                price=self.configData['stripe']['oneOffRunPriceId']
-            )
-
-            stripe.Invoice.pay(invoice.id)
+            try:
+                stripe.Invoice.pay(invoice.id)
+            except stripe.error.InvalidRequestError:
+                pass
 
             newApplication.stripeSubscriptionId = None
 
@@ -164,8 +169,8 @@ class ApplicationGroup(Resource):
             launchSource = "one_off"
 
         newTestingRun = TestingRun(
-            id=generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=user),
-            owner=user,
+            id=generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=userId),
+            owner=userId,
             applicationId=newApplication.id,
             stripeSubscriptionId=newApplication.stripeSubscriptionId,
             promoCode=newApplication.promoCode,
@@ -210,10 +215,10 @@ class ApplicationGroup(Resource):
 
                 newTrigger.save()
 
-        email = getUserProfileFromId(user)['email']
+        email = getUserProfileFromId(userId)['email']
         postToKwolaSlack(f"New application was created by user {email} on url {data['url']} with package {data['package']}", error=False)
 
-        updateUserProfileMetadataValue(user, "hasCreatedFirstApplication", True)
+        updateUserProfileMetadataValue(userId, "hasCreatedFirstApplication", True)
 
         return {
             "applicationId": str(newApplication.id),
@@ -224,16 +229,16 @@ class ApplicationGroup(Resource):
 
 class ApplicationSingle(Resource):
     def __init__(self):
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def get(self, application_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -243,13 +248,13 @@ class ApplicationSingle(Resource):
             abort(404)
 
     def post(self, application_id):
-        user, claims = authenticate(returnAllClaims=True)
-        if user is None:
+        userId, claims = authenticate(returnAllClaims=True)
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -315,7 +320,7 @@ class ApplicationSingle(Resource):
 
                     application.package = data['package']
                 elif data['package'] is None:
-                    email = getUserProfileFromId(user)['email']
+                    email = getUserProfileFromId(userId)['email']
                     postToKwolaSlack(f"User {email} has unsubscribed.", error=False)
 
             application.save()
@@ -324,18 +329,23 @@ class ApplicationSingle(Resource):
             abort(404)
 
     def delete(self, application_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
         if application is not None:
             application.status = "deleted"
+
+            if application.stripeSubscriptionId is not None:
+                stripe.Subscription.delete(application.stripeSubscriptionId)
+                application.stripeSubscriptionId = None
+
             application.save()
         else:
             abort(404)
@@ -344,13 +354,13 @@ class ApplicationSingle(Resource):
 class ApplicationImage(Resource):
     @cache.cached(timeout=36000)
     def get(self, application_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -363,13 +373,13 @@ class ApplicationImage(Resource):
 
 class ApplicationSubscribeToSlack(Resource):
     def get(self, application_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -396,13 +406,13 @@ class ApplicationSubscribeToSlack(Resource):
 
 
     def post(self, application_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -430,13 +440,13 @@ class ApplicationSubscribeToSlack(Resource):
 
 class ApplicationTestSlack(Resource):
     def post(self, application_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -451,13 +461,13 @@ class ApplicationTestSlack(Resource):
 
 class ApplicationIntegrateWithJIRA(Resource):
     def get(self, application_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -515,20 +525,20 @@ class ApplicationIntegrateWithJIRA(Resource):
 
 
     def post(self, application_id):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
         if application is not None:
             data = flask.request.get_json()
 
-            config = loadConfiguration()
+            config = loadCloudConfiguration()
 
             response = requests.post("https://auth.atlassian.com/oauth/token", {
                 "code": data['code'],
@@ -567,13 +577,13 @@ class ApplicationIntegrateWithJIRA(Resource):
 
 class ApplicationTestWebhook(Resource):
     def post(self, application_id, webhook_field):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         query = {"id": application_id}
         if not isAdmin():
-            query['owner'] = user
+            query['owner'] = userId
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -602,8 +612,8 @@ class ApplicationTestWebhook(Resource):
 
 class NewApplicationTestImage(Resource):
     def get(self):
-        user = authenticate()
-        if user is None:
+        userId = authenticate()
+        if userId is None:
             abort(401)
 
         url = flask.request.args['url']
@@ -656,7 +666,7 @@ class NewApplicationTestImage(Resource):
 
 class AttachCardToUser(Resource):
     def __init__(self):
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def post(self):
         user, claims = authenticate(returnAllClaims=True)
@@ -680,11 +690,11 @@ class AttachCardToUser(Resource):
 
 class TestAutoLogin(Resource):
     def __init__(self):
-        self.configData = loadConfiguration()
+        self.configData = loadCloudConfiguration()
 
     def post(self):
-        user, claims = authenticate(returnAllClaims=True)
-        if user is None:
+        userId, claims = authenticate(returnAllClaims=True)
+        if userId is None:
             abort(401)
 
         data = flask.request.get_json()

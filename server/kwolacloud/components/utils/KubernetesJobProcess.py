@@ -28,7 +28,7 @@ import os
 import psutil
 import time
 import google.cloud.logging
-from kwolacloud.config.config import loadConfiguration
+from kwolacloud.config.config import loadCloudConfiguration
 import stripe
 from kwola.config.logger import getLogger
 from kwolacloud.db import connectToMongoWithRetries

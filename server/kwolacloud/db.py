@@ -1,11 +1,11 @@
-from .config.config import loadConfiguration
+from .config.config import loadCloudConfiguration
 from mongoengine import connect
 import time
 from .datamodels.ApplicationModel import ApplicationModel
 
 
 def connectToMongoWithRetries(alias=None, db=None):
-    configData = loadConfiguration()
+    configData = loadCloudConfiguration()
 
     success = False
     lastError = None
