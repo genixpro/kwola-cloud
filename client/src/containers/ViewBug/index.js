@@ -19,6 +19,9 @@ import FastForwardIcon from '@material-ui/icons/FastForward';
 import BugActionList from "./BugActionList";
 import {Check} from "@material-ui/icons";
 import edgeBlackSquare from "../../images/edge-black-square.png";
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import ArrowForward from '@material-ui/icons/ArrowForward';
+import "./index.scss";
 
 
 class ViewBug extends Component {
@@ -130,6 +133,28 @@ class ViewBug extends Component {
         });
     }
 
+    goToActionClicked(index)
+    {
+        document.getElementById("video-top").scrollIntoView();
+
+        if(!this.state.player) return false;
+        this.state.player.restart()
+        this.state.player.forward(index)
+    }
+
+    forwardOneFrame()
+    {
+        if(!this.state.player) return false;
+        this.state.player.forward(1)
+    }
+
+    backwardOneFrame()
+    {
+        if(!this.state.player) return false;
+        // console.log(this.state.player)
+        this.state.player.rewind(1)
+    }
+
     render() {
         const { result } = this.state;
         const downloadVideo = <IconButton disabled={this.state.loader} onClick={() =>this.downloadVideo()} aria-label="get_app" color="secondary">{this.state.loader ? <CircularProgress disabled size={18} color="secondary"/> : <Icon className="fontSizeSmall">get_app</Icon>}</IconButton>       
@@ -142,7 +167,7 @@ class ViewBug extends Component {
                         <Row>
                             <HalfColumn>
                                 <Papersheet title="Debug Video" tooltip={downloadVideo}>
-
+                                    <div id={"video-top"} />
                                     <video id="player" controls style={{"width": "100%"}}>
                                         <source  type="video/mp4" />
                                         <span>Your browser does not support the video tag.</span>
@@ -150,17 +175,30 @@ class ViewBug extends Component {
                                     <br />
                                     <Button variant="contained"
                                             color={"primary"}
-                                            className="orderBtn"
+                                            className="video-control-button"
+                                            title={"Backward One Frame"}
+                                            onClick={() => this.backwardOneFrame()}>
+                                        <ArrowBackIcon />
+                                    </Button>
+                                    <Button variant="contained"
+                                            color={"primary"}
+                                            className="video-control-button"
                                             title={"Show Bug"}
                                             onClick={() => this.seekVideo()}>
                                         <span>Skip to bug frame in video</span>
-                                        <FastForwardIcon />
+                                    </Button>
+                                    <Button variant="contained"
+                                            color={"primary"}
+                                            className="video-control-button"
+                                            title={"Forward One Frame"}
+                                            onClick={() => this.forwardOneFrame()}>
+                                        <ArrowForward />
                                     </Button>
                                 </Papersheet>
                                 <br/>
                                 <img src={this.state.spriteSheetImageURL} />
                                 <Papersheet title={"Actions Performed"}>
-                                    <BugActionList bug={this.state.bug} />
+                                    <BugActionList bug={this.state.bug} onGoToActionClicked={(index) => this.goToActionClicked(index)} />
                                 </Papersheet>
                             </HalfColumn>
 
