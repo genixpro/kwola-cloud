@@ -80,6 +80,8 @@ class BugModel(Document):
 
     status = StringField(enumerate=['new', 'triage', 'fix_in_progress', 'needs_testing', 'closed'], default="new")
 
+    isBugNew = BooleanField()
+
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
         saveObjectToDisk(self, "bugs", config, overrideSaveFormat=overrideSaveFormat, overrideCompression=overrideCompression)
 

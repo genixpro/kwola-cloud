@@ -1,6 +1,7 @@
 from kwola.config.logger import getLogger
 from kwolacloud.datamodels.MutedError import MutedError
 from kwola.datamodels.BugModel import BugModel
+from kwolacloud.datamodels.TestingRun import TestingRun
 from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.components.utils.debug_video import createDebugVideoSubProcess
 from kwola.components.plugins.base.TestingStepPluginBase import TestingStepPluginBase
@@ -70,6 +71,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
         existingBugs = self.loadAllBugs(testingStep)
         mutedErrors = self.loadAllMutedErrors(testingStep)
+        priorTestingRunBugs = self.loadPriorTestingRunBugs(testingStep)
 
         bugObjects = []
 
@@ -118,11 +120,17 @@ class CreateCloudBugObjects(TestingStepPluginBase):
                 trace.codePrevalenceScore for trace in self.executionSessionTraces[executionSessionId][max(0, stepNumber-5):(stepNumber + 1)]
             ])
             bug.recomputeBugQualitativeFeatures()
+            bug.isBugNew = True
 
             duplicate = False
             for existingBug in existingBugs:
                 if bug.isDuplicateOf(existingBug):
                     duplicate = True
+                    break
+
+            for priorBug in priorTestingRunBugs:
+                if bug.isDuplicateOf(priorBug):
+                    bug.isBugNew = False
                     break
 
             for mutedError in mutedErrors:
@@ -190,6 +198,16 @@ class CreateCloudBugObjects(TestingStepPluginBase):
     def loadAllMutedErrors(self, testingStep):
         mutedErrors = MutedError.objects(applicationId=testingStep.applicationId)
         return list(mutedErrors)
+
+    def loadPriorTestingRunBugs(self, testingStep):
+        priorTestingRun = TestingRun.objects(applicationId=testingStep.applicationId, status="completed").order_by("-startTime").first()
+
+        if priorTestingRun is not None:
+            bugs = BugModel.objects(testingRunId=priorTestingRun.id)
+        else:
+            bugs = []
+
+        return list(bugs)
 
     def generateVideoFilesForBugs(self, testingStep, bugObjects):
         pool = multiprocessing.Pool(self.config['video_generation_processes'], maxtasksperchild=1)

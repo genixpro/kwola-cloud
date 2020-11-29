@@ -52,6 +52,8 @@ def main():
 
         for bug in BugModel.objects():
             bug.recomputeBugQualitativeFeatures()
+            if bug.isBugNew is None:
+                bug.isBugNew = True
             bug.save()
             logging.info(f"Processed bug {bug.id}")
 

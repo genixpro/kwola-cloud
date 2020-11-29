@@ -112,6 +112,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                 trace.codePrevalenceScore for trace in self.executionSessionTraces[executionSessionId][max(0, stepNumber-5):(stepNumber + 1)]
             ])
             bug.recomputeBugQualitativeFeatures()
+            bug.isBugNew = True
 
             duplicate = False
             for existingBug in existingBugs:
