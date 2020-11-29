@@ -66,9 +66,17 @@ class BugsTable extends Component{
                 applicationId: this.props.match.params.id,
                 error: bug.error,
                 creationDate: new Date().toISOString(),
-                totalOccurrences: 1,
-                mostRecentOccurrence: new Date(bug.creationDate.$date).toISOString()
+                totalOccurrences: 1
             };
+
+            if (bug.creationDate)
+            {
+                mutedErrorData.mostRecentOccurrence = new Date(bug.creationDate.$date).toISOString()
+            }
+            else
+            {
+                mutedErrorData.mostRecentOccurrence = new Date().toISOString();
+            }
 
             axios.post(`/muted_errors`, mutedErrorData).then((response) => {
                 const mutedErrorId = response.data.mutedErrorId;
