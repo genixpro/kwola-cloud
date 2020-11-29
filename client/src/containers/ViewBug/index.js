@@ -208,8 +208,22 @@ class ViewBug extends Component {
                                     // subtitle={}
                                 >
                                     <span>Bug Type: {this.state.bug.error._cls || "Unknown"}</span><br/><br/>
-                                    <span>Log Level: {this.state.bug.error.logLevel || "Unknown"}</span><br/><br/>
-                                    <span>URL: {this.state.bug.error.page || "Unknown"}</span><br/><br/>
+                                    <span>Page: {this.state.bug.error.page || "Unknown"}</span><br/><br/>
+                                    {
+                                        this.state.bug.error._cls === "LogError" ?
+                                            <span>Log Level: {this.state.bug.error.logLevel || "N/A"}<br/><br/></span>
+                                            : null
+                                    }
+                                    {
+                                        this.state.bug.error._cls === "HttpError" ?
+                                            <span>HTTP Status Code: {this.state.bug.error.statusCode || "N/A"}<br/><br/></span>
+                                            : null
+                                    }
+                                    {
+                                        this.state.bug.error._cls === "HttpError" ?
+                                            <span>HTTP Request URL: {this.state.bug.error.url || "N/A"}<br/><br/></span>
+                                            : null
+                                    }
                                     {
                                         this.state.bug.browser === "chrome" ?
                                             <span>Browser: <i className="devicon-chrome-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Chrome<br/><br/></span> : null
@@ -257,7 +271,7 @@ class ViewBug extends Component {
                                     </span>
 
                                     <span>Message:</span><br/>
-                                    <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message}</pre>
+                                    <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message || "N/A"}</pre>
 
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.stacktrace}</pre>
                                 </Papersheet>
