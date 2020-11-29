@@ -333,7 +333,7 @@ class WebEnvironmentSession:
 
         emailKeywords = ['use', 'mail', 'name']
         passwordKeywords = ['pass']
-        loginKeywords = ['log', 'sub', 'sign']
+        loginKeywords = ['log', 'sub', 'sign', 'connexion']
 
         for map in actionMaps:
             found = False
