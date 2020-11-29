@@ -180,7 +180,7 @@ class BugsTable extends Component{
                         width:'15%',
                         render: (rowData) => {
                             return <div className={"bugs-table-bug-screenshot-wrapper"}>
-                                {!rowData.isBugNew ? <div className="new-bug-ribbon"><span>NEW</span></div> : null}
+                                {rowData.isBugNew ? <div className="new-bug-ribbon"><span>NEW</span></div> : null}
                                 <img className={"bugs-table-bug-screenshot"} alt={"Bug Screenshot"} src={`${process.env.REACT_APP_BACKEND_API_URL}bugs/${rowData._id}/error_frame?token=${Auth.getQueryParameterToken()}`} />
                             </div>
                         },
