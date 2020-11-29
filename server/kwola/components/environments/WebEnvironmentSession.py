@@ -405,6 +405,21 @@ class WebEnvironmentSession:
 
             emailInputs, passwordInputs, loginButtons = self.findElementsForAutoLogin()
 
+            # Scroll down to the input elements so that they are all within view.
+            if len(emailInputs) > 0 or len(passwordInputs) > 0 or len(loginButtons) > 0:
+                scrollMargin = 250
+
+                elem = None
+                if len(emailInputs) > 0:
+                    elem = emailInputs[0]
+                if len(passwordInputs) > 0:
+                    elem = passwordInputs[0]
+                if len(loginButtons) > 0:
+                    elem = loginButtons[0]
+
+                self.driver.execute_script(f"""window.scrollTo(0, {max(0, elem.top - scrollMargin)});""")
+                emailInputs, passwordInputs, loginButtons = self.findElementsForAutoLogin()
+
             # check to see if there is a "login" button that we need to click first to expose
             # the login form
             if (len(emailInputs) == 0) and (len(passwordInputs) == 0) and len(loginButtons) > 0:
