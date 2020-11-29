@@ -101,6 +101,35 @@ class ViewBug extends Component {
         this.state.player.restart()
         this.state.player.forward(this.state.bug.stepNumber)
     }
+
+    changeBugImportanceLevel(newImportanceLevel)
+    {
+        const bug = this.state.bug;
+        bug.importanceLevel = newImportanceLevel;
+        this.setState({bug});
+
+        axios.post(`/bugs/${this.state.bug._id}`, {importanceLevel: newImportanceLevel}).then((response) => {
+
+        }, (error) =>
+        {
+            console.error("Error occurred while muting bug!");
+        });
+    }
+
+    changeBugStatus(newStatus)
+    {
+        const bug = this.state.bug;
+        bug.status = newStatus;
+        this.setState({bug});
+
+        axios.post(`/bugs/${this.state.bug._id}`, {status: newStatus}).then((response) => {
+
+        }, (error) =>
+        {
+            console.error("Error occurred while muting bug!");
+        });
+    }
+
     render() {
         const { result } = this.state;
         const downloadVideo = <IconButton disabled={this.state.loader} onClick={() =>this.downloadVideo()} aria-label="get_app" color="secondary">{this.state.loader ? <CircularProgress disabled size={18} color="secondary"/> : <Icon className="fontSizeSmall">get_app</Icon>}</IconButton>       
@@ -163,6 +192,31 @@ class ViewBug extends Component {
                                         this.state.bug.windowSize ?
                                             <span>Window Size: {this.state.bug.windowSize}<br/><br/></span> : null
                                     }
+
+                                    <span>Importance Level:
+                                    <select value={this.state.bug.importanceLevel}
+                                            onChange={(evt) => this.changeBugImportanceLevel(evt.target.value)}
+                                    >
+                                          <option value={1}>1 (highest)</option>
+                                          <option value={2}>2</option>
+                                          <option value={3}>3</option>
+                                          <option value={4}>4</option>
+                                          <option value={5}>5 (lowest)</option>
+                                      </select>
+                                        <br/><br/>
+                                    </span>
+
+                                    <span>Status:
+                                        <select value={this.state.bug.status}
+                                                onChange={(evt) => this.changeBugStatus(evt.target.value)}>
+                                              <option value={'new'}>New</option>
+                                              <option value={'triage'}>In triage</option>
+                                              <option value={'fix_in_progress'}>Fix in progress</option>
+                                              <option value={'needs_testing'}>Fixed, needs testing</option>
+                                              <option value={'closed'}>Closed</option>
+                                          </select>
+                                        <br/><br/>
+                                    </span>
 
                                     <span>Message:</span><br/>
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message}</pre>

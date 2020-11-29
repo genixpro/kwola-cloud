@@ -293,10 +293,6 @@ class TestingStepManager:
                 self.executionSessionTraceLocalPickleFiles[sessionN].append(traceFileName)
                 trace.actionMaps = actionMaps
 
-            # Submit a lambda to save this trace to disk. This is done in the background to avoid
-            # holding up the main loop. Saving the trace to disk can be time consuming.
-            self.traceSaveExecutor.submit(TestingStepManager.saveTrace, trace, self.config)
-
         if len(validTraces) > 0:
             for plugin in self.testingStepPlugins:
                 plugin.afterActionsRun(self.testStep, validTracePairedExecutionSessions, validTraces)
@@ -454,7 +450,15 @@ class TestingStepManager:
                 self.killAndJoinTestingSubprocesses()
             self.removeBadSessions()
 
+            # Compute the code prevalence scores for all of the traces
+            allTraces = [trace for traceList in self.executionSessionTraces for trace in traceList]
+            self.agent.symbolMapper.load()
+            self.agent.symbolMapper.computeCodePrevalenceScores(allTraces)
+
             # Ensure all the trace objects get saved to disc
+            for trace in allTraces:
+                self.traceSaveExecutor.submit(TestingStepManager.saveTrace, trace, self.config)
+
             self.traceSaveExecutor.shutdown()
 
             self.environment.runSessionCompletedHooks()

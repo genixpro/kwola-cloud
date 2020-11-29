@@ -63,9 +63,22 @@ class BugModel(Document):
 
     isJavascriptError = BooleanField()
 
+    # Deprecated
     severityScore = IntField()
+    # Deprecated
+    severityLevel = IntField()
+    # Deprecated
+    originalSeverityLevel = IntField()
 
-    severityLevel = StringField()
+    bugTypeSeverityScore = FloatField()
+
+    codePrevalenceScore = FloatField()
+
+    importanceLevel = IntField()
+
+    originalImportanceLevel = IntField()
+
+    status = StringField(enumerate=['new', 'triage', 'fix_in_progress', 'needs_testing', 'closed'], default="new")
 
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
         saveObjectToDisk(self, "bugs", config, overrideSaveFormat=overrideSaveFormat, overrideCompression=overrideCompression)
@@ -83,7 +96,8 @@ class BugModel(Document):
 
     def recomputeBugQualitativeFeatures(self):
         self.recomputeIsJavascriptError()
-        self.recomputeSeverityScore()
+        self.recomputeBugTypeSeverityScore()
+        self.recomputeImportanceLevel()
 
     def recomputeIsJavascriptError(self):
         self.isJavascriptError = False
@@ -107,16 +121,30 @@ class BugModel(Document):
                     self.isJavascriptError = True
                     break
 
-    def recomputeSeverityScore(self):
+    def recomputeBugTypeSeverityScore(self):
         if self.isJavascriptError:
-            self.severityScore = 10
+            self.bugTypeSeverityScore = 1.0
         elif isinstance(self.error, HttpError) and self.error.statusCode >= 500:
-            self.severityScore = 9
+            self.bugTypeSeverityScore = 0.9
         elif isinstance(self.error, HttpError) and (self.error.statusCode == 403 or self.error.statusCode == 401):
-            self.severityScore = 8
+            self.bugTypeSeverityScore = 0.8
         elif isinstance(self.error, HttpError) and self.error.statusCode == 404:
-            self.severityScore = 5
+            self.bugTypeSeverityScore = 0.4
         elif isinstance(self.error, LogError):
-            self.severityScore = 4
+            self.bugTypeSeverityScore = 0.2
         else:
-            self.severityScore = 0
+            self.bugTypeSeverityScore = 0.0
+
+    def recomputeImportanceLevel(self):
+        bugTypeWeight = 3.0
+        codePrevelanceWeight = 1.0
+        minimumSeverity = 1
+
+        codePrevalence = self.codePrevalenceScore
+        if codePrevalence is None:
+            codePrevalence = 0
+            bugTypeWeight = 4.0
+
+        self.importanceLevel = minimumSeverity + int(round(bugTypeWeight * (1.0 - self.bugTypeSeverityScore) + codePrevelanceWeight * (1.0 - codePrevalence) ))
+        self.originalImportanceLevel = self.importanceLevel
+

@@ -18,7 +18,8 @@ class BugsTable extends Component{
         newPage:0,
         setPage:0,
         rowsPerPage:10,
-        muted: {}
+        muted: {},
+        importanceLevels: {}
     };
 
     constructor(props)
@@ -56,6 +57,8 @@ class BugsTable extends Component{
 
     toggleMuteError(evt, bug)
     {
+        evt.stopPropagation();
+
         const muted = this.state.muted;
         if (!muted[bug._id] && !this.mutedErrorIds[bug._id])
         {
@@ -105,10 +108,24 @@ class BugsTable extends Component{
             muted[bug._id] = false;
         }
         this.setState({muted});
-        evt.stopPropagation();
     }
 
-	render(){
+    changeBugImportanceLevel(bug, newImportanceLevel)
+    {
+        const importanceLevels = this.state.importanceLevels;
+        importanceLevels[bug._id] = newImportanceLevel;
+        this.setState({importanceLevels});
+
+        axios.post(`/bugs/${bug._id}`, {importanceLevel: newImportanceLevel}).then((response) => {
+
+        }, (error) =>
+        {
+            console.error("Error occurred while muting bug!");
+        });
+    }
+
+	render()
+    {
         const setRowsPerPage = 10;
         const page = this.state.newPage
         let setPage = this.state.setPage
@@ -126,11 +143,11 @@ class BugsTable extends Component{
                     <TableBody>
                         {(this.props.data ? this.props.data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : []).map(bug => {
                             return (
-                                
+
                                 <TableRow key={bug._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/bugs/${bug._id}`)} >
                                     <TableCell>{bug.error.message}</TableCell>
                                 </TableRow>
-                                
+
                             );
                         })}
                     </TableBody>
@@ -147,7 +164,7 @@ class BugsTable extends Component{
                 />
                 */}
                 <MaterialTable
-                  columns={[ 
+                  columns={[
                     { title: 'id', field: '_id', hidden:true },
                     {
                         title: 'Bug Screenshot',
@@ -165,14 +182,31 @@ class BugsTable extends Component{
                         },
                      },
                     { title: 'Message', field: 'message',
-                        width: "60%",
+                        width: "50%",
                         cellStyle: {
-                          width: "60%",
+                          width: "50%",
                           maxWidth: "500px",
                           overflow: "hidden"
                         },
                         render: (rowData) => <div style={{"maxHeight": "90px", "overflow": "hidden"}}><span style={{"whiteSpace": 'pre-wrap'}}>{rowData.message.trim()}</span></div>
                      },
+                      { title: 'Importance', field: 'importanceLevel',
+                          width: "15%",
+                          cellStyle: {
+                              width: "15%"
+                          },
+                          render: (rowData) => <select value={this.state.importanceLevels[rowData._id] || rowData.importanceLevel}
+                                                                onClick={(evt) => evt.stopPropagation()}
+                                                                onChange={(evt) => this.changeBugImportanceLevel(rowData, evt.target.value)}
+                                                        >
+                              <option value={1}>1 (highest)</option>
+                              <option value={2}>2</option>
+                              <option value={3}>3</option>
+                              <option value={4}>4</option>
+                              <option value={5}>5 (lowest)</option>
+                          </select>
+
+                      },
                   {
                       field: 'url',
                       title: 'Options',
@@ -183,9 +217,9 @@ class BugsTable extends Component{
                                                             onClick={(evt) => this.toggleMuteError(evt, rowData)}>
                           <VolumeOffIcon />
                       </Button>,
-                      width:'15%',
+                      width:'10%',
                       cellStyle: {
-                          width: '15%'
+                          width: '10%'
                       }
                   }
                   ]}

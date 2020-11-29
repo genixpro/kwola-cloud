@@ -114,6 +114,10 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             bug.browser = executionSessionsById[executionSessionId].browser
             bug.userAgent = executionSessionsById[executionSessionId].userAgent
             bug.windowSize = executionSessionsById[executionSessionId].windowSize
+            bug.codePrevalenceScore = numpy.mean([
+                trace.codePrevalenceScore for trace in self.executionSessionTraces[executionSessionId][max(0, stepNumber-5):(stepNumber + 1)]
+            ])
+            bug.recomputeBugQualitativeFeatures()
 
             duplicate = False
             for existingBug in existingBugs:
