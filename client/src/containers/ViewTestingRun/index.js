@@ -51,7 +51,8 @@ class ViewTestingRun extends Component {
         settingsMenuOpen: false
     };
 
-    componentDidMount() {
+    loadAllData()
+    {
         axios.get(`/testing_runs/${this.props.match.params.id}`).then((response) => {
             this.setState({testingRun: response.data.testingRun});
         });
@@ -68,6 +69,11 @@ class ViewTestingRun extends Component {
         }).then((response) => {
             this.setState({executionSessions: response.data.executionSessions});
         });
+    }
+
+    componentDidMount()
+    {
+        this.loadAllData();
     }
 
     formatCSVData()
@@ -127,14 +133,14 @@ class ViewTestingRun extends Component {
     pauseTestingRun()
     {
         return axios.post(`/testing_runs/${this.props.match.params.id}/pause`).then((response) => {
-
+            this.loadAllData();
         });
     }
 
     resumeTestingRun()
     {
         return axios.post(`/testing_runs/${this.props.match.params.id}/resume`).then((response) => {
-
+            this.loadAllData();
         });
     }
 
