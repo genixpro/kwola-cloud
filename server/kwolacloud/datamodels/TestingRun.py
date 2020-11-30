@@ -96,9 +96,9 @@ class TestingRun(Document):
         return TestingRun.objects(id=id).first()
 
 
-    def runJob(self):
+    def createKubernetesJobObject(self):
         from kwolacloud.components.utils.KubernetesJob import KubernetesJob
-        
+
         configData = loadCloudConfiguration()
 
         if configData['features']['localRuns']:
@@ -117,6 +117,14 @@ class TestingRun(Document):
                                 memoryRequest="350Mi",
                                 memoryLimit="2048Mi"
                                 )
+        return job
+
+
+    def runJob(self):
+        configData = loadCloudConfiguration()
+
+        job = self.createKubernetesJobObject()
+
         if configData['features']['enableRuns']:
             if not configData['features']['localRuns'] and job.doesJobStillExist():
                 job.cleanup()

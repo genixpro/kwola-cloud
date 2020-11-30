@@ -42,7 +42,7 @@ from .resources.TestingStepResource import TestingStepsGroup, TestingStepsSingle
 from .resources.ExecutionSessionResource import ExecutionSessionGroup, ExecutionSessionSingle, ExecutionSessionVideo, ExecutionSessionTraces, ExecutionSessionSingleTrace
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
 from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSingle
-from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle, TestingRunsRestart, TestingRunsRestartTraining, TestingRunsDownloadZip
+from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle, TestingRunsRestart, TestingRunsRestartTraining, TestingRunsDownloadZip, PauseTestingRun, ResumeTestingRun
 from .resources.BugsResource import BugsGroup, BugsSingle, BugVideo, BugFrameSpriteSheet, BugErrorFrame
 from .resources.Webhooks import StripeWebhook
 from .resources.Billing import BillingURLResource
@@ -85,6 +85,8 @@ api.add_resource(TestingRunsSingle, '/api/testing_runs/<string:testing_run_id>')
 api.add_resource(TestingRunsRestart, '/api/testing_runs/<string:testing_run_id>/restart')
 api.add_resource(TestingRunsRestartTraining, '/api/testing_runs/<string:testing_run_id>/restart_training')
 api.add_resource(TestingRunsDownloadZip, '/api/testing_runs/<string:testing_run_id>/bugs_zip')
+api.add_resource(PauseTestingRun, '/api/testing_runs/<string:testing_run_id>/pause')
+api.add_resource(ResumeTestingRun, '/api/testing_runs/<string:testing_run_id>/resume')
 
 
 api.add_resource(TrainingStepGroup, '/api/training_steps')
