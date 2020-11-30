@@ -145,6 +145,7 @@ class BugModel(Document):
         codePrevalence = self.codePrevalenceScore
         if codePrevalence is None:
             codePrevalence = 0
+            codePrevelanceWeight = 0
             bugTypeWeight = 4.0
 
         self.importanceLevel = minimumSeverity + int(round(bugTypeWeight * (1.0 - self.bugTypeSeverityScore) + codePrevelanceWeight * (1.0 - codePrevalence) ))
