@@ -273,11 +273,11 @@ class PauseTestingRun(Resource):
             if not configData['features']['localRuns'] and mainJob.doesJobStillExist():
                 mainJob.cleanup()
 
-        manager = TestingRunManager(testingRun.id)
-        manager.loadTestingRun()
-
         for jobId in testingRun.runningTestingStepJobIds:
-            testStepJob = manager.createTestingStepKubeJob(jobId)
+            testStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
+                                        data={},
+                                        referenceId=jobId)
+
             if not configData['features']['localRuns'] and testStepJob.doesJobStillExist():
                 testStepJob.cleanup()
 
@@ -285,7 +285,9 @@ class PauseTestingRun(Resource):
         testingRun.runningTestingStepStartTimes = []
 
         if testingRun.runningTrainingStepJobId is not None:
-            trainingJob = manager.createTrainingStepKubeJob(testingRun.runningTrainingStepJobId)
+            trainingJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
+                                        data={},
+                                        referenceId=testingRun.runningTrainingStepJobId)
             if not configData['features']['localRuns'] and trainingJob.doesJobStillExist():
                 trainingJob.cleanup()
 
