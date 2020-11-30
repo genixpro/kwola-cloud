@@ -191,7 +191,9 @@ class TestingRunManager:
     def launchTestingStepsIfNeeded(self):
         logging.info(f"Launching testing steps if needed. Number to launch: {self.calculateNumberOfTestingSessionsToStart()}")
         runningSessions = len(self.run.runningTestingStepJobIds) * self.config['web_session_parallel_execution_sessions']
-        while self.calculateNumberOfTestingSessionsToStart() > 0 and runningSessions < self.run.configuration.maxParallelSessions:
+        while self.calculateNumberOfTestingSessionsToStart() > 0 \
+                and runningSessions < self.run.configuration.maxParallelSessions \
+                and not self.isTestingFailureConditionsMet():
             self.launchTestingStep()
             runningSessions = len(self.run.runningTestingStepJobIds) * self.config['web_session_parallel_execution_sessions']
 
