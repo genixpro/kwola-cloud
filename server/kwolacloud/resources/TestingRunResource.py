@@ -19,6 +19,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import flask
 import json
+import math
 import stripe
 import os
 from google.cloud import storage
@@ -318,6 +319,13 @@ class ResumeTestingRun(Resource):
             return abort(400)
 
         testingRun.status = "running"
+
+        portionComplete = testingRun.testingSessionsCompleted / testingRun.configuration.totalTestingSessions
+        testingRun.predictedEndTime = datetime.datetime.now() + relativedelta(hours=int(math.ceil(testingRun.configuration.hours * (1.0 - portionComplete))) + 1,
+                                                                              minute=30,
+                                                                              second=0,
+                                                                              microsecond=0)
+
         testingRun.save()
         testingRun.runJob()
 
