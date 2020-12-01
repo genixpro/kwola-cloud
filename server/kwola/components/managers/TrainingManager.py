@@ -129,7 +129,7 @@ class TrainingManager:
                     torch.distributed.init_process_group(backend="gloo",
                                                          world_size=self.gpuWorldSize,
                                                          rank=self.gpu,
-                                                         init_method=f"file:///tmp/{self.coordinatorTempFileName}")
+                                                         init_method=f"file://{os.path.join(tempfile.gettempdir(), self.coordinatorTempFileName)}")
                     break
                 except RuntimeError:
                     time.sleep(1)

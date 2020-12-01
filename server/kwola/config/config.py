@@ -205,7 +205,7 @@ class KwolaCoreConfiguration:
                 globalCachedPrebuiltConfigs[prebuild] = data
                 return data
         else:
-            data = json.loads(pkg_resources.resource_string("kwola", f"config/prebuilt_configs/{prebuild}.json"))
+            data = json.loads(pkg_resources.resource_string("kwola", os.path.join("config", "prebuilt_configs", f"{prebuild}.json")))
             globalCachedPrebuiltConfigs[prebuild] = data
             return data
 

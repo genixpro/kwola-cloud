@@ -96,7 +96,7 @@ def saveObjectToDisk(targetObject, folder, config, overrideSaveFormat=None, over
     elif dataFormat == "gcs":
         storageClient = getSharedGCSStorageClient()
         applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + targetObject.applicationId)
-        objectPath = f"{folder}/{targetObject.id}.json.gz"
+        objectPath = os.path.join(folder, f"{targetObject.id}.json.gz")
         objectBlob = storage.Blob(objectPath, applicationStorageBucket)
         data = gzip.compress(bytes(targetObject.to_json(indent=4), "utf8"), compresslevel=compression)
         objectBlob.upload_from_string(data)
@@ -118,7 +118,7 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True,
 
             storageClient = getSharedGCSStorageClient()
             applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + applicationId)
-            objectPath = f"{folder}/{id}.json.gz"
+            objectPath = os.path.join(folder, f"{id}.json.gz")
             objectBlob = storage.Blob(objectPath, applicationStorageBucket)
             data = objectBlob.download_as_string()
             object = modelClass.from_json(str(gzip.decompress(data), "utf8"))

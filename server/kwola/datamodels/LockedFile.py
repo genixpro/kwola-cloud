@@ -34,8 +34,8 @@ class LockedFile(object):
 
     @staticmethod
     def getLockFilePath(filePath):
-        fileName = filePath.split("/")[-1]
-        folder = "/".join(filePath.split("/")[:-1])
+        fileName = os.path.split(filePath)[-1]
+        folder = os.path.join(*os.path.split(filePath)[:-1])
         lockFile = os.path.join(folder, "." + fileName + ".lock")
         return lockFile
 

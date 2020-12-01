@@ -1356,8 +1356,6 @@ class DeepLearningAgent:
         # into other libraries that can load videos into numpy arrays
         cap = cv2.VideoCapture(localTemp)
 
-        os.unlink(localTemp)
-
         rawImages = []
 
         # We basically just keep looping until we have loaded all of the frames.
@@ -1369,6 +1367,9 @@ class DeepLearningAgent:
                 rawImages.append(rawImage)
             else:
                 break
+
+        del cap
+        os.unlink(localTemp)
 
         # Return the list of frames
         return rawImages

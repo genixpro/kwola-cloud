@@ -46,6 +46,8 @@ import torch.cuda
 import traceback
 import random
 import subprocess
+import sys
+import tempfile
 
 def getAvailableBrowsers(config):
     browsers = []
@@ -61,7 +63,10 @@ def getAvailableBrowsers(config):
             result2 = None
 
         try:
-            result3 = subprocess.run(['google-chrome', '--version'], stdout=subprocess.PIPE)
+            chromeCmd = "google-chrome"
+            if sys.platform == "win32" or sys.platform == "win64":
+                chromeCmd = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+            result3 = subprocess.run([chromeCmd, '--headless', '--version'], stdout=subprocess.PIPE)
         except FileNotFoundError:
             result3 = None
 
@@ -77,7 +82,10 @@ def getAvailableBrowsers(config):
             result = None
 
         try:
-            result2 = subprocess.run(['firefox', '--version'], stdout=subprocess.PIPE)
+            firefoxCmd = "firefox"
+            if sys.platform == "win32" or sys.platform == "win64":
+                firefoxCmd = "C:\Program Files\Mozilla Firefox\firefox.exe"
+            result2 = subprocess.run([firefoxCmd, '--version'], stdout=subprocess.PIPE)
         except FileNotFoundError:
             result2 = None
 
@@ -93,7 +101,11 @@ def getAvailableBrowsers(config):
             result = None
 
         try:
-            result2 = subprocess.run(['microsoft-edge', '--version'], stdout=subprocess.PIPE)
+            edgeCmd = "microsoft-edge"
+            if sys.platform == "win32" or sys.platform == "win64":
+                edgeCmd = "C:\Program Files (x86)\Microsoft\Edge\Application\edge.exe"
+
+            result2 = subprocess.run([edgeCmd, '--version'], stdout=subprocess.PIPE)
         except FileNotFoundError:
             result2 = None
 
@@ -132,7 +144,7 @@ def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
         testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
         testingStep.saveToDisk(config)
 
-        process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
+        process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
             "configDir": config.configurationDirectory,
             "testingStepId": str(testingStep.id),
             "shouldBeRandom": True,
@@ -183,7 +195,7 @@ def runRandomInitialization(config, trainingSequence, exitOnFail=True):
 
 def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber, coordinatorTempFileName):
     try:
-        process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTrainingStep"], {
+        process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTrainingStep"], {
             "configDir": config.configurationDirectory,
             "trainingSequenceId": str(trainingSequence.id),
             "trainingStepIndex": trainingStepIndex,
@@ -223,7 +235,7 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
         testingStep.saveToDisk(config)
 
-        process = ManagedTaskSubprocess(["python3", "-m", "kwola.tasks.RunTestingStep"], {
+        process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
             "configDir": config.configurationDirectory,
             "testingStepId": str(testingStep.id),
             "shouldBeRandom": False,
@@ -287,7 +299,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
         with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_loop'] + numberOfTrainingStepsInParallel)) as executor:
             coordinatorTempFileName = "kwola_distributed_coordinator-" + str(random.randint(0, 1e8))
-            coordinatorTempFilePath = "/tmp/" + coordinatorTempFileName
+            coordinatorTempFilePath = os.path.join(tempfile.gettempdir(), coordinatorTempFileName)
             if os.path.exists(coordinatorTempFilePath):
                 os.unlink(coordinatorTempFilePath)
 

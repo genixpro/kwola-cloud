@@ -66,8 +66,8 @@ import time
 import pickle
 import urllib.parse
 import urllib3
-import resource
 import psutil
+import sys
 
 class WebEnvironmentSession:
     """
@@ -173,6 +173,8 @@ class WebEnvironmentSession:
             chrome_options.add_argument(f"--no-sandbox")
             chrome_options.add_argument(f"--temp-profile")
             chrome_options.add_argument(f"--proxy-server=localhost:{self.proxy.port}")
+            if sys.platform == "win32" or sys.platform == "win64":
+                chrome_options.add_argument(f"--disable-dev-shm-usage")
 
             capabilities = webdriver.DesiredCapabilities.CHROME
             capabilities['loggingPrefs'] = {'browser': 'ALL'}

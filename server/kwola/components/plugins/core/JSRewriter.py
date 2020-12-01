@@ -5,6 +5,7 @@ import json
 import os
 import subprocess
 import re
+import sys
 from kwola.config.logger import getLogger
 
 
@@ -114,13 +115,17 @@ class JSRewriter(ProxyPluginBase):
                 f"cached without Kwola line counting installed. Its faster to install line counting only in the files that need "
                 f"it.")
 
+        babelCmd = 'babel'
+        if sys.platform == "win32" or sys.platform == "win64":
+            babelCmd = 'babel.cmd'
+
         result = subprocess.run(
-            ['babel', '-f', fileNameForBabel, '--plugins', 'babel-plugin-kwola', '--retain-lines', '--source-type',
+            [babelCmd, '-f', fileNameForBabel, '--plugins', 'babel-plugin-kwola', '--retain-lines', '--source-type',
              "script"], input=jsFileContents, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment)
 
         if result.returncode != 0 and "'import' and 'export' may appear only with" in str(result.stderr, 'utf8'):
             result = subprocess.run(
-                ['babel', '-f', fileNameForBabel, '--plugins', 'babel-plugin-kwola', '--retain-lines', '--source-type',
+                [babelCmd, '-f', fileNameForBabel, '--plugins', 'babel-plugin-kwola', '--retain-lines', '--source-type',
                  "module"], input=jsFileContents, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment)
 
         if result.returncode != 0:
