@@ -27,6 +27,8 @@ import Auth from "../../helpers/auth0/index"
 import Tooltip from "../../components/uielements/tooltip";
 import Typography from "../../components/uielements/typography";
 import { CSVLink, CSVDownload } from "react-csv";
+import PauseIcon from '@material-ui/icons/Pause';
+import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 
 import SessionTable from './sessionTable'
 import BugsTable from './bugsTable'
@@ -35,6 +37,7 @@ import CircularProgress from "../../components/uielements/circularProgress";
 import SettingsIcon from "@material-ui/icons/Settings";
 import Menus, {MenuItem} from "../../components/uielements/menus";
 import {Link} from "react-router-dom";
+import LoaderButton from "../../components/LoaderButton";
 
 class ViewTestingRun extends Component {
     state = {
@@ -48,7 +51,8 @@ class ViewTestingRun extends Component {
         settingsMenuOpen: false
     };
 
-    componentDidMount() {
+    loadAllData()
+    {
         axios.get(`/testing_runs/${this.props.match.params.id}`).then((response) => {
             this.setState({testingRun: response.data.testingRun});
         });
@@ -65,6 +69,11 @@ class ViewTestingRun extends Component {
         }).then((response) => {
             this.setState({executionSessions: response.data.executionSessions});
         });
+    }
+
+    componentDidMount()
+    {
+        this.loadAllData();
     }
 
     formatCSVData()
@@ -96,22 +105,16 @@ class ViewTestingRun extends Component {
 
     restartTestingRunKubeJob()
     {
-        if (window.confirm("Are you sure you want to restart the kube job? This will cause problems if there is already a kube job running for this testing run."))
-        {
-            axios.post(`/testing_runs/${this.props.match.params.id}/restart`).then((response) => {
-                window.alert("Successfully restarted Kube job");
-            });
-        }
+        return axios.post(`/testing_runs/${this.props.match.params.id}/restart`).then((response) => {
+
+        });
     }
 
     restartTrainingKubeJob()
     {
-        if (window.confirm("Are you sure you want to restart the kube job? This will cause problems if there is already a kube job doing training."))
-        {
-            axios.post(`/testing_runs/${this.props.match.params.id}/restart_training`).then((response) => {
-                window.alert("Successfully restarted Kube job");
-            });
-        }
+        return axios.post(`/testing_runs/${this.props.match.params.id}/restart_training`).then((response) => {
+
+        });
     }
 
     toggleSettingsMenuOpen(event)
@@ -125,6 +128,20 @@ class ViewTestingRun extends Component {
     closeSettingsMenuOpen()
     {
         this.setState({settingsMenuOpen: false});
+    }
+
+    pauseTestingRun()
+    {
+        return axios.post(`/testing_runs/${this.props.match.params.id}/pause`).then((response) => {
+            this.loadAllData();
+        });
+    }
+
+    resumeTestingRun()
+    {
+        return axios.post(`/testing_runs/${this.props.match.params.id}/resume`).then((response) => {
+            this.loadAllData();
+        });
     }
 
 
@@ -227,22 +244,40 @@ class ViewTestingRun extends Component {
                                             <span>Predicted End Time: {moment(this.state.testingRun.predictedEndTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
                                             : <span />
                                     }
+                                    {
+                                        this.state.testingRun.status === "running" ?
+                                            <div>
+                                                <br/>
+                                                <LoaderButton onClick={() => this.pauseTestingRun()}>
+                                                    <PauseIcon />
+                                                    Pause
+                                                </LoaderButton>
+                                            </div> : null
+                                    }
+                                    {
+                                        this.state.testingRun.status === "paused" ?
+                                            <div>
+                                                <br/>
+                                                <LoaderButton onClick={() => this.resumeTestingRun()}>
+                                                    <PlayArrowIcon />
+                                                    Resume
+                                                </LoaderButton>
+                                            </div> : null
+                                    }
                                 </Papersheet>
                                 <br/>
 
                                 {
                                     this.state.isAdmin && process.env.REACT_APP_DISABLE_ADMIN_VIEW !== "true" ?
                                         <Papersheet title={`Admin`}>
-                                            <Button variant="extended" color="primary"
-                                                    onClick={() => this.restartTestingRunKubeJob()}>
+                                            <LoaderButton onClick={() => this.restartTestingRunKubeJob()}>
                                                 Restart Testing Run Kube Job
                                                 <Icon className="rightIcon">send</Icon>
-                                            </Button>
-                                            <Button variant="extended" color="primary"
-                                                    onClick={() => this.restartTrainingKubeJob()}>
+                                            </LoaderButton>
+                                            <LoaderButton onClick={() => this.restartTrainingKubeJob()}>
                                                 Restart Training Kube Job
                                                 <Icon className="rightIcon">send</Icon>
-                                            </Button>
+                                            </LoaderButton>
                                         </Papersheet>
                                         : null
                                 }

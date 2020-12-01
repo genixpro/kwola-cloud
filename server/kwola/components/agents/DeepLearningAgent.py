@@ -2971,11 +2971,12 @@ class DeepLearningAgent:
 
             :param executionTraces: A list or generator providing kwola.datamodels.ExecutionTraceModel objects
 
-            :return: An integer providing the number of new symbols added
+            :return: A tuple with two integers, first providing the number of new symbols added,
+                     and second providing the number of symbols that were split in two
 
 
         """
 
-        newSymbolCount = self.symbolMapper.assignNewSymbols(executionTraces)
+        newSymbolCount, splitSymbolCount = self.symbolMapper.assignNewSymbols(executionTraces)
 
-        return newSymbolCount
+        return newSymbolCount, splitSymbolCount

@@ -19,12 +19,14 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import flask
 import json
+import math
 import stripe
 import os
 from google.cloud import storage
 import google.cloud.exceptions
 from kwola.components.utils.file import getSharedGCSStorageClient
 from ..helpers.stripe import getPriceIdForUser
+from ..components.managers.TestingRunManager import TestingRunManager
 
 
 class TestingRunsGroup(Resource):
@@ -242,3 +244,91 @@ class TestingRunsDownloadZip(Resource):
             abort(404)
 
 
+class PauseTestingRun(Resource):
+    def __init__(self):
+        self.configData = loadCloudConfiguration()
+
+    def post(self, testing_run_id):
+        userId = authenticate()
+        if userId is None:
+            return abort(401)
+
+        queryParams = {"id": testing_run_id}
+        if not isAdmin():
+            queryParams['owner'] = userId
+
+        testingRun = TestingRun.objects(**queryParams).first()
+
+        if testingRun is None:
+            return abort(404)
+
+        if testingRun.status != "running":
+            return abort(400)
+
+        configData = loadCloudConfiguration()
+
+        mainJob = testingRun.createKubernetesJobObject()
+
+        if configData['features']['enableRuns']:
+            if not configData['features']['localRuns'] and mainJob.doesJobStillExist():
+                mainJob.cleanup()
+
+        for jobId in testingRun.runningTestingStepJobIds:
+            testStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
+                                        data={},
+                                        referenceId=jobId)
+
+            if not configData['features']['localRuns'] and testStepJob.doesJobStillExist():
+                testStepJob.cleanup()
+
+        testingRun.runningTestingStepJobIds = []
+        testingRun.runningTestingStepStartTimes = []
+
+        if testingRun.runningTrainingStepJobId is not None:
+            trainingJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
+                                        data={},
+                                        referenceId=testingRun.runningTrainingStepJobId)
+            if not configData['features']['localRuns'] and trainingJob.doesJobStillExist():
+                trainingJob.cleanup()
+
+        testingRun.runningTrainingStepJobId = None
+        testingRun.runningTrainingStepStartTime = None
+        testingRun.status = "paused"
+        testingRun.save()
+
+        return {}
+
+
+class ResumeTestingRun(Resource):
+    def __init__(self):
+        self.configData = loadCloudConfiguration()
+
+    def post(self, testing_run_id):
+        userId = authenticate()
+        if userId is None:
+            return abort(401)
+
+        queryParams = {"id": testing_run_id}
+        if not isAdmin():
+            queryParams['owner'] = userId
+
+        testingRun = TestingRun.objects(**queryParams).first()
+
+        if testingRun is None:
+            return abort(404)
+
+        if testingRun.status != "paused":
+            return abort(400)
+
+        testingRun.status = "running"
+
+        portionComplete = testingRun.testingSessionsCompleted / testingRun.configuration.totalTestingSessions
+        testingRun.predictedEndTime = datetime.datetime.now() + relativedelta(hours=int(math.ceil(testingRun.configuration.hours * (1.0 - portionComplete))) + 1,
+                                                                              minute=30,
+                                                                              second=0,
+                                                                              microsecond=0)
+
+        testingRun.save()
+        testingRun.runJob()
+
+        return {}

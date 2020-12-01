@@ -191,7 +191,9 @@ class TestingRunManager:
     def launchTestingStepsIfNeeded(self):
         logging.info(f"Launching testing steps if needed. Number to launch: {self.calculateNumberOfTestingSessionsToStart()}")
         runningSessions = len(self.run.runningTestingStepJobIds) * self.config['web_session_parallel_execution_sessions']
-        while self.calculateNumberOfTestingSessionsToStart() > 0 and runningSessions < self.run.configuration.maxParallelSessions:
+        while self.calculateNumberOfTestingSessionsToStart() > 0 \
+                and runningSessions < self.run.configuration.maxParallelSessions \
+                and not self.isTestingFailureConditionsMet():
             self.launchTestingStep()
             runningSessions = len(self.run.runningTestingStepJobIds) * self.config['web_session_parallel_execution_sessions']
 
@@ -577,6 +579,7 @@ class TestingRunManager:
         agent.loadSymbolMap()
 
         totalNewSymbols = 0
+        totalSplitSymbols = 0
 
         for testingStepId in testingStepIdsToProcess:
             testingStep = TestingStep.loadFromDisk(testingStepId, config)
@@ -588,9 +591,11 @@ class TestingRunManager:
                     for executionTraceId in executionSession.executionTraces:
                         traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
-                    totalNewSymbols += agent.assignNewSymbols(traces)
+                    newSymbols, splitSymbols = agent.assignNewSymbols(traces)
+                    totalNewSymbols += newSymbols
+                    totalSplitSymbols += splitSymbols
 
-        logging.info(f"Added {totalNewSymbols} new symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
+        logging.info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
 
         agent.saveSymbolMap()
 

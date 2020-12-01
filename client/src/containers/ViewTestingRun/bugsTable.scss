@@ -1,7 +1,70 @@
 
 
+.bugs-table-bug-screenshot-wrapper
+{
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+
 .bugs-table-bug-screenshot
 {
   width: 150px;
   height: 150px;
+}
+
+
+
+/* common */
+.new-bug-ribbon {
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+  position: absolute;
+}
+
+.new-bug-ribbon::before,
+.new-bug-ribbon::after {
+  position: absolute;
+  z-index: -1;
+  content: '';
+  display: block;
+  border: 5px solid #2980b9;
+}
+
+.new-bug-ribbon span {
+  position: absolute;
+  display: block;
+  width: 100px;
+  padding: 5px 0;
+  background-color: #f7ff00;
+  box-shadow: 0 5px 10px rgba(0,0,0,.1);
+  color: #444444;
+  font: 700 10px/1 'Lato', sans-serif;
+  text-shadow: 0 1px 1px rgba(0,0,0,.2);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.new-bug-ribbon {
+  top: -0px;
+  left: -0px;
+}
+.new-bug-ribbon::before,
+.new-bug-ribbon::after {
+  border-top-color: transparent;
+  border-left-color: transparent;
+}
+.new-bug-ribbon::before {
+  top: 0;
+  right: 0;
+}
+.new-bug-ribbon::after {
+  bottom: 0;
+  left: 0;
+}
+.new-bug-ribbon span {
+  right: -8px;
+  top: 10px;
+  transform: rotate(-45deg);
 }

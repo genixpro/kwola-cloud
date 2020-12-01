@@ -36,7 +36,11 @@ class JSRewriter(ProxyPluginBase):
 
         cleanedFileName = self.getCleanedFileName(url)
 
-        if ('_js' in url and not "_json" in url and not "_jsp" in url and not url.endswith("_css")) or str(contentType).strip().lower() in jsMimeTypes:
+        if ('_js' in cleanedFileName
+                and not "_json" in cleanedFileName
+                and not "_jsp" in cleanedFileName
+                and not cleanedFileName.endswith("_css")) \
+              or str(contentType).split(";")[0].strip().lower() in jsMimeTypes:
             kind = filetype.guess(fileData)
             mime = ''
             if kind is not None:

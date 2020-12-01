@@ -49,7 +49,8 @@ class BugsGroup(Resource):
 
         queryParams["isMuted"] = False
 
-        bugs = BugModel.objects(**queryParams).no_dereference().order_by("-severityScore").only("id", "error")
+        fields = ["id", "error", "isMuted", "importanceLevel", "status", "isBugNew"]
+        bugs = BugModel.objects(**queryParams).no_dereference().order_by("importanceLevel", "-codePrevalenceScore").only(*fields)
 
         return {"bugs": json.loads(bugs.to_json())}
 
@@ -59,7 +60,6 @@ class BugsSingle(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
 
-    @cache.cached(timeout=36000)
     def get(self, bug_id):
         user = authenticate()
         if user is None:
@@ -91,11 +91,15 @@ class BugsSingle(Resource):
             return abort(404)
 
         data = flask.request.get_json()
-        # Only allow updating the muted field
+        # Only allow updating a few fields
         if 'isMuted' in data:
             bug.isMuted = data['isMuted']
         if 'mutedErrorId' in data:
             bug.mutedErrorId = data['mutedErrorId']
+        if 'importanceLevel' in data:
+            bug.importanceLevel = data['importanceLevel']
+        if 'status' in data:
+            bug.status = data['status']
 
         bug.save()
 

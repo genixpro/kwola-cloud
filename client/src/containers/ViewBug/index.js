@@ -19,6 +19,9 @@ import FastForwardIcon from '@material-ui/icons/FastForward';
 import BugActionList from "./BugActionList";
 import {Check} from "@material-ui/icons";
 import edgeBlackSquare from "../../images/edge-black-square.png";
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import ArrowForward from '@material-ui/icons/ArrowForward';
+import "./index.scss";
 
 
 class ViewBug extends Component {
@@ -101,6 +104,57 @@ class ViewBug extends Component {
         this.state.player.restart()
         this.state.player.forward(this.state.bug.stepNumber)
     }
+
+    changeBugImportanceLevel(newImportanceLevel)
+    {
+        const bug = this.state.bug;
+        bug.importanceLevel = newImportanceLevel;
+        this.setState({bug});
+
+        axios.post(`/bugs/${this.state.bug._id}`, {importanceLevel: newImportanceLevel}).then((response) => {
+
+        }, (error) =>
+        {
+            console.error("Error occurred while muting bug!");
+        });
+    }
+
+    changeBugStatus(newStatus)
+    {
+        const bug = this.state.bug;
+        bug.status = newStatus;
+        this.setState({bug});
+
+        axios.post(`/bugs/${this.state.bug._id}`, {status: newStatus}).then((response) => {
+
+        }, (error) =>
+        {
+            console.error("Error occurred while muting bug!");
+        });
+    }
+
+    goToActionClicked(index)
+    {
+        document.getElementById("video-top").scrollIntoView();
+
+        if(!this.state.player) return false;
+        this.state.player.restart()
+        this.state.player.forward(index)
+    }
+
+    forwardOneFrame()
+    {
+        if(!this.state.player) return false;
+        this.state.player.forward(1)
+    }
+
+    backwardOneFrame()
+    {
+        if(!this.state.player) return false;
+        // console.log(this.state.player)
+        this.state.player.rewind(1)
+    }
+
     render() {
         const { result } = this.state;
         const downloadVideo = <IconButton disabled={this.state.loader} onClick={() =>this.downloadVideo()} aria-label="get_app" color="secondary">{this.state.loader ? <CircularProgress disabled size={18} color="secondary"/> : <Icon className="fontSizeSmall">get_app</Icon>}</IconButton>       
@@ -113,7 +167,7 @@ class ViewBug extends Component {
                         <Row>
                             <HalfColumn>
                                 <Papersheet title="Debug Video" tooltip={downloadVideo}>
-
+                                    <div id={"video-top"} />
                                     <video id="player" controls style={{"width": "100%"}}>
                                         <source  type="video/mp4" />
                                         <span>Your browser does not support the video tag.</span>
@@ -121,17 +175,30 @@ class ViewBug extends Component {
                                     <br />
                                     <Button variant="contained"
                                             color={"primary"}
-                                            className="orderBtn"
+                                            className="video-control-button"
+                                            title={"Backward One Frame"}
+                                            onClick={() => this.backwardOneFrame()}>
+                                        <ArrowBackIcon />
+                                    </Button>
+                                    <Button variant="contained"
+                                            color={"primary"}
+                                            className="video-control-button"
                                             title={"Show Bug"}
                                             onClick={() => this.seekVideo()}>
                                         <span>Skip to bug frame in video</span>
-                                        <FastForwardIcon />
+                                    </Button>
+                                    <Button variant="contained"
+                                            color={"primary"}
+                                            className="video-control-button"
+                                            title={"Forward One Frame"}
+                                            onClick={() => this.forwardOneFrame()}>
+                                        <ArrowForward />
                                     </Button>
                                 </Papersheet>
                                 <br/>
                                 <img src={this.state.spriteSheetImageURL} />
                                 <Papersheet title={"Actions Performed"}>
-                                    <BugActionList bug={this.state.bug} />
+                                    <BugActionList bug={this.state.bug} onGoToActionClicked={(index) => this.goToActionClicked(index)} />
                                 </Papersheet>
                             </HalfColumn>
 
@@ -141,8 +208,22 @@ class ViewBug extends Component {
                                     // subtitle={}
                                 >
                                     <span>Bug Type: {this.state.bug.error._cls || "Unknown"}</span><br/><br/>
-                                    <span>Log Level: {this.state.bug.error.logLevel || "Unknown"}</span><br/><br/>
-                                    <span>URL: {this.state.bug.error.page || "Unknown"}</span><br/><br/>
+                                    <span>Page: {this.state.bug.error.page || "Unknown"}</span><br/><br/>
+                                    {
+                                        this.state.bug.error._cls === "LogError" ?
+                                            <span>Log Level: {this.state.bug.error.logLevel || "N/A"}<br/><br/></span>
+                                            : null
+                                    }
+                                    {
+                                        this.state.bug.error._cls === "HttpError" ?
+                                            <span>HTTP Status Code: {this.state.bug.error.statusCode || "N/A"}<br/><br/></span>
+                                            : null
+                                    }
+                                    {
+                                        this.state.bug.error._cls === "HttpError" ?
+                                            <span>HTTP Request URL: {this.state.bug.error.url || "N/A"}<br/><br/></span>
+                                            : null
+                                    }
                                     {
                                         this.state.bug.browser === "chrome" ?
                                             <span>Browser: <i className="devicon-chrome-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Chrome<br/><br/></span> : null
@@ -164,8 +245,33 @@ class ViewBug extends Component {
                                             <span>Window Size: {this.state.bug.windowSize}<br/><br/></span> : null
                                     }
 
+                                    <span>Importance Level:
+                                    <select value={this.state.bug.importanceLevel}
+                                            onChange={(evt) => this.changeBugImportanceLevel(evt.target.value)}
+                                    >
+                                          <option value={1}>1 (highest)</option>
+                                          <option value={2}>2</option>
+                                          <option value={3}>3</option>
+                                          <option value={4}>4</option>
+                                          <option value={5}>5 (lowest)</option>
+                                      </select>
+                                        <br/><br/>
+                                    </span>
+
+                                    <span>Status:
+                                        <select value={this.state.bug.status}
+                                                onChange={(evt) => this.changeBugStatus(evt.target.value)}>
+                                              <option value={'new'}>New</option>
+                                              <option value={'triage'}>In triage</option>
+                                              <option value={'fix_in_progress'}>Fix in progress</option>
+                                              <option value={'needs_testing'}>Fixed, needs testing</option>
+                                              <option value={'closed'}>Closed</option>
+                                          </select>
+                                        <br/><br/>
+                                    </span>
+
                                     <span>Message:</span><br/>
-                                    <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message}</pre>
+                                    <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message || "N/A"}</pre>
 
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.stacktrace}</pre>
                                 </Papersheet>

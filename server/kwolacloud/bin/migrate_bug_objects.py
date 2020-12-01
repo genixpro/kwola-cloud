@@ -98,9 +98,8 @@ def main():
         pool = ctx.Pool(processes=2, initializer=initializeKwolaCloudProcess, maxtasksperchild=None)
 
         bugIdsToProcess = set()
-        for bug in BugModel.objects().only('id', 'actionsPerformed'):
-            if not bug.actionsPerformed or len(bug.actionsPerformed) == 0:
-                bugIdsToProcess.add(bug.id)
+        for bug in BugModel.objects(actionsPerformed__exists=False).only('id'):
+            bugIdsToProcess.add(bug.id)
 
         resultObjects = []
         for bugId in bugIdsToProcess:
