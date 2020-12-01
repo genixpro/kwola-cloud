@@ -369,7 +369,7 @@ class SymbolMapper:
 
         self.validateSymbolMaps()
 
-        return len(newSymbolMaps)
+        return netNewSymbolsCount, splitSymbolsCount
 
 
     def insertLOCSymbolMap(self, newSymbolMap):
