@@ -536,7 +536,7 @@ class DeepLearningAgent:
             convertedImageFuture.result() for convertedImageFuture in convertedImageFutures
         ]
 
-        getLogger().error(str(convertedProcessedImages), flush=True)
+        getLogger().error(str(convertedProcessedImages))
 
         # Merge all the images into a single numpy array.
         return numpy.array(convertedProcessedImages)
