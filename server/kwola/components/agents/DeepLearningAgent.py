@@ -536,10 +536,14 @@ class DeepLearningAgent:
             convertedImageFuture.result() for convertedImageFuture in convertedImageFutures
         ]
 
-        getLogger().error(str(convertedProcessedImages))
+        try:
+            # Merge all the images into a single numpy array.
+            result = numpy.array(convertedProcessedImages)
 
-        # Merge all the images into a single numpy array.
-        return numpy.array(convertedProcessedImages)
+            return result
+        except Exception as e:
+            getLogger().error(str(convertedProcessedImages))
+            raise
 
     def createPixelActionMap(self, actionMaps, height, width):
         """
