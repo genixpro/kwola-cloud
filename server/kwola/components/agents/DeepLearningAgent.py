@@ -542,7 +542,7 @@ class DeepLearningAgent:
 
             return result
         except Exception as e:
-            getLogger().error(str(convertedProcessedImages))
+            getLogger().error(str([a.shape for a in convertedProcessedImages]))
             raise
 
     def createPixelActionMap(self, actionMaps, height, width):
