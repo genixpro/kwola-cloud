@@ -538,7 +538,7 @@ class DeepLearningAgent:
 
         try:
             # Merge all the images into a single numpy array.
-            result = numpy.array(convertedProcessedImages)
+            result = numpy.array(convertedProcessedImages, ndmin=3)
 
             return result
         except Exception as e:
