@@ -524,7 +524,7 @@ class DeepLearningAgent:
         convertedImageFutures = []
 
         # We try to do each of the images in parallel by using a thread pool executor. In practice only the C++ code
-        # within scikit-image will actually multithread due to Python's stupid global interpreter lock flaw.
+        # within scikit-image will actually multi thread due to Python's stupid global interpreter lock flaw.
         # But that still gives us some gains here.
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for image in images:
@@ -535,6 +535,8 @@ class DeepLearningAgent:
         convertedProcessedImages = [
             convertedImageFuture.result() for convertedImageFuture in convertedImageFutures
         ]
+
+        getLogger().error(str(convertedProcessedImages), flush=True)
 
         # Merge all the images into a single numpy array.
         return numpy.array(convertedProcessedImages)
