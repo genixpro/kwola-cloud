@@ -23,8 +23,10 @@ class BillingURLResource(Resource):
 
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
 
+        configData = loadCloudConfiguration()
+
         try:
-            session = stripe.billing_portal.Session.create(customer=stripeCustomerId)
+            session = stripe.billing_portal.Session.create(customer=stripeCustomerId, return_url=configData['frontend']['url'] + "app/dashboard")
         except stripe.error.InvalidRequestError:
             # Customer doesn't exist. Return 400
             return abort(400)
