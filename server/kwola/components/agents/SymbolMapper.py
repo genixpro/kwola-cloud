@@ -218,6 +218,11 @@ class SymbolMapper:
         # If a given symbol is actually used in this set of traces, then the
         # value gets reset back to 0 below.
         for symbol in self.allSymbols:
+            if not hasattr(symbol, 'tracesSinceLastSeen'):
+                symbol.tracesSinceLastSeen = 0
+            if not hasattr(symbol, 'totalTracesWithSymbol'):
+                symbol.totalTracesWithSymbol = 0
+
             symbol.tracesSinceLastSeen += len(executionTraces)
 
         for trace in executionTraces:
