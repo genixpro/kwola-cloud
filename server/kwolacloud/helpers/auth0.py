@@ -28,8 +28,18 @@ def resetAuthService(*args):
     global authService
     authService = None
 
+globalTestingUserToken = None
+globalTestingUserTokenTime = None
+
 @autoretry()
 def getAccessTokenForTestingUser():
+    global globalTestingUserToken
+    global globalTestingUserTokenTime
+    
+    if globalTestingUserToken is not None:
+        if abs((datetime.datetime.now() - globalTestingUserTokenTime).total_seconds()) < 3600:
+            return globalTestingUserToken
+
     configData = loadCloudConfiguration()
 
     domain = configData['auth0']['domain'].replace("https://", "")
@@ -43,6 +53,9 @@ def getAccessTokenForTestingUser():
                             grant_type="password",
                             audience='https://{}/api/v2/'.format(domain)
                             )
+
+    globalTestingUserToken = token
+    globalTestingUserTokenTime = datetime.datetime.now()
 
     return token
 
