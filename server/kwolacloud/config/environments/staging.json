@@ -42,7 +42,8 @@
     "enableRuns": true,
     "localRuns": false,
     "enableSupportOfferEmailsOnUsers": false,
-    "enableSelfTestLoginEndpoint": false
+    "enableSelfTestLoginEndpoint": false,
+    "enableDataDeletion": true
   },
   "jira": {
     "clientId": "mtH8HhB3Le0CQU0ArORjlPPT8u0Xqk2m",

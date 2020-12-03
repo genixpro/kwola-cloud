@@ -149,6 +149,10 @@ class RecurringTestingTriggerSingle(Resource):
         if not isAdmin():
             queryParams['owner'] = user
 
+        configData = loadCloudConfiguration()
+        if not configData['features']['enableDataDeletion']:
+            return
+
         trigger = RecurringTestingTrigger.objects(**queryParams).first()
 
         if trigger is None:

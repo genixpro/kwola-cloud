@@ -337,6 +337,10 @@ class ApplicationSingle(Resource):
         if not isAdmin():
             query['owner'] = userId
 
+        configData = loadCloudConfiguration()
+        if not configData['features']['enableDataDeletion']:
+            return
+
         application = ApplicationModel.objects(**query).limit(1).first()
 
         if application is not None:

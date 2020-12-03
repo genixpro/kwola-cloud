@@ -79,6 +79,10 @@ class MutedErrorsSingle(Resource):
         if not isAdmin():
             queryParams['owner'] = user
 
+        configData = loadCloudConfiguration()
+        if not configData['features']['enableDataDeletion']:
+            return
+
         mutedError = MutedError.objects(**queryParams).first()
 
         if mutedError is None:
