@@ -8,6 +8,7 @@ import safeImport from "./safe_import";
 import SignInPage from './containers/Page/signin';
 import Page404 from './containers/Page/404';
 import Page505 from './containers/Page/505';
+import SelfTestLogin from './containers/Page/selftestlogin';
 
 class RestrictedRoute extends Component
 {
@@ -82,6 +83,11 @@ class PublicRoute extends Component
                     exact
                     path="/app/505"
                     component={Page505}
+                />
+                <Route
+                    exact
+                    path="/app/self_test_login"
+                    component={SelfTestLogin}
                 />
                 {/*<Route*/}
                 {/*  exact*/}

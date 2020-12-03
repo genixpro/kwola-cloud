@@ -41,7 +41,8 @@
     "enableSlackLogging": true,
     "enableRuns": true,
     "localRuns": false,
-    "enableSupportOfferEmailsOnUsers": false
+    "enableSupportOfferEmailsOnUsers": false,
+    "enableSelfTestLoginEndpoint": false
   },
   "jira": {
     "clientId": "mtH8HhB3Le0CQU0ArORjlPPT8u0Xqk2m",
