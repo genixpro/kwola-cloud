@@ -632,9 +632,6 @@ class WebEnvironmentSession:
                         data.canClick = true;
                     
                     const elemStyle = window.getComputedStyle(element);
-                    if (elemStyle.getPropertyValue("cursor") === "pointer")
-                        data.canClick = true;
-                    
                     if ((elemStyle.getPropertyValue("overflow-y") === "scroll" || elemStyle.getPropertyValue("overflow-y") === "auto" ||
                         (elemStyle.getPropertyValue("overflow-y") === "visible" && (element.tagName.toLowerCase() === "html" || element.tagName.toLowerCase() === "body") )
                        )

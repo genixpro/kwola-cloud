@@ -172,6 +172,9 @@ def generateLossChart(configDir, applicationId, attribute, title, fileName):
 
     lossValues = [result[0] for result in lossValuesSorted]
 
+    if len(lossValues) == 0:
+        return
+
     fig, ax = plt.subplots()
 
     lossValues = scipy.signal.medfilt(lossValues, kernel_size=9)

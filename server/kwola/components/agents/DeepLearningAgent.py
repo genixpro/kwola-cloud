@@ -341,7 +341,9 @@ class DeepLearningAgent:
             "span": config['random_html_element_span_weight'],
             "div": config['random_html_element_div_weight'],
             "canvas": config['random_html_element_canvas_weight'],
-            "other": config['random_html_element_other_weight']
+            "other": config['random_html_element_other_weight'],
+            "html": config['random_html_element_html_weight'],
+            "body": config['random_html_element_body_weight']
         }
 
         # Create the sorted list of action names. This sorted list is used to
@@ -563,34 +565,7 @@ class DeepLearningAgent:
 
         # Iterate through each of the action maps
         for element in actionMaps:
-            actionTypes = []
-
-            # If the element is clickable, add in the relevant actions (single and double click)
-            if element['canClick']:
-                if "click" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("click"))
-                if "doubleClick" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("doubleClick"))
-
-            # Only a handful of elements have right click enabled, so this is treated seperately
-            # from the regular left click
-            if element['canRightClick']:
-                if "rightClick" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("rightClick"))
-
-            # If the element is an input box, then we have to enable all of the typing actions
-            if element['canType']:
-                for actionName in self.actionsSorted:
-                    if actionName.startswith("type"):
-                        actionTypes.append(self.actionsSorted.index(actionName))
-
-                if "clear" in self.actionsSorted:
-                    actionTypes.append(self.actionsSorted.index("clear"))
-
-            if element['canScroll']:
-                for actionName in self.actionsSorted:
-                    if actionName.startswith("scroll"):
-                        actionTypes.append(self.actionsSorted.index(actionName))
+            actionTypes = self.allowedActionsForActionMap(element)
 
             # Here is the essential part. For each of the actions that are supported by this action
             # element, we paint a rectangle of 1's on the pixel action map. Effectively, the pixel
@@ -1112,6 +1087,38 @@ class DeepLearningAgent:
         # We return a list composed of just the action objects, one for each sub environment.
         return [action[1] for action in sortedActions], times
 
+    def allowedActionsForActionMap(self, actionMap):
+        actionTypes = []
+
+        # If the element is clickable, add in the relevant actions (single and double click)
+        if actionMap['canClick']:
+            if "click" in self.actionsSorted:
+                actionTypes.append(self.actionsSorted.index("click"))
+            if "doubleClick" in self.actionsSorted:
+                actionTypes.append(self.actionsSorted.index("doubleClick"))
+
+        # Only a handful of elements have right click enabled, so this is treated seperately
+        # from the regular left click
+        if actionMap['canRightClick']:
+            if "rightClick" in self.actionsSorted:
+                actionTypes.append(self.actionsSorted.index("rightClick"))
+
+        # If the element is an input box, then we have to enable all of the typing actions
+        if actionMap['canType']:
+            for actionName in self.actionsSorted:
+                if actionName.startswith("type"):
+                    actionTypes.append(self.actionsSorted.index(actionName))
+
+            if "clear" in self.actionsSorted:
+                actionTypes.append(self.actionsSorted.index("clear"))
+
+        if actionMap['canScroll']:
+            for actionName in self.actionsSorted:
+                if actionName.startswith("scroll"):
+                    actionTypes.append(self.actionsSorted.index(actionName))
+
+        return actionTypes
+
     def getRandomAction(self, sampleActionRecentActionCounts, sampleActionMaps, pixelActionMap):
         """
         This function is used to decide on a totally random action. It uses a somewhat fancy mechanism that involves weighting
@@ -1120,7 +1127,7 @@ class DeepLearningAgent:
         just done using heuristics.
 
         :param sampleActionRecentActionCounts: This is a list of integers, the same size as sampleActionMaps, that contains the count
-                                               of the number of times that action map has been clicked on the recent actions list.
+                                               of the number of times that action map has been clicked in the recent actions list.
                                                Technically speaking, the recent actions list only contains actions since the last
                                                time the neural network discovered new functionality.
         :param sampleActionMaps: This is the list of action maps that are currently available for this environment.
@@ -1154,6 +1161,9 @@ class DeepLearningAgent:
         # The weights for the action maps are based on what type of HTML element that action map is representing.
         actionMapWeights = numpy.array([self.elementBaseWeights.get(map.elementType, self.elementBaseWeights['other']) for map in sampleActionMaps], dtype=numpy.float64) / (numpy.array(sampleActionRecentActionCounts) + 1)
 
+        # pprint([(map.elementType, map.keywords.replace("null", "").strip()[:30], map.left, map.right, map.top, map.bottom, weight) for map, weight in zip(sampleActionMaps, actionMapWeights)])
+        # print(len(sampleActionMaps), flush=True)
+
         # Scale all the weights so that they add up to 1, becoming probabilities. Then use those probabilities to
         # choose a random action map from the list.
         actionMapProbabilities = actionMapWeights / numpy.sum(actionMapWeights)
@@ -1177,10 +1187,11 @@ class DeepLearningAgent:
         actionY = random.randint(actionTopLimit, actionBottomLimit)
 
         # Get the list of actions that are allowed at the chosen coordinates
-        possibleActionsAtPixel = pixelActionMap[:, actionY, actionX]
-        possibleActionIndexes = [actionIndex for actionIndex in range(len(self.actionsSorted)) if possibleActionsAtPixel[actionIndex]]
+        # possibleActionsAtPixel = pixelActionMap[:, actionY, actionX]
+        # possibleActionIndexes = [actionIndex for actionIndex in range(len(self.actionsSorted)) if possibleActionsAtPixel[actionIndex]]
+        possibleActionIndexes = self.allowedActionsForActionMap(chosenActionMap)
         # Create a list containing a weight for each of the possible actions.
-        # The base weights are set in the configuration file and help bias the algroithm towards clicking and away
+        # The base weights are set in the configuration file and help bias the algorithm towards clicking and away
         # from typing, since there are significantly more typing actions then clicking ones
         possibleActionWeights = [self.actionBaseWeights[actionIndex] for actionIndex in possibleActionIndexes]
 
