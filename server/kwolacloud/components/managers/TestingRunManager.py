@@ -276,7 +276,9 @@ class TestingRunManager:
             for bug in BugModel.objects(owner=self.run.owner,
                                         applicationId=self.run.applicationId,
                                         testingRunId=self.run.id,
-                                        testingStepId=result['testingStepId']).only("id"):
+                                        testingStepId=result['testingStepId'],
+                                        isMuted=False
+                                        ).only("id"):
                 self.run.bugsNeedingReproduction.append(bug.id)
 
         def handleFailure():

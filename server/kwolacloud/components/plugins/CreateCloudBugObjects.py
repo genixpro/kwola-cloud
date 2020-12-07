@@ -10,6 +10,7 @@ import numpy
 import skimage.io
 import skimage.draw
 import io
+import copy
 import tempfile
 from kwolacloud.datamodels.id_utility import generateKwolaId
 from datetime import datetime
@@ -108,7 +109,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             bug.executionSessionId = executionSessionId
             bug.creationDate = datetime.now()
             bug.stepNumber = stepNumber
-            bug.error = error
+            bug.error = copy.deepcopy(error)
             bug.testingRunId = testingStep.testingRunId
             bug.actionsPerformed = [
                 trace.actionPerformed for trace in self.executionSessionTraces[executionSessionId]
@@ -164,7 +165,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         getLogger().info(f"Found {len(self.newErrorsThisTestingStep[testingStep.id])} new unique errors this session.")
 
         testingStep.bugsFound = len(self.newErrorsThisTestingStep[testingStep.id])
-        testingStep.errors = self.newErrorsThisTestingStep[testingStep.id]
+        testingStep.errors = copy.deepcopy(self.newErrorsThisTestingStep[testingStep.id])
 
         self.generateVideoFilesForBugs(bugObjects)
         self.generateFrameSpriteSheetsForBugs(bugObjects)
