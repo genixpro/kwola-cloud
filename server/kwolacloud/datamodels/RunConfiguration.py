@@ -90,9 +90,9 @@ class RunConfiguration(EmbeddedDocument):
 
     enableChrome = BooleanField(default=True)
 
-    enableFirefox = BooleanField(default=True)
+    enableFirefox = BooleanField(default=False)
 
-    enableEdge = BooleanField(default=True)
+    enableEdge = BooleanField(default=False)
 
     enableWindowSizeDesktop = BooleanField(default=True)
 

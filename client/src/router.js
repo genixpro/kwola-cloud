@@ -9,12 +9,21 @@ import SignInPage from './containers/Page/signin';
 import Page404 from './containers/Page/404';
 import Page505 from './containers/Page/505';
 import SelfTestLogin from './containers/Page/selftestlogin';
+import Auth from "./helpers/auth0";
 
 class RestrictedRoute extends Component
 {
     render()
     {
-        const isLoggedIn = Auth0.isAuthenticated();
+        let isLoggedIn = Auth0.isAuthenticated();
+
+        // Adding in this special check here because on very rare occasions, isLoggedIn can be true but
+        // we still have no user data
+        const userData = Auth.getUserInfo();
+        if (!userData)
+        {
+            isLoggedIn = false;
+        }
 
         if(!this.props.isLoggedIn)
         {

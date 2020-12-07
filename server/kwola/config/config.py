@@ -92,8 +92,7 @@ class KwolaCoreConfiguration:
             maxAttempts = 5
             for attempt in range(maxAttempts):
                 try:
-                    # mongoengine.connect(host=self.configData['mongo_uri'])
-                    mongoengine.connect(host="mongodb://localhost:27017/kwolacloud")
+                    mongoengine.connect(host=self.configData['mongo_uri'])
                     break
                 except Exception as e:
                     if attempt == (maxAttempts - 1):

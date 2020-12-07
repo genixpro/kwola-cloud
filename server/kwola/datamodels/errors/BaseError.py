@@ -64,7 +64,7 @@ class BaseError(EmbeddedDocument):
         for regex in deduplicationIgnoreRegexes:
             message = re.sub(regex, "", message)
 
-        return message
+        return str(message.encode('ascii', 'xmlcharrefreplace'), 'ascii')
 
     @staticmethod
     def computeErrorMessageSimilarity(message, otherMessage):
