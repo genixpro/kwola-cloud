@@ -53,7 +53,7 @@ class ActionMap(EmbeddedDocument):
 
     inputValue = StringField()
 
-    attributes = DictField(StringField())
+    attributes = DictField(StringField(null=True))
 
     def doesOverlapWith(self, other, tolerancePixels=0):
         if abs(self.left - other.left) > tolerancePixels:

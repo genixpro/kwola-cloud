@@ -734,6 +734,8 @@ class WebEnvironmentSession:
             actionMaps = []
 
             for actionMapData in elementActionMaps:
+                elementActionMaps['attributes'] = {str(k): (None if v is None else str(v)) for k, v in elementActionMaps['attributes'].items()}
+
                 actionMap = ActionMap(**actionMapData)
 
                 if self.config['prevent_offsite_links']:
