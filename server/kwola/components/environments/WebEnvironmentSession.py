@@ -734,7 +734,7 @@ class WebEnvironmentSession:
             actionMaps = []
 
             for actionMapData in elementActionMaps:
-                elementActionMaps['attributes'] = {str(k): (None if v is None else str(v)) for k, v in elementActionMaps['attributes'].items()}
+                actionMapData['attributes'] = {str(k): (None if v is None else str(v)) for k, v in actionMapData['attributes'].items()}
 
                 actionMap = ActionMap(**actionMapData)
 
