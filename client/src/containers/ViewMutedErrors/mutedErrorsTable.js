@@ -18,7 +18,7 @@ class MutedErrorsTable extends Component{
 
     handleRowClick(event, rowData)
 	{
-    	this.props.history.push(`/app/dashboard/execution_sessions/${rowData._id}`)
+    	// this.props.history.push(`/app/dashboard/execution_sessions/${rowData._id}`)
     }
 
     processData(data)

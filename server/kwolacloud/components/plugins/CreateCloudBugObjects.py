@@ -166,7 +166,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         testingStep.bugsFound = len(self.newErrorsThisTestingStep[testingStep.id])
         testingStep.errors = self.newErrorsThisTestingStep[testingStep.id]
 
-        self.generateVideoFilesForBugs(testingStep, bugObjects)
+        self.generateVideoFilesForBugs(bugObjects)
         self.generateFrameSpriteSheetsForBugs(bugObjects)
 
         # We save the bug objects after generating the video files
@@ -216,7 +216,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
         return list(bugs)
 
-    def generateVideoFilesForBugs(self, testingStep, bugObjects):
+    def generateVideoFilesForBugs(self, bugObjects):
         pool = multiprocessing.Pool(self.config['video_generation_processes'], maxtasksperchild=1)
         futures = []
 

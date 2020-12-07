@@ -113,26 +113,6 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
 
         result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins, browser=chosenBrowser, windowSize=chosenWindowSize)
 
-        application = ApplicationModel.objects(id=run.applicationId).limit(1).first()
-        bugs = BugModel.objects(owner=run.owner, testingStepId=newID, isMuted=False)
-        for bug in bugs:
-            if application.enableEmailNewBugNotifications:
-                # sendBugFoundNotification(application, bug)
-                pass
-
-            if application.enableSlackNewBugNotifications:
-                postToCustomerSlack(
-                    f"A new error has been found. View the bug here: {configData['frontend']['url']}app/dashboard/bugs/{bug.id}",
-                    application,
-                    bug.error.message
-                )
-
-            if application.enablePushBugsToJIRA:
-                postBugToCustomerJIRA(bug, application)
-
-            if application.bugFoundWebhookURL:
-                sendCustomerWebhook(application, "bugFoundWebhookURL", json.loads(bug.to_json()))
-
         logging.info(f"Finished testing step for testing run {testingRunId}")
 
         return result

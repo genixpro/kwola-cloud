@@ -10,6 +10,8 @@
   "autologin": false,
   "batch_size": 16,
   "batches_per_iteration": 8,
+  "bug_reproduction_maximum_failures": 3,
+  "bug_reproduction_timeout": 5400,
   "chart_enable_cumulative_coverage_chart": false,
   "chart_enable_cumulative_errors_chart": false,
   "chart_generate_cumulative_coverage_frequency": 25,
@@ -280,6 +282,8 @@
   "web_session_no_network_activity_timeout": 10,
   "web_session_no_network_activity_wait_time": 1.0,
   "web_session_parallel_execution_sessions": 10,
+  "web_session_page_load_timeout": 60,
+  "web_session_script_execution_timeout": 30,
   "web_session_perform_action_wait_time": 0.5,
   "web_session_print_every_action": false,
   "web_session_print_every_action_failure": false,
@@ -372,6 +376,21 @@
     "vue",
     "webix",
     "worker"
+  ],
+  "web_session_ignore_javascript_domains": [
+    "ads.travelaudience.com",
+    "beacon.sojern.com",
+    "doubleclick.net",
+    "google-analytics.com",
+    "googleadservices.com",
+    "googlesyndication.com",
+    "googletagmanager.com",
+    "googletagservices.com",
+    "js.sddan.com",
+    "loadeu.exelator.com",
+    "pixel.sojern.com",
+    "static.xx.fbcdn.net",
+    "tag.yieldoptimizer.com"
   ],
   "video_generation_processes": 1
 }

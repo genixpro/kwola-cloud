@@ -586,7 +586,7 @@ class DeepLearningAgent:
     def getActionMapsIntersectingWithAction(self, action, actionMaps):
         """
             This method will filter a list of action maps you provide it, returning only the ones that appear
-            to intersect with the given action.
+            to intersect with the given action and are also capable of responding to that action.
 
             :param action: This should be a kwola.datamodels.actions.BaseAction instance, or one of its derived classes.
             :param actionMaps: This must be a list of kwola.datamodels.ActionMapModel instances.
@@ -595,7 +595,8 @@ class DeepLearningAgent:
         selected = []
         for actionMap in actionMaps:
             if actionMap.left <= action.x <= actionMap.right and actionMap.top <= action.y <= actionMap.bottom:
-                selected.append(actionMap)
+                if actionMap.canRunAction(action):
+                    selected.append(actionMap)
 
         return selected
 
@@ -764,13 +765,14 @@ class DeepLearningAgent:
         pixelActionMapsBatch = []
         epsilonsPerSample = []
         recentActionsBatch = []
-        actionMapsBatch = []
+        originalActionMapsBatch = []
+        filteredActionMapsBatch = []
         recentActionsCountsBatch = []
 
         modelDownscale = self.config['model_image_downscale_ratio']
 
         zippedValues = zip(range(len(processedImages)), processedImages, symbolLists, symbolWeights, envActionMaps, recentActions)
-        for sampleIndex, image, sampleSymbolList, sampleSymbolWeights, sampleActionMaps, sampleRecentActions in zippedValues:
+        for sampleIndex, image, sampleSymbolList, sampleSymbolWeights, filteredSampleActionMaps, sampleRecentActions in zippedValues:
             # Ok here is a very important mechanism. Technically what is being calculated below is the "epsilon" value from classical
             # Q-learning. I'm just giving it a different name which suits my style. The "epsilon" is just the probability that the
             # algorithm will choose a random action instead of the prediction. In our situation, we have two values, because we have
@@ -791,10 +793,10 @@ class DeepLearningAgent:
             weightedRandomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.25 * (1 + (stepNumber / self.config['testing_sequence_length']))
 
             # Filter the action maps to reduce instances where the algorithm is repeating itself over and over again.
-            sampleActionMaps, sampleActionRecentActionCounts = self.filterActionMapsToPreventRepeatActions(sampleActionMaps, sampleRecentActions, width, height)
+            filteredSampleActionMaps, sampleActionRecentActionCounts = self.filterActionMapsToPreventRepeatActions(filteredSampleActionMaps, sampleRecentActions, width, height)
 
             # Create the pixel action map, which is basically a pixel by pixel representation of what actions are available to the algorithm.
-            pixelActionMap = self.createPixelActionMap(sampleActionMaps, height, width)
+            pixelActionMap = self.createPixelActionMap(filteredSampleActionMaps, height, width)
 
             # Here is where the algorithm decides whether it will use a random action here
             # or make use of the predictions of the neural network
@@ -806,14 +808,15 @@ class DeepLearningAgent:
                 symbolListOffsets.append(len(symbolListBatch))
                 symbolListBatch.extend(sampleSymbolList)
                 symbolWeightBatch.extend(sampleSymbolWeights)
-                actionMapsBatch.append(sampleActionMaps)
+                originalActionMapsBatch.append(filteredSampleActionMaps)
+                filteredActionMapsBatch.append(filteredSampleActionMaps)
                 pixelActionMapsBatch.append(pixelActionMap)
                 recentActionsBatch.append(sampleRecentActions)
                 epsilonsPerSample.append(weightedRandomActionProbability)
                 recentActionsCountsBatch.append(sampleActionRecentActionCounts)
             else:
                 # We will generate a pure random action for this sample. In that case, we just do it, generating the random action
-                actionX, actionY, actionType = self.getRandomAction(sampleActionRecentActionCounts, sampleActionMaps, pixelActionMap)
+                actionX, actionY, actionType = self.getRandomAction(sampleActionRecentActionCounts, filteredSampleActionMaps, pixelActionMap)
 
                 # Here we make use of the lambda functions that were prepared in the constructor,
                 # which map the action string to a function which creates the action object.
@@ -821,7 +824,7 @@ class DeepLearningAgent:
                 action.source = "random"
                 action.predictedReward = None
                 action.wasRepeatOverride = False
-                action.intersectingActionMaps = self.getActionMapsIntersectingWithAction(action, sampleActionMaps)
+                action.intersectingActionMaps = self.getActionMapsIntersectingWithAction(action, filteredSampleActionMaps)
 
                 # Its probably important to recognize what is happening here. Since we are processing the samples bound for the neural network
                 # separately from the samples that we generate random actions for, we will need some way of reassembling all of the results
@@ -909,10 +912,10 @@ class DeepLearningAgent:
 
             # Now we iterate over all of the data and results for each of the sub environments
             for sampleIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues,\
-                sampleRecentActions, sampleActionMaps, sampleActionRecentActionCounts,\
+                sampleRecentActions, filteredSampleActionMaps, originalSampleActionMaps, sampleActionRecentActionCounts,\
                 samplePixelActionMap in zip(batchSampleIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
-                                                                  recentActionsBatch, actionMapsBatch, recentActionsCountsBatch,
-                                                                  pixelActionMapsBatch):
+                                                                  recentActionsBatch, filteredActionMapsBatch, originalActionMapsBatch,
+                                                                  recentActionsCountsBatch, pixelActionMapsBatch):
                 startTime = datetime.now()
 
                 # Here is where we determine whether the algorithm will use the predicted best action from the neural network,
@@ -946,7 +949,7 @@ class DeepLearningAgent:
                     # Here we create an action object using the lambdas. We aren't creating the final action object,
                     # since we do one last check below to ensure this isn't an exact repeat action.
                     potentialAction = self.actions[self.actionsSorted[actionType]](actionX, actionY)
-                    potentialActionMaps = self.getActionMapsIntersectingWithAction(potentialAction, sampleActionMaps)
+                    potentialActionMaps = self.getActionMapsIntersectingWithAction(potentialAction, filteredSampleActionMaps)
 
                     # If the network is predicting the same action as it did within the recent turns list, down to the exact pixels
                     # of the action maps, that usually implies its stuck and its action had no effect on the environment. Switch
@@ -1042,7 +1045,7 @@ class DeepLearningAgent:
                         # This usually occurs when all the probabilities do not add up to 1, generally this only happens when the neural network
                         # isn't trained yet
                         # So instead we just pick an action randomly.
-                        actionX, actionY, actionType = self.getRandomAction(sampleActionRecentActionCounts, sampleActionMaps, samplePixelActionMap)
+                        actionX, actionY, actionType = self.getRandomAction(sampleActionRecentActionCounts, filteredSampleActionMaps, samplePixelActionMap)
                         source = "random"
                         override = True
 
@@ -1054,7 +1057,7 @@ class DeepLearningAgent:
                 action = self.actions[self.actionsSorted[actionType]](actionX, actionY)
                 action.source = source
                 action.predictedReward = samplePredictedReward
-                action.intersectingActionMaps = self.getActionMapsIntersectingWithAction(action, sampleActionMaps)
+                action.intersectingActionMaps = self.getActionMapsIntersectingWithAction(action, originalSampleActionMaps)
                 action.wasRepeatOverride = override
                 # Here we append both the action and the original sample index. The original sample index
                 # is later used to recover the original ordering of the actions list
@@ -1105,12 +1108,13 @@ class DeepLearningAgent:
 
         # If the element is an input box, then we have to enable all of the typing actions
         if actionMap['canType']:
-            for actionName in self.actionsSorted:
-                if actionName.startswith("type"):
-                    actionTypes.append(self.actionsSorted.index(actionName))
-
-            if "clear" in self.actionsSorted:
-                actionTypes.append(self.actionsSorted.index("clear"))
+            if not actionMap['inputValue']:
+                for actionName in self.actionsSorted:
+                    if actionName.startswith("type"):
+                        actionTypes.append(self.actionsSorted.index(actionName))
+            else:
+                if "clear" in self.actionsSorted:
+                    actionTypes.append(self.actionsSorted.index("clear"))
 
         if actionMap['canScroll']:
             for actionName in self.actionsSorted:

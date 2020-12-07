@@ -273,6 +273,12 @@ class TestingRunManager:
             self.run.testingSteps.append(result['testingStepId'])
             self.run.testingStepsNeedingSymbolProcessing.append(result['testingStepId'])
 
+            for bug in BugModel.objects(owner=self.run.owner,
+                                        applicationId=self.run.applicationId,
+                                        testingRunId=self.run.id,
+                                        testingStepId=result['testingStepId']).only("id"):
+                self.run.bugsNeedingReproduction.append(bug.id)
+
         def handleFailure():
             self.run.failedTestingSteps += 1
 
@@ -506,6 +512,132 @@ class TestingRunManager:
             return True
         return False
 
+    def createBugReproductionKubeJob(self, bugId, jobId):
+        job = KubernetesJob(module="kwolacloud.tasks.BugReproductionTask",
+                                               data={
+                                                   "bugId": bugId
+                                               },
+                                               referenceId=jobId,
+                                               image="worker",
+                                               cpuRequest="1000m",
+                                               cpuLimit="1500m",
+                                               memoryRequest="4.0Gi",
+                                               memoryLimit="4.0Gi",
+                                               gpu=False
+                           )
+        return job
+
+
+    def launchBugReproductionJobsIfNeeded(self):
+        logging.info(f"Checking if there are any bug reproduction jobs that need to be launched.")
+        for bugId in self.run.bugsNeedingReproduction:
+            if bugId not in self.run.runningBugReproductionJobIds:
+                self.launchBugReproductionJob(bugId)
+
+    def launchBugReproductionJob(self, bugId):
+        logging.info(f"Starting a bug reproduction task for run {self.run.id} and bug id {bugId}")
+
+        jobId = f"{self.run.id}-bug-reproduction-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}-{bugId}"
+
+        if self.cloudConfigData['features']['localRuns']:
+            currentBugReproductionJob = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.BugReproductionTaskLocal"], {
+                "bugId": bugId
+            }, timeout=7200, config=getKwolaConfiguration(), logId=None)
+        else:
+            currentBugReproductionJob = self.createBugReproductionKubeJob(bugId, jobId)
+
+        currentBugReproductionJob.start()
+
+        self.run.runningBugReproductionJobIds[bugId] = jobId
+        self.run.runningBugReproductionStartTimes[bugId] = datetime.datetime.now()
+        self.run.save()
+
+        logging.info(f"Started a bug reproduction task with job id {jobId}")
+
+    def reviewRunningBugReproductionJobIds(self):
+        logging.info(f"Reviewing the running bug reproduction tasks. Number running: {len(self.run.runningBugReproductionJobIds)}")
+
+        def handleSuccess(bugId):
+            del self.run.bugsNeedingReproduction[self.run.bugsNeedingReproduction.index(bugId)]
+
+        def handleFailure(bugId):
+            self.run.bugReproductionFailureCounts[bugId] = self.run.bugReproductionFailureCounts.get(bugId, 0) + 1
+            if self.run.bugReproductionFailureCounts[bugId] > self.config['bug_reproduction_maximum_failures']:
+                del self.run.bugsNeedingReproduction[self.run.bugsNeedingReproduction.index(bugId)]
+
+        jobsToRemove = []
+        for bugId in zip(self.run.runningBugReproductionJobIds.keys()):
+            jobId = self.run.runningBugReproductionJobIds[bugId]
+            startTime = self.run.runningBugReproductionStartTimes[bugId]
+            timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
+            job = self.createBugReproductionKubeJob(bugId, jobId)
+
+            if not job.doesJobStillExist():
+                logging.info(f"Job with id {jobId} was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
+                jobsToRemove.append((bugId, jobId, job))
+            elif job.ready():
+                logging.info(f"Ready job has been found for run {self.run.id} with name {job.kubeJobName()}!")
+
+                # We only count this testing step if it actually completed successfully, because
+                # otherwise it needs to be done over again.
+                if job.successful():
+                    resultObj = job.getResult()
+                    if resultObj is not None and resultObj.result is not None and resultObj.result['success']:
+                        logging.info(f"Finished a bug reproduction job for run {self.run.id} with name {job.kubeJobName()}")
+                        handleSuccess(bugId)
+                    else:
+                        logging.error(f"A bug reproduction job appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}")
+                        handleFailure(bugId)
+                else:
+                    logging.error(f"A bug reproduction job appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}")
+                    handleFailure(bugId)
+
+                job.cleanup()
+                jobsToRemove.append((bugId, jobId, job))
+            elif timeElapsed > self.config['bug_reproduction_timeout']:
+                # First check to see if there was a result object. Sometimes jobs are timing out after completion for some bizarre reason.
+                resultObj = job.getResult()
+                if resultObj is not None and resultObj.result is not None:
+                    if resultObj.result['success']:
+                        logging.warning(f"A bug reproduction job has timed out for run {self.run.id} with name {job.kubeJobName()}, but it appears it to have run successfully but then continued running after completion. It produced a result object: {pformat(resultObj.result)}")
+                        handleSuccess(bugId)
+                    else:
+                        logging.error(f"A bug reproduction job has timed out on testing run {self.run.id} with job name {job.kubeJobName()}, but it also appears to have failed and then continued running after completion. It produced a result object: {pformat(resultObj.result)}")
+                        handleFailure(bugId)
+                else:
+                    logging.error(f"A bup reproduction job appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}. It has not produced a result object - presumably it is still running.")
+                    handleFailure(bugId)
+
+                job.cleanup()
+                jobsToRemove.append((bugId, jobId, job))
+            elif not job.ready() and job.getResult() is not None:
+                resultObj = job.getResult()
+
+                timePassed = abs((datetime.datetime.now() - resultObj.time).total_seconds())
+
+                # Make sure at least 60 seconds has passed before we evaluate this result object.
+                # This is to give the server enough time to shut down cleanly before we force
+                # kill it as a timed out process.
+                if timePassed > 60:
+                    if resultObj.result['success']:
+                        logging.warning(f"A bug reproduction job with id {self.run.id} and name {job.kubeJobName()} has finished successfully, but it appears to have been hung and did not exit cleanly. It had to be forcibly stopped. It produced a result object: {pformat(resultObj.result)}")
+                        handleSuccess(bugId)
+                    else:
+                        logging.error(f"A bug reproduction job has failed with id {self.run.id} with job name {job.kubeJobName()}. It also appears to have been hung on exit and did not exit cleanly, meaning we had to forcibly shut it down. It produced a result object: {pformat(resultObj.result)}")
+                        handleFailure(bugId)
+
+                    # We force cleaning up this task, because it is still running and thus if we don't forcibly clean it, it will hang around taking up resources.
+                    job.cleanup()
+                    jobsToRemove.append((bugId, jobId, job))
+
+        for (bugId, jobId, job) in jobsToRemove:
+            del self.run.runningBugReproductionJobIds[bugId]
+            del self.run.runningBugReproductionStartTimes[bugId]
+
+        self.run.save()
+
+        return len(jobsToRemove)
+
     @autoretry()
     def createBugsZipFile(self):
         bugs = list(BugModel.objects(owner=self.application.owner, testingRunId=self.run.id, isMuted=False))
@@ -628,6 +760,9 @@ class TestingRunManager:
                 countFinished += self.reviewRunningTrainingSteps()
                 self.launchTrainingStepIfNeeded()
 
+                countFinished += self.reviewRunningBugReproductionJobIds()
+                self.launchBugReproductionJobsIfNeeded()
+
                 self.updateModelSymbols(self.config, self.run.testingStepsNeedingSymbolProcessing)
                 self.run.testingStepsNeedingSymbolProcessing = []
 
@@ -643,6 +778,23 @@ class TestingRunManager:
                 time.sleep(60)
 
             self.reviewRunningTestingSteps()
+
+            self.run.save()
+
+            logging.info(f"Finished running testing steps for testing run {self.run.id}")
+
+            # Now we continue looping to ensure that all of the bugs that needed to be reproduced have been reproduced.
+            while len(self.run.bugsNeedingReproduction) > 0:
+                countFinished = self.reviewRunningBugReproductionJobIds()
+                self.launchBugReproductionJobsIfNeeded()
+
+                countFinished = self.reviewRunningTrainingSteps()
+                self.launchTrainingStepIfNeeded()
+
+                # save on every step - just in case it was changed.
+                self.run.save()
+
+                time.sleep(60)
 
             logging.info(f"Finished testing main sequence of the testing run {self.run.id}")
 

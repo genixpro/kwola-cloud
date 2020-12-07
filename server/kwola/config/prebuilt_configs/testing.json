@@ -152,7 +152,7 @@
   "random_html_element_span_weight": 0.7,
   "random_html_element_html_weight": 2.5,
   "random_html_element_body_weight": 2.5,
-  "random_initialization_testing_sequence_timeout": 600,
+  "random_initialization_testing_sequence_timeout": 3600,
   "random_weight_clear": 0.5,
   "random_weight_click": 1.0,
   "random_weight_custom_type_action": 0.5,
@@ -204,7 +204,7 @@
   "state_value_convolution_stride": 1,
   "symbol_dictionary_size": 25000,
   "symbol_embedding_size": 32,
-  "testing_enable_prediction_subprocess": true,
+  "testing_enable_prediction_subprocess": false,
   "testing_fetch_action_map_timeout": 30,
   "testing_get_image_timeout": 30,
   "testing_max_repeat_action_maps_without_new_branches": 3,
@@ -285,6 +285,8 @@
   "web_session_no_network_activity_timeout": 10,
   "web_session_no_network_activity_wait_time": 1.0,
   "web_session_parallel_execution_sessions": 1,
+  "web_session_page_load_timeout": 60,
+  "web_session_script_execution_timeout": 30,
   "web_session_perform_action_wait_time": 0.5,
   "web_session_print_every_action": true,
   "web_session_print_every_action_failure": true,
@@ -379,6 +381,21 @@
     "vue",
     "webix",
     "worker"
+  ],
+  "web_session_ignore_javascript_domains": [
+    "ads.travelaudience.com",
+    "beacon.sojern.com",
+    "doubleclick.net",
+    "google-analytics.com",
+    "googleadservices.com",
+    "googlesyndication.com",
+    "googletagmanager.com",
+    "googletagservices.com",
+    "js.sddan.com",
+    "loadeu.exelator.com",
+    "pixel.sojern.com",
+    "static.xx.fbcdn.net",
+    "tag.yieldoptimizer.com"
   ],
   "video_generation_processes": 4
 }

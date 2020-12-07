@@ -6,6 +6,7 @@ import os
 import subprocess
 import re
 import sys
+import urllib.parse
 from kwola.config.logger import getLogger
 
 
@@ -100,6 +101,18 @@ class JSRewriter(ProxyPluginBase):
         longFileHash, shortFileHash = ProxyPluginBase.computeHashes(bytes(fileData))
 
         fileNameForBabel = shortFileHash + "_" + cleanedFileName
+
+        parsedURL = urllib.parse.urlparse(url)
+        foundIgnoreHost = False
+        for ignoreHost in self.config['web_session_ignore_javascript_domains']:
+            if ignoreHost in parsedURL.hostname:
+                foundIgnoreHost = ignoreHost
+                break
+
+        if foundIgnoreHost:
+            getLogger().info(f"Warning: Ignoring javascript file {url} because it came from the "
+                             f"domain name '{foundIgnoreHost}' which is marked to be ignored in the config file.")
+            return fileData
 
         environment = dict(os.environ)
 

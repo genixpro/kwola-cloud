@@ -258,12 +258,6 @@ class TestingStepManager:
             validTraces.append(trace)
             validTracePairedExecutionSessions.append(executionSession)
 
-            trace.executionSessionId = str(executionSession.id)
-            trace.testingStepId = str(self.testStep.id)
-            trace.applicationId = str(executionSession.applicationId)
-            trace.testingRunId = str(executionSession.testingRunId)
-            trace.owner = self.testStep.owner
-
             trace.timeForScreenshot = screenshotTime
             trace.timeForActionMapRetrieval = actionMapRetrievalTime
             trace.timeForActionDecision = actionDecisionTime

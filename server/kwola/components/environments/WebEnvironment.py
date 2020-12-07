@@ -99,10 +99,9 @@ class WebEnvironment:
 
             getLogger().info(f"Starting up {sessionCount} parallel browser sessions.")
 
-            self.sessions = [
-                createSession(sessionNumber)
-                for sessionNumber in range(sessionCount)
-            ]
+            self.sessions = []
+            for sessionNumber in range(sessionCount):
+                self.sessions.append(createSession(sessionNumber))
 
             for sessionNumber in range(sessionCount):
                 executor.submit(initializeSession, self.sessions[sessionNumber])
@@ -170,12 +169,18 @@ class WebEnvironment:
 
         results = []
         for session, action in zip(self.sessions, actions):
-            future = AsyncThreadFuture(session.runAction, [action], timeout=self.config['testing_run_action_timeout'])
-            resultFutures.append(future)
+            if action is not None:
+                future = AsyncThreadFuture(session.runAction, [action], timeout=self.config['testing_run_action_timeout'])
+                resultFutures.append(future)
+            else:
+                resultFutures.append(None)
 
         for session, future in zip(self.sessions, resultFutures):
             try:
-                result = future.result()
+                if future is not None:
+                    result = future.result()
+                else:
+                    result = (None, {})
             except TimeoutError:
                 getLogger().warning("Warning: timeout exceeded in WebEnvironment.runActions")
                 result = (None, {})

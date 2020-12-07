@@ -6,3 +6,24 @@
   margin-left: 5px;
   margin-right: 5px;
 }
+
+
+.reproducible-widget
+{
+  font-size: 24px;
+
+  .successful-reproduction
+  {
+    span {
+      margin-left: 10px;
+    }
+  }
+
+  .failed-reproduction
+  {
+    span {
+      margin-left: 10px;
+    }
+  }
+}
+

@@ -87,6 +87,14 @@ class TestingRun(Document):
 
     didTrainingFail = BooleanField(default=False)
 
+    bugsNeedingReproduction = ListField(StringField(), default=[])
+
+    bugReproductionFailureCounts = DictField(StringField(), default={})
+
+    runningBugReproductionJobIds = DictField(StringField(), default={})
+
+    runningBugReproductionStartTimes = DictField(DateTimeField(), default={})
+
     def saveToDisk(self, config):
         self.save()
 

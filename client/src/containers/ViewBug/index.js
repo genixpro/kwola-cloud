@@ -22,6 +22,9 @@ import edgeBlackSquare from "../../images/edge-black-square.png";
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import ArrowForward from '@material-ui/icons/ArrowForward';
 import "./index.scss";
+import LoaderButton from "../../components/LoaderButton";
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import CancelIcon from '@material-ui/icons/Cancel';
 
 
 class ViewBug extends Component {
@@ -30,7 +33,8 @@ class ViewBug extends Component {
         loadingVideo:true,
         loader:false,
         executionSession: null,
-        spriteSheetImageURL: null
+        spriteSheetImageURL: null,
+        isAdmin: Auth.isAdmin()
     };
 
     componentDidMount()
@@ -151,8 +155,19 @@ class ViewBug extends Component {
     backwardOneFrame()
     {
         if(!this.state.player) return false;
-        // console.log(this.state.player)
+
         this.state.player.rewind(1)
+    }
+
+    triggerBugReproductionJob()
+    {
+        return axios.post(`/bugs/${this.state.bug._id}/start_reproduction_job`, {}).then((response) =>
+        {
+
+        }, (error) =>
+        {
+            console.error("Error occurred while triggering the bug reproduction job.");
+        });
     }
 
     render() {
@@ -198,6 +213,23 @@ class ViewBug extends Component {
                                 <br/>
                                 <img src={this.state.spriteSheetImageURL} />
                                 <Papersheet title={"Actions Performed"}>
+                                    <div className={"reproducible-widget"}>
+                                        {
+                                            this.state.bug.reproducible ?
+                                                <div className={"successful-reproduction"}>
+                                                    <CheckCircleIcon htmlColor={"green"}/>
+                                                    <span>Reproducible</span>
+                                                </div> : null
+                                        }
+                                        {
+                                            !this.state.bug.reproducible ?
+                                                <div className={"failed-reproduction"}>
+                                                    <CancelIcon htmlColor={"red"}/>
+                                                    <span>Failed to reproduce </span>
+                                                </div> : null
+                                        }
+                                    </div>
+                                    <br/>
                                     <BugActionList bug={this.state.bug} onGoToActionClicked={(index) => this.goToActionClicked(index)} />
                                 </Papersheet>
                             </HalfColumn>
@@ -276,6 +308,22 @@ class ViewBug extends Component {
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.stacktrace}</pre>
                                 </Papersheet>
                                 <br/>
+
+                                {
+                                    this.state.isAdmin && process.env.REACT_APP_DISABLE_ADMIN_VIEW !== "true" ?
+                                        [
+                                            <Papersheet title={`Admin`} key={1}>
+                                                <LoaderButton onClick={() => this.triggerBugReproductionJob()}>
+                                                    Trigger Bug Reproduction Job
+                                                    <Icon className="rightIcon">send</Icon>
+                                                </LoaderButton>
+                                            </Papersheet>,
+                                            <br key={2}/>
+                                        ]
+                                        : null
+                                }
+
+
                                 <Papersheet title={`Did you like the information you got about this bug?`}>
                                     <FeedbackWidget
                                         applicationId={this.props.match.params.id}

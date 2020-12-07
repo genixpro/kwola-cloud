@@ -3,25 +3,26 @@
 #     All Rights Reserved.
 #
 
-import flask
-from flask_restful import Resource, reqparse, abort
-from flask_jwt_extended import (create_access_token, create_refresh_token,
-                                jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 from ..app import cache
-from kwola.datamodels.BugModel import BugModel
+from ..auth import authenticate, isAdmin
+from ..config.config import getKwolaConfiguration, loadCloudConfiguration
+from ..tasks.BugReproductionTask import runBugReproductionJob
 from ..tasks.RunTesting import runTesting
+from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required,
+                                jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+from flask_restful import Resource, reqparse, abort
+from google.cloud import storage
+from kwola.components.utils.file import loadKwolaFileData, saveKwolaFileData, getSharedGCSStorageClient
+from kwola.config.config import KwolaCoreConfiguration
+from kwola.datamodels.BugModel import BugModel
+from kwola.datamodels.CustomIDField import CustomIDField
+import bson
+import flask
+import flask
+import google.cloud.exceptions
 import json
 import logging
-import bson
-from kwola.datamodels.CustomIDField import CustomIDField
-from ..config.config import getKwolaConfiguration, loadCloudConfiguration
-import flask
-from kwola.config.config import KwolaCoreConfiguration
 import os.path
-from ..auth import authenticate, isAdmin
-from kwola.components.utils.file import loadKwolaFileData, saveKwolaFileData, getSharedGCSStorageClient
-from google.cloud import storage
-import google.cloud.exceptions
 
 class BugsGroup(Resource):
     def __init__(self):
@@ -239,3 +240,26 @@ class BugErrorFrame(Resource):
             return abort(404)
         finally:
             pass
+
+
+class BugsAdminTriggerReproduction(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+
+    def post(self, bug_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": bug_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        bug = BugModel.objects(**queryParams).first()
+
+        if bug is None:
+            return abort(404)
+
+        runBugReproductionJob(bug)
+
+        return {}

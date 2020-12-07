@@ -222,8 +222,8 @@ class WebEnvironmentSession:
             """, self.config['web_session_width'][self.windowSize], self.config['web_session_height'][self.windowSize])
 
         self.driver.set_window_size(*window_size)
-        self.driver.set_script_timeout(30)
-        self.driver.set_page_load_timeout(30)
+        self.driver.set_script_timeout(self.config['web_session_script_execution_timeout'])
+        self.driver.set_page_load_timeout(self.config['web_session_page_load_timeout'])
 
     def fetchTargetWebpage(self):
         try:
@@ -609,11 +609,24 @@ class WebEnvironmentSession:
                                     element.getAttribute("type") + " " + element.getAttribute("placeholder") + " " + 
                                     element.getAttribute("title") + " " + element.getAttribute("aria-label") + " " + 
                                     element.getAttribute("aria-placeholder") + " " + element.getAttribute("aria-roledescription")
-                                  ).toLowerCase().replace(/\\s+/g, " ")
+                                  ).toLowerCase().replace(/\\s+/g, " "),
+                        inputValue: String(element.value),
+                        attributes: {
+                            "href": element.getAttribute("href"),
+                            "src": element.getAttribute("src"),
+                            "class": element.getAttribute("class"),
+                            "name": element.getAttribute("name"),
+                            "id": element.getAttribute("id"),
+                            "type": element.getAttribute("type"),
+                            "placeholder": element.getAttribute("placeholder"),
+                            "title": element.getAttribute("title"),
+                            "aria-label": element.getAttribute("aria-label"),
+                            "aria-placeholder": element.getAttribute("aria-placeholder"),
+                            "aria-roledescription": element.getAttribute("aria-roledescription")
+                        }
                     };
                     
-                    if (element.tagName === "A"
-                            || element.tagName === "BUTTON"
+                    if ( element.tagName === "BUTTON"
                             || element.tagName === "AREA"
                             || element.tagName === "AUDIO"
                             || element.tagName === "VIDEO"
@@ -621,6 +634,9 @@ class WebEnvironmentSession:
                             || element.tagName === "SELECT")
                         data.canClick = true;
                     
+                    if (element.tagName === "A" && element.getAttribute("href") && element.getAttribute("href") !== "#")
+                        data.canClick = true;
+                        
                     if (element.tagName === "INPUT" && !(element.getAttribute("type") === "text" 
                                                          || element.getAttribute("type") === "" 
                                                          || element.getAttribute("type") === "password"
@@ -638,7 +654,17 @@ class WebEnvironmentSession:
                          && element.scrollHeight > element.clientHeight)
                         data.canScroll = true;
                     
-                    if (element.tagName === "INPUT" || element.tagName === "TEXTAREA")
+                    if (element.tagName === "TEXTAREA")
+                        data.canType = true;
+                        
+                    if (element.tagName === "INPUT" && (element.getAttribute("type") === "text" 
+                                                         || element.getAttribute("type") === "" 
+                                                         || element.getAttribute("type") === "password"
+                                                         || element.getAttribute("type") === "email"
+                                                         || element.getAttribute("type") === null 
+                                                         || element.getAttribute("type") === undefined 
+                                                         || !element.getAttribute("type")
+                                                      ))
                         data.canType = true;
                     
                     if (isFunction(element.onclick) 
@@ -709,6 +735,13 @@ class WebEnvironmentSession:
 
             for actionMapData in elementActionMaps:
                 actionMap = ActionMap(**actionMapData)
+
+                if self.config['prevent_offsite_links']:
+                    if actionMap.elementType == 'a':
+                        if actionMap.attributes['href'] and self.isURLOffsite(actionMap.attributes['href']):
+                            # Skip this element because it links to an offsite page.
+                            continue
+
                 # Cut the keywords off at 1024 characters to prevent too much memory / storage usage
                 actionMap.keywords = actionMap.keywords[:self.config['web_session_action_map_max_keyword_size']]
 
@@ -860,6 +893,24 @@ class WebEnvironmentSession:
 
         return success, networkWaitTime
 
+    def isURLOffsite(self, url):
+        offsite = False
+        if url != "data:," and self.getHostRoot(url) != self.targetHostRoot:
+            offsite = True
+
+        whitelistMatched = False
+        if len(self.urlWhitelistRegexes) == 0:
+            whitelistMatched = True
+
+        for regex in self.urlWhitelistRegexes:
+            if regex.search(url) is not None:
+                whitelistMatched = True
+
+        if not whitelistMatched:
+            offsite = True
+
+        return offsite
+
     def checkOffsite(self, priorURL):
         try:
             # If the browser went off site and off site links are disabled, then we send it back to the url it started from
@@ -868,20 +919,7 @@ class WebEnvironmentSession:
 
                 current_url = self.driver.current_url
 
-                offsite = False
-                if current_url != "data:," and self.getHostRoot(current_url) != self.targetHostRoot:
-                    offsite = True
-
-                whitelistMatched = False
-                if len(self.urlWhitelistRegexes) == 0:
-                    whitelistMatched = True
-
-                for regex in self.urlWhitelistRegexes:
-                    if regex.search(current_url) is not None:
-                        whitelistMatched = True
-
-                if not whitelistMatched:
-                    offsite = True
+                offsite = self.isURLOffsite(current_url)
 
                 if offsite:
                     getLogger().info(f"The browser session went offsite (to {current_url}) and going offsite is disabled. The browser is being reset back to the URL it was at prior to this action: {priorURL}")
@@ -939,6 +977,11 @@ class WebEnvironmentSession:
             executionTrace.browser = self.browser
             executionTrace.userAgent = self.proxy.getUserAgent()
             executionTrace.windowSize = self.windowSize
+            executionTrace.executionSessionId = str(self.executionSession.id)
+            executionTrace.testingStepId = str(self.executionSession.testingStepId)
+            executionTrace.applicationId = str(self.executionSession.applicationId)
+            executionTrace.testingRunId = str(self.executionSession.testingRunId)
+            executionTrace.owner = self.executionSession.owner
 
             # Set the execution trace id in the proxy. The proxy will add on headers
             # to all http requests sent by the browser with information identifying

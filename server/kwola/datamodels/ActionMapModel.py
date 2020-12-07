@@ -51,6 +51,10 @@ class ActionMap(EmbeddedDocument):
     
     keywords = StringField()
 
+    inputValue = StringField()
+
+    attributes = DictField(StringField())
+
     def doesOverlapWith(self, other, tolerancePixels=0):
         if abs(self.left - other.left) > tolerancePixels:
             return False
@@ -92,6 +96,35 @@ class ActionMap(EmbeddedDocument):
             return False
 
         return True
+
+    def canRunAction(self, action):
+        from .actions.TypeAction import TypeAction
+        from .actions.ClickTapAction import ClickTapAction
+        from .actions.RightClickAction import RightClickAction
+        from .actions.ScrollingAction import ScrollingAction
+        from .actions.ClearFieldAction import ClearFieldAction
+
+        if isinstance(action, TypeAction):
+            if self.canType:
+                return True
+
+        if isinstance(action, ClearFieldAction):
+            if self.canType:
+                return True
+
+        if isinstance(action, ClickTapAction):
+            if self.canClick:
+                return True
+
+        if isinstance(action, RightClickAction):
+            if self.canRightClick:
+                return True
+
+        if isinstance(action, ScrollingAction):
+            if self.canScroll:
+                return True
+
+        return False
 
     def __eq__(self, other):
         return self.doesOverlapWith(other)

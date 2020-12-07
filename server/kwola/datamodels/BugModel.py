@@ -53,6 +53,7 @@ class BugModel(Document):
 
     mutedErrorId = StringField(default=None)
 
+    # Deprecated / unused
     reproductionTraces = ListField(StringField())
 
     browser = StringField()
@@ -81,6 +82,8 @@ class BugModel(Document):
     status = StringField(enumerate=['new', 'triage', 'fix_in_progress', 'needs_testing', 'closed'], default="new")
 
     isBugNew = BooleanField()
+
+    reproducible = BooleanField(default=False)
 
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
         saveObjectToDisk(self, "bugs", config, overrideSaveFormat=overrideSaveFormat, overrideCompression=overrideCompression)

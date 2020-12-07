@@ -46,6 +46,9 @@ class BaseError(EmbeddedDocument):
     @staticmethod
     @functools.lru_cache(maxsize=1024)
     def computeReducedErrorComparisonMessage(message):
+        if isinstance(message, bytes):
+            message = str(message, 'utf8')
+
         deduplicationIgnoreRegexes = [
             sharedNonJavascriptCodeUrlRegex,
             sharedHexUuidRegex,
@@ -78,4 +81,4 @@ class BaseError(EmbeddedDocument):
         return BaseError.computeErrorMessageSimilarity(message, otherMessage)
 
     def isDuplicateOf(self, otherError):
-        return self.computeSimilarity(otherError) >= 0.90
+        return self.computeSimilarity(otherError) >= 0.95
