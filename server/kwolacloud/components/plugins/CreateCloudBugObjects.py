@@ -155,8 +155,6 @@ class CreateCloudBugObjects(TestingStepPluginBase):
                 videoData = loadKwolaFileData(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), self.config)
                 saveKwolaFileData(bugVideoFilePath, videoData, self.config)
 
-                getLogger().info(f"\n\nBug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
-
                 existingBugs.append(bug)
                 bugObjects.append(bug)
 
