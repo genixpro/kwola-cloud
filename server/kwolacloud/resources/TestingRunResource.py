@@ -284,6 +284,14 @@ class PauseTestingRun(Resource):
         testingRun.runningTestingStepJobIds = []
         testingRun.runningTestingStepStartTimes = []
 
+        for jobId in testingRun.runningBugReproductionJobIds.values():
+            bugReproductionJob = KubernetesJob(module="kwolacloud.tasks.BugReproductionTask",
+                                        data={},
+                                        referenceId=jobId)
+
+            if not configData['features']['localRuns'] and bugReproductionJob.doesJobStillExist():
+                bugReproductionJob.cleanup()
+
         if testingRun.runningTrainingStepJobId is not None:
             trainingJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
                                         data={},

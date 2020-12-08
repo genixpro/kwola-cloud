@@ -24,6 +24,7 @@ from datetime import datetime
 import random
 import numpy
 import copy
+import logging
 
 class BugReproducer:
     """
@@ -169,12 +170,12 @@ class BugReproducer:
                 else:
                     actions.append(None)
 
-            print(f"Running action {actionIndex}", flush=True)
+            logging.info(f"Running action {actionIndex}", flush=True)
             traces = environment.runActions(actions)
             for actionListIndex, actionList, trace in zip(range(len(actionLists)), actionLists, traces):
                 if actionIndex == (len(actionList) - 1):
                     if trace is None:
-                        print(f"Trace is None at {actionIndex}", flush=True)
+                        logging.info(f"Trace is None at {actionIndex}", flush=True)
                         didReproduceSuccessfully[actionListIndex] = False
                     else:
                         didOneMatch = False
