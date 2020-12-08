@@ -43,7 +43,6 @@ from kwola.datamodels.errors.BaseError import BaseError
 from kwola.datamodels.errors.ExceptionError import ExceptionError
 from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.errors.LogError import LogError
-from kwolacloud.tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
 
 def main():

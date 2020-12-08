@@ -24,7 +24,7 @@ from google.cloud import storage
 import json
 import billiard as multiprocessing
 from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
-from kwola.components.utils.file import getSharedGCSStorageClient
+from kwola.config.config import getSharedGCSStorageClient
 
 # Do not remove the following unused imports, as they are actually required
 # For the migration script to function correctly.
@@ -38,7 +38,7 @@ from kwola.datamodels.errors.BaseError import BaseError
 from kwola.datamodels.errors.ExceptionError import ExceptionError
 from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.errors.LogError import LogError
-from kwolacloud.tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
+# from kwolacloud.tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
 def loadTraces(config, session):
     hasNone = False

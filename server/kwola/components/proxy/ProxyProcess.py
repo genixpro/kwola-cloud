@@ -149,7 +149,7 @@ class ProxyProcess:
         userAgentTracer = UserAgentTracer()
         networkErrorTracer = NetworkErrorTracer()
 
-        proxyThread = Thread(target=ProxyProcess.runProxyServerThread, args=(codeRewriter, pathTracer, networkErrorTracer, resultQueue), daemon=True)
+        proxyThread = Thread(target=ProxyProcess.runProxyServerThread, args=(codeRewriter, pathTracer, networkErrorTracer, userAgentTracer, resultQueue), daemon=True)
         proxyThread.start()
 
         while True:
@@ -187,15 +187,15 @@ class ProxyProcess:
                 exit(0)
 
     @staticmethod
-    def runProxyServerThread(codeRewriter, pathTracer, networkErrorTracer, resultQueue):
+    def runProxyServerThread(codeRewriter, pathTracer, networkErrorTracer, userAgentTracer, resultQueue):
         while True:
             try:
-                ProxyProcess.runProxyServerOnce(codeRewriter, pathTracer, networkErrorTracer, resultQueue)
+                ProxyProcess.runProxyServerOnce(codeRewriter, pathTracer, networkErrorTracer, userAgentTracer, resultQueue)
             except Exception:
                 getLogger().warning(f"Had to restart the mitmproxy due to an exception: {traceback.format_exc()}")
 
     @staticmethod
-    def runProxyServerOnce(codeRewriter, pathTracer, networkErrorTracer, resultQueue):
+    def runProxyServerOnce(codeRewriter, pathTracer, networkErrorTracer, userAgentTracer, resultQueue):
         from mitmproxy import proxy, options
         from mitmproxy.tools.dump import DumpMaster
         import mitmproxy.exceptions
@@ -215,6 +215,7 @@ class ProxyProcess:
                 m.addons.add(codeRewriter)
                 m.addons.add(pathTracer)
                 m.addons.add(networkErrorTracer)
+                m.addons.add(userAgentTracer)
                 break
             except mitmproxy.exceptions.ServerException:
                 getLogger().warning(f"Had to restart the mitmproxy due to an exception: {traceback.format_exc()}")

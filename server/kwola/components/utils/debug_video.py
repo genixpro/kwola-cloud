@@ -24,32 +24,29 @@ from ...components.agents.DeepLearningAgent import DeepLearningAgent
 from ...config.config import KwolaCoreConfiguration
 from ...config.logger import getLogger, setupLocalLogging
 from ...datamodels.ExecutionSessionModel import ExecutionSession
-from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import os
 import traceback
 from .retry import autoretry
 
 
-def createDebugVideoSubProcess(configDir, executionSessionId, name="", includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilightStepNumber=None, cutoffStepNumber=None, folder="debug_videos"):
+def createDebugVideoSubProcess(config, executionSessionId, name="", includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilightStepNumber=None, cutoffStepNumber=None, folder="debug_videos"):
     try:
         setupLocalLogging()
 
         getLogger().info(f"Creating debug video for session {executionSessionId} with options includeNeuralNetworkCharts={includeNeuralNetworkCharts}, includeNetPresentRewardChart={includeNetPresentRewardChart}, hilightStepNumber={hilightStepNumber}, cutoffStepNumber={cutoffStepNumber}")
 
-        config = KwolaCoreConfiguration(configDir)
+        config = KwolaCoreConfiguration(config)
 
         agent = DeepLearningAgent(config, whichGpu=None)
         agent.initialize(enableTraining=False)
         agent.load()
 
-        kwolaDebugVideoDirectory = config.getKwolaUserDataDirectory(folder)
-
         executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
         videoData = agent.createDebugVideoForExecutionSession(executionSession, includeNeuralNetworkCharts=includeNeuralNetworkCharts, includeNetPresentRewardChart=includeNetPresentRewardChart, hilightStepNumber=hilightStepNumber, cutoffStepNumber=cutoffStepNumber)
 
-        filePath = os.path.join(kwolaDebugVideoDirectory, f'{name + "_" if name else ""}{str(executionSession.id)}.mp4')
-        saveKwolaFileData(filePath, videoData, config)
+        fileName = f'{name + "_" if name else ""}{str(executionSession.id)}.mp4'
+        config.saveKwolaFileData(folder, fileName, videoData)
 
         del agent
     except Exception as e:

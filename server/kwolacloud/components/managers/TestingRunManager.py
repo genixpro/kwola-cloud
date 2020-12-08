@@ -9,7 +9,7 @@ from ...config.config import loadCloudConfiguration, getKwolaConfiguration
 from ...datamodels.ApplicationModel import ApplicationModel
 from ...datamodels.TestingRun import TestingRun
 from ...helpers.email import sendFinishTestingRunEmail
-from ...tasks.utils import mountTestingRunStorageDrive, verifyStripeSubscription, unmountTestingRunStorageDrive
+from ...tasks.utils import verifyStripeSubscription
 from dateutil.relativedelta import relativedelta
 from google.cloud import storage
 from kwola.components.environments.WebEnvironment import WebEnvironment
@@ -25,7 +25,7 @@ from kwolacloud.components.utils.KubernetesJob import KubernetesJob
 from kwolacloud.helpers.slack import postToCustomerSlack, postToKwolaSlack
 from kwolacloud.helpers.webhook import sendCustomerWebhook
 from kwola.components.utils.charts import generateAllCharts
-from kwola.components.utils.file import getSharedGCSStorageClient
+from kwola.config.config import getSharedGCSStorageClient
 from pprint import pformat
 import datetime
 import google
@@ -53,22 +53,6 @@ class TestingRunManager:
         self.storageClient = getSharedGCSStorageClient()
         self.applicationStorageBucket = None
 
-
-    def mountStorageDrive(self):
-        if not self.cloudConfigData['features']['localRuns']:
-            self.configDir = mountTestingRunStorageDrive(self.run.applicationId)
-            if self.configDir is None:
-                errorMessage = f"{traceback.format_exc()}"
-                logging.error(f"{errorMessage}")
-                raise RuntimeError(f"Unable to mount the gcs storage drive for application id {self.run.applicationId}")
-        else:
-            if not os.path.exists("data"):
-                os.mkdir("data")
-
-            self.configDir = os.path.join("data", self.run.applicationId)
-
-            if not os.path.exists(self.configDir):
-                os.mkdir(self.configDir)
 
     def updateApplicationObjectForStart(self):
         # Make sure that this application has recorded that at least one testing run has launched
@@ -183,7 +167,7 @@ class TestingRunManager:
 
             self.run.save()
 
-            self.config = KwolaCoreConfiguration(self.configDir)
+            self.config = self.run.runConfiguration.createKwolaCoreConfiguration(self.run.applicationId)
 
             self.doInitialBrowserSession()
             self.ensureAgentModelExists()
@@ -741,14 +725,13 @@ class TestingRunManager:
         if ApplicationModel.objects(Q(status__exists=False) | Q(status="active"), id=self.run.applicationId).count() == 0:
             return
 
-        self.mountStorageDrive()
         self.updateApplicationObjectForStart()
 
         self.updateKwolaConfigJSONFile()
         self.doTestingRunInitializationIfNeeded()
 
         try:
-            self.config = KwolaCoreConfiguration(self.configDir)
+            self.config = self.run.runConfiguration.createKwolaCoreConfiguration(self.run.applicationId)
             logging.info(f"Testing Run starting with configuration: \n{pformat(self.config.configData)}")
 
             self.shouldExit = False
@@ -864,7 +847,5 @@ class TestingRunManager:
             errorMessage = f"Error in the primary RunTesting job for the testing run with id {self.run.id}:\n\n{traceback.format_exc()}"
             logging.error(f"{errorMessage}")
             raise
-        finally:
-            unmountTestingRunStorageDrive(self.configDir)
 
 

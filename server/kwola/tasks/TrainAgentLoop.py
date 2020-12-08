@@ -32,7 +32,6 @@ from ..datamodels.ExecutionSessionModel import ExecutionSession
 from ..datamodels.ExecutionTraceModel import ExecutionTrace
 from ..components.managers.TrainingManager import TrainingManager
 from ..components.utils.charts import generateAllCharts
-from ..datamodels.LockedFile import LockedFile
 from ..components.utils.asyncthreadfuture import AsyncThreadFuture
 from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
@@ -148,7 +147,7 @@ def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
-            "configDir": config.configurationDirectory,
+            "config": config.serialize(),
             "testingStepId": str(testingStep.id),
             "shouldBeRandom": True,
             "generateDebugVideo": False,
@@ -199,7 +198,7 @@ def runRandomInitialization(config, trainingSequence, exitOnFail=True):
 def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber, coordinatorTempFileName):
     try:
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTrainingStep"], {
-            "configDir": config.configurationDirectory,
+            "config": config.serialize(),
             "trainingSequenceId": str(trainingSequence.id),
             "trainingStepIndex": trainingStepIndex,
             "gpu": gpuNumber,
@@ -239,7 +238,7 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
-            "configDir": config.configurationDirectory,
+            "config": config.serialize(),
             "testingStepId": str(testingStep.id),
             "shouldBeRandom": False,
             "generateDebugVideo": generateDebugVideo and config['enable_debug_videos'],
@@ -396,16 +395,13 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
     generateAllCharts(config, applicationId=None, enableCumulativeCoverage=True)
 
-def trainAgent(configDir, exitOnFail=False):
+def trainAgent(config, exitOnFail=False):
     try:
         multiprocessing.set_start_method('spawn')
     except RuntimeError:
         pass
 
-    config = KwolaCoreConfiguration(configDir)
-
-    # Create the bugs directory. This is just temporary
-    config.getKwolaUserDataDirectory("bugs")
+    config = KwolaCoreConfiguration(config)
 
     # Load and save the agent to make sure all training subprocesses are synced
     agent = DeepLearningAgent(config=config, whichGpu=None)
@@ -440,7 +436,6 @@ def trainAgent(configDir, exitOnFail=False):
         sequenceId = sequenceId.replace(".json", "")
         sequenceId = sequenceId.replace(".gz", "")
 
-        LockedFile.clearLockFile(os.path.join(config.getKwolaUserDataDirectory("training_sequences"), files[0]))
         trainingSequence = TrainingSequence.loadFromDisk(sequenceId, config)
 
     testingSteps = [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"]

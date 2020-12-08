@@ -30,7 +30,6 @@ from ...datamodels.ExecutionSessionTraceWeights import ExecutionSessionTraceWeig
 from ...datamodels.TestingStepModel import TestingStep
 from ...datamodels.TrainingStepModel import TrainingStep
 from datetime import datetime
-from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import atexit
 import subprocess
 import concurrent.futures
@@ -60,9 +59,8 @@ def isNumpyArray(obj):
 
 
 class TrainingManager:
-    def __init__(self, configDir, trainingSequenceId, trainingStepIndex, gpu=None, coordinatorTempFileName="kwola_distributed_coordinator", testingRunId=None, applicationId=None, gpuWorldSize=torch.cuda.device_count(), plugins=None):
-        self.config = KwolaCoreConfiguration(configDir)
-        self.configDir = configDir
+    def __init__(self, config, trainingSequenceId, trainingStepIndex, gpu=None, coordinatorTempFileName="kwola_distributed_coordinator", testingRunId=None, applicationId=None, gpuWorldSize=torch.cuda.device_count(), plugins=None):
+        self.config = KwolaCoreConfiguration(config)
 
         # Make sure applicationId is set in the config and save it
         if 'applicationId' not in self.config:
@@ -319,7 +317,7 @@ class TrainingManager:
             subProcessCommandQueue = multiprocessing.Queue()
             subProcessBatchResultQueue = multiprocessing.Queue()
 
-            subProcess = multiprocessing.Process(target=TrainingManager.prepareAndLoadBatchesSubprocess, args=(self.configDir, self.batchDirectory, subProcessCommandQueue, subProcessBatchResultQueue, subprocessIndex, self.applicationId))
+            subProcess = multiprocessing.Process(target=TrainingManager.prepareAndLoadBatchesSubprocess, args=(self.config.serialize(), self.batchDirectory, subProcessCommandQueue, subProcessBatchResultQueue, subprocessIndex, self.applicationId))
             subProcess.start()
             atexit.register(lambda: subProcess.terminate())
 
@@ -424,21 +422,21 @@ class TrainingManager:
             getLogger().error(f"ERROR! A NaN was detected in this models output. Not saving model.")
 
     @staticmethod
-    def saveExecutionSessionTraceWeights(traceWeightData, configDir):
-        config = KwolaCoreConfiguration(configDir)
+    def saveExecutionSessionTraceWeights(traceWeightData, config):
+        config = KwolaCoreConfiguration(config)
         traceWeightData.saveToDisk(config)
 
 
     @staticmethod
-    def writeSingleExecutionTracePreparedSampleData(traceBatch, sampleCacheDir, config):
+    def writeSingleExecutionTracePreparedSampleData(traceBatch, config):
         traceId = traceBatch['traceIds'][0]
 
-        cacheFile = os.path.join(sampleCacheDir, traceId + "-sample.pickle.gz")
+        cacheFile = traceId + "-sample.pickle.gz"
 
         pickleBytes = pickle.dumps(traceBatch, protocol=pickle.HIGHEST_PROTOCOL)
         compressedPickleBytes = gzip.compress(pickleBytes)
 
-        saveKwolaFileData(cacheFile, compressedPickleBytes, config)
+        config.saveKwolaFileData("prepared_samples", cacheFile, compressedPickleBytes)
 
     @staticmethod
     def addExecutionSessionToSampleCache(executionSessionId, config):
@@ -451,8 +449,6 @@ class TrainingManager:
 
                 agent.loadSymbolMap()
 
-                sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples")
-
                 executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
                 batches = agent.prepareBatchesForExecutionSession(executionSession)
@@ -460,7 +456,7 @@ class TrainingManager:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
                     futures = []
                     for traceIndex, traceBatch in zip(range(len(executionSession.executionTraces) - 1), batches):
-                        futures.append(executor.submit(TrainingManager.writeSingleExecutionTracePreparedSampleData, traceBatch, sampleCacheDir, config))
+                        futures.append(executor.submit(TrainingManager.writeSingleExecutionTracePreparedSampleData, traceBatch, config))
                     for future in futures:
                         future.result(timeout=config['training_write_prepared_sample_timeout'])
                 getLogger().info(f"Finished adding {executionSessionId} to the sample cache.")
@@ -473,44 +469,34 @@ class TrainingManager:
                     getLogger().warning(f"Warning! Failed to prepare samples for execution session {executionSessionId}. Error was: {traceback.print_exc()}")
 
     @staticmethod
-    def destroyPreparedSamplesForExecutionTrace(configDir, executionTraceId):
+    def destroyPreparedSamplesForExecutionTrace(config, executionTraceId):
         """ This method is used to destroy the cached prepared_samples data so that it can later be recreated. This is commonly triggered
             in the event of an error."""
-        config = KwolaCoreConfiguration(configDir)
-        sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples", ensureExists=False)
+        config = KwolaCoreConfiguration(config)
 
-        cacheFile = os.path.join(sampleCacheDir, executionTraceId + "-sample.pickle.gz")
+        cacheFile = executionTraceId + "-sample.pickle.gz"
 
         # Just for compatibility with the old naming scheme
-        oldCacheFileName = os.path.join(sampleCacheDir, executionTraceId + ".pickle.gz")
+        oldCacheFileName = executionTraceId + ".pickle.gz"
 
-        try:
-            os.unlink(cacheFile)
-        except FileNotFoundError:
-            pass
-
-        try:
-            os.unlink(oldCacheFileName)
-        except FileNotFoundError:
-            pass
-
+        config.deleteKwolaFileData("prepared_samples", cacheFile)
+        config.deleteKwolaFileData("prepared_samples", oldCacheFileName)
 
     @staticmethod
-    def prepareBatchesForExecutionTrace(configDir, executionTraceId, executionSessionId, batchDirectory, applicationId):
+    def prepareBatchesForExecutionTrace(config, executionTraceId, executionSessionId, batchDirectory, applicationId):
         try:
-            config = KwolaCoreConfiguration(configDir)
+            config = KwolaCoreConfiguration(config)
 
             agent = DeepLearningAgent(config, whichGpu=None)
 
-            sampleCacheDir = config.getKwolaUserDataDirectory("prepared_samples", ensureExists=False)
-            cacheFile = os.path.join(sampleCacheDir, executionTraceId + "-sample.pickle.gz")
+            cacheFile = executionTraceId + "-sample.pickle.gz"
 
-            fileData = loadKwolaFileData(cacheFile, config)
+            fileData = config.loadKwolaFileData("prepared_samples", cacheFile)
             if fileData is None:
                 TrainingManager.addExecutionSessionToSampleCache(executionSessionId, config)
                 cacheHit = False
 
-                fileData = loadKwolaFileData(cacheFile, config)
+                fileData = config.loadKwolaFileData("prepared_samples", cacheFile)
                 sampleBatch = pickle.loads(gzip.decompress(fileData))
             else:
                 sampleBatch = pickle.loads(gzip.decompress(fileData))
@@ -613,7 +599,7 @@ class TrainingManager:
             for traceId in chosenExecutionTraceIds:
                 traceWeightData = executionSessionTraceWeightDataIdMap[str(traceId)]
 
-                future = processPool.apply_async(TrainingManager.prepareBatchesForExecutionTrace, (config.configurationDirectory, str(traceId), str(traceWeightData['id']), batchDirectory, applicationId))
+                future = processPool.apply_async(TrainingManager.prepareBatchesForExecutionTrace, (config.serialize(), str(traceId), str(traceWeightData['id']), batchDirectory, applicationId))
                 futures.append(future)
 
             cacheHits = []
@@ -673,18 +659,18 @@ class TrainingManager:
                 # prepared samples cache for all of the various traceIds that were
                 # chosen here.
                 for traceId in chosenExecutionTraceIds:
-                    TrainingManager.destroyPreparedSamplesForExecutionTrace(config.configurationDirectory, traceId)
+                    TrainingManager.destroyPreparedSamplesForExecutionTrace(config.serialize(), traceId)
 
                 subProcessCommandQueue.put(("batch", {}))
             return 1.0
 
     @staticmethod
     def loadAllTestingSteps(config, applicationId=None):
-        testStepsDir = config.getKwolaUserDataDirectory("testing_steps")
-
         if config['data_serialization_method']['default'] == 'mongo':
             return list(TestingStep.objects(applicationId=applicationId).no_dereference())
         else:
+            testStepsDir = config.getKwolaUserDataDirectory("testing_steps")
+
             testingSteps = []
 
             for fileName in os.listdir(testStepsDir):
@@ -699,18 +685,18 @@ class TrainingManager:
             return testingSteps
 
     @staticmethod
-    def updateTraceRewardLoss(traceId, applicationId, sampleRewardLoss, configDir):
-        config = KwolaCoreConfiguration(configDir)
+    def updateTraceRewardLoss(traceId, applicationId, sampleRewardLoss, config):
+        config = KwolaCoreConfiguration(config)
         trace = ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=False, applicationId=applicationId)
         trace.lastTrainingRewardLoss = sampleRewardLoss
         trace.saveToDisk(config)
 
     @staticmethod
-    def prepareAndLoadBatchesSubprocess(configDir, batchDirectory, subProcessCommandQueue, subProcessBatchResultQueue, subprocessIndex=0, applicationId=None):
+    def prepareAndLoadBatchesSubprocess(config, batchDirectory, subProcessCommandQueue, subProcessBatchResultQueue, subprocessIndex=0, applicationId=None):
         try:
             setupLocalLogging()
 
-            config = KwolaCoreConfiguration(configDir)
+            config = KwolaCoreConfiguration(config)
 
             getLogger().info(f"Starting initialization for batch preparation sub process.")
 
@@ -752,7 +738,7 @@ class TrainingManager:
 
             executionSessionTraceWeightFutures = []
             for session in executionSessions:
-                future = initialDataLoadProcessPool.apply_async(TrainingManager.loadExecutionSessionTraceWeights, [session.id, session.executionTraces[:-1], configDir])
+                future = initialDataLoadProcessPool.apply_async(TrainingManager.loadExecutionSessionTraceWeights, [session.id, session.executionTraces[:-1], config.serialize()])
                 executionSessionTraceWeightFutures.append((future, session))
 
             completed = 0
@@ -843,7 +829,7 @@ class TrainingManager:
                             if differenceRatio > config['training_trace_selection_min_loss_ratio_difference_for_save']:
                                 traceWeightData.weights[executionTraceId] = sampleRewardLoss
                                 if traceWeightData.id not in executionSessionTraceWeightSaveFutures or executionSessionTraceWeightSaveFutures[traceWeightData.id].ready():
-                                    traceSaveFuture = backgroundTraceSaveProcessPool.apply_async(TrainingManager.saveExecutionSessionTraceWeights, (traceWeightData, configDir))
+                                    traceSaveFuture = backgroundTraceSaveProcessPool.apply_async(TrainingManager.saveExecutionSessionTraceWeights, (traceWeightData, config.serialize()))
                                     executionSessionTraceWeightSaveFutures[traceWeightData.id] = traceSaveFuture
 
                     if needToResetPool and lastProcessPool is None:
@@ -956,15 +942,15 @@ class TrainingManager:
         return session
 
     @staticmethod
-    def loadExecutionTrace(traceId, applicationId, configDir):
-        config = KwolaCoreConfiguration(configDir)
+    def loadExecutionTrace(traceId, applicationId, config):
+        config = KwolaCoreConfiguration(config)
         trace = ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True, applicationId=applicationId)
         return pickle.dumps(trace, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def loadExecutionSessionTraceWeights(sessionId, traceIds, configDir):
+    def loadExecutionSessionTraceWeights(sessionId, traceIds, config):
         try:
-            config = KwolaCoreConfiguration(configDir)
+            config = KwolaCoreConfiguration(config)
 
             traceWeights = ExecutionSessionTraceWeights.loadFromDisk(sessionId, config, printErrorOnFailure=False)
             if traceWeights is None:

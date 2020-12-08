@@ -10,6 +10,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
 from ..app import cache
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
+from kwolacloud.datamodels.TestingRun import TestingRun
 from kwola.tasks.RunTestingStep import runTestingStep
 import json
 import os
@@ -18,7 +19,7 @@ import flask
 from kwola.config.config import KwolaCoreConfiguration
 from kwolacloud.config.config import loadCloudConfiguration
 import os.path
-from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive, getSharedGCSStorageClient
+from ..tasks.utils import getSharedGCSStorageClient
 from ..auth import authenticate, isAdmin
 import concurrent.futures
 from google.cloud import storage
@@ -146,19 +147,12 @@ class ExecutionSessionTraces(Resource):
         if executionSession is None:
             return abort(404)
 
-        configData = loadCloudConfiguration()
-        if not configData['features']['localRuns']:
-            configDir = mountTestingRunStorageDrive(executionSession.applicationId)
-        else:
-            configDir = os.path.join("data", executionSession.applicationId)
-
-        config = KwolaCoreConfiguration(configDir)
+        testingRun = TestingRun.objects(id=executionSession.testingRunId)
+        config = testingRun.runConfiguration.createKwolaCoreConfiguration(testingRun.applicationId)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
             traces = executor.map(lambda traceId: ExecutionTrace.loadFromDisk(traceId, config, omitLargeFields=True, applicationId=executionSession.applicationId),
                                   executionSession.executionTraces)
-
-        unmountTestingRunStorageDrive(configDir)
 
         return {"executionTraces": [json.loads(trace.to_json()) for trace in traces]}
 
@@ -182,17 +176,10 @@ class ExecutionSessionSingleTrace(Resource):
         if executionSession is None:
             return abort(404)
 
-        configData = loadCloudConfiguration()
-        if not configData['features']['localRuns']:
-            configDir = mountTestingRunStorageDrive(executionSession.applicationId)
-        else:
-            configDir = os.path.join("data", executionSession.applicationId)
-
-        config = KwolaCoreConfiguration(configDir)
+        testingRun = TestingRun.objects(id=executionSession.testingRunId)
+        config = testingRun.runConfiguration.createKwolaCoreConfiguration(testingRun.applicationId)
 
         trace = ExecutionTrace.loadFromDisk(execution_trace_id, config, applicationId=executionSession.applicationId)
-
-        unmountTestingRunStorageDrive(configDir)
 
         return {"executionTrace": json.loads(trace.to_json())}
 

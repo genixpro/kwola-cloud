@@ -29,7 +29,6 @@ import filetype
 import re
 from pprint import pformat
 from ..plugins.base.ProxyPluginBase import ProxyPluginBase
-from ..utils.file import loadKwolaFileData, saveKwolaFileData
 
 class RewriteProxy:
     def __init__(self, config, plugins, testingRunId=None, testingStepId=None, executionSessionId=None):
@@ -64,19 +63,20 @@ class RewriteProxy:
         fileNameRoot = str(fileNameRoot.encode('ascii', 'xmlcharrefreplace'), 'ascii').replace("&#", "-").replace(";", "-")
         extension = str(extension.encode('ascii', 'xmlcharrefreplace'), 'ascii').replace("&#", "-").replace(";", "-")
 
-        cacheFileName = os.path.join(self.config.getKwolaUserDataDirectory("proxy_cache"), fileNameRoot[:100] + "_" + fileHash + "." + extension)
+        cacheFileName = fileNameRoot[:100] + "_" + fileHash + "." + extension
 
         return cacheFileName
 
 
     def findInCache(self, fileHash, fileURL):
         cacheFileName = self.getCacheFileName(fileHash, fileURL)
-        return loadKwolaFileData(cacheFileName, self.config, printErrorOnFailure=False)
+        data = self.config.loadKwolaFileData("proxy_cache", cacheFileName, printErrorOnFailure=False)
+        return data
 
     def saveInCache(self, fileHash, fileURL, data):
         cacheFileName = self.getCacheFileName(fileHash, fileURL)
         try:
-            return saveKwolaFileData(cacheFileName, data, self.config)
+            return self.config.saveKwolaFileData("proxy_cache", cacheFileName, data)
         except FileExistsError:
             pass
 
@@ -84,34 +84,37 @@ class RewriteProxy:
         flow.request.headers['Accept-Encoding'] = 'identity'
 
     def requestheaders(self, flow):
-        flow.request.headers['Accept-Encoding'] = 'identity'
+        try:
+            flow.request.headers['Accept-Encoding'] = 'identity'
 
-        # Add in a bunch of Kwola related headers to the request. This makes it possible for upstream
-        # systems to identify kwola related requests and separate them
-        flow.request.headers['X-Kwola'] = 'true'
+            # Add in a bunch of Kwola related headers to the request. This makes it possible for upstream
+            # systems to identify kwola related requests and separate them
+            flow.request.headers['X-Kwola'] = 'true'
 
-        if 'applicationId' in self.config and self.config['applicationId'] is not None:
-            flow.request.headers['X-Kwola-Application-Id'] = self.config['applicationId']
+            if 'applicationId' in self.config and self.config['applicationId'] is not None:
+                flow.request.headers['X-Kwola-Application-Id'] = self.config['applicationId']
 
-        if self.testingRunId is not None:
-            flow.request.headers['X-Kwola-Testing-Run-Id'] = self.testingRunId
+            if self.testingRunId is not None:
+                flow.request.headers['X-Kwola-Testing-Run-Id'] = self.testingRunId
 
-        if self.testingStepId is not None:
-            flow.request.headers['X-Kwola-Testing-Step-Id'] = self.testingStepId
+            if self.testingStepId is not None:
+                flow.request.headers['X-Kwola-Testing-Step-Id'] = self.testingStepId
 
-        if self.executionSessionId is not None:
-            flow.request.headers['X-Kwola-Execution-Session-Id'] = self.executionSessionId
+            if self.executionSessionId is not None:
+                flow.request.headers['X-Kwola-Execution-Session-Id'] = self.executionSessionId
 
-        if self.executionTraceId is not None:
-            flow.request.headers['X-Kwola-Execution-Trace-Id'] = self.executionTraceId
+            if self.executionTraceId is not None:
+                flow.request.headers['X-Kwola-Execution-Trace-Id'] = self.executionTraceId
 
-        # Add the word "Kwola" to the user agent string
-        if 'User-Agent' in flow.request.headers:
-            flow.request.headers['User-Agent'] = flow.request.headers['User-Agent'] + " Kwola"
-        elif 'user-agent' in flow.request.headers:
-            flow.request.headers['user-agent'] = flow.request.headers['user-agent'] + " Kwola"
-        else:
-            flow.request.headers['User-Agent'] = "Kwola"
+            # Add the word "Kwola" to the user agent string
+            if 'User-Agent' in flow.request.headers:
+                flow.request.headers['User-Agent'] = flow.request.headers['User-Agent'] + " Kwola"
+            elif 'user-agent' in flow.request.headers:
+                flow.request.headers['user-agent'] = flow.request.headers['user-agent'] + " Kwola"
+            else:
+                flow.request.headers['User-Agent'] = "Kwola"
+        except Exception as e:
+            getLogger().error(traceback.format_exc())
 
     @concurrent
     def responseheaders(self, flow):
@@ -155,48 +158,52 @@ class RewriteProxy:
         """
             The full HTTP response has been read.
         """
-        contentType = flow.response.headers.get('Content-Type')
-        if contentType is None:
-            contentType = flow.response.headers.get('content-type')
+        try:
+            contentType = flow.response.headers.get('Content-Type')
+            if contentType is None:
+                contentType = flow.response.headers.get('content-type')
 
-        # Don't attempt to transform if its not a 2xx, just let it pass through
-        if flow.response.status_code < 200 or flow.response.status_code >= 300:
-            for plugin in self.plugins:
-                plugin.observeRequest(url=flow.request.url,
-                                      statusCode=flow.response.status_code,
-                                      contentType=contentType,
-                                      headers=flow.request.headers,
-                                      origFileData=bytes(flow.response.data.content),
-                                      transformedFileData=bytes(flow.response.data.content),
-                                      didTransform=False
-                                      )
-            return
+            # Don't attempt to transform if its not a 2xx, just let it pass through
+            if flow.response.status_code < 200 or flow.response.status_code >= 300:
+                for plugin in self.plugins:
+                    plugin.observeRequest(url=flow.request.url,
+                                          statusCode=flow.response.status_code,
+                                          contentType=contentType,
+                                          headers=flow.request.headers,
+                                          origFileData=bytes(flow.response.data.content),
+                                          transformedFileData=bytes(flow.response.data.content),
+                                          didTransform=False
+                                          )
+                return
 
-        longFileHash, shortFileHash = ProxyPluginBase.computeHashes(bytes(flow.response.data.content))
+            longFileHash, shortFileHash = ProxyPluginBase.computeHashes(bytes(flow.response.data.content))
 
-        cached = self.memoryCache.get(longFileHash)
-        if cached is None:
-            cached = self.findInCache(shortFileHash, flow.request.url)
+            cached = self.memoryCache.get(longFileHash)
+            if cached is None:
+                cached = self.findInCache(shortFileHash, flow.request.url)
+                if cached is not None:
+                    self.memoryCache[longFileHash] = cached
+
             if cached is not None:
-                self.memoryCache[longFileHash] = cached
+                flow.response.data.headers['Content-Length'] = str(len(cached))
+                flow.response.data.content = cached
 
-        if cached is not None:
-            flow.response.data.headers['Content-Length'] = str(len(cached))
-            flow.response.data.content = cached
+                for plugin in self.plugins:
+                    plugin.observeRequest(url=flow.request.url,
+                                          statusCode=flow.response.status_code,
+                                          contentType=contentType,
+                                          headers=flow.request.headers,
+                                          origFileData=bytes(flow.response.data.content),
+                                          transformedFileData=cached,
+                                          didTransform=(len(flow.response.data.content) != len(cached)) # Cheap hack, should fix this to do a proper recording of whether
+                                                                                                        # The transform happened
+                                          )
+                return
 
-            for plugin in self.plugins:
-                plugin.observeRequest(url=flow.request.url,
-                                      statusCode=flow.response.status_code,
-                                      contentType=contentType,
-                                      headers=flow.request.headers,
-                                      origFileData=bytes(flow.response.data.content),
-                                      transformedFileData=cached,
-                                      didTransform=(len(flow.response.data.content) != len(cached)) # Cheap hack, should fix this to do a proper recording of whether
-                                                                                                    # The transform happened
-                                      )
+            fileURL = flow.request.url
+        except Exception as e:
+            getLogger().error(traceback.format_exc())
             return
-
-        fileURL = flow.request.url
 
         try:
             originalFileContents = bytes(flow.response.data.content)
@@ -281,3 +288,5 @@ class RewriteProxy:
 
         except Exception as e:
             getLogger().error(traceback.format_exc())
+            return
+

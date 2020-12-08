@@ -9,7 +9,7 @@ from ..datamodels.id_utility import generateKwolaId
 from ..datamodels.TestingRun import TestingRun
 from ..helpers.jira import postBugToCustomerJIRA
 from ..helpers.slack import postToCustomerSlack
-from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
+from .utils import verifyStripeSubscription
 from kwola.components.plugins.core.CreateLocalBugObjects import CreateLocalBugObjects
 from kwola.components.plugins.core.GenerateAnnotatedVideos import GenerateAnnotatedVideos
 from kwola.components.plugins.core.LogSessionActionExecutionTimes import LogSessionActionExecutionTimes
@@ -38,8 +38,6 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
 
     logging.info(f"Testing run obj: {pformat(json.loads(run.to_json()))}")
 
-    configData = loadCloudConfiguration()
-
     if run is None:
         errorMessage = f"Error! {testingRunId} not found."
         logging.error(f"{errorMessage}")
@@ -49,17 +47,8 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
     if not verifyStripeSubscription(run):
        return {"success": False}
 
-    if not configData['features']['localRuns']:
-        configDir = mountTestingRunStorageDrive(run.applicationId)
-        if configDir is None:
-            errorMessage = f"{traceback.format_exc()}"
-            logging.error(f"{errorMessage}")
-            return {"success": False, "exception": errorMessage}
-    else:
-        configDir = os.path.join("data", run.applicationId)
-
     try:
-        config = KwolaCoreConfiguration(configDir)
+        config = run.runConfiguration.createKwolaCoreConfiguration(run.applicationId)
 
         shouldBeRandom = False
         if testingStepIndex < (config['training_random_initialization_sequences']):
@@ -111,7 +100,7 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
             SendExecutionSessionWebhooks(config, application)
         ]
 
-        result = RunTestingStep.runTestingStep(configDir, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins, browser=chosenBrowser, windowSize=chosenWindowSize)
+        result = RunTestingStep.runTestingStep(config, str(testingStep.id), shouldBeRandom=shouldBeRandom, plugins=plugins, browser=chosenBrowser, windowSize=chosenWindowSize)
 
         logging.info(f"Finished testing step for testing run {testingRunId}")
 
@@ -120,9 +109,7 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
         errorMessage = f"{traceback.format_exc()}"
         logging.error(f"{errorMessage}")
         return {"success": False, "exception": errorMessage}
-    finally:
-        # unmountTestingRunStorageDrive(configDir)
-        pass
+
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from pprint import pformat
 import traceback
 import os
 import json
-from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
+from .utils import verifyStripeSubscription
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from ..config.config import loadCloudConfiguration
 
@@ -22,8 +22,6 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
 
     logging.info(f"Testing run obj: {pformat(json.loads(run.to_json()))}")
 
-    configData = loadCloudConfiguration()
-
     if run is None:
         errorMessage = f"Error! {testingRunId} not found."
         logging.error(f"{errorMessage}")
@@ -33,19 +31,12 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     if not verifyStripeSubscription(run):
        return {"success": False}
 
-    if not configData['features']['localRuns']:
-        configDir = mountTestingRunStorageDrive(run.applicationId)
-        if configDir is None:
-            errorMessage = f"{traceback.format_exc()}"
-            logging.error(f"{errorMessage}")
-            return {"success": False, "exception": errorMessage}
-    else:
-        configDir = os.path.join("data", run.applicationId)
-
     try:
         gpu = 0
 
-        result = RunTrainingStep.runTrainingStep(configDir, testingRunId, trainingStepsCompleted, gpu=gpu, testingRunId=testingRunId, applicationId=run.applicationId, gpuWorldSize=1)
+        config = run.runConfiguration.createKwolaCoreConfiguration(run.applicationId)
+
+        result = RunTrainingStep.runTrainingStep(config, testingRunId, trainingStepsCompleted, gpu=gpu, testingRunId=testingRunId, applicationId=run.applicationId, gpuWorldSize=1)
 
         logging.info(f"Completed training step for testing run {testingRunId}")
         return result
@@ -53,9 +44,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
         errorMessage = f"{traceback.format_exc()}"
         logging.error(f"{errorMessage}")
         return {"success": False, "exception": errorMessage}
-    finally:
-        # unmountTestingRunStorageDrive(configDir)
-        pass
+
 
 
 if __name__ == "__main__":

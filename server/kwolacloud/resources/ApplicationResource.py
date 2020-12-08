@@ -48,7 +48,8 @@ import cv2
 import numpy
 from ..helpers.auth0 import getUserProfileFromId
 from ..helpers.stripe import attachPaymentMethodToUserAccountIfNeeded
-from kwola.components.utils.file import getSharedGCSStorageClient
+from kwola.config.config import getSharedGCSStorageClient
+from ..tasks.utils import createMainStorageBucketIfNeeded, createCacheBucketIfNeeded
 
 
 class ApplicationGroup(Resource):
@@ -154,6 +155,9 @@ class ApplicationGroup(Resource):
             newApplication.stripeSubscriptionId = None
 
         newApplication.save()
+
+        createMainStorageBucketIfNeeded(newApplication.id)
+        createCacheBucketIfNeeded(newApplication.id)
 
         runConfiguration = copy.deepcopy(newApplication.defaultRunConfiguration)
 
@@ -720,7 +724,7 @@ class TestAutoLogin(Resource):
         with open(os.path.join(dir, "kwola.json"), 'wt') as f:
             json.dump(kwolaConfigData, f)
 
-        config = KwolaCoreConfiguration(configurationDirectory=dir)
+        config = KwolaCoreConfiguration.loadConfigurationFromDirectory(dir)
 
         session = WebEnvironmentSession(config, tabNumber=0)
         session.fetchTargetWebpage()

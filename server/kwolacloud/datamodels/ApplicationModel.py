@@ -5,7 +5,7 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.datamodels.DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from kwolacloud.datamodels.RunConfiguration import RunConfiguration
 from kwolacloud.datamodels.TestingRun import TestingRun
-from kwola.components.utils.file import getSharedGCSStorageClient
+from kwola.config.config import getSharedGCSStorageClient
 from kwolacloud.config.config import loadCloudConfiguration
 from mongoengine import *
 from selenium import webdriver

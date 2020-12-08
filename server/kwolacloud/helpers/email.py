@@ -4,7 +4,6 @@ import base64
 from ..config.config import loadCloudConfiguration
 import logging
 import os.path
-from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from kwola.config.config import KwolaCoreConfiguration
 from ..helpers.auth0 import getUserProfileFromId
 
@@ -57,12 +56,7 @@ def sendBugFoundNotification(application, bug):
         "bugUrl": f"{configData['frontend']['url']}app/dashboard/bugs/{bug.id}"
     }
 
-    if not configData['features']['localRuns']:
-        configDir = mountTestingRunStorageDrive(bug.applicationId)
-    else:
-        configDir = os.path.join("data", bug.applicationId)
-
-    config = KwolaCoreConfiguration(configDir)
+    config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.id)
 
     videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
 
@@ -81,9 +75,6 @@ def sendBugFoundNotification(application, bug):
     message.template_id = 'd-a7f557fbf657448b9a38f7e3e5be3f8a'
     sg = SendGridAPIClient(configData['sendgrid']['apiKey'])
     response = sg.send(message)
-
-    if not configData['features']['localRuns']:
-        unmountTestingRunStorageDrive(configDir)
 
 
 

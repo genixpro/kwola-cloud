@@ -9,7 +9,6 @@ from ..datamodels.id_utility import generateKwolaId
 from ..datamodels.TestingRun import TestingRun
 from ..helpers.jira import postBugToCustomerJIRA
 from ..helpers.slack import postToCustomerSlack
-from .utils import mountTestingRunStorageDrive, verifyStripeSubscription
 from datetime import datetime
 from kwola.components.environments.WebEnvironment import WebEnvironment
 from kwola.components.plugins.core.CreateLocalBugObjects import CreateLocalBugObjects
@@ -30,7 +29,6 @@ from kwolacloud.components.plugins.SendExecutionSessionWebhooks import SendExecu
 from kwolacloud.components.utils.KubernetesJobProcess import KubernetesJobProcess
 from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 from kwolacloud.helpers.webhook import sendCustomerWebhook
-from kwola.components.utils.file import loadKwolaFileData, saveKwolaFileData
 from pprint import pformat
 import json
 import logging
@@ -78,20 +76,12 @@ def runBugReproductionAlgorithm(bugId):
     logging.info(f"Starting bug reproduction for bug id {bugId}")
 
     bug = BugModel.objects(id=bugId).first()
+    run = TestingRun.objects(id=bug.testingRunId).first()
 
     configData = loadCloudConfiguration()
 
-    if not configData['features']['localRuns']:
-        configDir = mountTestingRunStorageDrive(bug.applicationId)
-        if configDir is None:
-            errorMessage = f"{traceback.format_exc()}"
-            logging.error(f"{errorMessage}")
-            return {"success": False, "exception": errorMessage}
-    else:
-        configDir = os.path.join("data", bug.applicationId)
-
     try:
-        config = KwolaCoreConfiguration(configDir)
+        config = run.runConfiguration.createKwolaCoreConfiguration(run.applicationId)
 
         config['web_session_height'] = {
             "desktop": 768,
@@ -152,12 +142,9 @@ def runBugReproductionAlgorithm(bugId):
                 videoData = f.read()
 
 
-            kwolaVideoDirectory = config.getKwolaUserDataDirectory("videos")
-            filePath = os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4')
-            saveKwolaFileData(filePath, videoData, config)
-
-            bugVideoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), bug.id + ".mp4")
-            saveKwolaFileData(bugVideoFilePath, videoData, config)
+            fileName = f'{str(executionSession.id)}.mp4'
+            config.saveKwolaFileData("videos", fileName, videoData)
+            config.saveKwolaFileData("bugs", bug.id + ".mp4",  videoData)
 
             bug.executionSessionId = executionSession.id
             bug.stepNumber = len(shortestActionSequence) - 1
@@ -195,9 +182,7 @@ def runBugReproductionAlgorithm(bugId):
         errorMessage = f"{traceback.format_exc()}"
         logging.error(f"{errorMessage}")
         return {"success": False, "exception": errorMessage}
-    finally:
-        # unmountTestingRunStorageDrive(configDir)
-        pass
+
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@ import requests
 from ..config.config import loadCloudConfiguration, getKwolaConfiguration
 from kwola.config.config import KwolaCoreConfiguration
 import os.path
-from ..tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
 
 def postBugToCustomerJIRA(bug, application):
@@ -48,13 +47,7 @@ def postBugToCustomerJIRA(bug, application):
     else:
         issueId = jiraAPIResponse.json()['id']
 
-        configData = loadCloudConfiguration()
-        if not configData['features']['localRuns']:
-            configDir = mountTestingRunStorageDrive(bug.applicationId)
-        else:
-            configDir = os.path.join("data", bug.applicationId)
-
-        config = KwolaCoreConfiguration(configDir)
+        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.id)
 
         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"),
                                      f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
@@ -74,7 +67,3 @@ def postBugToCustomerJIRA(bug, application):
             if jiraAPIResponse.status_code != 200:
                 logging.error(f"Error uploading attachment to issue in JIRA. Status code: {jiraAPIResponse.status_code}. Text: {jiraAPIResponse.text}")
                 return
-
-        if not configData['features']['localRuns']:
-            unmountTestingRunStorageDrive(configDir)
-

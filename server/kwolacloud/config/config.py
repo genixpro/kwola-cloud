@@ -50,7 +50,7 @@ def getKwolaConfigurationData():
 def getKwolaConfiguration():
     data = getKwolaConfigurationData()
 
-    config = KwolaCoreConfiguration(configData=data)
+    config = KwolaCoreConfiguration(data)
 
     return config
 

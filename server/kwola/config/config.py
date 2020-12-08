@@ -30,7 +30,11 @@ import mongoengine
 import mongoengine.connection
 from pprint import pprint
 from ..components.utils.regex import sharedUrlRegex
-
+from google.cloud import storage
+import google
+import google.cloud
+from ..config.logger import getLogger, setupLocalLogging
+from ..components.utils.retry import autoretry
 
 globalCachedPrebuiltConfigs = {}
 
@@ -38,26 +42,11 @@ class KwolaCoreConfiguration:
     """
         This class represents the configuration for the Kwola model.
     """
-    def __init__(self, configurationDirectory = None, configData = None):
-        if configurationDirectory is not None:
-            self.configFileName = os.path.join(configurationDirectory, "kwola.json")
-            self.configurationDirectory = configurationDirectory
-            self.configData = {}
-
-            maxAttempts = 5
-            for attempt in range(maxAttempts):
-                try:
-                    with open(self.configFileName, "rt") as f:
-                        data = json.load(f)
-                        break
-                except OSError:
-                    if attempt == (maxAttempts - 1):
-                        raise
-                    else:
-                        time.sleep(2**attempt)
-        else:
-            data = configData
-
+    def __init__(self, data):
+        if isinstance(data, str):
+            data = json.loads(data)
+        elif isinstance(data, KwolaCoreConfiguration):
+            data = data.configData
 
         if 'profile' not in data:
             data['profile'] = 'medium'
@@ -82,6 +71,28 @@ class KwolaCoreConfiguration:
 
         self.connectToMongoIfNeeded()
 
+    @staticmethod
+    def loadConfigurationFromDirectory(configurationDirectory):
+        configFileName = os.path.join(configurationDirectory, "kwola.json")
+        configData = {}
+
+        maxAttempts = 5
+        for attempt in range(maxAttempts):
+            try:
+                with open(configFileName, "rt") as f:
+                    configData = json.load(f)
+                    break
+            except OSError:
+                if attempt == (maxAttempts - 1):
+                    raise
+                else:
+                    time.sleep(2**attempt)
+
+        configData['configurationDirectory'] = configurationDirectory
+        configData['configFileName'] = configFileName
+
+        return KwolaCoreConfiguration(configData)
+
     def connectToMongoIfNeeded(self):
         if isinstance(self.configData['data_serialization_method'], dict):
             method = self.configData['data_serialization_method']['default']
@@ -100,6 +111,8 @@ class KwolaCoreConfiguration:
                     else:
                         time.sleep(2**attempt)
 
+    def serialize(self):
+        return json.dumps(self.configData, indent=4)
 
     def getKwolaUserDataDirectory(self, subDirName, ensureExists=True):
         """
@@ -209,4 +222,92 @@ class KwolaCoreConfiguration:
             globalCachedPrebuiltConfigs[prebuild] = data
             return data
 
+    @autoretry()
+    def saveKwolaFileData(self, folder, fileName, fileData):
+        filePath = os.path.join(folder, fileName)
+
+        if self['data_file_storage_method'] == 'local':
+            # Todo - we shouldn't be making these os.path.exists calls every single time we save file data
+            # Its inefficient.
+            if not os.path.exists(os.path.join(self.configurationDirectory, folder)):
+                os.mkdir(os.path.join(self.configurationDirectory, folder))
+
+            with open(os.path.join(self.configurationDirectory, filePath), 'wb') as f:
+                f.write(fileData)
+        elif self['data_file_storage_method'] == 'gcs':
+            if 'applicationId' not in self or self.applicationId is None:
+                raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
+
+            storageClient = getSharedGCSStorageClient()
+            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
+            objectBlob = storage.Blob(filePath, applicationStorageBucket)
+            objectBlob.upload_from_string(fileData)
+        else:
+            raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for configuration data_file_storage_method")
+
+
+    @autoretry()
+    def loadKwolaFileData(self, folder, fileName, printErrorOnFailure=True):
+        filePath = os.path.join(folder, fileName)
+
+        try:
+            if self['data_file_storage_method'] == 'local':
+                with open(os.path.join(self.configurationDirectory, filePath), 'rb') as f:
+                    data = f.read()
+                    return data
+            elif self['data_file_storage_method'] == 'gcs':
+                if 'applicationId' not in self or self.applicationId is None:
+                    raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
+
+                storageClient = getSharedGCSStorageClient()
+                applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
+                objectBlob = storage.Blob(filePath, applicationStorageBucket)
+                data = objectBlob.download_as_string()
+                return data
+            else:
+                raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for uration data_file_storage_method")
+        except FileNotFoundError:
+            if printErrorOnFailure:
+                getLogger().info(f"Error: Failed to load file {filePath}. File not found. Usually implies the file failed to write. "
+                                      "Sometimes this occurs if you kill the process while it is running. If this occurs "
+                                      "during normal operations without interruption, that would indicate a bug.")
+            return
+        except google.cloud.exceptions.NotFound:
+            if printErrorOnFailure:
+                getLogger().info(f"Error: Failed to load object {filePath}. Google cloud storage file not found. Usually implies the file failed to write. "
+                                      "Sometimes this occurs if you kill the process while it is running. If this occurs "
+                                      "during normal operations without interruption, that would indicate a bug.")
+            return
+
+    @autoretry()
+    def deleteKwolaFileData(self, folder, fileName):
+        filePath = os.path.join(folder, fileName)
+
+        try:
+            if self['data_file_storage_method'] == 'local':
+                os.unlink(filePath)
+            elif self['data_file_storage_method'] == 'gcs':
+                if 'applicationId' not in self or self.applicationId is None:
+                    raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
+
+                storageClient = getSharedGCSStorageClient()
+                applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
+                objectBlob = storage.Blob(filePath, applicationStorageBucket)
+                objectBlob.delete()
+                return
+            else:
+                raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for configuration data_file_storage_method")
+        except FileNotFoundError:
+            return
+        except google.cloud.exceptions.NotFound:
+            return
+
+
+globalStorageClient = None
+def getSharedGCSStorageClient():
+    global globalStorageClient
+    if globalStorageClient is None:
+        globalStorageClient = storage.Client()
+
+    return globalStorageClient
 

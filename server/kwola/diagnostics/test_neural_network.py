@@ -75,7 +75,7 @@ def testNeuralNetworkAllGPUs(verbose=True):
                                                                     enableRightClickCommand=False
                                                                     )
     try:
-        config = KwolaCoreConfiguration(configDir)
+        config = KwolaCoreConfiguration.loadConfigurationFromDirectory(configDir)
 
         allSuccess = True
 

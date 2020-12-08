@@ -12,7 +12,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_r
                                 jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 from flask_restful import Resource, reqparse, abort
 from google.cloud import storage
-from kwola.components.utils.file import loadKwolaFileData, saveKwolaFileData, getSharedGCSStorageClient
+from kwola.config.config import getSharedGCSStorageClient
 from kwola.config.config import KwolaCoreConfiguration
 from kwola.datamodels.BugModel import BugModel
 from kwola.datamodels.CustomIDField import CustomIDField

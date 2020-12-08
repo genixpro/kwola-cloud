@@ -27,7 +27,7 @@ class GenerateAnnotatedVideos(TestingStepPluginBase):
 
         futures = []
         for session in executionSessions:
-            future = pool.apply_async(func=createDebugVideoSubProcess, args=(self.config.configurationDirectory, str(session.id), "", False, False, None, None, "annotated_videos"))
+            future = pool.apply_async(func=createDebugVideoSubProcess, args=(self.config.serialize(), str(session.id), "", False, False, None, None, "annotated_videos"))
             futures.append(future)
 
         for future in futures:

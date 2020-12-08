@@ -24,7 +24,7 @@ import stripe
 import os
 from google.cloud import storage
 import google.cloud.exceptions
-from kwola.components.utils.file import getSharedGCSStorageClient
+from kwola.config.config import getSharedGCSStorageClient
 from ..helpers.stripe import getPriceIdForUser
 from ..components.managers.TestingRunManager import TestingRunManager
 

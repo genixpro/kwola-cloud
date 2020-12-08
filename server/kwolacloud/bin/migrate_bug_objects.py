@@ -22,6 +22,7 @@ from ..db import connectToMongoWithRetries
 from kwolacloud.tasks.RunHourlyTasks import runHourlyTasks
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
+from kwolacloud.datamodels.TestingRun import TestingRun
 from kwola.datamodels.BugModel import BugModel
 from ..helpers.slack import SlackLogHandler
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
@@ -43,7 +44,6 @@ from kwola.datamodels.errors.BaseError import BaseError
 from kwola.datamodels.errors.ExceptionError import ExceptionError
 from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.errors.LogError import LogError
-from kwolacloud.tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 from kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
 
 def processBug(bugId):
@@ -55,6 +55,7 @@ def processBug(bugId):
         bug = BugModel.objects(id=bugId).first()
 
         executionSession = ExecutionSession.objects(id=bug.executionSessionId).first()
+        testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
         if executionSession is None:
             return
@@ -62,13 +63,7 @@ def processBug(bugId):
         if bug.applicationId is None:
             bug.applicationId = executionSession.applicationId
 
-        configData = loadCloudConfiguration()
-        if not configData['features']['localRuns']:
-            configDir = mountTestingRunStorageDrive(bug.applicationId)
-        else:
-            configDir = os.path.join("data", bug.applicationId)
-
-        config = KwolaCoreConfiguration(configDir)
+        config = testingRun.runConfiguration.createKwolaCoreConfiguration(testingRun.applicationId)
 
         if not bug.actionsPerformed or len(bug.actionsPerformed) == 0:
             actionsPerformed = []
@@ -82,8 +77,6 @@ def processBug(bugId):
         plugin.generateFrameSpriteSheetsForBugs([bug])
 
         bug.save()
-
-        unmountTestingRunStorageDrive(configDir)
 
     except Exception as e:
         logging.info(f"Received an error while processing {bugId}: {traceback.format_exc()}")

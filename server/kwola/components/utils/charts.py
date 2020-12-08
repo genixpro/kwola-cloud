@@ -8,7 +8,6 @@ from ...datamodels.TrainingStepModel import TrainingStep
 from ...datamodels.BugModel import BugModel
 from ...config.logger import getLogger, setupLocalLogging
 from ...config.config import KwolaCoreConfiguration
-from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import matplotlib
 import numpy
 import os
@@ -31,10 +30,10 @@ def averageRewardForTestingStep(config, testingStepId):
         return None
 
 
-def generateRewardChart(configDir, applicationId):
+def generateRewardChart(config, applicationId):
     getLogger().info(f"Generating the reward chart")
 
-    config = KwolaCoreConfiguration(configDir)
+    config = KwolaCoreConfiguration(config)
 
     testingSteps = sorted(
         [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
@@ -64,8 +63,7 @@ def generateRewardChart(configDir, applicationId):
     _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
-        filePath = f"{config.getKwolaUserDataDirectory('charts')}/reward_chart.png"
-        saveKwolaFileData(filePath, f.read(), config)
+        config.saveKwolaFileData("charts", "reward_chart.png", f.read())
     os.unlink(localFilePath)
 
 
@@ -88,10 +86,10 @@ def averageCoverageForTestingStep(config, testingStepId):
     else:
         return None
 
-def generateCoverageChart(configDir, applicationId):
+def generateCoverageChart(config, applicationId):
     getLogger().info(f"Generating the coverage chart")
 
-    config = KwolaCoreConfiguration(configDir)
+    config = KwolaCoreConfiguration(config)
 
     testingSteps = sorted(
         [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
@@ -119,8 +117,7 @@ def generateCoverageChart(configDir, applicationId):
     _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
-        filePath = f"{config.getKwolaUserDataDirectory('charts')}/coverage_chart.png"
-        saveKwolaFileData(filePath, f.read(), config)
+        config.saveKwolaFileData("charts", "coverage_chart.png", f.read())
     os.unlink(localFilePath)
 
     pool.close()
@@ -153,10 +150,10 @@ def loadTrainingStepLossData(config, trainingStepId, attribute):
     else:
         return 0, step.startTime, step.status
 
-def generateLossChart(configDir, applicationId, attribute, title, fileName):
+def generateLossChart(config, applicationId, attribute, title, fileName):
     getLogger().info(f"Generating the loss chart for {attribute}")
 
-    config = KwolaCoreConfiguration(configDir)
+    config = KwolaCoreConfiguration(config)
 
     trainingStepIds = findAllTrainingStepIds(config, applicationId=applicationId)
 
@@ -189,8 +186,7 @@ def generateLossChart(configDir, applicationId, attribute, title, fileName):
     _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
-        filePath = os.path.join(config.getKwolaUserDataDirectory('charts'), fileName)
-        saveKwolaFileData(filePath, f.read(), config)
+        config.saveKwolaFileData("charts", fileName, f.read())
     os.unlink(localFilePath)
 
     pool.close()
@@ -249,10 +245,10 @@ def computeCumulativeCoverageForTestingSteps(testingStepIds, config):
     return float(executedAtleastOnce) / float(total)
 
 
-def generateCumulativeCoverageChart(configDir, applicationId=None):
+def generateCumulativeCoverageChart(config, applicationId=None):
     getLogger().info(f"Generating the cumulative coverage chart")
 
-    config = KwolaCoreConfiguration(configDir)
+    config = KwolaCoreConfiguration(config)
 
     testingSteps = sorted(
         [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
@@ -278,8 +274,8 @@ def generateCumulativeCoverageChart(configDir, applicationId=None):
     _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
-        filePath = f"{config.getKwolaUserDataDirectory('charts')}/cumulative_coverage_chart.png"
-        saveKwolaFileData(filePath, f.read(), config)
+        config.saveKwolaFileData("charts", "cumulative_coverage_chart.png", f.read())
+
     os.unlink(localFilePath)
 
     getLogger().info(f"Best Cumulative Coverage: {numpy.max(cumulativeCoverageValues)}")
@@ -310,10 +306,10 @@ def loadAllBugs(config, applicationId=None):
 
         return bugs
 
-def generateCumulativeErrorsFoundChart(configDir, applicationId):
+def generateCumulativeErrorsFoundChart(config, applicationId):
     getLogger().info(f"Generating the cumulative errors chart")
 
-    config = KwolaCoreConfiguration(configDir)
+    config = KwolaCoreConfiguration(config)
 
     testingSteps = sorted(
         [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
@@ -348,8 +344,8 @@ def generateCumulativeErrorsFoundChart(configDir, applicationId):
     _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
-        filePath = f"{config.getKwolaUserDataDirectory('charts')}/errors_found.png"
-        saveKwolaFileData(filePath, f.read(), config)
+        config.saveKwolaFileData("charts", "errors_found.png", f.read())
+
     os.unlink(localFilePath)
 
     pool.close()
@@ -364,20 +360,20 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
     futures = []
 
     if config['chart_enable_cumulative_coverage_chart'] and enableCumulativeCoverage:
-        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.configurationDirectory, applicationId]))
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId]))
 
-    futures.append(pool.apply_async(generateRewardChart, [config.configurationDirectory, applicationId]))
-    futures.append(pool.apply_async(generateCoverageChart, [config.configurationDirectory, applicationId]))
+    futures.append(pool.apply_async(generateRewardChart, [config.serialize(), applicationId]))
+    futures.append(pool.apply_async(generateCoverageChart, [config.serialize(), applicationId]))
 
     if config['chart_enable_cumulative_errors_chart']:
-        futures.append(pool.apply_async(generateCumulativeErrorsFoundChart, [config.configurationDirectory, applicationId]))
+        futures.append(pool.apply_async(generateCumulativeErrorsFoundChart, [config.serialize(), applicationId]))
 
-    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'totalLosses', "Total Loss", 'total_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'presentRewardLosses', "Present Reward Loss", 'present_reward_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'discountedFutureRewardLosses', "Discounted Future Reward Loss", 'discounted_future_reward_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'stateValueLosses', "State Value Loss", 'state_value_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'advantageLosses', "Advantage Loss", 'advantage_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config.configurationDirectory, applicationId, 'actionProbabilityLosses', "Action Probability Loss", 'action_probability_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'totalLosses', "Total Loss", 'total_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'presentRewardLosses', "Present Reward Loss", 'present_reward_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'discountedFutureRewardLosses', "Discounted Future Reward Loss", 'discounted_future_reward_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'stateValueLosses', "State Value Loss", 'state_value_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'advantageLosses', "Advantage Loss", 'advantage_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'actionProbabilityLosses', "Action Probability Loss", 'action_probability_loss_chart.png']))
 
     for future in futures:
         future.get()

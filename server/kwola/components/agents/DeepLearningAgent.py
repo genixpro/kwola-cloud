@@ -28,7 +28,6 @@ from ...datamodels.actions.TypeAction import TypeAction
 from ...datamodels.actions.ScrollingAction import ScrollingAction
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
-from ..utils.file import loadKwolaFileData, saveKwolaFileData
 from .TraceNet import TraceNet
 from ..utils.video import chooseBestFfmpegVideoCodec
 from pprint import pprint
@@ -94,8 +93,7 @@ class DeepLearningAgent:
             self.variableWrapperFunc = lambda t, x: t(x).cuda(device=f"cuda:{self.whichGpu}")
 
         # Fetch the folder that we will store the model parameters in
-        self.modelPath = os.path.join(config.getKwolaUserDataDirectory("models"), "deep_learning_model")
-        self.symbolMapPath = os.path.join(config.getKwolaUserDataDirectory("models"), "symbol_map")
+        self.modelFileName = "deep_learning_model"
 
         self.fakeStringGenerator = Faker()
 
@@ -379,7 +377,7 @@ class DeepLearningAgent:
         """
         self.loadSymbolMap()
 
-        fileData = loadKwolaFileData(self.modelPath, self.config, printErrorOnFailure=False)
+        fileData = self.config.loadKwolaFileData("models", self.modelFileName, printErrorOnFailure=False)
         if fileData is None:
             # Initialize a fresh model if we are unable to load a model from disk.
             self.model.initialize()
@@ -417,7 +415,7 @@ class DeepLearningAgent:
         buffer = io.BytesIO()
         torch.save(self.model.state_dict(), buffer)
 
-        saveKwolaFileData(self.modelPath + saveName, buffer.getvalue(), self.config)
+        self.config.saveKwolaFileData("models", self.modelFileName + saveName, buffer.getvalue())
 
         self.saveSymbolMap()
 
@@ -1360,15 +1358,15 @@ class DeepLearningAgent:
         return discountedFutureRewards
 
     @staticmethod
-    def readVideoFrames(videoFilePath, config):
+    def readVideoFrames(videoFileName, config):
         """
         This method reads a given video file into a numpy array of images that can then be further manipulated
 
-        :param videoFilePath: This is a path to the video file on the local hard drive.
+        :param videoFileName: This is the name of the video file
         :return: A list containing numpy arrays, a single numpy array for each frame in the video.
         """
 
-        data = loadKwolaFileData(videoFilePath, config)
+        data = config.loadKwolaFileData("videos", videoFileName)
         localTempDescriptor, localTemp = tempfile.mkstemp()
         with open(localTempDescriptor, 'wb') as f:
             f.write(data)
@@ -1432,9 +1430,7 @@ class DeepLearningAgent:
             :param cutoffStepNumber: This will cut the video short at the given step number.
             :return: Nothing is returned from this function.
         """
-        videoPath = self.config.getKwolaUserDataDirectory("videos")
-
-        rawImages = DeepLearningAgent.readVideoFrames(os.path.join(videoPath, f"{str(executionSession.id)}.mp4"), self.config)
+        rawImages = DeepLearningAgent.readVideoFrames(f"{str(executionSession.id)}.mp4", self.config)
 
         executionTraces = [ExecutionTrace.loadFromDisk(traceId, self.config, applicationId=executionSession.applicationId) for traceId in executionSession.executionTraces]
 
@@ -1616,7 +1612,7 @@ class DeepLearningAgent:
                     hilight = 1 / ((dist/3)+1)
 
                 future = processingPool.apply_async(DeepLearningAgent.createDebugImagesForExecutionTraceStatic,
-                                         args=[self.config.configurationDirectory,
+                                         args=[self.config,
                                                  str(executionSession.id), traceIndex, pickle.dumps(trace, protocol=pickle.HIGHEST_PROTOCOL),
                                                  rawImage, lastRawImage, networkOutput,
                                                  presentRewards, discountedFutureRewards, tempScreenshotDirectory,
@@ -1696,9 +1692,7 @@ class DeepLearningAgent:
         return outputs
 
     @staticmethod
-    def createDebugImagesForExecutionTraceStatic(configDir, *args, **kwargs):
-        config = KwolaCoreConfiguration(configDir)
-
+    def createDebugImagesForExecutionTraceStatic(config, *args, **kwargs):
         agent = DeepLearningAgent(config, whichGpu=None)
         agent.loadSymbolMap()
         return agent.createDebugImagesForExecutionTrace(*args, **kwargs)
@@ -2364,8 +2358,8 @@ class DeepLearningAgent:
 
         # In this section, we load the video and all of the execution traces from the disk
         # at the same time.
-        videoPath = os.path.join(self.config.getKwolaUserDataDirectory("videos"), f'{str(executionSession.id)}.mp4')
-        for rawImage, traceId in zip(DeepLearningAgent.readVideoFrames(videoPath, self.config), executionSession.executionTraces):
+        videoFileName = f'{str(executionSession.id)}.mp4'
+        for rawImage, traceId in zip(DeepLearningAgent.readVideoFrames(videoFileName, self.config), executionSession.executionTraces):
             trace = ExecutionTrace.loadFromDisk(traceId, self.config, applicationId=executionSession.applicationId)
             # Occasionally if your doing a lot of R&D and killing the code a lot,
             # the software will save a broken file to disk. When this happens, you

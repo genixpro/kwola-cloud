@@ -37,7 +37,6 @@ from kwola.components.plugins.core.LogSessionRewards import LogSessionRewards
 from kwola.components.plugins.core.PrecomputeSessionsForSampleCache import PrecomputeSessionsForSampleCache
 from kwola.components.plugins.core.RecordScreenshots import RecordScreenshots
 from kwola.errors import ProxyVerificationFailed
-from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import atexit
 import billiard as multiprocessing
 import numpy
@@ -53,13 +52,12 @@ from pprint import pformat
 
 
 class TestingStepManager:
-    def __init__(self, configDir, testingStepId, shouldBeRandom=False, generateDebugVideo=False, plugins=None, browser=None, windowSize=None):
+    def __init__(self, config, testingStepId, shouldBeRandom=False, generateDebugVideo=False, plugins=None, browser=None, windowSize=None):
         getLogger().info(f"Starting New Testing Sequence")
 
         self.generateDebugVideo = generateDebugVideo
         self.shouldBeRandom = shouldBeRandom
-        self.configDir = configDir
-        self.config = KwolaCoreConfiguration(configDir)
+        self.config = KwolaCoreConfiguration(config)
         self.browser = browser
         self.windowSize = windowSize
 
@@ -68,10 +66,6 @@ class TestingStepManager:
         self.stepsRemaining = int(self.config['testing_sequence_length'])
 
         self.testStep = TestingStep.loadFromDisk(testingStepId, self.config)
-        # Make sure applicationId is set in the config and save it
-        if 'applicationId' not in self.config:
-            self.config['applicationId'] = self.testStep.applicationId
-            self.config.saveConfig()
 
         self.executionSessions = []
         self.executionSessionTraces = []
@@ -153,7 +147,7 @@ class TestingStepManager:
             subProcessCommandQueue = multiprocessing.Queue()
             subProcessResultQueue = multiprocessing.Queue()
             preloadTraceFiles = [file for fileList in self.executionSessionTraceLocalPickleFiles for file in fileList]
-            subProcess = multiprocessing.Process(target=TestingStepManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
+            subProcess = multiprocessing.Process(target=TestingStepManager.predictedActionSubProcess, args=(self.config.serialize(), self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
             subProcess.start()
             atexit.register(lambda: subProcess.terminate())
 
@@ -168,7 +162,7 @@ class TestingStepManager:
         subProcessCommandQueue = multiprocessing.Queue()
         subProcessResultQueue = multiprocessing.Queue()
         preloadTraceFiles = [file for fileList in self.executionSessionTraceLocalPickleFiles for file in fileList]
-        subProcess = multiprocessing.Process(target=TestingStepManager.predictedActionSubProcess, args=(self.configDir, self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
+        subProcess = multiprocessing.Process(target=TestingStepManager.predictedActionSubProcess, args=(self.config.serialize(), self.shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles))
         subProcess.start()
         atexit.register(lambda: subProcess.terminate())
 
@@ -300,12 +294,11 @@ class TestingStepManager:
         moviePlugin = [plugin for plugin in self.environment.plugins if isinstance(plugin, RecordScreenshots)][0]
         localVideoPaths = [moviePlugin.movieFilePath(executionSession) for executionSession in self.executionSessions]
 
-        kwolaVideoDirectory = self.config.getKwolaUserDataDirectory("videos")
 
         for executionSession, sessionN, localVideoPath in zip(self.executionSessions, range(len(localVideoPaths)), localVideoPaths):
             with open(localVideoPath, 'rb') as origFile:
-                filePath = os.path.join(kwolaVideoDirectory, f'{str(executionSession.id)}.mp4')
-                saveKwolaFileData(filePath, origFile.read(), self.config)
+                fileName = f'{str(executionSession.id)}.mp4'
+                self.config.saveKwolaFileData("videos", fileName, origFile.read())
 
 
     def shutdownEnvironment(self):
@@ -314,10 +307,10 @@ class TestingStepManager:
 
 
     @staticmethod
-    def predictedActionSubProcess(configDir, shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles):
+    def predictedActionSubProcess(config, shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles):
         setupLocalLogging()
 
-        config = KwolaCoreConfiguration(configDir)
+        config = KwolaCoreConfiguration(config)
 
         agent = DeepLearningAgent(config, whichGpu=None)
 
@@ -332,7 +325,7 @@ class TestingStepManager:
 
         def preloadFile(fileName):
             nonlocal loadedPastExecutionTraces
-            fileData = loadKwolaFileData(fileName, config)
+            fileData = config.loadKwolaFileData("execution_traces", fileName)
             loadedPastExecutionTraces[fileName] = pickle.loads(fileData)
 
         preloadStartTime = datetime.now()
@@ -362,7 +355,7 @@ class TestingStepManager:
                     if fileName in loadedPastExecutionTraces:
                         pastExecutionTraces[sessionN].append(loadedPastExecutionTraces[fileName])
                     else:
-                        fileData = loadKwolaFileData(fileName, config)
+                        fileData = config.loadKwolaFileData("execution_traces", fileName)
                         trace = pickle.loads(fileData)
                         pastExecutionTraces[sessionN].append(trace)
                         loadedPastExecutionTraces[fileName] = trace

@@ -1,4 +1,3 @@
-from ..utils.file import loadKwolaFileData, saveKwolaFileData
 import copy
 import io
 import numpy
@@ -39,8 +38,8 @@ class SymbolMapper:
 
         self.allSymbols = []
 
-        self.modelPath = os.path.join(config.getKwolaUserDataDirectory("models"), "deep_learning_model")
-        self.symbolMapPath = os.path.join(config.getKwolaUserDataDirectory("models"), "symbol_mapper")
+        self.modelFileName = "deep_learning_model"
+        self.symbolMapFileName = "symbol_mapper"
 
         self.config = config
 
@@ -55,13 +54,13 @@ class SymbolMapper:
     def load(self):
         # We also need to load the symbol map - this is the mapping between symbol strings
         # and their index values within the embedding structure
-        symbolMapData = loadKwolaFileData(self.symbolMapPath, self.config, printErrorOnFailure=False)
+        symbolMapData = self.config.loadKwolaFileData("models", self.symbolMapFileName, printErrorOnFailure=False)
         if symbolMapData is not None:
             (self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.allSymbols) = pickle.loads(symbolMapData)
 
     def save(self):
         fileData = pickle.dumps((self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.allSymbols), protocol=pickle.HIGHEST_PROTOCOL)
-        saveKwolaFileData(self.symbolMapPath, fileData, self.config)
+        self.config.saveKwolaFileData("models", self.symbolMapFileName, fileData)
 
 
     def findNextLOCSymbolMapping(self, fileName, branchTrace):
@@ -198,7 +197,7 @@ class SymbolMapper:
 
 
         """
-        fileData = loadKwolaFileData(self.modelPath, self.config, printErrorOnFailure=False)
+        fileData = self.config.loadKwolaFileData("models", self.modelFileName, printErrorOnFailure=False)
         buffer = io.BytesIO(fileData)
 
         # Depending on whether GPU is turned on, we try load the state dict
@@ -370,7 +369,7 @@ class SymbolMapper:
 
         buffer = io.BytesIO()
         torch.save(stateDict, buffer)
-        saveKwolaFileData(self.modelPath, buffer.getvalue(), self.config)
+        self.config.saveKwolaFileData("models", self.modelFileName, buffer.getvalue())
 
         self.validateSymbolMaps()
 

@@ -27,7 +27,7 @@ class GenerateDebugVideos(TestingStepPluginBase):
 
         # Start some parallel processes generating debug videos.
         debugVideoSubprocess1 = multiprocessing.Process(target=createDebugVideoSubProcess, args=(
-            self.config.configurationDirectory, str(executionSessions[0].id), "prediction", True, True, None, None, "debug_videos"))
+            self.config.serialize(), str(executionSessions[0].id), "prediction", True, True, None, None, "debug_videos"))
         atexit.register(lambda: debugVideoSubprocess1.terminate())
         debugVideoSubprocesses.append(debugVideoSubprocess1)
 
@@ -35,7 +35,7 @@ class GenerateDebugVideos(TestingStepPluginBase):
         time.sleep(5)
 
         debugVideoSubprocess2 = multiprocessing.Process(target=createDebugVideoSubProcess, args=(
-            self.config.configurationDirectory, str(executionSessions[int(len(executionSessions) / 3)].id), "mix", True, True, None, None, "debug_videos"))
+            self.config.serialize(), str(executionSessions[int(len(executionSessions) / 3)].id), "mix", True, True, None, None, "debug_videos"))
         atexit.register(lambda: debugVideoSubprocess2.terminate())
         debugVideoSubprocesses.append(debugVideoSubprocess2)
 

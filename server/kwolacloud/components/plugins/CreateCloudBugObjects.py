@@ -14,7 +14,6 @@ import copy
 import tempfile
 from kwolacloud.datamodels.id_utility import generateKwolaId
 from datetime import datetime
-from kwola.components.utils.file import loadKwolaFileData, saveKwolaFileData
 import atexit
 import concurrent.futures
 import billiard as multiprocessing
@@ -151,9 +150,8 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
             if not duplicate:
                 bug.id = generateKwolaId(BugModel, testingStep.owner, self.config)
-                bugVideoFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bugs"), bug.id + ".mp4")
-                videoData = loadKwolaFileData(os.path.join(kwolaVideoDirectory, f'{str(executionSessionId)}.mp4'), self.config)
-                saveKwolaFileData(bugVideoFilePath, videoData, self.config)
+                videoData = self.config.loadKwolaFileData("videos", f'{str(executionSessionId)}.mp4')
+                self.config.saveKwolaFileData("bugs", bug.id + ".mp4", videoData)
 
                 existingBugs.append(bug)
                 bugObjects.append(bug)
@@ -239,9 +237,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         cropHeight = 300
 
         for bug in bugObjects:
-            videoPath = self.config.getKwolaUserDataDirectory("videos")
-
-            rawImages = DeepLearningAgent.readVideoFrames(os.path.join(videoPath, f"{str(bug.executionSessionId)}.mp4"), self.config)
+            rawImages = DeepLearningAgent.readVideoFrames(f"{str(bug.executionSessionId)}.mp4", self.config)
 
             sprite = numpy.ones([cropHeight * (bug.stepNumber + 3), cropWidth, 3], dtype=numpy.uint8) * 255
 
@@ -256,15 +252,12 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
                     sprite[imageIndex * cropHeight : (imageIndex + 1) * cropHeight, 0:cropWidth, :] = cropped
 
-            spriteFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bug_frame_sprite_sheets"), f"{bug.id}.jpg")
-            errorFrameFilePath = os.path.join(self.config.getKwolaUserDataDirectory("bug_error_frames"), f"{bug.id}.jpg")
-
             localTempDescriptor, localTemp = tempfile.mkstemp(suffix=".jpg")
             skimage.io.imsave(localTemp, sprite)
             with open(localTempDescriptor, 'rb') as f:
                 data = f.read()
             os.unlink(localTemp)
-            saveKwolaFileData(spriteFilePath, data, self.config)
+            self.config.saveKwolaFileData("bug_frame_sprite_sheets", f"{bug.id}.jpg", data, self.config)
 
 
             localTempDescriptor, localTemp = tempfile.mkstemp(suffix=".jpg")
@@ -272,7 +265,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             with open(localTempDescriptor, 'rb') as f:
                 data = f.read()
             os.unlink(localTemp)
-            saveKwolaFileData(errorFrameFilePath, data, self.config)
+            self.config.saveKwolaFileData("bug_error_frames", f"{bug.id}.jpg", data, self.config)
 
     def cropImageAroundAction(self, image, action, cropWidth, cropHeight):
         left = int(action.x - cropWidth/2)
