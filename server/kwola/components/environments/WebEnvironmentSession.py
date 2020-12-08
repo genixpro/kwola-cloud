@@ -733,12 +733,14 @@ class WebEnvironmentSession:
 
             actionMaps = []
 
+            current_page_url = self.driver.current_url
+
             for actionMapData in elementActionMaps:
                 actionMap = ActionMap(**actionMapData)
 
                 if self.config['prevent_offsite_links']:
                     if actionMap.elementType == 'a':
-                        if actionMap.attributes['href'] and self.isURLOffsite(actionMap.attributes['href']):
+                        if actionMap.attributes['href'] and self.isURLOffsite(actionMap.attributes['href'], current_page_url):
                             # Skip this element because it links to an offsite page.
                             continue
 
@@ -898,15 +900,18 @@ class WebEnvironmentSession:
 
         return success, networkWaitTime
 
-    def normalizeLinkURL(self, url):
+    def normalizeLinkURL(self, url, currentPageURL):
         parsed = urllib.parse.urlparse(url)
         if not parsed.scheme or not parsed.netloc or not parsed.path:
-            url = urllib.parse.urljoin(self.driver.current_url, url)
+            url = urllib.parse.urljoin(currentPageURL, url)
 
         return url
 
-    def isURLOffsite(self, url):
-        url = self.normalizeLinkURL(url)
+    def isURLOffsite(self, url, currentPageURL=None):
+        if currentPageURL is None:
+            currentPageURL = url
+
+        url = self.normalizeLinkURL(url, currentPageURL)
 
         offsite = False
         if url != "data:," and self.getHostRoot(url) != self.targetHostRoot:
