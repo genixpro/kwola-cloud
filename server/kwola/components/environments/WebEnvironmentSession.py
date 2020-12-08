@@ -899,21 +899,9 @@ class WebEnvironmentSession:
         return success, networkWaitTime
 
     def normalizeLinkURL(self, url):
-        parsed = list(urllib.parse.urlparse(url))
-        if not parsed[0]:
-            parsed[0] = urllib.parse.urlparse(self.driver.current_url).scheme
-        if not parsed[1]:
-            parsed[1] = urllib.parse.urlparse(self.driver.current_url).netloc
-        if not parsed[2]:
-            parsed[2] = urllib.parse.urlparse(self.driver.current_url).path
-        if not parsed[3]:
-            parsed[3] = urllib.parse.urlparse(self.driver.current_url).params
-        if not parsed[4]:
-            parsed[4] = urllib.parse.urlparse(self.driver.current_url).query
-        if not parsed[5]:
-            parsed[5] = urllib.parse.urlparse(self.driver.current_url).fragment
-
-        url = urllib.parse.urlunparse(parsed)
+        parsed = urllib.parse.urlparse(url)
+        if not parsed.scheme or not parsed.netloc or not parsed.path:
+            url = urllib.parse.urljoin(self.driver.current_url, url)
 
         return url
 
