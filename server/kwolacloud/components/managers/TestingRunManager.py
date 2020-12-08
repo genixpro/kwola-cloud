@@ -568,7 +568,7 @@ class TestingRunManager:
                 del self.run.bugsNeedingReproduction[self.run.bugsNeedingReproduction.index(bugId)]
 
         jobsToRemove = []
-        for bugId in zip(self.run.runningBugReproductionJobIds.keys()):
+        for bugId in self.run.runningBugReproductionJobIds.keys():
             jobId = self.run.runningBugReproductionJobIds[bugId]
             startTime = self.run.runningBugReproductionStartTimes[bugId]
             timeElapsed = (datetime.datetime.now() - startTime).total_seconds()
