@@ -277,7 +277,6 @@ class KwolaCoreConfiguration:
                                       "during normal operations without interruption, that would indicate a bug.")
             return
 
-    @autoretry()
     def deleteKwolaFileData(self, folder, fileName):
         filePath = os.path.join(folder, fileName)
 
