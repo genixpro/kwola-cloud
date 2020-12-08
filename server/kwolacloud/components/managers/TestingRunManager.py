@@ -539,7 +539,7 @@ class TestingRunManager:
     def launchBugReproductionJob(self, bugId):
         logging.info(f"Starting a bug reproduction task for run {self.run.id} and bug id {bugId}")
 
-        jobId = f"bug-reproduction-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}-{bugId}"
+        jobId = f"bug-repro-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}-{bugId}"
 
         if self.cloudConfigData['features']['localRuns']:
             currentBugReproductionJob = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.BugReproductionTaskLocal"], {
