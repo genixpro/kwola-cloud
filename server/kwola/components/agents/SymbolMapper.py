@@ -131,7 +131,7 @@ class SymbolMapper:
             if symbolCount == -1:
                 trace.codePrevalenceScore = None
             else:
-                trace.codePrevalenceScore = sortedSymbolCounts.index(symbolCount) / len(sortedSymbolCounts)
+                trace.codePrevalenceScore = float(sortedSymbolCounts.index(symbolCount) / len(sortedSymbolCounts))
 
     def computeCoverageSymbolsList(self, executionTrace):
         symbolIndexes = []

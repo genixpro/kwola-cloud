@@ -609,20 +609,20 @@ class WebEnvironmentSession:
                                     element.getAttribute("type") + " " + element.getAttribute("placeholder") + " " + 
                                     element.getAttribute("title") + " " + element.getAttribute("aria-label") + " " + 
                                     element.getAttribute("aria-placeholder") + " " + element.getAttribute("aria-roledescription")
-                                  ).toLowerCase().replace(/\\s+/g, " "),
-                        inputValue: String(element.value),
+                                  ).toLowerCase().replace(/\\s+/g, " ").replace("null", "").replace("undefined", "").trim(),
+                        inputValue: String(element.value).replace("undefined", "").replace("null", ""),
                         attributes: {
-                            "href": element.getAttribute("href"),
-                            "src": element.getAttribute("src"),
-                            "class": element.getAttribute("class"),
-                            "name": element.getAttribute("name"),
-                            "id": element.getAttribute("id"),
-                            "type": element.getAttribute("type"),
-                            "placeholder": element.getAttribute("placeholder"),
-                            "title": element.getAttribute("title"),
-                            "aria-label": element.getAttribute("aria-label"),
-                            "aria-placeholder": element.getAttribute("aria-placeholder"),
-                            "aria-roledescription": element.getAttribute("aria-roledescription")
+                            "href": String(element.getAttribute("href")).replace("null", "").replace("undefined", ""),
+                            "src": String(element.getAttribute("src")).replace("null", "").replace("undefined", ""),
+                            "class": String(element.getAttribute("class")).replace("null", "").replace("undefined", ""),
+                            "name": String(element.getAttribute("name")).replace("null", "").replace("undefined", ""),
+                            "id": String(element.getAttribute("id")).replace("null", "").replace("undefined", ""),
+                            "type": String(element.getAttribute("type")).replace("null", "").replace("undefined", ""),
+                            "placeholder": String(element.getAttribute("placeholder")).replace("null", "").replace("undefined", ""),
+                            "title": String(element.getAttribute("title")).replace("null", "").replace("undefined", ""),
+                            "aria-label": String(element.getAttribute("aria-label")).replace("null", "").replace("undefined", ""),
+                            "aria-placeholder": String(element.getAttribute("aria-placeholder")).replace("null", "").replace("undefined", ""),
+                            "aria-roledescription": String(element.getAttribute("aria-roledescription")).replace("null", "").replace("undefined", "")
                         }
                     };
                     
@@ -734,8 +734,6 @@ class WebEnvironmentSession:
             actionMaps = []
 
             for actionMapData in elementActionMaps:
-                actionMapData['attributes'] = {str(k): (None if v is None else str(v)) for k, v in actionMapData['attributes'].items()}
-
                 actionMap = ActionMap(**actionMapData)
 
                 if self.config['prevent_offsite_links']:
@@ -765,6 +763,11 @@ class WebEnvironmentSession:
                     overlapMap.canType = overlapMap.canType or actionMap.canType
                     overlapMap.canRightClick = overlapMap.canRightClick or actionMap.canRightClick
                     overlapMap.keywords = overlapMap.keywords + " " + actionMap.keywords
+                    overlapMap.inputValue = overlapMap.inputValue + " " + actionMap.inputValue
+
+                    attributeKeys = set(overlapMap.attributes.keys()).union(set(actionMap.attributes.keys()))
+                    for key in attributeKeys:
+                        overlapMap.attributes[key] = (overlapMap.attributes.get(key, "") + " " + actionMap.attributes.get(key, "")).strip()
                 else:
                     actionMaps.append(actionMap)
 
