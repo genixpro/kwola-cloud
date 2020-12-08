@@ -226,7 +226,9 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             futures.append(future)
 
         for future in futures:
-            future.get()
+            value = future.get()
+            if value:
+                getLogger().error(value)
 
         pool.close()
         pool.join()

@@ -3,6 +3,7 @@ from ..base.TestingStepPluginBase import TestingStepPluginBase
 import atexit
 import concurrent.futures
 import billiard as multiprocessing
+from kwola.config.logger import getLogger
 
 
 class GenerateAnnotatedVideos(TestingStepPluginBase):
@@ -30,7 +31,9 @@ class GenerateAnnotatedVideos(TestingStepPluginBase):
             futures.append(future)
 
         for future in futures:
-            future.get()
+            value = future.get()
+            if value:
+                getLogger().error(value)
 
         pool.close()
         pool.join()

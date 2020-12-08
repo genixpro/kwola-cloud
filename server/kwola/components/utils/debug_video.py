@@ -54,4 +54,4 @@ def createDebugVideoSubProcess(configDir, executionSessionId, name="", includeNe
         del agent
     except Exception as e:
         getLogger().error(f"An error was triggered while generating a debug video: {traceback.format_exc()}")
-        raise
+        return traceback.format_exc()
