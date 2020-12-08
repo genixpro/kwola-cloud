@@ -47,7 +47,6 @@ class TestingRunManager:
         self.testingRunId = testingRunId
         self.run = None
         self.cloudConfigData = loadCloudConfiguration()
-        self.configDir = None
         self.config = None
         self.shouldExit = False
         self.storageClient = getSharedGCSStorageClient()
@@ -60,72 +59,6 @@ class TestingRunManager:
         self.application.hasFirstTestingRunLaunched = True
         self.application.lastTestingDate = datetime.datetime.now()
         self.application.save()
-
-
-    def updateKwolaConfigJSONFile(self):
-        configFilePath = os.path.join(self.configDir, "kwola.json")
-
-        runConfiguration = self.run.configuration
-
-        kwolaConfigData = getKwolaConfigurationData()
-
-        kwolaConfigData['applicationId'] = self.run.applicationId
-        kwolaConfigData['url'] = runConfiguration.url
-        kwolaConfigData['email'] = runConfiguration.email
-        kwolaConfigData['password'] = runConfiguration.password
-        kwolaConfigData['name'] = runConfiguration.name
-        kwolaConfigData['paragraph'] = runConfiguration.paragraph
-        kwolaConfigData['enableRandomNumberCommand'] = runConfiguration.enableRandomNumberCommand
-        kwolaConfigData['enableRandomBracketCommand'] = runConfiguration.enableRandomBracketCommand
-        kwolaConfigData['enableRandomMathCommand'] = runConfiguration.enableRandomMathCommand
-        kwolaConfigData['enableRandomOtherSymbolCommand'] = runConfiguration.enableRandomOtherSymbolCommand
-        kwolaConfigData['enableDoubleClickCommand'] = runConfiguration.enableDoubleClickCommand
-        kwolaConfigData['enableRightClickCommand'] = runConfiguration.enableRightClickCommand
-        kwolaConfigData['enableTypeEmail'] = runConfiguration.enableTypeEmail
-        kwolaConfigData['enableTypePassword'] = runConfiguration.enableTypePassword
-        kwolaConfigData['enableScrolling'] = runConfiguration.enableScrolling
-        kwolaConfigData['enableRandomLettersCommand'] = runConfiguration.enableRandomLettersCommand
-        kwolaConfigData['enableRandomAddressCommand'] = runConfiguration.enableRandomAddressCommand
-        kwolaConfigData['enableRandomEmailCommand'] = runConfiguration.enableRandomEmailCommand
-        kwolaConfigData['enableRandomPhoneNumberCommand'] = runConfiguration.enableRandomPhoneNumberCommand
-        kwolaConfigData['enableRandomParagraphCommand'] = runConfiguration.enableRandomParagraphCommand
-        kwolaConfigData['enableRandomDateTimeCommand'] = runConfiguration.enableRandomDateTimeCommand
-        kwolaConfigData['enableRandomCreditCardCommand'] = runConfiguration.enableRandomCreditCardCommand
-        kwolaConfigData['enableRandomURLCommand'] = runConfiguration.enableRandomURLCommand
-        kwolaConfigData['autologin'] = runConfiguration.autologin
-        kwolaConfigData['prevent_offsite_links'] = runConfiguration.preventOffsiteLinks
-        kwolaConfigData['testing_sequence_length'] = runConfiguration.testingSequenceLength
-        if runConfiguration.enablePathWhitelist:
-            kwolaConfigData['web_session_restrict_url_to_regexes'] = runConfiguration.urlWhitelistRegexes
-        else:
-            kwolaConfigData['web_session_restrict_url_to_regexes'] = []
-        kwolaConfigData['custom_typing_action_strings'] = runConfiguration.customTypingActionStrings
-        kwolaConfigData['enable_5xx_error'] = runConfiguration.enable5xxError
-        kwolaConfigData['enable_400_error'] = runConfiguration.enable400Error
-        kwolaConfigData['enable_401_error'] = runConfiguration.enable401Error
-        kwolaConfigData['enable_403_error'] = runConfiguration.enable403Error
-        kwolaConfigData['enable_404_error'] = runConfiguration.enable404Error
-        kwolaConfigData['enable_javascript_console_error'] = runConfiguration.enableJavascriptConsoleError
-        kwolaConfigData['enable_unhandled_exception_error'] = runConfiguration.enableUnhandledExceptionError
-        kwolaConfigData['web_session_enable_chrome'] = runConfiguration.enableChrome
-        kwolaConfigData['web_session_enable_firefox'] = runConfiguration.enableFirefox
-        kwolaConfigData['web_session_enable_edge'] = runConfiguration.enableEdge
-        kwolaConfigData['web_session_enable_window_size_desktop'] = runConfiguration.enableWindowSizeDesktop
-        kwolaConfigData['web_session_enable_window_size_tablet'] = runConfiguration.enableWindowSizeTablet
-        kwolaConfigData['web_session_enable_window_size_mobile'] = runConfiguration.enableWindowSizeMobile
-
-        if not self.cloudConfigData['features']['localRuns']:
-            # We have to write directly to the google cloud storage bucket because of the way that the storage
-            # drives get mounted through fuse.
-            configFileBlob = storage.Blob("kwola.json", self.applicationStorageBucket)
-            configFileBlob.upload_from_string(json.dumps(kwolaConfigData, indent=4, sort_keys=True))
-
-        # Also write a copy locally.
-        try:
-            with open(configFilePath, 'wt') as configFile:
-                json.dump(kwolaConfigData, configFile, indent=4, sort_keys=True)
-        except OSError:
-            pass
 
 
     def doInitialBrowserSession(self):
@@ -727,7 +660,6 @@ class TestingRunManager:
 
         self.updateApplicationObjectForStart()
 
-        self.updateKwolaConfigJSONFile()
         self.doTestingRunInitializationIfNeeded()
 
         try:
