@@ -48,7 +48,7 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
        return {"success": False}
 
     try:
-        config = run.runConfiguration.createKwolaCoreConfiguration(run.applicationId)
+        config = run.configuration.createKwolaCoreConfiguration(run.applicationId)
 
         shouldBeRandom = False
         if testingStepIndex < (config['training_random_initialization_sequences']):

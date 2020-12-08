@@ -81,7 +81,7 @@ def runBugReproductionAlgorithm(bugId):
     configData = loadCloudConfiguration()
 
     try:
-        config = run.runConfiguration.createKwolaCoreConfiguration(run.applicationId)
+        config = run.configuration.createKwolaCoreConfiguration(run.applicationId)
 
         config['web_session_height'] = {
             "desktop": 768,

@@ -121,22 +121,22 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True,
         def tryPickle():
             nonlocal object
             if object is None:
-                object = pickle.loads(config.loadKwolaFileData(folder, pickleFileName))
+                object = pickle.loads(config.loadKwolaFileData(folder, pickleFileName, printErrorOnFailure=printErrorOnFailure))
 
         def tryPickleGzip():
             nonlocal object
             if object is None:
-                object = pickle.loads(gzip.decompress(config.loadKwolaFileData(folder, gzipPickleFileName)))
+                object = pickle.loads(gzip.decompress(config.loadKwolaFileData(folder, gzipPickleFileName, printErrorOnFailure=printErrorOnFailure)))
 
         def tryJson():
             nonlocal object
             if object is None:
-                object = modelClass.from_json(config.loadKwolaFileData(folder, jsonFileName))
+                object = modelClass.from_json(config.loadKwolaFileData(folder, jsonFileName, printErrorOnFailure=printErrorOnFailure))
 
         def tryJsonGzip():
             nonlocal object
             if object is None:
-                object = modelClass.from_json(str(gzip.decompress(config.loadKwolaFileData(folder, gzipJsonFileName)), "utf8"))
+                object = modelClass.from_json(str(gzip.decompress(config.loadKwolaFileData(folder, gzipJsonFileName, printErrorOnFailure=printErrorOnFailure)), "utf8"))
 
         if dataFormat == 'pickle':
             if compression > 0:

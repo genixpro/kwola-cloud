@@ -167,7 +167,7 @@ class TestingRunManager:
 
             self.run.save()
 
-            self.config = self.run.runConfiguration.createKwolaCoreConfiguration(self.run.applicationId)
+            self.config = self.run.configuration.createKwolaCoreConfiguration(self.run.applicationId)
 
             self.doInitialBrowserSession()
             self.ensureAgentModelExists()
@@ -731,7 +731,7 @@ class TestingRunManager:
         self.doTestingRunInitializationIfNeeded()
 
         try:
-            self.config = self.run.runConfiguration.createKwolaCoreConfiguration(self.run.applicationId)
+            self.config = self.run.configuration.createKwolaCoreConfiguration(self.run.applicationId)
             logging.info(f"Testing Run starting with configuration: \n{pformat(self.config.configData)}")
 
             self.shouldExit = False

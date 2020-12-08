@@ -63,7 +63,7 @@ def processBug(bugId):
         if bug.applicationId is None:
             bug.applicationId = executionSession.applicationId
 
-        config = testingRun.runConfiguration.createKwolaCoreConfiguration(testingRun.applicationId)
+        config = testingRun.configuration.createKwolaCoreConfiguration(testingRun.applicationId)
 
         if not bug.actionsPerformed or len(bug.actionsPerformed) == 0:
             actionsPerformed = []
