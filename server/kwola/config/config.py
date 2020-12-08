@@ -222,7 +222,6 @@ class KwolaCoreConfiguration:
             globalCachedPrebuiltConfigs[prebuild] = data
             return data
 
-    @autoretry()
     def saveKwolaFileData(self, folder, fileName, fileData):
         filePath = os.path.join(folder, fileName)
 
@@ -246,7 +245,6 @@ class KwolaCoreConfiguration:
             raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for configuration data_file_storage_method")
 
 
-    @autoretry()
     def loadKwolaFileData(self, folder, fileName, printErrorOnFailure=True):
         filePath = os.path.join(folder, fileName)
 
