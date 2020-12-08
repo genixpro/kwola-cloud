@@ -59,6 +59,8 @@ class NetworkErrorTracer:
                         text = json.dumps(data, indent=4)
                     except json.JSONDecodeError:
                         text = str(flow.response.data.content)
+                    except UnicodeDecodeError:
+                        text = str(flow.response.data.content)
 
                 self.errors.append(HttpError(type="http", path=flow.request.path, statusCode=flow.response.status_code, message=str(text), url=flow.request.url))
         except Exception as e:
