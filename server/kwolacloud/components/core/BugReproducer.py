@@ -170,12 +170,12 @@ class BugReproducer:
                 else:
                     actions.append(None)
 
-            logging.info(f"Running action {actionIndex}", flush=True)
+            logging.info(f"Running action {actionIndex}")
             traces = environment.runActions(actions)
             for actionListIndex, actionList, trace in zip(range(len(actionLists)), actionLists, traces):
                 if actionIndex == (len(actionList) - 1):
                     if trace is None:
-                        logging.info(f"Trace is None at {actionIndex}", flush=True)
+                        logging.info(f"Trace is None at {actionIndex}")
                         didReproduceSuccessfully[actionListIndex] = False
                     else:
                         didOneMatch = False

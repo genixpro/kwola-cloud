@@ -89,7 +89,7 @@ class TestingRun(Document):
 
     bugsNeedingReproduction = ListField(StringField(), default=[])
 
-    bugReproductionFailureCounts = DictField(StringField(), default={})
+    bugReproductionFailureCounts = DictField(IntField(), default={})
 
     runningBugReproductionJobIds = DictField(StringField(), default={})
 
