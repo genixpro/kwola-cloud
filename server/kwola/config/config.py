@@ -315,7 +315,7 @@ class KwolaCoreConfiguration:
 
             blobs = applicationStorageBucket.list_blobs(prefix=folder, delimiter="/")
 
-            return [blob.name for blob in blobs]
+            return [blob.name[len(folder) + 1:] for blob in blobs]
         else:
             raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for configuration data_file_storage_method")
 
