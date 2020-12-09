@@ -217,7 +217,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
         for bugIndex, bug in enumerate(bugObjects):
             future = pool.apply_async(func=createDebugVideoSubProcess, args=(
-                self.config.configurationDirectory, str(bug.executionSessionId), f"{bug.id}_bug", False, False, bug.stepNumber,
+                self.config.serialize(), str(bug.executionSessionId), f"{bug.id}_bug", False, False, bug.stepNumber,
                 bug.stepNumber + 3, "bugs"))
             futures.append(future)
 
