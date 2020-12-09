@@ -76,7 +76,7 @@ def saveObjectToDisk(targetObject, folder, config, overrideSaveFormat=None, over
     elif dataFormat == "json":
         if compression == 0:
             fileName = str(targetObject.id) + ".json"
-            config.saveKwolaFileData(folder, fileName, targetObject.to_json(indent=4))
+            config.saveKwolaFileData(folder, fileName, bytes(targetObject.to_json(indent=4), 'utf8'))
         else:
             fileName = str(targetObject.id) + ".json.gz"
             config.saveKwolaFileData(folder, fileName, gzip.compress(bytes(targetObject.to_json(indent=4), "utf8"), compresslevel=compression))
