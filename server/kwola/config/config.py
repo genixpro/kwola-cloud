@@ -313,7 +313,7 @@ class KwolaCoreConfiguration:
             storageClient = getSharedGCSStorageClient()
             applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
 
-            blobs = applicationStorageBucket.list_blobs(prefix=folder, delimiter="/")
+            blobs = applicationStorageBucket.list_blobs(prefix=folder, delimiter="")
 
             return [blob.name[len(folder) + 1:] for blob in blobs]
         else:
