@@ -124,10 +124,10 @@ class TrainingManager:
         if self.gpu is not None:
             for subprocessIndex in range(10):
                 try:
-                    init_method = f"file://{os.path.join(tempfile.gettempdir(), 'kwola_distributed_coordinator')}"
+                    init_method = f"file://{os.path.join(tempfile.gettempdir(), self.coordinatorTempFileName)}"
 
                     if sys.platform == "win32" or sys.platform == "win64":
-                        init_method = f"file:///{os.path.join(tempfile.gettempdir(), 'kwola_distributed_coordinator')}"
+                        init_method = f"file:///{os.path.join(tempfile.gettempdir(), self.coordinatorTempFileName)}"
 
                     torch.distributed.init_process_group(backend="gloo",
                                                          world_size=self.gpuWorldSize,
