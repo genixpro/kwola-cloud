@@ -268,7 +268,7 @@
   "web_session_enable_window_size_tablet": true,
   "web_session_enable_window_size_mobile": true,
   "web_session_enable_shared_chrome_cache": false,
-  "web_session_enable_shared_edge_cache": true,
+  "web_session_enable_shared_edge_cache": false,
   "web_session_enable_js_rewriting": true,
   "web_session_enable_html_rewriting": true,
   "web_session_headless": true,
