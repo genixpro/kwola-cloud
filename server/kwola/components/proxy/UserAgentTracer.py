@@ -31,9 +31,9 @@ class UserAgentTracer:
     def requestheaders(self, flow):
         try:
             if 'User-Agent' in flow.request.headers:
-                self.lastUserAgent = flow.request.headers['User-Agent'].replace(" Kwola", "")
+                self.lastUserAgent = flow.request.headers['User-Agent']
             elif 'user-agent' in flow.request.headers:
-                self.lastUserAgent = flow.request.headers['user-agent'].replace(" Kwola", "")
+                self.lastUserAgent = flow.request.headers['user-agent']
         except Exception as e:
             getLogger().error(traceback.format_exc())
 

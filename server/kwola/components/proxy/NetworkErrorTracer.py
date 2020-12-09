@@ -24,6 +24,7 @@ from bs4 import BeautifulSoup
 import json
 import traceback
 from ...config.config import getLogger
+import re
 
 
 class NetworkErrorTracer:
@@ -53,6 +54,11 @@ class NetworkErrorTracer:
                 if b"</html" in flow.response.data.content:
                     # Parse response as html
                     text = BeautifulSoup(flow.response.data.content, features="html.parser").get_text()
+
+                    text = re.sub(re.compile(r"\s+"), " ", text)
+
+                    if len(text) > 1024:
+                        text = text[:1024] + " ... [message truncated due to excessive length]"
                 else:
                     try:
                         data = json.loads(flow.response.data.content)
