@@ -42,9 +42,10 @@ class RewriteProxy:
         self.executionSessionId = executionSessionId
         self.executionTraceId = None
 
+        self.filesAvailableInMemoryCache = set()
+
         for fileName in self.config.listAllFilesInFolder("proxy_cache"):
-            data = self.config.loadKwolaFileData("proxy_cache", fileName, printErrorOnFailure=False)
-            self.memoryCache[fileName] = data
+            self.filesAvailableInMemoryCache.add(fileName)
 
     def getCacheFileName(self, fileHash, fileURL):
         fileName = ProxyPluginBase.getCleanedFileName(fileURL)
@@ -178,6 +179,9 @@ class RewriteProxy:
 
             cacheFileName = self.getCacheFileName(shortFileHash, flow.request.url)
             cached = self.memoryCache.get(cacheFileName)
+            if cached is None and cacheFileName in self.filesAvailableInMemoryCache:
+                cached = self.config.loadKwolaFileData("proxy_cache", cacheFileName, printErrorOnFailure=False)
+                self.memoryCache[cacheFileName] = cached
 
             if cached is not None:
                 flow.response.data.headers['Content-Length'] = str(len(cached))
