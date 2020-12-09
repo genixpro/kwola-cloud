@@ -67,8 +67,6 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             self.executionSessionTraces[executionSession.id].append(trace)
 
     def testingStepFinished(self, testingStep, executionSessions):
-        kwolaVideoDirectory = self.config.getKwolaUserDataDirectory("videos")
-
         existingBugs = self.loadAllBugs(testingStep)
         mutedErrors = self.loadAllMutedErrors(testingStep)
         priorTestingRunBugs = self.loadPriorTestingRunBugs(testingStep)
