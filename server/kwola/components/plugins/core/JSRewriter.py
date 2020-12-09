@@ -24,7 +24,7 @@ class JSRewriter(ProxyPluginBase):
     def __init__(self, config):
         self.config = config
 
-        self.multipleBranchesCheckingRegex = re.compile(b"globalKwolaCounter_\\d{1,8}\\[1\\] \\+= 1;")
+        self.multipleBranchesCheckingRegex = re.compile(b"globalKwolaCounter_\\d{1,8}\\[1\\] ?\\+= ?1;")
 
     def willRewriteFile(self, url, contentType, fileData):
         jsMimeTypes = [
