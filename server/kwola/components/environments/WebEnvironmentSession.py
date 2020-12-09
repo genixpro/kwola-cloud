@@ -340,21 +340,21 @@ class WebEnvironmentSession:
         for map in actionMaps:
             found = False
             for matchKeyword in emailKeywords:
-                if matchKeyword in map.keywords and map.elementType == "input":
+                if matchKeyword in map.keywords and map.elementType == "input" and map.canType:
                     emailInputs.append(map)
                     found = True
                     break
             if found:
                 continue
             for matchKeyword in passwordKeywords:
-                if matchKeyword in map.keywords and map.elementType == "input":
+                if matchKeyword in map.keywords and map.elementType == "input" and map.canType:
                     passwordInputs.append(map)
                     found = True
                     break
             if found:
                 continue
             for matchKeyword in loginKeywords:
-                if matchKeyword in map.keywords and map.elementType in ['input', 'button', 'div']:
+                if matchKeyword in map.keywords and map.canClick:
                     loginButtons.append(map)
                     found = True
                     break
@@ -617,20 +617,20 @@ class WebEnvironmentSession:
                                     element.getAttribute("type") + " " + element.getAttribute("placeholder") + " " + 
                                     element.getAttribute("title") + " " + element.getAttribute("aria-label") + " " + 
                                     element.getAttribute("aria-placeholder") + " " + element.getAttribute("aria-roledescription")
-                                  ).toLowerCase().replace(/\\s+/g, " ").replace("null", "").replace("undefined", "").trim(),
-                        inputValue: String(element.value).replace("undefined", "").replace("null", ""),
+                                  ).toLowerCase().replace(/\\s+/g, " ").replace(/null/g, "").replace(/undefined/g, "").trim(),
+                        inputValue: String(element.value).replace(/undefined/g, "").replace("null", ""),
                         attributes: {
-                            "href": String(element.getAttribute("href")).replace("null", "").replace("undefined", ""),
-                            "src": String(element.getAttribute("src")).replace("null", "").replace("undefined", ""),
-                            "class": String(element.getAttribute("class")).replace("null", "").replace("undefined", ""),
-                            "name": String(element.getAttribute("name")).replace("null", "").replace("undefined", ""),
-                            "id": String(element.getAttribute("id")).replace("null", "").replace("undefined", ""),
-                            "type": String(element.getAttribute("type")).replace("null", "").replace("undefined", ""),
-                            "placeholder": String(element.getAttribute("placeholder")).replace("null", "").replace("undefined", ""),
-                            "title": String(element.getAttribute("title")).replace("null", "").replace("undefined", ""),
-                            "aria-label": String(element.getAttribute("aria-label")).replace("null", "").replace("undefined", ""),
-                            "aria-placeholder": String(element.getAttribute("aria-placeholder")).replace("null", "").replace("undefined", ""),
-                            "aria-roledescription": String(element.getAttribute("aria-roledescription")).replace("null", "").replace("undefined", "")
+                            "href": String(element.getAttribute("href")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "src": String(element.getAttribute("src")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "class": String(element.getAttribute("class")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "name": String(element.getAttribute("name")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "id": String(element.getAttribute("id")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "type": String(element.getAttribute("type")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "placeholder": String(element.getAttribute("placeholder")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "title": String(element.getAttribute("title")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "aria-label": String(element.getAttribute("aria-label")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "aria-placeholder": String(element.getAttribute("aria-placeholder")).replace(/null/g, "").replace(/undefined/g, ""),
+                            "aria-roledescription": String(element.getAttribute("aria-roledescription")).replace(/null/g, "").replace(/undefined/g, "")
                         },
                         eventHandlers: []
                     };
@@ -779,6 +779,8 @@ class WebEnvironmentSession:
                     attributeKeys = set(overlapMap.attributes.keys()).union(set(actionMap.attributes.keys()))
                     for key in attributeKeys:
                         overlapMap.attributes[key] = (overlapMap.attributes.get(key, "") + " " + actionMap.attributes.get(key, "")).strip()
+
+                    overlapMap.eventHandlers = list(set(overlapMap.eventHandlers + actionMap.eventHandlers))
                 else:
                     actionMaps.append(actionMap)
 
