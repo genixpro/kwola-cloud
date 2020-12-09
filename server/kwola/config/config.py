@@ -229,7 +229,12 @@ class KwolaCoreConfiguration:
             # Todo - we shouldn't be making these os.path.exists calls every single time we save file data
             # Its inefficient.
             if not os.path.exists(os.path.join(self.configurationDirectory, folder)):
-                os.mkdir(os.path.join(self.configurationDirectory, folder))
+                try:
+                    os.mkdir(os.path.join(self.configurationDirectory, folder))
+                except FileExistsError:
+                    # This just means there is a race condition and multiple threads attempted
+                    # to create this folder at the same time.
+                    pass
 
             with open(os.path.join(self.configurationDirectory, filePath), 'wb') as f:
                 f.write(fileData)
