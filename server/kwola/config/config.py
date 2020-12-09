@@ -282,7 +282,7 @@ class KwolaCoreConfiguration:
 
         try:
             if self['data_file_storage_method'] == 'local':
-                os.unlink(filePath)
+                os.unlink(os.path.join(self.configurationDirectory, filePath))
             elif self['data_file_storage_method'] == 'gcs':
                 if 'applicationId' not in self or self.applicationId is None:
                     raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
@@ -298,6 +298,26 @@ class KwolaCoreConfiguration:
             return
         except google.cloud.exceptions.NotFound:
             return
+
+    def listAllFilesInFolder(self, folder):
+        if self['data_file_storage_method'] == 'local':
+            dir = os.path.join(self.configurationDirectory, folder)
+            if os.path.exists(dir):
+                return os.listdir(dir)
+            else:
+                return []
+        elif self['data_file_storage_method'] == 'gcs':
+            if 'applicationId' not in self or self.applicationId is None:
+                raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
+
+            storageClient = getSharedGCSStorageClient()
+            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
+
+            blobs = applicationStorageBucket.list_blobs(prefix=folder, delimiter="/")
+
+            return [blob.name for blob in blobs]
+        else:
+            raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for configuration data_file_storage_method")
 
 
 globalStorageClient = None

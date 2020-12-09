@@ -42,6 +42,10 @@ class RewriteProxy:
         self.executionSessionId = executionSessionId
         self.executionTraceId = None
 
+        for fileName in self.config.listAllFilesInFolder("proxy_cache"):
+            data = self.config.loadKwolaFileData("proxy_cache", fileName, printErrorOnFailure=False)
+            self.memoryCache[fileName] = data
+
     def getCacheFileName(self, fileHash, fileURL):
         fileName = ProxyPluginBase.getCleanedFileName(fileURL)
 
@@ -66,12 +70,6 @@ class RewriteProxy:
         cacheFileName = fileNameRoot[:100] + "_" + fileHash + "." + extension
 
         return cacheFileName
-
-
-    def findInCache(self, fileHash, fileURL):
-        cacheFileName = self.getCacheFileName(fileHash, fileURL)
-        data = self.config.loadKwolaFileData("proxy_cache", cacheFileName, printErrorOnFailure=False)
-        return data
 
     def saveInCache(self, fileHash, fileURL, data):
         cacheFileName = self.getCacheFileName(fileHash, fileURL)
@@ -178,11 +176,8 @@ class RewriteProxy:
 
             longFileHash, shortFileHash = ProxyPluginBase.computeHashes(bytes(flow.response.data.content))
 
-            cached = self.memoryCache.get(longFileHash)
-            if cached is None:
-                cached = self.findInCache(shortFileHash, flow.request.url)
-                if cached is not None:
-                    self.memoryCache[longFileHash] = cached
+            cacheFileName = self.getCacheFileName(shortFileHash, flow.request.url)
+            cached = self.memoryCache.get(cacheFileName)
 
             if cached is not None:
                 flow.response.data.headers['Content-Length'] = str(len(cached))
@@ -257,7 +252,7 @@ class RewriteProxy:
                     transformed = gzip.compress(transformed, compresslevel=9)
 
                 self.saveInCache(shortFileHash, fileURL, transformed)
-                self.memoryCache[longFileHash] = transformed
+                self.memoryCache[cacheFileName] = transformed
 
                 flow.response.data.headers['Content-Length'] = str(len(transformed))
                 flow.response.data.content = transformed
@@ -274,7 +269,7 @@ class RewriteProxy:
 
             else:
                 self.saveInCache(shortFileHash, fileURL, originalFileContents)
-                self.memoryCache[longFileHash] = originalFileContents
+                self.memoryCache[cacheFileName] = originalFileContents
 
                 for plugin in self.plugins:
                     plugin.observeRequest(url=flow.request.url,

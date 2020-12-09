@@ -273,4 +273,4 @@ def main():
         exit(1)
 
     configDir = getConfigurationDirFromCommandLineArgs()
-    TrainAgentLoop.trainAgent(configDir)
+    TrainAgentLoop.trainAgent(KwolaCoreConfiguration.loadConfigurationFromDirectory(configDir))
