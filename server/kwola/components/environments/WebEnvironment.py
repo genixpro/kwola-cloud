@@ -216,8 +216,9 @@ class WebEnvironment:
 
             timeList = sorted(timeList, key=lambda x: x['max'], reverse=True)
             maxTimes = [(t['key'], t['max']) for t in timeList if t['max'] > 0.5]
+            stdTimes = [(t['key'], t['std']) for t in timeList if t['max'] > 0.5]
 
-            getLogger().warning(f"Time taken to execute the actions in the browser was unusually long: {timeTaken} seconds. Here are the subtimes: {pformat(maxTimes)}")
+            getLogger().warning(f"Time taken to execute the actions in the browser was unusually long: {timeTaken} seconds. Here are the subtimes: {pformat(maxTimes)} and standard deviations: {pformat(stdTimes)}")
 
         return traces
 
