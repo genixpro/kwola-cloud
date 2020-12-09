@@ -573,6 +573,14 @@ class WebEnvironmentSession:
                 function isFunction(functionToCheck) {
                  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
                 }
+                
+                function uniques(a)
+                {
+                    var seen = {};
+                    return a.filter(function(item) {
+                        return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+                    });
+                }
             
                 const actionMaps = [];
                 const domElements = document.querySelectorAll("*");
@@ -623,7 +631,8 @@ class WebEnvironmentSession:
                             "aria-label": String(element.getAttribute("aria-label")).replace("null", "").replace("undefined", ""),
                             "aria-placeholder": String(element.getAttribute("aria-placeholder")).replace("null", "").replace("undefined", ""),
                             "aria-roledescription": String(element.getAttribute("aria-roledescription")).replace("null", "").replace("undefined", "")
-                        }
+                        },
+                        eventHandlers: []
                     };
                     
                     if ( element.tagName === "BUTTON"
@@ -685,40 +694,40 @@ class WebEnvironmentSession:
                         
                     if (window.kwolaEvents && window.kwolaEvents.has(element))
                     {
-                        const knownEvents = window.kwolaEvents.get(element);
-                        if (knownEvents.indexOf("click") != -1)
+                        data.eventHandlers = uniques(window.kwolaEvents.get(element));
+                        if (data.eventHandlers.indexOf("click") != -1)
                         {
                             data.canClick = true;
                         }
-                        if (knownEvents.indexOf("contextmenu") != -1)
+                        if (data.eventHandlers.indexOf("contextmenu") != -1)
                         {
                             data.canRightClick = true;
                         }
-                        if (knownEvents.indexOf("dblclick") != -1)
+                        if (data.eventHandlers.indexOf("dblclick") != -1)
                         {
                             data.canClick = true;
                         }
                         
-                        if (knownEvents.indexOf("mousedown") != -1)
+                        if (data.eventHandlers.indexOf("mousedown") != -1)
                         {
                             data.canClick = true;
                             data.canRightClick = true;
                         }
-                        if (knownEvents.indexOf("mouseup") != -1)
+                        if (data.eventHandlers.indexOf("mouseup") != -1)
                         {
                             data.canClick = true;
                             data.canRightClick = true;
                         }
                         
-                        if (knownEvents.indexOf("keydown") != -1)
+                        if (data.eventHandlers.indexOf("keydown") != -1)
                         {
                             data.canType = true;
                         }
-                        if (knownEvents.indexOf("keypress") != -1)
+                        if (data.eventHandlers.indexOf("keypress") != -1)
                         {
                             data.canType = true;
                         }
-                        if (knownEvents.indexOf("keyup") != -1)
+                        if (data.eventHandlers.indexOf("keyup") != -1)
                         {
                             data.canType = true;
                         }
