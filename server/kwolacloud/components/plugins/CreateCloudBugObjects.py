@@ -255,7 +255,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             with open(localTempDescriptor, 'rb') as f:
                 data = f.read()
             os.unlink(localTemp)
-            self.config.saveKwolaFileData("bug_frame_sprite_sheets", f"{bug.id}.jpg", data, self.config)
+            self.config.saveKwolaFileData("bug_frame_sprite_sheets", f"{bug.id}.jpg", data)
 
 
             localTempDescriptor, localTemp = tempfile.mkstemp(suffix=".jpg")
@@ -263,7 +263,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             with open(localTempDescriptor, 'rb') as f:
                 data = f.read()
             os.unlink(localTemp)
-            self.config.saveKwolaFileData("bug_error_frames", f"{bug.id}.jpg", data, self.config)
+            self.config.saveKwolaFileData("bug_error_frames", f"{bug.id}.jpg", data)
 
     def cropImageAroundAction(self, image, action, cropWidth, cropHeight):
         left = int(action.x - cropWidth/2)
