@@ -142,7 +142,7 @@ def loadObjectFromDisk(modelClass, id, folder, config, printErrorOnFailure=True,
         def tryJsonGzip():
             nonlocal object
             if object is None:
-                object = config.loadKwolaFileData(folder, jsonFileName, printErrorOnFailure=printErrorOnFailure)
+                object = config.loadKwolaFileData(folder, gzipJsonFileName, printErrorOnFailure=printErrorOnFailure)
                 if object is not None:
                     object = modelClass.from_json(str(gzip.decompress(object), "utf8"))
 
