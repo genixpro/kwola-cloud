@@ -71,7 +71,7 @@ class BaseError(EmbeddedDocument):
         message = BaseError.computeReducedErrorComparisonMessage(message)
         otherMessage = BaseError.computeReducedErrorComparisonMessage(otherMessage)
 
-        distanceScore = edlib.align(message, otherMessage)['editDistance'] / max(len(message), len(otherMessage))
+        distanceScore = edlib.align(message, otherMessage)['editDistance'] / max(1, max(len(message), len(otherMessage)))
         return 1.0 - distanceScore
 
     def computeSimilarity(self, otherError):

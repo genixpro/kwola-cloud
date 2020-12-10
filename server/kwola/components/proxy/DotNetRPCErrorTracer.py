@@ -64,9 +64,13 @@ class DotNetRPCErrorTracer:
         if rpcResponse['type'] != "rpc":
             message = ""
             if "exceptionmessage" in rpcResponse:
-                message = rpcResponse['exceptionmessage']
+                message = f"Exception occurred in backend RPC call: {rpcResponse['exceptionmessage']}"
             elif "implementationexceptiontype" in rpcResponse:
                 message = f"Exception occurred in backend RPC call: {rpcResponse['implementationexceptiontype']}"
+
+            message += f"\nRequest data: {json.dumps(rpcRequest, indent=4)}\nResponse data: {json.dumps(rpcResponse, indent=4)}"
+
+            message = message.strip()
 
             self.errors.append(
                 DotNetRPCError(type="dotnetrpc",
