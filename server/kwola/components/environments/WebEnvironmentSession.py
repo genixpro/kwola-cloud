@@ -644,7 +644,7 @@ class WebEnvironmentSession:
                             || element.tagName === "SELECT")
                         data.canClick = true;
                     
-                    if (element.tagName === "A" && element.getAttribute("href") && element.getAttribute("href") !== "#")
+                    if (element.tagName === "A")
                         data.canClick = true;
                         
                     if (element.tagName === "INPUT" && !(element.getAttribute("type") === "text" 
@@ -678,14 +678,16 @@ class WebEnvironmentSession:
                         data.canType = true;
                     
                     if (isFunction(element.onclick) 
-                        || isFunction(element.onauxclick) 
                         || isFunction(element.onmousedown)
                         || isFunction(element.onmouseup)
+                        || isFunction(element.onpointerdown)
+                        || isFunction(element.onpointerup)
                         || isFunction(element.ontouchend)
                         || isFunction(element.ontouchstart))
                         data.canClick = true;
                     
-                    if (isFunction(element.oncontextmenu))
+                    if (isFunction(element.oncontextmenu)
+                        || isFunction(element.onauxclick))
                         data.canRightClick = true;
                     
                     if (isFunction(element.onkeydown) 
@@ -709,14 +711,21 @@ class WebEnvironmentSession:
                             data.canClick = true;
                         }
                         
-                        if (data.eventHandlers.indexOf("mousedown") != -1)
+                        for (let event of data.eventHandlers)
                         {
-                            data.canClick = true;
-                            data.canRightClick = true;
+                            if (event.startsWith("mouse"))
+                            {
+                                data.canClick = true;
+                                data.canRightClick = true;
+                            }
+                            if (event.startsWith("touch") || event.startsWith("pointer"))
+                            {
+                                data.canClick = true;
+                            }
                         }
-                        if (data.eventHandlers.indexOf("mouseup") != -1)
+                        
+                        if (data.eventHandlers.indexOf("auxclick") != -1)
                         {
-                            data.canClick = true;
                             data.canRightClick = true;
                         }
                         
