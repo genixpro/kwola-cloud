@@ -11,11 +11,13 @@ import stripe
 import stripe.error
 from ..auth import authenticate, isAdmin
 from ..config.config import loadCloudConfiguration
+from kwola.components.utils.retry import autoretry
 
 class BillingURLResource(Resource):
     def __init__(self):
         pass
 
+    @autoretry(maxAttempts=4)
     def get(self):
         user, claims = authenticate(returnAllClaims=True)
         if user is None:
