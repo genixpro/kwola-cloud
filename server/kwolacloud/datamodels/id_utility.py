@@ -6,6 +6,7 @@ import hashlib
 import random
 from .Counter import CounterModel
 from ..config.config import loadCloudConfiguration
+from mongoengine.errors import MultipleObjectsReturned
 
 def generateKwolaId(modelClass, owner, kwolaConfig, groupIndex=None):
     serverConfig = loadCloudConfiguration()
@@ -98,7 +99,11 @@ def generateObjectCounterValueCode(modelClass, owner, length, groupIndex=None):
     if groupIndex is not None:
         queryParameters['groupIndex'] = groupIndex
 
-    counterObject = CounterModel.objects(**queryParameters).upsert_one(inc__counter=1)
+    try:
+        counterObject = CounterModel.objects(**queryParameters).upsert_one(inc__counter=1)
+    except MultipleObjectsReturned:
+        CounterModel.objects(**queryParameters).delete()
+        counterObject = CounterModel.objects(**queryParameters).upsert_one(inc__counter=1)
 
     counterStr = str(counterObject.counter)
 
