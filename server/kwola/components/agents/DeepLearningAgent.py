@@ -1600,7 +1600,7 @@ class DeepLearningAgent:
         }
 
         sharedMultiprocessingContext = multiprocessing.get_context('spawn')
-        processingPool = sharedMultiprocessingContext.Pool(processes=self.config['debug_video_workers'], initializer=setupLocalLogging, maxtasksperchild=1)
+        processingPool = sharedMultiprocessingContext.Pool(processes=self.config['debug_video_workers'], initializer=setupLocalLogging, maxtasksperchild=self.config['debug_video_max_frames_per_worker'])
 
         imageGenerationFutures = []
         for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImagesFiltered, networkOutputs):

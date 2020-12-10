@@ -48,6 +48,7 @@
   "debug_video_hilight_background_color_g":187,
   "debug_video_hilight_background_color_r":251,
   "debug_video_left_size": 100,
+  "debug_video_max_frames_per_worker": 5,
   "debug_video_neural_network_chart_right_size_addition": 1150,
   "debug_video_neural_network_chart_right_size_addition_per_four_actions": 250,
   "debug_video_neural_network_chart_top_margin": 75,
