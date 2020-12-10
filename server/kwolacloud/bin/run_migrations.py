@@ -9,5 +9,6 @@ from .migrate_bug_object_severity_score import main as migrate_bug_severity_scor
 
 
 def main():
-    migrate_bug_severity_score()
-    migrate_bug_objects_main()
+    # migrate_bug_severity_score()
+    # migrate_bug_objects_main()
+    pass
