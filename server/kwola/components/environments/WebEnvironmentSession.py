@@ -1065,8 +1065,6 @@ class WebEnvironmentSession:
 
             executionTrace.didActionSucceed = success
 
-            self.updateWindowSize()
-
             startTime = datetime.now()
             networkWaitTime = self.checkOffsite(priorURL=executionTrace.startURL)
             actionExecutionTimes['checkOffsite-second-networkWaitTime'] = networkWaitTime
@@ -1075,6 +1073,8 @@ class WebEnvironmentSession:
             startTime = datetime.now()
             self.checkLoadFailure(priorURL=executionTrace.startURL)
             actionExecutionTimes['checkLoadFailure'] = (datetime.now() - startTime).total_seconds()
+
+            self.updateWindowSize()
 
             for plugin in self.plugins:
                 startTime = datetime.now()
