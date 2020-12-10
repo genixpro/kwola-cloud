@@ -65,7 +65,7 @@ ENV NVIDIA_REQUIRE_CUDA "cuda>=10.1 brand=tesla,driver>=384,driver<385 brand=tes
 
 # Install some basic system dependencies
 RUN apt-get update && apt-get install \
-    chromium-browser=86* \
+    chromium-browser=87* \
     firefox \
     ffmpeg \
     freetype* \
@@ -122,7 +122,7 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s 
     kubectl version --client
 
 # Download and install Chromedriver
-RUN wget https://chromedriver.storage.googleapis.com/86.0.4240.22/chromedriver_linux64.zip && \
+RUN wget https://chromedriver.storage.googleapis.com/87.0.4280.88/chromedriver_linux64.zip && \
     unzip chromedriver_linux64.zip && \
     cp chromedriver /usr/bin/ && \
     chmod 644 /usr/bin/chromedriver && \
