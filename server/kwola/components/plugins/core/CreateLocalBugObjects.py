@@ -142,7 +142,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                 existingBugs.append(bug)
                 bugObjects.append(bug)
 
-                getLogger().info(f"\n\nBug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
+                getLogger().info(f"\n\nBug #{len(bugObjects)}:\n{bug.generateBugText()}\n")
 
         getLogger().info(f"Found {len(self.newErrorsThisTestingStep[testingStep.id])} new unique errors this session.")
 

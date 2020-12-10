@@ -149,14 +149,10 @@ class CreateCloudBugObjects(TestingStepPluginBase):
                     mutedError.saveToDisk(self.config)
 
             if not duplicate:
-                bug.id = generateKwolaId(BugModel, testingStep.owner, self.config)
-                videoData = self.config.loadKwolaFileData("videos", f'{str(executionSessionId)}.mp4')
-                self.config.saveKwolaFileData("bugs", bug.id + ".mp4", videoData)
-
                 existingBugs.append(bug)
                 bugObjects.append(bug)
 
-                getLogger().info(f"\n\nBug #{errorIndex + 1}:\n{bug.generateBugText()}\n")
+                getLogger().info(f"\n\nBug #{len(bugObjects)}:\n{bug.generateBugText()}\n")
 
         getLogger().info(f"Found {len(self.newErrorsThisTestingStep[testingStep.id])} new unique errors this session.")
 
@@ -166,6 +162,23 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         self.generateVideoFilesForBugs(bugObjects)
         self.generateFrameSpriteSheetsForBugs(bugObjects)
 
+        # Dedupe the bugs a second time. This is because the video generation can take quite a while,
+        # and while it was running, other testing steps may have saved similar bugs. So we just do
+        # second pass of filtering here to doubly ensure we do not save any duplicates to disk.
+        # This still isn't perfect because technically two different testing steps could be running
+        # this second deduping pass at the same time, but it is way less likely.
+        existingBugs = self.loadAllBugs(testingStep)
+        filteredBugObjects = []
+        for bug in bugObjects:
+            duplicate = False
+            for existingBug in existingBugs:
+                if bug.isDuplicateOf(existingBug):
+                    duplicate = True
+                    break
+            if not duplicate:
+                filteredBugObjects.append(bug)
+        bugObjects = filteredBugObjects
+
         # We save the bug objects after generating the video files
         # Just to ensure that any bugs which get shown on the frontend
         # actually had their associated video files and don't cause
@@ -174,6 +187,9 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         # thus don't want to leave a bunch of bug objects in the db
         # without their associated video objects.
         for bug in bugObjects:
+            bug.id = generateKwolaId(BugModel, testingStep.owner, self.config)
+            videoData = self.config.loadKwolaFileData("videos", f'{str(bug.executionSessionId)}.mp4')
+            self.config.saveKwolaFileData("bugs", bug.id + ".mp4", videoData)
             bug.save()
 
     def sessionFailed(self, testingStep, executionSession):
