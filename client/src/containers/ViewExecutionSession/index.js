@@ -40,7 +40,7 @@ class ViewExecutionSession extends Component {
             this.setState({executionSession: response.data.executionSession})
         });
 
-        axios.get(`/execution_sessions/${this.props.executionSessionId}/traces`).then((response) =>
+        axios.get(`/execution_sessions/${this.props.match.params.id}/traces`).then((response) =>
         {
             this.setState({executionTraces: response.data.executionTraces})
         });

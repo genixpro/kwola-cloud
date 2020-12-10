@@ -306,18 +306,6 @@ class ViewBug extends Component {
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message || "N/A"}</pre>
 
                                     <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.stacktrace}</pre>
-
-                                    {
-                                        this.state.bug.error._cls === "DotNetRPCError" ?
-                                            <pre style={{"whiteSpace": "pre-wrap"}}>Request Data: {this.state.bug.error.requestData || "N/A"}<br/><br/></pre>
-                                            : null
-                                    }
-
-                                    {
-                                        this.state.bug.error._cls === "DotNetRPCError" ?
-                                            <pre style={{"whiteSpace": "pre-wrap"}}>Response Data: {this.state.bug.error.responseData || "N/A"}<br/><br/></pre>
-                                            : null
-                                    }
                                 </Papersheet>
                                 <br/>
 
