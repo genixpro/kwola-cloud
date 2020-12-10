@@ -217,14 +217,17 @@ class WebEnvironmentSession:
         else:
             raise ValueError(f"Unsupported value for browser '{self.browser}'. Valid values are 'firefox', 'chrome' or 'edge'.")
 
+        self.updateWindowSize()
+        self.driver.set_script_timeout(self.config['web_session_script_execution_timeout'])
+        self.driver.set_page_load_timeout(self.config['web_session_page_load_timeout'])
+
+    def updateWindowSize(self):
         window_size = self.driver.execute_script("""
             return [window.outerWidth - window.innerWidth + arguments[0],
               window.outerHeight - window.innerHeight + arguments[1]];
             """, self.config['web_session_width'][self.windowSize], self.config['web_session_height'][self.windowSize])
 
         self.driver.set_window_size(*window_size)
-        self.driver.set_script_timeout(self.config['web_session_script_execution_timeout'])
-        self.driver.set_page_load_timeout(self.config['web_session_page_load_timeout'])
 
     def fetchTargetWebpage(self):
         try:
@@ -1052,6 +1055,8 @@ class WebEnvironmentSession:
                 plugin.beforeActionRuns(self.driver, self.proxy, self.executionSession, executionTrace, action)
                 actionExecutionTimes[f"plugin-before-{type(plugin).__name__}"] = (datetime.now() - startTime).total_seconds()
 
+            self.updateWindowSize()
+
             startTime = datetime.now()
             success, networkWaitTime = self.performActionInBrowser(action)
             timeTaken = (datetime.now() - startTime).total_seconds()
@@ -1059,6 +1064,8 @@ class WebEnvironmentSession:
             actionExecutionTimes[f"performActionInBrowser-networkWaitTime"] = networkWaitTime
 
             executionTrace.didActionSucceed = success
+
+            self.updateWindowSize()
 
             startTime = datetime.now()
             networkWaitTime = self.checkOffsite(priorURL=executionTrace.startURL)
