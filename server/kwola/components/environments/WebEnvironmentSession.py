@@ -711,17 +711,35 @@ class WebEnvironmentSession:
                             data.canClick = true;
                         }
                         
-                        for (let event of data.eventHandlers)
+                        if (data.eventHandlers.indexOf("mousedown") != -1)
                         {
-                            if (event.startsWith("mouse"))
-                            {
-                                data.canClick = true;
-                                data.canRightClick = true;
-                            }
-                            if (event.startsWith("touch") || event.startsWith("pointer"))
-                            {
-                                data.canClick = true;
-                            }
+                            data.canClick = true;
+                            data.canRightClick = true;
+                        }
+                        if (data.eventHandlers.indexOf("mouseup") != -1)
+                        {
+                            data.canClick = true;
+                            data.canRightClick = true;
+                        }
+                        
+                        if (data.eventHandlers.indexOf("pointerdown") != -1)
+                        {
+                            data.canClick = true;
+                            data.canRightClick = true;
+                        }
+                        if (data.eventHandlers.indexOf("pointerup") != -1)
+                        {
+                            data.canClick = true;
+                            data.canRightClick = true;
+                        }
+                        
+                        if (data.eventHandlers.indexOf("touchend") != -1)
+                        {
+                            data.canClick = true;
+                        }
+                        if (data.eventHandlers.indexOf("touchstart") != -1)
+                        {
+                            data.canClick = true;
                         }
                         
                         if (data.eventHandlers.indexOf("auxclick") != -1)
