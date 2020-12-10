@@ -85,7 +85,7 @@ class WebEnvironment:
             session.hasBrowserDied = True
             session.browserDeathReason = f"A fatal error occurred during session initialization: {traceback.format_exc()}"
 
-        @autoretry(ignoreFailure=True, onFinalFailure=onInitializeFailure, exponentialBackOffBase=2.5)
+        @autoretry(ignoreFailure=True, onFinalFailure=onInitializeFailure)
         def initializeSession(session):
             session.initialize()
 
@@ -107,10 +107,15 @@ class WebEnvironment:
         futures = []
         for sessionNumber in range(sessionCount):
             future = AsyncThreadFuture(initializeSession, [self.sessions[sessionNumber]], timeout=self.config['web_session_initialization_timeout'])
-            futures.append(future)
+            futures.append((future, self.sessions[sessionNumber]))
 
-        for future in futures:
-            result = future.result()
+        for future, session in futures:
+            try:
+                result = future.result()
+            except TimeoutError:
+                session.hasBrowserDied = True
+                session.browserDeathReason = f"A fatal error occurred during session initialization: {traceback.format_exc()}"
+
 
     def shutdown(self):
         for session in self.sessions:
