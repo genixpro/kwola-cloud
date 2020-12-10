@@ -22,7 +22,7 @@ class SlackLogHandler(logging.Handler):
     @autoretry()
     def emit(self, record):
         if record.levelno >= logging.ERROR:
-            message = f"[{config['name']}] {record.filename}:{record.lineno} {record.getMessage()}"
+            message = f"[{str(config['name'])}] {str(record.filename)}:{str(record.lineno)} {str(record.getMessage())}"
             slackErrors.post(text=message)
 
 
