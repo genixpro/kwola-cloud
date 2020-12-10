@@ -149,6 +149,10 @@ class CreateCloudBugObjects(TestingStepPluginBase):
                     mutedError.saveToDisk(self.config)
 
             if not duplicate:
+                bug.id = generateKwolaId(BugModel, testingStep.owner, self.config)
+                videoData = self.config.loadKwolaFileData("videos", f'{str(bug.executionSessionId)}.mp4')
+                self.config.saveKwolaFileData("bugs", bug.id + ".mp4", videoData)
+                
                 existingBugs.append(bug)
                 bugObjects.append(bug)
 
@@ -187,9 +191,6 @@ class CreateCloudBugObjects(TestingStepPluginBase):
         # thus don't want to leave a bunch of bug objects in the db
         # without their associated video objects.
         for bug in bugObjects:
-            bug.id = generateKwolaId(BugModel, testingStep.owner, self.config)
-            videoData = self.config.loadKwolaFileData("videos", f'{str(bug.executionSessionId)}.mp4')
-            self.config.saveKwolaFileData("bugs", bug.id + ".mp4", videoData)
             bug.save()
 
     def sessionFailed(self, testingStep, executionSession):
