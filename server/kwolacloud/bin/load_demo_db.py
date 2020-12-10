@@ -17,6 +17,7 @@ from kwola.datamodels.errors.LogError import LogError
 from kwola.datamodels.errors.BaseError import BaseError
 from kwola.datamodels.errors.ExceptionError import ExceptionError
 from kwola.datamodels.errors.HttpError import HttpError
+from kwola.datamodels.errors.DotNetRPCError import DotNetRPCError
 from kwola.datamodels.ActionMapModel import ActionMap
 from kwola.datamodels.actions.ClickTapAction import ClickTapAction
 from kwola.datamodels.actions.ClearFieldAction import ClearFieldAction

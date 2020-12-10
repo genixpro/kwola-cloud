@@ -23,6 +23,7 @@ from .errors.BaseError import BaseError
 from .errors.ExceptionError import ExceptionError
 from .errors.HttpError import HttpError
 from .errors.LogError import LogError
+from .errors.DotNetRPCError import DotNetRPCError
 from .actions.BaseAction import BaseAction
 from .CustomIDField import CustomIDField
 from .DiskUtilities import saveObjectToDisk, loadObjectFromDisk
@@ -129,10 +130,12 @@ class BugModel(Document):
     def recomputeBugTypeSeverityScore(self):
         if self.isJavascriptError:
             self.bugTypeSeverityScore = 1.0
-        elif isinstance(self.error, HttpError) and self.error.statusCode >= 500:
-            self.bugTypeSeverityScore = 0.9
-        elif isinstance(self.error, HttpError) and (self.error.statusCode == 403 or self.error.statusCode == 401):
+        elif isinstance(self.error, DotNetRPCError):
             self.bugTypeSeverityScore = 0.8
+        elif isinstance(self.error, HttpError) and self.error.statusCode >= 500:
+            self.bugTypeSeverityScore = 0.8
+        elif isinstance(self.error, HttpError) and (self.error.statusCode == 403 or self.error.statusCode == 401):
+            self.bugTypeSeverityScore = 0.6
         elif isinstance(self.error, HttpError) and self.error.statusCode == 404:
             self.bugTypeSeverityScore = 0.4
         elif isinstance(self.error, LogError):

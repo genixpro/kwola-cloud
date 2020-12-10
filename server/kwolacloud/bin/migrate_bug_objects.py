@@ -44,6 +44,7 @@ from kwola.datamodels.errors.BaseError import BaseError
 from kwola.datamodels.errors.ExceptionError import ExceptionError
 from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.errors.LogError import LogError
+from kwola.datamodels.errors.DotNetRPCError import DotNetRPCError
 from kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
 
 def processBug(bugId):

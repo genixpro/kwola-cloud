@@ -38,6 +38,7 @@ from kwola.datamodels.errors.BaseError import BaseError
 from kwola.datamodels.errors.ExceptionError import ExceptionError
 from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.errors.LogError import LogError
+from kwola.datamodels.errors.DotNetRPCError import DotNetRPCError
 # from kwolacloud.tasks.utils import mountTestingRunStorageDrive, unmountTestingRunStorageDrive
 
 def loadTraces(config, session):

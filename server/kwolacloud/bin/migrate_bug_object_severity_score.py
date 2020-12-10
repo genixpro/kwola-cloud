@@ -41,6 +41,7 @@ from kwola.datamodels.actions.TypeAction import TypeAction
 from kwola.datamodels.actions.WaitAction import WaitAction
 from kwola.datamodels.errors.BaseError import BaseError
 from kwola.datamodels.errors.ExceptionError import ExceptionError
+from kwola.datamodels.errors.DotNetRPCError import DotNetRPCError
 from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.errors.LogError import LogError
 from kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects

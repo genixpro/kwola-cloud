@@ -44,6 +44,7 @@ from ..plugins.core.RecordCursorAtAction import RecordCursorAtAction
 from ..plugins.core.RecordExceptions import RecordExceptions
 from ..plugins.core.RecordLogEntriesAndLogErrors import RecordLogEntriesAndLogErrors
 from ..plugins.core.RecordNetworkErrors import RecordNetworkErrors
+from ..plugins.core.RecordDotNetRPCErrors import RecordDotNetRPCErrors
 from ..plugins.core.RecordPageURLs import RecordPageURLs
 from ..plugins.core.RecordScreenshots import RecordScreenshots
 
@@ -62,6 +63,7 @@ class WebEnvironment:
             RecordExceptions(),
             RecordLogEntriesAndLogErrors(config),
             RecordNetworkErrors(),
+            RecordDotNetRPCErrors(),
             RecordPageURLs(),
             RecordAllPaths(),
             RecordBranchTrace(),

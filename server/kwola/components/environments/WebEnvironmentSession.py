@@ -29,6 +29,7 @@ from ...datamodels.actions.WaitAction import WaitAction
 from ...datamodels.actions.ScrollingAction import ScrollingAction
 from ...datamodels.errors.ExceptionError import ExceptionError
 from ...datamodels.errors.LogError import LogError
+from ...datamodels.errors.DotNetRPCError import DotNetRPCError
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
 from ..plugins.base.ProxyPluginBase import ProxyPluginBase
 from ..plugins.base.WebEnvironmentPluginBase import WebEnvironmentPluginBase
