@@ -197,6 +197,7 @@ class TestingRunManager:
                                         isMuted=False
                                         ).only("id"):
                 self.run.bugsNeedingReproduction.append(bug.id)
+                logging.info(f"Added the bug {bug.id} to the list of bugs that need to be reproduced.")
 
         def handleFailure():
             self.run.failedTestingSteps += 1
