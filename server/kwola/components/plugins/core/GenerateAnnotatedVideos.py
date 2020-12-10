@@ -3,6 +3,7 @@ from ..base.TestingStepPluginBase import TestingStepPluginBase
 import atexit
 import concurrent.futures
 import billiard as multiprocessing
+import billiard.exceptions
 from kwola.config.logger import getLogger
 
 
@@ -28,12 +29,30 @@ class GenerateAnnotatedVideos(TestingStepPluginBase):
         futures = []
         for session in executionSessions:
             future = pool.apply_async(func=createDebugVideoSubProcess, args=(self.config.serialize(), str(session.id), "", False, False, None, None, "annotated_videos"))
-            futures.append(future)
+            futures.append((session, future))
 
-        for future in futures:
-            value = future.get()
-            if value:
-                getLogger().error(value)
+        for session, future in futures:
+            localFuture = future
+            for retry in range(5):
+                try:
+                    value = localFuture.get()
+                    if value:
+                        getLogger().error(value)
+                    break
+                except billiard.exceptions.WorkerLostError:
+                    if retry == 4:
+                        raise
+                    localFuture = pool.apply_async(func=createDebugVideoSubProcess,
+                                              args=(self.config.serialize(), str(session.id), "", False, False, None, None, "annotated_videos"))
+                except BrokenPipeError:
+                    if retry == 4:
+                        raise
+                    localFuture = pool.apply_async(func=createDebugVideoSubProcess,
+                                              args=(self.config.serialize(), str(session.id), "", False, False, None, None, "annotated_videos"))
+
+
+
+
 
         pool.close()
         pool.join()
