@@ -1600,7 +1600,7 @@ class DeepLearningAgent:
         }
 
         sharedMultiprocessingContext = multiprocessing.get_context('spawn')
-        processingPool = sharedMultiprocessingContext.Pool(processes=self.config['debug_video_workers'], initializer=setupLocalLogging)
+        processingPool = sharedMultiprocessingContext.Pool(processes=self.config['debug_video_workers'], initializer=setupLocalLogging, maxtasksperchild=1)
 
         imageGenerationFutures = []
         for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImagesFiltered, networkOutputs):
@@ -1733,6 +1733,8 @@ class DeepLearningAgent:
             :return: None
         """
         # setupLocalLogging()
+
+        mpl.use('Agg')
 
         try:
             trace = pickle.loads(trace)
