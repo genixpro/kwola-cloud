@@ -210,7 +210,7 @@ class BugReproducer:
                     continue
 
                 originalKeywords = set(originalActionMap.keywords.split())
-                similarity = len(keywords.intersection(originalKeywords)) / len(keywords.union(originalKeywords))
+                similarity = len(keywords.intersection(originalKeywords)) / max(1, len(keywords.union(originalKeywords)))
                 cornerDist = abs(currentActionMap.left - originalActionMap.left) + \
                              abs(currentActionMap.right - originalActionMap.right) + \
                              abs(currentActionMap.top - originalActionMap.top) + \

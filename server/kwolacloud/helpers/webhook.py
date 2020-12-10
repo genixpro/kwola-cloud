@@ -35,6 +35,8 @@ def sendCustomerWebhook(application, webhookField, jsonData, isTestCall=False):
             response = requests.post(targetURL, dataBytes, headers=headers, timeout=timeout)
         except requests.exceptions.ConnectTimeout:
             return False
+        except requests.exceptions.ConnectionError:
+            return False
 
         if response.status_code != 200:
             return False

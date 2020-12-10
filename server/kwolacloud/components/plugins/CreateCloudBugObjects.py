@@ -6,6 +6,7 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.components.utils.debug_video import createDebugVideoSubProcess
 from kwola.components.plugins.base.TestingStepPluginBase import TestingStepPluginBase
 from kwola.components.agents.DeepLearningAgent import DeepLearningAgent
+from kwola.components.utils.retry import autoretry
 import numpy
 import skimage.io
 import skimage.draw
@@ -212,6 +213,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
         return list(bugs)
 
+    @autoretry(exponentialBackOffBase=3)
     def generateVideoFilesForBugs(self, bugObjects):
         pool = multiprocessing.Pool(self.config['video_generation_processes'], maxtasksperchild=1)
         futures = []

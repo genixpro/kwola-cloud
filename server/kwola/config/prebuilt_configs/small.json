@@ -278,7 +278,7 @@
     "mobile": 740
   },
   "web_session_initial_fetch_sleep_time": 6,
-  "web_session_max_startup_workers": 6,
+  "web_session_initialization_timeout": 300,
   "web_session_no_network_activity_timeout": 10,
   "web_session_no_network_activity_wait_time": 1.0,
   "web_session_parallel_execution_sessions": 8,

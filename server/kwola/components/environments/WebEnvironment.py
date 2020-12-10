@@ -87,24 +87,28 @@ class WebEnvironment:
         def initializeSession(session):
             session.initialize()
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=config['web_session_max_startup_workers']) as executor:
-            sessionCount = config['web_session_parallel_execution_sessions']
-            if sessionLimit is not None:
-                sessionCount = min(sessionLimit, sessionCount)
+        sessionCount = config['web_session_parallel_execution_sessions']
+        if sessionLimit is not None:
+            sessionCount = min(sessionLimit, sessionCount)
 
-            if executionSessions is None:
-                self.executionSessions = [None] * sessionCount
-            else:
-                self.executionSessions = executionSessions
+        if executionSessions is None:
+            self.executionSessions = [None] * sessionCount
+        else:
+            self.executionSessions = executionSessions
 
-            getLogger().info(f"Starting up {sessionCount} parallel browser sessions.")
+        getLogger().info(f"Starting up {sessionCount} parallel browser sessions.")
 
-            self.sessions = []
-            for sessionNumber in range(sessionCount):
-                self.sessions.append(createSession(sessionNumber))
+        self.sessions = []
+        for sessionNumber in range(sessionCount):
+            self.sessions.append(createSession(sessionNumber))
 
-            for sessionNumber in range(sessionCount):
-                executor.submit(initializeSession, self.sessions[sessionNumber])
+        futures = []
+        for sessionNumber in range(sessionCount):
+            future = AsyncThreadFuture(initializeSession, [self.sessions[sessionNumber]], timeout=self.config['web_session_initialization_timeout'])
+            futures.append(future)
+
+        for future in futures:
+            result = future.result()
 
     def shutdown(self):
         for session in self.sessions:

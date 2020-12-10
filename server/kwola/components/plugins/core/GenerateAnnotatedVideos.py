@@ -1,4 +1,5 @@
 from ...utils.debug_video import createDebugVideoSubProcess
+from ...utils.retry import autoretry
 from ..base.TestingStepPluginBase import TestingStepPluginBase
 import atexit
 import concurrent.futures
@@ -23,6 +24,7 @@ class GenerateAnnotatedVideos(TestingStepPluginBase):
     def afterActionsRun(self, testingStep, executionSessions, traces):
         pass
 
+    @autoretry(exponentialBackOffBase=3)
     def testingStepFinished(self, testingStep, executionSessions):
         pool = multiprocessing.Pool(self.config['video_generation_processes'], maxtasksperchild=1)
 

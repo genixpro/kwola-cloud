@@ -3,6 +3,7 @@ from kwola.datamodels.BugModel import BugModel
 from kwola.datamodels.CustomIDField import CustomIDField
 from ...utils.debug_video import createDebugVideoSubProcess
 from ..base.TestingStepPluginBase import TestingStepPluginBase
+from kwola.components.utils.retry import autoretry
 from datetime import datetime
 import atexit
 import concurrent.futures
@@ -190,6 +191,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
 
         return bugs
 
+    @autoretry(exponentialBackOffBase=3)
     def generateVideoFilesForBugs(self, testingStep, bugObjects):
         pool = multiprocessing.Pool(self.config['video_generation_processes'], maxtasksperchild=1)
         futures = []
