@@ -20,6 +20,7 @@ from dateutil.relativedelta import relativedelta
 import flask
 import json
 import math
+import concurrent.futures
 import stripe
 import os
 from google.cloud import storage
@@ -267,37 +268,37 @@ class PauseTestingRun(Resource):
 
         configData = loadCloudConfiguration()
 
-        mainJob = testingRun.createKubernetesJobObject()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            mainJob = testingRun.createKubernetesJobObject()
+            if configData['features']['enableRuns']:
+                if not configData['features']['localRuns'] and mainJob.doesJobStillExist():
+                    executor.submit(mainJob.cleanup)
 
-        if configData['features']['enableRuns']:
-            if not configData['features']['localRuns'] and mainJob.doesJobStillExist():
-                mainJob.cleanup()
+            for jobId in testingRun.runningTestingStepJobIds:
+                testStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
+                                            data={},
+                                            referenceId=jobId)
 
-        for jobId in testingRun.runningTestingStepJobIds:
-            testStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
-                                        data={},
-                                        referenceId=jobId)
+                if not configData['features']['localRuns'] and testStepJob.doesJobStillExist():
+                    executor.submit(testStepJob.cleanup)
 
-            if not configData['features']['localRuns'] and testStepJob.doesJobStillExist():
-                testStepJob.cleanup()
+            testingRun.runningTestingStepJobIds = []
+            testingRun.runningTestingStepStartTimes = []
 
-        testingRun.runningTestingStepJobIds = []
-        testingRun.runningTestingStepStartTimes = []
+            for jobId in testingRun.runningBugReproductionJobIds.values():
+                bugReproductionJob = KubernetesJob(module="kwolacloud.tasks.BugReproductionTask",
+                                            data={},
+                                            referenceId=jobId)
 
-        for jobId in testingRun.runningBugReproductionJobIds.values():
-            bugReproductionJob = KubernetesJob(module="kwolacloud.tasks.BugReproductionTask",
-                                        data={},
-                                        referenceId=jobId)
+                if not configData['features']['localRuns'] and bugReproductionJob.doesJobStillExist():
+                    executor.submit(bugReproductionJob.cleanup)
 
-            if not configData['features']['localRuns'] and bugReproductionJob.doesJobStillExist():
-                bugReproductionJob.cleanup()
-
-        if testingRun.runningTrainingStepJobId is not None:
-            trainingJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
-                                        data={},
-                                        referenceId=testingRun.runningTrainingStepJobId)
-            if not configData['features']['localRuns'] and trainingJob.doesJobStillExist():
-                trainingJob.cleanup()
+            if testingRun.runningTrainingStepJobId is not None:
+                trainingJob = KubernetesJob(module="kwolacloud.tasks.SingleTrainingStepTask",
+                                            data={},
+                                            referenceId=testingRun.runningTrainingStepJobId)
+                if not configData['features']['localRuns'] and trainingJob.doesJobStillExist():
+                    executor.submit(trainingJob.cleanup)
 
         testingRun.runningTrainingStepJobId = None
         testingRun.runningTrainingStepStartTime = None
