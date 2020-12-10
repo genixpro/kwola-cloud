@@ -637,14 +637,12 @@ class WebEnvironmentSession:
                     };
                     
                     if ( element.tagName === "BUTTON"
+                            || element.tagName === "A"
                             || element.tagName === "AREA"
                             || element.tagName === "AUDIO"
                             || element.tagName === "VIDEO"
                             || element.tagName === "OPTION"
                             || element.tagName === "SELECT")
-                        data.canClick = true;
-                    
-                    if (element.tagName === "A")
                         data.canClick = true;
                         
                     if (element.tagName === "INPUT" && !(element.getAttribute("type") === "text" 
@@ -676,6 +674,9 @@ class WebEnvironmentSession:
                                                          || !element.getAttribute("type")
                                                       ))
                         data.canType = true;
+                        
+                    if (element.contentEditable === 'true' || element.contentEditable === true)
+                        data.canType = true;                    
                     
                     if (isFunction(element.onclick) 
                         || isFunction(element.onmousedown)
