@@ -87,7 +87,7 @@ class ViewExecutionSession extends Component {
                                     }
                                     {
                                         this.state.executionSession.browser === "edge" ?
-                                            <span>Browser: <img src={edgeBlackSquare}  style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Edge<br/><br/></span> : null
+                                            <span>Browser: <img src={edgeBlackSquare}  style={{"width":"20px", "fontSize":"20px", "position": "relative", "top": "2px"}} /> Edge<br/><br/></span> : null
                                     }
                                     {
                                         this.state.executionSession.userAgent ?
