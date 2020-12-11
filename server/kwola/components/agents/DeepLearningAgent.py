@@ -1601,6 +1601,8 @@ class DeepLearningAgent:
 
         sharedMultiprocessingContext = multiprocessing.get_context('spawn')
         processingPool = sharedMultiprocessingContext.Pool(processes=self.config['debug_video_workers'], initializer=setupLocalLogging, maxtasksperchild=self.config['debug_video_max_frames_per_worker'])
+        
+        outputIdenticalFramesPerTrace = 4
 
         imageGenerationFutures = []
         for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImagesFiltered, networkOutputs):
@@ -1617,7 +1619,7 @@ class DeepLearningAgent:
                                                  rawImage, lastRawImage, networkOutput,
                                                  presentRewards, discountedFutureRewards, tempScreenshotDirectory,
                                                  includeNeuralNetworkCharts, includeNetPresentRewardChart, hilight,
-                                                 rewardBounds, uniqueActionColors
+                                                 rewardBounds, uniqueActionColors, outputIdenticalFramesPerTrace
                                                ])
                 imageGenerationFutures.append(future)
 
@@ -1630,7 +1632,7 @@ class DeepLearningAgent:
 
         @autoretry()
         def generateMovie():
-            result = subprocess.run(['ffmpeg', '-f', 'image2', "-r", "2", '-i', 'kwola-screenshot-%05d.png', '-vcodec', chooseBestFfmpegVideoCodec(), '-pix_fmt', 'yuv420p', '-crf', '25', '-preset', 'veryslow', "debug.mp4"], cwd=tempScreenshotDirectory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            result = subprocess.run(['ffmpeg', '-f', 'image2', "-r", str(2 * outputIdenticalFramesPerTrace), '-i', 'kwola-screenshot-%05d.png', '-vcodec', chooseBestFfmpegVideoCodec(), '-pix_fmt', 'yuv420p', '-crf', '25', '-preset', 'veryslow', "debug.mp4"], cwd=tempScreenshotDirectory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if result.returncode != 0 or not os.path.exists(moviePath):
                 errorMsg = f"Error! Attempted to create a movie using ffmpeg and the process exited with exit-code {result.returncode}. The following output was observed:\n"
                 errorMsg += str(result.stdout, 'utf8') + "\n"
@@ -1702,7 +1704,7 @@ class DeepLearningAgent:
                                            rawImage, lastRawImage, networkOutput,
                                            presentRewards, discountedFutureRewards, tempScreenshotDirectory,
                                            includeNeuralNetworkCharts=True, includeNetPresentRewardChart=True, hilight=0,
-                                           rewardBounds=None, uniqueActionColors=None):
+                                           rewardBounds=None, uniqueActionColors=None, outputIdenticalFramesPerTrace=None):
         """
             This method is used to generate a single debug image for a single execution trace. Technically this method actually
             generates two debug images. The first shows what action is being performed, and the second shows what happened after
@@ -1729,6 +1731,7 @@ class DeepLearningAgent:
                             hilight and 1 being full hilight. Hilighting a frame will change the background color
             :param rewardBounds: A tuple containing the bounds to be used for generating images
             :param uniqueActionColors: A dictionary mapping pixel action map values to various colors
+            :param outputIdenticalFramesPerTrace: The number of video frames that kwola should generate for each trace
 
             :return: None
         """
@@ -2191,9 +2194,10 @@ class DeepLearningAgent:
             if includeNeuralNetworkCharts:
                 addRightSideDebugCharts(newImage, lastRawImage, trace)
 
-            fileName = f"kwola-screenshot-{traceIndex*2:05d}.png"
-            filePath = os.path.join(tempScreenshotDirectory, fileName)
-            skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
+            for outputFrame in range(outputIdenticalFramesPerTrace):
+                fileName = f"kwola-screenshot-{traceIndex*2*outputIdenticalFramesPerTrace + outputFrame:05d}.png"
+                filePath = os.path.join(tempScreenshotDirectory, fileName)
+                skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
 
             newImage = numpy.ones([imageHeight + extraHeight, imageWidth + extraWidth, debugVideoImageChannels]) * 255
             if hilight > 0:
@@ -2208,14 +2212,16 @@ class DeepLearningAgent:
                 addBottomRewardChartToImage(newImage, trace)
             if includeNeuralNetworkCharts:
                 addRightSideDebugCharts(newImage, lastRawImage, trace)
-
-            fileName = f"kwola-screenshot-{traceIndex*2 + 1:05d}.png"
-            filePath = os.path.join(tempScreenshotDirectory, fileName)
-            skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
+            
+            for outputFrame in range(outputIdenticalFramesPerTrace):
+                fileName = f"kwola-screenshot-{traceIndex*2*outputIdenticalFramesPerTrace + outputFrame + outputIdenticalFramesPerTrace:05d}.png"
+                filePath = os.path.join(tempScreenshotDirectory, fileName)
+                skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
+            
             if includeNeuralNetworkCharts:
-                getLogger().info(f"Completed debug image {fileName}")
+                getLogger().info(f"Completed debug image for trace {traceIndex}")
         except Exception:
-            getLogger().error(f"Failed to create debug image!\n{traceback.format_exc()}")
+            getLogger().error(f"Failed to create debug image for trace {traceIndex}!\n{traceback.format_exc()}")
 
     def createRewardPixelMask(self, processedImage, action):
         """
