@@ -147,7 +147,7 @@ class ExecutionSessionTraces(Resource):
         if executionSession is None:
             return abort(404)
 
-        testingRun = TestingRun.objects(id=executionSession.testingRunId)
+        testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
         config = testingRun.configuration.createKwolaCoreConfiguration(testingRun.applicationId)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
@@ -176,7 +176,7 @@ class ExecutionSessionSingleTrace(Resource):
         if executionSession is None:
             return abort(404)
 
-        testingRun = TestingRun.objects(id=executionSession.testingRunId)
+        testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
         config = testingRun.configuration.createKwolaCoreConfiguration(testingRun.applicationId)
 
         trace = ExecutionTrace.loadFromDisk(execution_trace_id, config, applicationId=executionSession.applicationId)
