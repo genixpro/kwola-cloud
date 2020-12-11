@@ -52,11 +52,11 @@ def createBugReproductionKubernetesJobObject(bug):
                             },
                             referenceId=bug.id + "-bug-reproduction",
                             image="worker",
-                            cpuRequest="1000m",
-                            cpuLimit=None,
-                            memoryRequest="2Gi",
-                            memoryLimit="3Gi"
-                            )
+                            cpuRequest="3500m",
+                            cpuLimit="4000m",
+                            memoryRequest="9.0Gi",
+                            memoryLimit="12.0Gi",
+                          )
     return job
 
 

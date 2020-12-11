@@ -439,10 +439,10 @@ class TestingRunManager:
                                                },
                                                referenceId=jobId,
                                                image="worker",
-                                               cpuRequest="1000m",
-                                               cpuLimit="1500m",
-                                               memoryRequest="4.0Gi",
-                                               memoryLimit="4.0Gi",
+                                               cpuRequest="3500m",
+                                               cpuLimit="4000m",
+                                               memoryRequest="9.0Gi",
+                                               memoryLimit="12.0Gi",
                                                gpu=False
                            )
         return job

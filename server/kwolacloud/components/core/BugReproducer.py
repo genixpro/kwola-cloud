@@ -189,7 +189,9 @@ class BugReproducer:
                         else:
                             didReproduceSuccessfully[actionListIndex] = False
 
-        # environment.runSessionCompletedHooks()
+        environment.runSessionCompletedHooks()
+
+        environment.shutdown()
 
         return [didReproduceSuccessfully.get(index, False) for index in range(len(actionLists))]
 
