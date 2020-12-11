@@ -76,7 +76,7 @@ class ViewBug extends Component {
      }
      
     downloadVideo(){
-        document.getElementById('downloadLink').click();
+        document.getElementById(`downloadLink-${this.state.bug._id}`).click();
     }
 
     loadVideo(player){
@@ -91,7 +91,7 @@ class ViewBug extends Component {
               const url = window.URL.createObjectURL(new Blob([response.data]));
               this.makePlayer(url,player)
               const link = document.createElement('a');
-              link.id = "downloadLink"
+              link.id = `downloadLink-${this.state.bug._id}`
               link.href = url;
               link.setAttribute('download', this.state.bug._id+'_debug.mp4');
               document.body.appendChild(link);
