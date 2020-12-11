@@ -45,9 +45,13 @@ class RewriteProxy:
         self.filesAvailableInMemoryCache = set()
 
         for fileName in self.config.listAllFilesInFolder("proxy_cache"):
-            self.filesAvailableInMemoryCache.add(fileName)
+            self.filesAvailableInMemoryCache.add(self.getHashFromCacheFileName(fileName))
 
         getLogger().info(f"Loaded {len(self.filesAvailableInMemoryCache)} files into the memory cache.")
+
+    def getHashFromCacheFileName(self, fileName):
+        hash = fileName.split("_")[-1].split(".")[0]
+        return hash
 
     def getCacheFileName(self, fileHash, fileURL):
         fileName = ProxyPluginBase.getCleanedFileName(fileURL)
@@ -177,13 +181,13 @@ class RewriteProxy:
                                           )
                 return
 
-            longFileHash, shortFileHash = ProxyPluginBase.computeHashes(bytes(flow.response.data.content))
+            fileHash = ProxyPluginBase.computeHash(bytes(flow.response.data.content))
 
-            cacheFileName = self.getCacheFileName(shortFileHash, flow.request.url)
-            cached = self.memoryCache.get(cacheFileName)
-            if cached is None and cacheFileName in self.filesAvailableInMemoryCache:
+            cacheFileName = self.getCacheFileName(fileHash, flow.request.url)
+            cached = self.memoryCache.get(fileHash)
+            if cached is None and fileHash in self.filesAvailableInMemoryCache:
                 cached = self.config.loadKwolaFileData("proxy_cache", cacheFileName, printErrorOnFailure=False)
-                self.memoryCache[cacheFileName] = cached
+                self.memoryCache[fileHash] = cached
 
             if cached is not None:
                 flow.response.data.headers['Content-Length'] = str(len(cached))
@@ -259,8 +263,8 @@ class RewriteProxy:
                 if gzipped:
                     transformed = gzip.compress(transformed, compresslevel=9)
 
-                self.saveInCache(shortFileHash, fileURL, transformed)
-                self.memoryCache[cacheFileName] = transformed
+                self.saveInCache(fileHash, fileURL, transformed)
+                self.memoryCache[fileHash] = transformed
 
                 flow.response.data.headers['Content-Length'] = str(len(transformed))
                 flow.response.data.content = transformed

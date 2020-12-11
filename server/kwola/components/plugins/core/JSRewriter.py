@@ -98,9 +98,9 @@ class JSRewriter(ProxyPluginBase):
                 wrapperEnd = wrapper[1]
 
         cleanedFileName = self.getCleanedFileName(url)
-        longFileHash, shortFileHash = ProxyPluginBase.computeHashes(bytes(fileData))
+        longFileHash = ProxyPluginBase.computeHash(bytes(fileData))
 
-        fileNameForBabel = shortFileHash + "_" + cleanedFileName
+        fileNameForBabel = longFileHash + "_" + cleanedFileName
 
         parsedURL = urllib.parse.urlparse(url)
         foundIgnoreHost = False
