@@ -638,6 +638,11 @@ class WebEnvironmentSession:
                         },
                         eventHandlers: []
                     };
+
+                    if (window.kwolaEvents && window.kwolaEvents.has(element))
+                    {
+                        data.eventHandlers = uniques(window.kwolaEvents.get(element));
+                    }
                     
                     if ( element.tagName === "BUTTON"
                             || element.tagName === "A"
@@ -679,29 +684,28 @@ class WebEnvironmentSession:
                         data.canType = true;
                         
                     if (element.contentEditable === 'true' || element.contentEditable === true)
-                        data.canType = true;                    
-                    
-                    if (isFunction(element.onclick) 
-                        || isFunction(element.onmousedown)
-                        || isFunction(element.onmouseup)
-                        || isFunction(element.onpointerdown)
-                        || isFunction(element.onpointerup)
-                        || isFunction(element.ontouchend)
-                        || isFunction(element.ontouchstart))
-                        data.canClick = true;
-                    
-                    if (isFunction(element.oncontextmenu)
-                        || isFunction(element.onauxclick))
-                        data.canRightClick = true;
-                    
-                    if (isFunction(element.onkeydown) 
-                        || isFunction(element.onkeypress) 
-                        || isFunction(element.onkeyup))
                         data.canType = true;
                         
-                    if (window.kwolaEvents && window.kwolaEvents.has(element))
+                    if (element.tagName !== "HTML" && element.tagName !== "BODY")
                     {
-                        data.eventHandlers = uniques(window.kwolaEvents.get(element));
+                        if (isFunction(element.onclick) 
+                            || isFunction(element.onmousedown)
+                            || isFunction(element.onmouseup)
+                            || isFunction(element.onpointerdown)
+                            || isFunction(element.onpointerup)
+                            || isFunction(element.ontouchend)
+                            || isFunction(element.ontouchstart))
+                            data.canClick = true;
+                        
+                        if (isFunction(element.oncontextmenu)
+                            || isFunction(element.onauxclick))
+                            data.canRightClick = true;
+                        
+                        if (isFunction(element.onkeydown) 
+                            || isFunction(element.onkeypress) 
+                            || isFunction(element.onkeyup))
+                            data.canType = true;
+                        
                         if (data.eventHandlers.indexOf("click") != -1)
                         {
                             data.canClick = true;
