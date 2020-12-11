@@ -216,12 +216,13 @@ class RewriteProxy:
                     break
 
             foundSimilarOriginal = False
+            foundOriginalFileURL = None
             if chosenPlugin is not None:
                 size = len(unzippedFileContents)
                 if size not in self.originalRewriteItemsBySize:
                     self.originalRewriteItemsBySize[size] = []
 
-                for sameSizedOriginal in self.originalRewriteItemsBySize[size]:
+                for sameSizedOriginal, originalFileURL in self.originalRewriteItemsBySize[size]:
                     charsDifferent = 0
                     for chr, otherChr in zip(unzippedFileContents, sameSizedOriginal):
                         if chr != otherChr:
@@ -231,14 +232,15 @@ class RewriteProxy:
                         # Basically we are looking at what is effectively the same file with some minor differences.
                         # This is common with ad-serving, tracking tags and JSONP style responses.
                         foundSimilarOriginal = True
+                        foundOriginalFileURL = originalFileURL
                         break
 
                 if not foundSimilarOriginal:
-                    self.originalRewriteItemsBySize[size].append(unzippedFileContents)
+                    self.originalRewriteItemsBySize[size].append((unzippedFileContents, flow.request.url))
 
             if foundSimilarOriginal:
                 # We don't translate it or save it in the cache. Just leave as is.
-                getLogger().warning(f"Decided not to translate file {flow.request.url} because it looks extremely similar to a request we have already seen. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system.")
+                getLogger().warning(f"Decided not to translate file {flow.request.url} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system.")
 
                 for plugin in self.plugins:
                     plugin.observeRequest(url=flow.request.url,
