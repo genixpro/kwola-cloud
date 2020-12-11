@@ -203,24 +203,24 @@ class CreateLocalBugObjects(TestingStepPluginBase):
 
         for bugIndex, bug, future in futures:
             localFuture = future
-            for retry in range(5):
-                try:
-                    value = localFuture.get()
-                    if value:
-                        getLogger().error(value)
-                    break
-                except billiard.exceptions.WorkerLostError:
-                    if retry == 4:
-                        raise
-                    localFuture = pool.apply_async(func=createDebugVideoSubProcess, args=(
-                        self.config.serialize(), str(bug.executionSessionId), f"{bug.id}_bug", False, False, bug.stepNumber,
-                        bug.stepNumber + 3, "bugs"))
-                except BrokenPipeError:
-                    if retry == 4:
-                        raise
-                    localFuture = pool.apply_async(func=createDebugVideoSubProcess, args=(
-                        self.config.serialize(), str(bug.executionSessionId), f"{bug.id}_bug", False, False, bug.stepNumber,
-                        bug.stepNumber + 3, "bugs"))
+            # for retry in range(5):
+            # try:
+            value = localFuture.get()
+            if value:
+                getLogger().error(value)
+            break
+            # except billiard.exceptions.WorkerLostError:
+            #     if retry == 4:
+            #         raise
+            #     localFuture = pool.apply_async(func=createDebugVideoSubProcess, args=(
+            #         self.config.serialize(), str(bug.executionSessionId), f"{bug.id}_bug", False, False, bug.stepNumber,
+            #         bug.stepNumber + 3, "bugs"))
+            # except BrokenPipeError:
+            #     if retry == 4:
+            #         raise
+            #     localFuture = pool.apply_async(func=createDebugVideoSubProcess, args=(
+            #         self.config.serialize(), str(bug.executionSessionId), f"{bug.id}_bug", False, False, bug.stepNumber,
+            #         bug.stepNumber + 3, "bugs"))
 
         pool.close()
         pool.join()

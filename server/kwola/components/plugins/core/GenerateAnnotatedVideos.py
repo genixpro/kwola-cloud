@@ -35,22 +35,22 @@ class GenerateAnnotatedVideos(TestingStepPluginBase):
 
         for session, future in futures:
             localFuture = future
-            for retry in range(5):
-                try:
-                    value = localFuture.get()
-                    if value:
-                        getLogger().error(value)
-                    break
-                except billiard.exceptions.WorkerLostError:
-                    if retry == 4:
-                        raise
-                    localFuture = pool.apply_async(func=createDebugVideoSubProcess,
-                                              args=(self.config.serialize(), str(session.id), "", False, False, None, None, "annotated_videos"))
-                except BrokenPipeError:
-                    if retry == 4:
-                        raise
-                    localFuture = pool.apply_async(func=createDebugVideoSubProcess,
-                                              args=(self.config.serialize(), str(session.id), "", False, False, None, None, "annotated_videos"))
+            # for retry in range(5):
+            # try:
+            value = localFuture.get()
+            if value:
+                getLogger().error(value)
+            break
+            # except billiard.exceptions.WorkerLostError:
+            #     if retry == 4:
+            #         raise
+            #     localFuture = pool.apply_async(func=createDebugVideoSubProcess,
+            #                               args=(self.config.serialize(), str(session.id), "", False, False, None, None, "annotated_videos"))
+            # except BrokenPipeError:
+            #     if retry == 4:
+            #         raise
+            #     localFuture = pool.apply_async(func=createDebugVideoSubProcess,
+            #                               args=(self.config.serialize(), str(session.id), "", False, False, None, None, "annotated_videos"))
 
 
 
