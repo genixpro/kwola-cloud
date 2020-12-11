@@ -623,33 +623,35 @@ class TestingRunManager:
             sendCustomerWebhook(self.application, "testingRunFinishedWebhookURL", json.loads(self.run.to_json()))
 
     def updateModelSymbols(self, config, testingStepIdsToProcess):
-        logging.info(f"Updating the model symbols.")
+        if len(testingStepIdsToProcess):
+            logging.info(f"Updating the model symbols.")
 
-        # Load and save the agent to make sure all training subprocesses are synced
-        agent = DeepLearningAgent(config=config, whichGpu=None)
-        agent.initialize(enableTraining=False)
-        agent.loadSymbolMap()
+            # Load and save the agent to make sure all training subprocesses are synced
+            agent = DeepLearningAgent(config=config, whichGpu=None)
+            agent.initialize(enableTraining=False)
+            agent.loadSymbolMap()
 
-        totalNewSymbols = 0
-        totalSplitSymbols = 0
+            totalNewSymbols = 0
+            totalSplitSymbols = 0
+    
+            for testingStepId in testingStepIdsToProcess:
+                testingStep = TestingStep.loadFromDisk(testingStepId, config)
+                for executionSessionId in testingStep.executionSessions:
+                    executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
-        for testingStepId in testingStepIdsToProcess:
-            testingStep = TestingStep.loadFromDisk(testingStepId, config)
-            for executionSessionId in testingStep.executionSessions:
-                executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
+                    if executionSession.status == "completed":
+                        traces = []
+                        for executionTraceId in executionSession.executionTraces:
+                            traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
-                if executionSession.status == "completed":
-                    traces = []
-                    for executionTraceId in executionSession.executionTraces:
-                        traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
+                        newSymbols, splitSymbols = agent.assignNewSymbols(traces)
+                        totalNewSymbols += newSymbols
+                        totalSplitSymbols += splitSymbols
 
-                    newSymbols, splitSymbols = agent.assignNewSymbols(traces)
-                    totalNewSymbols += newSymbols
-                    totalSplitSymbols += splitSymbols
+            logging.info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
 
-        logging.info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
-
-        agent.saveSymbolMap()
+            agent.saveSymbolMap()
+            logging.info(f"Saved the updated symbol map!")
 
     def runTesting(self):
         self.loadTestingRun()
