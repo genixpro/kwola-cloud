@@ -58,6 +58,8 @@ class BugReproducer:
             if not foundReduction:
                 failuresFindingReduction += 1
 
+            logging.info(f"Reproductions: {str(foundReduction)}, new length: {len(currentActionList)}")
+
         testRemoveActionIndexes = list(range(len(currentActionList) - 1))
         lastLength = len(currentActionList)
         while len(testRemoveActionIndexes) > 0:
@@ -76,6 +78,8 @@ class BugReproducer:
                 lastLength = len(currentActionList)
 
                 testRemoveActionIndexes = [index - numberRemoved for index in testRemoveActionIndexes]
+
+            logging.info(f"Reproductions: {str(foundReduction)}, new length: {len(currentActionList)}")
 
         return (True, currentActionList)
 
