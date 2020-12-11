@@ -44,6 +44,7 @@
   "debug_video_crop_box_color_g":0,
   "debug_video_crop_box_color_r":255,
   "debug_video_generation_frequency": 5,
+  "debug_video_generation_timeout": 900,
   "debug_video_hilight_background_color_b":191,
   "debug_video_hilight_background_color_g":187,
   "debug_video_hilight_background_color_r":251,

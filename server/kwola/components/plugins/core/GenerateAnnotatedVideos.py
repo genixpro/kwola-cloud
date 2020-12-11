@@ -37,7 +37,7 @@ class GenerateAnnotatedVideos(TestingStepPluginBase):
             localFuture = future
             # for retry in range(5):
             # try:
-            value = localFuture.get()
+            value = localFuture.get(timeout=self.config['debug_video_generation_timeout'])
             if value:
                 getLogger().error(value)
             break
