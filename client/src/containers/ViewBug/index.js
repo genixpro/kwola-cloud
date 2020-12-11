@@ -25,6 +25,7 @@ import "./index.scss";
 import LoaderButton from "../../components/LoaderButton";
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import CancelIcon from '@material-ui/icons/Cancel';
+import {detect} from "detect-browser";
 
 
 class ViewBug extends Component {
@@ -79,8 +80,8 @@ class ViewBug extends Component {
         document.getElementById(`downloadLink-${this.state.bug._id}`).click();
     }
 
-    loadVideo(player){
-
+    loadVideo(player)
+    {
         this.setState({loader:true}, ()=>{
             axios({
               url:`${process.env.REACT_APP_BACKEND_API_URL}bugs/${this.state.bug._id}/video?token=${Auth.getQueryParameterToken()}`,
@@ -101,12 +102,6 @@ class ViewBug extends Component {
             });
         });
         return false;
-    }
-
-    seekVideo(){
-        if(!this.state.player) return false;
-        this.state.player.restart()
-        this.state.player.forward(this.state.bug.stepNumber)
     }
 
     changeBugImportanceLevel(newImportanceLevel)
@@ -137,13 +132,27 @@ class ViewBug extends Component {
         });
     }
 
+    seekToAction(actionNumber)
+    {
+        if(!this.state.player) return false;
+        this.state.player.restart()
+
+        const browser = detect();
+        if (browser.name === "firefox")
+        {
+            this.state.player.forward(actionNumber)
+        }
+        else
+        {
+            this.state.player.forward(actionNumber + 0.5)
+        }
+    }
+
     goToActionClicked(index)
     {
         document.getElementById("video-top").scrollIntoView();
 
-        if(!this.state.player) return false;
-        this.state.player.restart()
-        this.state.player.forward(index)
+        this.seekToAction(index);
     }
 
     forwardOneFrame()
@@ -199,7 +208,7 @@ class ViewBug extends Component {
                                             color={"primary"}
                                             className="video-control-button"
                                             title={"Show Bug"}
-                                            onClick={() => this.seekVideo()}>
+                                            onClick={() => this.seekToAction(this.state.bug.stepNumber)}>
                                         <span>Skip to bug frame in video</span>
                                     </Button>
                                     <Button variant="contained"
