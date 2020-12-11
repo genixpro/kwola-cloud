@@ -5,6 +5,7 @@ import os.path
 import pickle
 import pprint
 import torch
+from ...config.logger import getLogger
 import traceback
 import matplotlib.pyplot as plt
 
@@ -59,7 +60,9 @@ class SymbolMapper:
             (self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.allSymbols) = pickle.loads(symbolMapData)
 
     def save(self):
+        getLogger().info(f"Saving the symbol map file.")
         fileData = pickle.dumps((self.symbolMap, self.knownFiles, self.nextSymbolIndex, self.allSymbols), protocol=pickle.HIGHEST_PROTOCOL)
+        getLogger().info(f"Size: {len(fileData)}")
         self.config.saveKwolaFileData("models", self.symbolMapFileName, fileData)
 
 

@@ -42,6 +42,8 @@ def getKwolaConfigurationData():
     mainConfig = loadCloudConfiguration()
 
     data['mongo_uri'] = mainConfig['mongo']['uri']
+    data['enable_google_cloud_logging'] = mainConfig['features']['enableGoogleCloudLogging']
+    data['enable_slack_logging'] = mainConfig['features']['enableSlackLogging']
 
     return data
 

@@ -243,9 +243,11 @@ class KwolaCoreConfiguration:
             if 'applicationId' not in self or self.applicationId is None:
                 raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
 
+            getLogger().info(f"Getting GCS client for data save")
             storageClient = getSharedGCSStorageClient()
             applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
             objectBlob = storage.Blob(filePath, applicationStorageBucket)
+            getLogger().info(f"Saving to {filePath}, in bucket kwola-testing-run-data-{self.applicationId}")
             objectBlob.upload_from_string(fileData)
         else:
             raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for configuration data_file_storage_method")

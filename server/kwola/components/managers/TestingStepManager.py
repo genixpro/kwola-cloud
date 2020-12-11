@@ -308,7 +308,7 @@ class TestingStepManager:
 
     @staticmethod
     def predictedActionSubProcess(config, shouldBeRandom, subProcessCommandQueue, subProcessResultQueue, preloadTraceFiles):
-        setupLocalLogging()
+        setupLocalLogging(config)
 
         config = KwolaCoreConfiguration(config)
 

@@ -148,7 +148,7 @@ class ProxyProcess:
 
     @staticmethod
     def runProxyServerSubprocess(config, commandQueue, resultQueue, plugins, testingRunId, testingStepId, executionSessionId):
-        setupLocalLogging()
+        setupLocalLogging(config)
 
         plugins = pickle.loads(plugins)
 

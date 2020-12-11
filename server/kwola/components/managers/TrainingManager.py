@@ -694,7 +694,7 @@ class TrainingManager:
     @staticmethod
     def prepareAndLoadBatchesSubprocess(config, batchDirectory, subProcessCommandQueue, subProcessBatchResultQueue, subprocessIndex=0, applicationId=None):
         try:
-            setupLocalLogging()
+            setupLocalLogging(config)
 
             config = KwolaCoreConfiguration(config)
 

@@ -1735,7 +1735,7 @@ class DeepLearningAgent:
 
             :return: None
         """
-        # setupLocalLogging()
+        setupLocalLogging(self.config)
 
         mpl.use('Agg')
 
