@@ -685,8 +685,15 @@ class WebEnvironmentSession:
                         
                     if (element.contentEditable === 'true' || element.contentEditable === true)
                         data.canType = true;
+                    
+                    // Determine whether this element is full screen
+                    var fullScreen = false;
+                    if (data.width > (window.innerWidth * 0.90) && data.height > (window.innerHeight * 0.90))
+                    {
+                        fullScreen = true;
+                    }
                         
-                    if (element.tagName !== "HTML" && element.tagName !== "BODY")
+                    if (element.tagName !== "HTML" && element.tagName !== "BODY" && !fullScreen)
                     {
                         if (isFunction(element.onclick) 
                             || isFunction(element.onmousedown)
