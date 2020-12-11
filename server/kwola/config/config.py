@@ -283,6 +283,7 @@ class KwolaCoreConfiguration:
                                       "during normal operations without interruption, that would indicate a bug.")
             return
 
+    @autoretry()
     def deleteKwolaFileData(self, folder, fileName):
         filePath = os.path.join(folder, fileName)
 
@@ -305,6 +306,7 @@ class KwolaCoreConfiguration:
         except google.cloud.exceptions.NotFound:
             return
 
+    @autoretry()
     def listAllFilesInFolder(self, folder):
         if self['data_file_storage_method'] == 'local':
             dir = os.path.join(self.configurationDirectory, folder)
