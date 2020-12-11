@@ -1059,8 +1059,6 @@ class WebEnvironmentSession:
                 plugin.beforeActionRuns(self.driver, self.proxy, self.executionSession, executionTrace, action)
                 actionExecutionTimes[f"plugin-before-{type(plugin).__name__}"] = (datetime.now() - startTime).total_seconds()
 
-            self.updateWindowSize()
-
             startTime = datetime.now()
             success, networkWaitTime = self.performActionInBrowser(action)
             timeTaken = (datetime.now() - startTime).total_seconds()
@@ -1077,8 +1075,6 @@ class WebEnvironmentSession:
             startTime = datetime.now()
             self.checkLoadFailure(priorURL=executionTrace.startURL)
             actionExecutionTimes['checkLoadFailure'] = (datetime.now() - startTime).total_seconds()
-
-            self.updateWindowSize()
 
             for plugin in self.plugins:
                 startTime = datetime.now()
@@ -1109,12 +1105,15 @@ class WebEnvironmentSession:
 
     def getImage(self):
         try:
+            image = numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
+
             if self.hasBrowserDied:
-                return numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
+                return image
 
-            image = cv2.imdecode(numpy.frombuffer(self.driver.get_screenshot_as_png(), numpy.uint8), -1)
+            decoded = cv2.imdecode(numpy.frombuffer(self.driver.get_screenshot_as_png(), numpy.uint8), -1)
+            decoded = numpy.flip(decoded[:, :, :3], axis=2)  # OpenCV always reads things in BGR for some reason, so we have to flip into RGB ordering
 
-            image = numpy.flip(image[:, :, :3], axis=2)  # OpenCV always reads things in BGR for some reason, so we have to flip into RGB ordering
+            image[0:decoded.shape[0], 0:decoded.shape[1], :] = decoded
 
             return image
         except urllib3.exceptions.MaxRetryError:
