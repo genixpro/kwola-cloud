@@ -85,6 +85,8 @@
   "enable_5xx_error": true,
   "enable_cursor_prediction_loss": true,
   "enable_debug_videos": true,
+  "enable_google_cloud_logging": false,
+  "enable_slack_logging": false,
   "enable_execution_feature_prediction_loss": true,
   "enable_javascript_console_error": true,
   "enable_trace_prediction_loss": true,

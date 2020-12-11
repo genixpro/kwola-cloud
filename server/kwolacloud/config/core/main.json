@@ -83,6 +83,8 @@
   "discounted_future_reward_convolution_stride": 1,
   "enable_cursor_prediction_loss": false,
   "enable_debug_videos": true,
+  "enable_google_cloud_logging": true,
+  "enable_slack_logging": true,
   "enable_execution_feature_prediction_loss": false,
   "enable_trace_prediction_loss": false,
   "iterations_between_db_saves": 25,

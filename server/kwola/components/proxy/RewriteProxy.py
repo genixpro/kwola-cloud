@@ -47,6 +47,8 @@ class RewriteProxy:
         for fileName in self.config.listAllFilesInFolder("proxy_cache"):
             self.filesAvailableInMemoryCache.add(fileName)
 
+        getLogger().info(f"Loaded {len(self.filesAvailableInMemoryCache)} files into the memory cache.")
+
     def getCacheFileName(self, fileHash, fileURL):
         fileName = ProxyPluginBase.getCleanedFileName(fileURL)
 

@@ -11,6 +11,8 @@ def setupLocalLogging(config=None):
     logger.setLevel(logging.INFO)
 
     if config is not None:
+        from .config import KwolaCoreConfiguration
+        config = KwolaCoreConfiguration(config)
         if config['enable_google_cloud_logging']:
             import google.cloud.logging
 
