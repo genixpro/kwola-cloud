@@ -215,6 +215,9 @@ class RewriteProxy:
 
             unzippedFileContents, gzipped = self.decompressDataIfNeeded(originalFileContents)
 
+            if len(unzippedFileContents) == 0:
+                return
+
             chosenPlugin = None
             for plugin in self.plugins:
                 if plugin.willRewriteFile(fileURL, contentType, unzippedFileContents):
