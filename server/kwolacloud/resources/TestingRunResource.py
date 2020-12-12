@@ -268,11 +268,11 @@ class PauseTestingRun(Resource):
 
         configData = loadCloudConfiguration()
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            mainJob = testingRun.createKubernetesJobObject()
-            if not configData['features']['localRuns'] and mainJob.doesJobStillExist():
-                executor.submit(mainJob.cleanup)
+        mainJob = testingRun.createKubernetesJobObject()
+        if not configData['features']['localRuns'] and mainJob.doesJobStillExist():
+            mainJob.cleanup()
 
+        with concurrent.futures.ThreadPoolExecutor() as executor:
             for jobId in testingRun.runningTestingStepJobIds:
                 testStepJob = KubernetesJob(module="kwolacloud.tasks.SingleTestingStepTask",
                                             data={},
