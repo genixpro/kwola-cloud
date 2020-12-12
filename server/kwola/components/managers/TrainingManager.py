@@ -822,15 +822,7 @@ class TrainingManager:
                         sampleRewardLoss = data["sampleRewardLoss"]
                         if executionTraceId in executionSessionTraceWeightDataIdMap:
                             traceWeightData = executionSessionTraceWeightDataIdMap[executionTraceId]
-
-                            # We do this check here because saving execution traces is actually a pretty CPU heavy process,
-                            # so we only want to do it if the loss has actually changed by a significant degree
-                            differenceRatio = abs(traceWeightData.weights[executionTraceId] - sampleRewardLoss) / (traceWeightData.weights[executionTraceId] + 1e-6)
-                            if differenceRatio > config['training_trace_selection_min_loss_ratio_difference_for_save']:
-                                traceWeightData.weights[executionTraceId] = sampleRewardLoss
-                                if traceWeightData.id not in executionSessionTraceWeightSaveFutures or executionSessionTraceWeightSaveFutures[traceWeightData.id].ready():
-                                    traceSaveFuture = backgroundTraceSaveProcessPool.apply_async(TrainingManager.saveExecutionSessionTraceWeights, (traceWeightData, config.serialize()))
-                                    executionSessionTraceWeightSaveFutures[traceWeightData.id] = traceSaveFuture
+                            traceWeightData.weights[executionTraceId] = sampleRewardLoss
 
                     if needToResetPool and lastProcessPool is None:
                         needToResetPool = False
@@ -875,6 +867,11 @@ class TrainingManager:
                             lastProcessPool.terminate()
                             lastProcessPool = None
                             lastProcessPoolFutures = []
+
+
+            for traceWeightData in executionSessionTraceWeightDataIdMap.values():
+                backgroundTraceSaveProcessPool.apply_async(TrainingManager.saveExecutionSessionTraceWeights,
+                                                                             (traceWeightData, config.serialize()))
 
             backgroundTraceSaveProcessPool.close()
             backgroundTraceSaveProcessPool.join()

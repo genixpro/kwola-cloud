@@ -261,7 +261,6 @@
   "training_surplus_batches": 10,
   "training_trace_selection_cache_not_full_state_one_side_bias": 0.5,
   "training_trace_selection_maximum_weight": 5.0,
-  "training_trace_selection_min_loss_ratio_difference_for_save": 0.25,
   "training_trace_selection_minimum_weight": 0.1,
   "training_update_target_network_every": 250,
   "training_write_prepared_sample_timeout": 60,

@@ -49,6 +49,8 @@ def createDebugVideoSubProcess(config, executionSessionId, name="", includeNeura
         config.saveKwolaFileData(folder, fileName, videoData)
 
         del agent
+
+        getLogger().info(f"Finished creating debug video for session {executionSessionId}")
     except Exception as e:
         getLogger().error(f"An error was triggered while generating a debug video: {traceback.format_exc()}")
         return traceback.format_exc()
