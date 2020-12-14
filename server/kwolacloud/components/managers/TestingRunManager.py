@@ -14,6 +14,7 @@ from dateutil.relativedelta import relativedelta
 from google.cloud import storage
 from kwola.components.environments.WebEnvironment import WebEnvironment
 from kwola.components.agents.DeepLearningAgent import DeepLearningAgent
+from kwola.components.agents.SymbolMapper import SymbolMapper
 from kwola.datamodels.TestingStepModel import TestingStep
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
@@ -626,10 +627,8 @@ class TestingRunManager:
         if len(testingStepIdsToProcess):
             logging.info(f"Updating the model symbols.")
 
-            # Load and save the agent to make sure all training subprocesses are synced
-            agent = DeepLearningAgent(config=config, whichGpu=None)
-            agent.initialize(enableTraining=False)
-            agent.loadSymbolMap()
+            symbolMap = SymbolMapper(config)
+            symbolMap.load()
 
             totalNewSymbols = 0
             totalSplitSymbols = 0
@@ -644,13 +643,13 @@ class TestingRunManager:
                         for executionTraceId in executionSession.executionTraces:
                             traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
-                        newSymbols, splitSymbols = agent.assignNewSymbols(traces)
+                        newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
                         totalNewSymbols += newSymbols
                         totalSplitSymbols += splitSymbols
 
             logging.info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
 
-            agent.saveSymbolMap()
+            symbolMap.save()
             logging.info(f"Saved the updated symbol map!")
 
     def runTesting(self):

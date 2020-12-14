@@ -203,10 +203,9 @@ def computeCumulativeBranchTraceForTestingSteps(testingStepId, config):
                 trace = ExecutionTrace.loadFromDisk(traceId, config)
                 for fileName in trace.branchTrace:
                     if fileName not in cumulativeBranchTrace:
-                        cumulativeBranchTrace[fileName] = numpy.array(trace.branchTrace[fileName])
+                        cumulativeBranchTrace[fileName] = trace.branchTrace[fileName]
                     else:
-                        cumulativeBranchTrace[fileName] = numpy.maximum(cumulativeBranchTrace[fileName],
-                                                                        numpy.array(trace.branchTrace[fileName]))
+                        cumulativeBranchTrace[fileName] = trace.branchTrace[fileName].maximum(cumulativeBranchTrace[fileName])
 
     return cumulativeBranchTrace
 
@@ -224,16 +223,15 @@ def computeCumulativeCoverageForTestingSteps(testingStepIds, config):
         branchTrace = future.get()
         for fileName in branchTrace:
             if fileName not in cumulativeBranchTrace:
-                cumulativeBranchTrace[fileName] = numpy.array(branchTrace[fileName])
+                cumulativeBranchTrace[fileName] = branchTrace[fileName]
             else:
-                cumulativeBranchTrace[fileName] = numpy.maximum(cumulativeBranchTrace[fileName],
-                                                                numpy.array(branchTrace[fileName]))
+                cumulativeBranchTrace[fileName] = cumulativeBranchTrace[fileName].maximum(branchTrace[fileName])
 
     total = 0
     executedAtleastOnce = 0
     for fileName in cumulativeBranchTrace:
-        total += len(cumulativeBranchTrace[fileName])
-        executedAtleastOnce += numpy.count_nonzero(cumulativeBranchTrace[fileName])
+        total += cumulativeBranchTrace[fileName].shape[0]
+        executedAtleastOnce += len(numpy.nonzero(cumulativeBranchTrace[fileName])[0])
 
     # Just an extra check here to cover our ass in case of division by zero
     if total == 0:

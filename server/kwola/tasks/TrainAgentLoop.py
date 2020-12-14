@@ -21,6 +21,7 @@
 
 from ..config.logger import getLogger, setupLocalLogging
 from ..components.agents.DeepLearningAgent import DeepLearningAgent
+from ..components.agents.SymbolMapper import SymbolMapper
 from ..components.environments.WebEnvironment import WebEnvironment
 from ..tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from ..config.config import KwolaCoreConfiguration
@@ -264,10 +265,8 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         raise
 
 def updateModelSymbols(config, testingStepId):
-    # Load and save the agent to make sure all training subprocesses are synced
-    agent = DeepLearningAgent(config=config, whichGpu=None)
-    agent.initialize(enableTraining=False)
-    agent.load()
+    symbolMap = SymbolMapper(config)
+    symbolMap.load()
 
     testingStep = TestingStep.loadFromDisk(testingStepId, config)
 
@@ -281,19 +280,19 @@ def updateModelSymbols(config, testingStepId):
             traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
         if len(traces) > 1000:
-            newSymbols, splitSymbols = agent.assignNewSymbols(traces)
+            newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
             totalNewSymbols += newSymbols
             totalSplitSymbols += splitSymbols
             traces = []
 
-    newSymbols, splitSymbols = agent.assignNewSymbols(traces)
+    newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
     totalNewSymbols += newSymbols
     totalSplitSymbols += splitSymbols
-
     traces = []
+
     getLogger().info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from testing step {testingStepId}")
 
-    agent.save()
+    symbolMap.save()
 
 def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     stepStartTime = datetime.now()
@@ -306,7 +305,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
         getLogger().info(f"Starting a single training loop. Loops completed: {trainingSequence.trainingLoopsCompleted}")
 
         with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_loop'] + numberOfTrainingStepsInParallel)) as executor:
-            coordinatorTempFileName = "kwola_distributed_coordinator-" + str(random.randint(0, 1e8))
+            coordinatorTempFileName = "kwola_distributed_coordinator-" + str(random.randint(0, int(1e8)))
             coordinatorTempFilePath = os.path.join(tempfile.gettempdir(), coordinatorTempFileName)
             if os.path.exists(coordinatorTempFilePath):
                 os.unlink(coordinatorTempFilePath)

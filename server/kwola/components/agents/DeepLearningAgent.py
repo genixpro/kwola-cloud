@@ -417,16 +417,10 @@ class DeepLearningAgent:
 
         self.config.saveKwolaFileData("models", self.modelFileName + saveName, buffer.getvalue())
 
-        self.saveSymbolMap()
-
     def loadSymbolMap(self):
         # We also need to load the symbol map - this is the mapping between symbol strings
         # and their index values within the embedding structure
         self.symbolMapper.load()
-
-    @autoretry()
-    def saveSymbolMap(self):
-        self.symbolMapper.save()
 
     def getTorchDevices(self):
         """
