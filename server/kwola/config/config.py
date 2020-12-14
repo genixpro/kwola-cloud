@@ -246,9 +246,7 @@ class KwolaCoreConfiguration:
             storageClient = getSharedGCSStorageClient()
             applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
             objectBlob = storage.Blob(filePath, applicationStorageBucket)
-            getLogger().info(f"Saving to {filePath}, in bucket kwola-testing-run-data-{self.applicationId}")
             objectBlob.upload_from_string(fileData)
-            getLogger().info(f"{filePath} has been saved successfully")
         else:
             raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for configuration data_file_storage_method")
 
