@@ -36,6 +36,7 @@ import logging
 import os.path
 import random
 import time
+import io
 import traceback
 import zipfile
 from mongoengine.queryset.visitor import Q
@@ -563,8 +564,8 @@ class TestingRunManager:
     def createBugsZipFile(self):
         bugs = list(BugModel.objects(owner=self.application.owner, testingRunId=self.run.id, isMuted=False))
 
-        bugsZipFileOnDisk = open(os.path.join(self.config.getKwolaUserDataDirectory("bug_zip_files"), self.run.id + ".zip"), 'wb')
-        bugsZip = zipfile.ZipFile(file=bugsZipFileOnDisk, mode='w')
+        bugZipFileBuffer = io.BytesIO()
+        bugsZip = zipfile.ZipFile(file=bugZipFileBuffer, mode='w')
 
         for bugIndex, bug in enumerate(bugs):
             bugRawVideoFilePath = f"bugs/{str(bug.id)}.mp4"
@@ -588,7 +589,9 @@ class TestingRunManager:
                 logging.warning(f"Warning! Unable to find the bug video file {bugAnnotatedVideoFilePath} while attempting to assemble the final bug zip file.")
 
         bugsZip.close()
-        bugsZipFileOnDisk.close()
+
+        bugZipData = bugZipFileBuffer.getvalue()
+        self.config.saveKwolaFileData("bug_zip_files", self.run.id + ".zip", bugZipData)
 
     def updateApplicationObjectForFinish(self):
         # Fetch application a second time down here, just in case any of the fields have changed
