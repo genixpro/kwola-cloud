@@ -1101,9 +1101,13 @@ class DeepLearningAgent:
         # If the element is an input box, then we have to enable all of the typing actions
         if actionMap['canType']:
             if not actionMap['inputValue']:
-                for actionName in self.actionsSorted:
-                    if actionName.startswith("type"):
-                        actionTypes.append(self.actionsSorted.index(actionName))
+                if actionMap['attributes']['type'] == 'password':
+                    if 'typePassword' in self.actionsSorted:
+                        actionTypes.append(self.actionsSorted.index('typePassword'))
+                else:
+                    for actionName in self.actionsSorted:
+                        if actionName.startswith("type"):
+                            actionTypes.append(self.actionsSorted.index(actionName))
             else:
                 if "clear" in self.actionsSorted:
                     actionTypes.append(self.actionsSorted.index("clear"))
