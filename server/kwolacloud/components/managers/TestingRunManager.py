@@ -652,6 +652,10 @@ class TestingRunManager:
                         totalSplitSymbols += splitSymbols
                         traces = []
 
+            newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
+            totalNewSymbols += newSymbols
+            totalSplitSymbols += splitSymbols
+
             logging.info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
 
             symbolMap.save()
