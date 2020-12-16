@@ -405,6 +405,8 @@ class SymbolMapper:
 
         self.validateSymbolMaps()
 
+        getLogger().info(f"New: {netNewSymbolsCount}, split: {splitSymbolsCount}")
+
         return netNewSymbolsCount, splitSymbolsCount
 
 
