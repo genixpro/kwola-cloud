@@ -239,9 +239,9 @@ class SymbolMapper:
             localBranchTraces = {}
 
             for fileName in trace.branchTrace.keys():
-                branchTrace = trace.branchTrace[fileName]
-                branchTrace = branchTrace.minimum(numpy.ones_like(branchTrace, dtype=numpy.float64, shape=branchTrace.shape))
-                localBranchTraces[fileName] = SymbolMapper.createSparseTraceArray(branchTrace)
+                local = SymbolMapper.createSparseTraceArray(trace.branchTrace[fileName])
+                local = local.minimum(1).maximum(0).astype(numpy.bool).astype(numpy.float64)
+                localBranchTraces[fileName] = set(local.indices)
 
             createNewLOCMap = False
 
@@ -249,8 +249,14 @@ class SymbolMapper:
             while symbolMapFound:
                 symbolMapFound = False
                 for fileName in localBranchTraces.keys():
-                    if numpy.argwhere(localBranchTraces[fileName] > 0).size > 0:
-                        locSymbolMapping, branchIndex = self.findNextLOCSymbolMapping(fileName, localBranchTraces[fileName])
+                    if len(localBranchTraces[fileName]) > 0:
+                        branchIndex = None
+                        locSymbolMapping = None
+                        while len(localBranchTraces[fileName]):
+                            branchIndex = localBranchTraces[fileName].pop()
+                            locSymbolMapping = self.symbolMap.get((fileName, branchIndex))
+                            if locSymbolMapping is not None:
+                                break
 
                         if locSymbolMapping is not None:
                             symbolMapFound = True
@@ -261,16 +267,15 @@ class SymbolMapper:
                             negativeBranchTraces = {}
                             for locSymbolMapFileName in locSymbolMapping.branchTrace.keys():
                                 if locSymbolMapFileName not in localBranchTraces:
-                                    localBranchTraces[locSymbolMapFileName] = SymbolMapper.createSparseTraceArray(numpy.zeros_like(locSymbolMapping.branchTrace[locSymbolMapFileName], dtype=numpy.float64, shape=locSymbolMapping.branchTrace[locSymbolMapFileName].shape))
+                                    localBranchTraces[locSymbolMapFileName] = set()
 
-                                localBranchTraces[locSymbolMapFileName] -= locSymbolMapping.branchTrace[locSymbolMapFileName]
+                                negatives = set(locSymbolMapping.branchTrace[locSymbolMapFileName].indices)
+                                negatives.difference_update(localBranchTraces[locSymbolMapFileName])
 
-                                negatives = SymbolMapper.createSparseTraceArray(localBranchTraces[locSymbolMapFileName].minimum(numpy.zeros_like(localBranchTraces[locSymbolMapFileName], dtype=numpy.float64, shape=localBranchTraces[locSymbolMapFileName].shape)))
+                                localBranchTraces[locSymbolMapFileName].difference_update(negatives)
 
-                                if len(negatives.nonzero()[0]) > 0:
+                                if len(negatives) > 0:
                                     negativeBranchTraces[locSymbolMapFileName] = negatives
-
-                                localBranchTraces[locSymbolMapFileName] = SymbolMapper.createSparseTraceArray(localBranchTraces[locSymbolMapFileName].maximum(numpy.zeros_like(localBranchTraces[locSymbolMapFileName], dtype=numpy.float64, shape=localBranchTraces[locSymbolMapFileName].shape)))
 
                             if len(negativeBranchTraces):
                                 splitSymbolsCount += 1
@@ -282,12 +287,15 @@ class SymbolMapper:
                                 }, None, None)
 
                                 for negativeFileName in negativeBranchTraces.keys():
-                                    firstNewSymbolMap.branchTrace[negativeFileName] += negativeBranchTraces[negativeFileName]
+                                    for index in negativeBranchTraces[negativeFileName]:
+                                        firstNewSymbolMap.branchTrace[negativeFileName][index, 0] = 0
+
                                     if len(firstNewSymbolMap.branchTrace[negativeFileName].nonzero()[0]) == 0:
                                         del firstNewSymbolMap.branchTrace[negativeFileName]
 
                                 secondNewSymbolMap = LineOfCodeSymbolMapping({
-                                    locSymbolMapFileName: numpy.absolute(branchTrace) for locSymbolMapFileName, branchTrace in negativeBranchTraces.items()
+                                    locSymbolMapFileName: scipy.sparse.csc_matrix((numpy.ones(len(branchTrace)), (list(branchTrace), numpy.zeros(len(branchTrace), dtype=numpy.int32))) )
+                                    for locSymbolMapFileName, branchTrace in negativeBranchTraces.items()
                                 }, None, None)
 
                                 firstNewSymbolMap.totalTracesWithSymbol = locSymbolMapping.totalTracesWithSymbol
@@ -322,10 +330,8 @@ class SymbolMapper:
                 newSymbolBranchTrace = {}
 
                 for fileName in localBranchTraces.keys():
-                    branchTrace = SymbolMapper.createSparseTraceArray(localBranchTraces[fileName].maximum(numpy.zeros_like(localBranchTraces[fileName], dtype=numpy.float64, shape=localBranchTraces[fileName].shape)))
-                    positiveIndexes = numpy.nonzero(branchTrace)[0]
-
-                    if len(positiveIndexes) > 0:
+                    if len(localBranchTraces[fileName]):
+                        branchTrace = scipy.sparse.csc_matrix((numpy.ones(len(localBranchTraces[fileName])), (list(branchTrace), numpy.zeros(len(localBranchTraces[fileName]), dtype=numpy.int32)) ))
                         newSymbolBranchTrace[fileName] = branchTrace
 
                 newSymbolMap = LineOfCodeSymbolMapping(newSymbolBranchTrace, None, None)
