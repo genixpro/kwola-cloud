@@ -208,6 +208,8 @@ class SymbolMapper:
 
 
         """
+        getLogger().info(f"Assigning symbols for {len(executionTraces)} traces")
+
         fileData = self.config.loadKwolaFileData("models", self.modelFileName, printErrorOnFailure=False)
         buffer = io.BytesIO(fileData)
 
