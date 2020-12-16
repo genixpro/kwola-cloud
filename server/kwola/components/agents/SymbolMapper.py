@@ -73,19 +73,13 @@ class SymbolMapper:
 
 
     def findNextLOCSymbolMapping(self, fileName, branchTrace):
-        positiveIndexes = numpy.nonzero(branchTrace > 0)[0]
-
-        index = 0
-
-        branchIndex = positiveIndexes[index]
-        locSymbolMapping = self.symbolMap.get((fileName, branchIndex))
-        while locSymbolMapping is None:
-            index += 1
-            if index >= len(positiveIndexes):
-                break
-
-            branchIndex = positiveIndexes[index]
-            locSymbolMapping = self.symbolMap.get((fileName, branchIndex))
+        branchIndex = None
+        locSymbolMapping = None
+        for value, branchIndex in zip(branchTrace.data, branchTrace.indices):
+            if value >= 0:
+                locSymbolMapping = self.symbolMap.get((fileName, branchIndex))
+                if locSymbolMapping is not None:
+                    break
 
         if locSymbolMapping is None:
             return None, None
@@ -100,17 +94,18 @@ class SymbolMapper:
 
         for fileName in branchTrace:
             local = SymbolMapper.createSparseTraceArray(branchTrace[fileName])
-            local = local.minimum(numpy.ones_like(local, dtype=numpy.float64, shape=local.shape))
+            local = local.minimum(1).astype(numpy.bool).astype(numpy.float64)
             localBranchTraces[fileName] = SymbolMapper.createSparseTraceArray(local)
 
         for fileName in localBranchTraces.keys():
-            while numpy.argwhere(localBranchTraces[fileName] > 0).size > 0:
+            while localBranchTraces[fileName].max() > 0:
                 locSymbolMapping, branchIndex = self.findNextLOCSymbolMapping(fileName, localBranchTraces[fileName])
 
                 if locSymbolMapping is not None:
                     for locTraceFileName in locSymbolMapping.branchTrace:
                         if locTraceFileName in localBranchTraces:
-                            localBranchTraces[locTraceFileName] -= locSymbolMapping.branchTrace[locTraceFileName]
+                            localBranchTraces[locTraceFileName] -= localBranchTraces[locTraceFileName].multiply(locSymbolMapping.branchTrace[locTraceFileName])
+                            localBranchTraces[locTraceFileName].eliminate_zeros()
                     locSymbols.append(locSymbolMapping)
                     locBranchIndexes.append(branchIndex)
                     locFileNames.append(fileName)
@@ -408,7 +403,7 @@ class SymbolMapper:
             return
 
         executionTraces[0].cachedStartCumulativeBranchTrace = {
-            name: SymbolMapper.createSparseTraceArray(numpy.zeros_like(value, dtype=numpy.float64, shape=value.shape))
+            name: SymbolMapper.createSparseTraceArray(scipy.sparse.csc_matrix(value.shape, dtype=numpy.float64))
             for name, value in executionTraces[0].branchTrace.items()
         }
 
@@ -438,12 +433,12 @@ class SymbolMapper:
             return
 
         executionTraces[0].cachedStartDecayingBranchTrace = {
-            name: SymbolMapper.createSparseTraceArray(numpy.zeros_like(value, dtype=numpy.float64, shape=value.shape))
+            name: SymbolMapper.createSparseTraceArray(scipy.sparse.csc_matrix(value.shape, dtype=numpy.float64))
             for name, value in executionTraces[0].branchTrace.items()
         }
 
         executionTraces[0].cachedEndDecayingBranchTrace = {
-            name: SymbolMapper.createSparseTraceArray(value.minimum(numpy.ones_like(value, dtype=numpy.float64, shape=value.shape)) * self.config['decaying_branch_trace_scale'])
+            name: SymbolMapper.createSparseTraceArray(value.minimum(1) * self.config['decaying_branch_trace_scale'])
             for name, value in executionTraces[0].branchTrace.items()
         }
 
@@ -458,9 +453,7 @@ class SymbolMapper:
                     trace.cachedEndDecayingBranchTrace[fileName] *= self.config['decaying_branch_trace_decay_rate']
 
                 for fileName in trace.branchTrace.keys():
-                    branchesExecuted = SymbolMapper.createSparseTraceArray(trace.branchTrace[fileName].minimum(
-                        numpy.ones_like(trace.branchTrace[fileName], dtype=numpy.float64, shape=trace.branchTrace[fileName].shape)
-                    ) * self.config['decaying_branch_trace_scale'])
+                    branchesExecuted = SymbolMapper.createSparseTraceArray(trace.branchTrace[fileName].minimum(1) * self.config['decaying_branch_trace_scale'])
 
                     if fileName in trace.cachedEndDecayingBranchTrace:
                         if trace.branchTrace[fileName].shape[0] == trace.cachedEndDecayingBranchTrace[fileName].shape[0]:
@@ -490,12 +483,12 @@ class SymbolMapper:
         reversedExecutionTraces.reverse()
 
         reversedExecutionTraces[0].cachedEndDecayingFutureBranchTrace = {
-            name: SymbolMapper.createSparseTraceArray(numpy.zeros_like(value, dtype=numpy.float64, shape=value.shape))
+            name: SymbolMapper.createSparseTraceArray(scipy.sparse.csc_matrix(value.shape, dtype=numpy.float64))
             for name, value in reversedExecutionTraces[0].branchTrace.items()
         }
 
         reversedExecutionTraces[0].cachedStartDecayingFutureBranchTrace = {
-            name: SymbolMapper.createSparseTraceArray(value.minimum(numpy.ones_like(value, dtype=numpy.float64, shape=value.shape)) * self.config['decaying_future_branch_trace_scale'])
+            name: SymbolMapper.createSparseTraceArray(value.minimum(1) * self.config['decaying_future_branch_trace_scale'])
             for name, value in reversedExecutionTraces[0].branchTrace.items()
         }
 
@@ -525,4 +518,7 @@ class SymbolMapper:
 
     @staticmethod
     def createSparseTraceArray(a):
+        if isinstance(a, scipy.sparse.csc_matrix):
+            return a
+
         return scipy.sparse.csc_matrix(numpy.reshape(a, newshape=[a.shape[0], 1]), shape=[a.shape[0], 1], dtype=numpy.float64)
