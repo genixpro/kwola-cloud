@@ -236,24 +236,23 @@ class SymbolMapper:
             symbol.tracesSinceLastSeen += len(executionTraces)
 
         for trace in executionTraces:
-            localBranchTraces = {}
+            localBranchTraceIndexSets = {}
 
             for fileName in trace.branchTrace.keys():
                 local = SymbolMapper.createSparseTraceArray(trace.branchTrace[fileName])
                 local = local.minimum(1).maximum(0).astype(numpy.bool).astype(numpy.float64)
-                localBranchTraces[fileName] = set(local.indices)
+                localBranchTraceIndexSets[fileName] = set(local.indices)
 
             createNewLOCMap = False
 
             symbolMapFound = True
             while symbolMapFound:
                 symbolMapFound = False
-                for fileName in localBranchTraces.keys():
-                    if len(localBranchTraces[fileName]) > 0:
+                for fileName in localBranchTraceIndexSets.keys():
+                    if len(localBranchTraceIndexSets[fileName]) > 0:
                         branchIndex = None
                         locSymbolMapping = None
-                        while len(localBranchTraces[fileName]):
-                            branchIndex = localBranchTraces[fileName].pop()
+                        for branchIndex in localBranchTraceIndexSets[fileName]:
                             locSymbolMapping = self.symbolMap.get((fileName, branchIndex))
                             if locSymbolMapping is not None:
                                 break
@@ -264,38 +263,43 @@ class SymbolMapper:
                             locSymbolMapping.totalTracesWithSymbol += 1
                             locSymbolMapping.tracesSinceLastSeen = 0
 
-                            negativeBranchTraces = {}
+                            negativeBranchTraceIndexSets = {}
                             for locSymbolMapFileName in locSymbolMapping.branchTrace.keys():
-                                if locSymbolMapFileName not in localBranchTraces:
-                                    localBranchTraces[locSymbolMapFileName] = set()
+                                if locSymbolMapFileName not in localBranchTraceIndexSets:
+                                    localBranchTraceIndexSets[locSymbolMapFileName] = set()
 
                                 negatives = set(locSymbolMapping.branchTrace[locSymbolMapFileName].indices)
-                                negatives.difference_update(localBranchTraces[locSymbolMapFileName])
+                                negatives.difference_update(localBranchTraceIndexSets[locSymbolMapFileName])
 
-                                localBranchTraces[locSymbolMapFileName].difference_update(negatives)
+                                localBranchTraceIndexSets[locSymbolMapFileName].difference_update(locSymbolMapping.branchTrace[locSymbolMapFileName].indices)
 
                                 if len(negatives) > 0:
-                                    negativeBranchTraces[locSymbolMapFileName] = negatives
+                                    negativeBranchTraceIndexSets[locSymbolMapFileName] = negatives
 
-                            if len(negativeBranchTraces):
+                            if len(negativeBranchTraceIndexSets):
                                 splitSymbolsCount += 1
 
                                 # We have to split the previous line of code symbol mapping into two separate mappings, because those lines of code have been observed
                                 # to occur separately
-                                firstNewSymbolMap = LineOfCodeSymbolMapping({
-                                    locSymbolMapFileName: branchTrace for locSymbolMapFileName, branchTrace in locSymbolMapping.branchTrace.items()
-                                }, None, None)
+                                firstNewSymbolMapDict = {}
+                                for locSymbolMapFileName, branchTrace in locSymbolMapping.branchTrace.items():
+                                    indices = list(set(branchTrace.indices).difference(negativeBranchTraceIndexSets.get(locSymbolMapFileName, set())))
 
-                                for negativeFileName in negativeBranchTraces.keys():
-                                    for index in negativeBranchTraces[negativeFileName]:
-                                        firstNewSymbolMap.branchTrace[negativeFileName][index, 0] = 0
+                                    if len(indices) > 0:
+                                        firstNewSymbolMapDict[locSymbolMapFileName] = scipy.sparse.csc_matrix(
+                                            (numpy.ones(len(indices)),
+                                             (indices, numpy.zeros(len(indices), dtype=numpy.int32))),
+                                            shape=locSymbolMapping.branchTrace[locSymbolMapFileName].shape
+                                        )
 
-                                    if len(firstNewSymbolMap.branchTrace[negativeFileName].nonzero()[0]) == 0:
-                                        del firstNewSymbolMap.branchTrace[negativeFileName]
+                                firstNewSymbolMap = LineOfCodeSymbolMapping(firstNewSymbolMapDict, None, None)
 
                                 secondNewSymbolMap = LineOfCodeSymbolMapping({
-                                    locSymbolMapFileName: scipy.sparse.csc_matrix((numpy.ones(len(branchTrace)), (list(branchTrace), numpy.zeros(len(branchTrace), dtype=numpy.int32))) )
-                                    for locSymbolMapFileName, branchTrace in negativeBranchTraces.items()
+                                    locSymbolMapFileName: scipy.sparse.csc_matrix(
+                                        ( numpy.ones(len(branchTrace)), (list(branchTrace), numpy.zeros(len(branchTrace), dtype=numpy.int32)) ),
+                                        shape=locSymbolMapping.branchTrace[locSymbolMapFileName].shape
+                                    )
+                                    for locSymbolMapFileName, branchTrace in negativeBranchTraceIndexSets.items()
                                 }, None, None)
 
                                 firstNewSymbolMap.totalTracesWithSymbol = locSymbolMapping.totalTracesWithSymbol
@@ -329,9 +333,12 @@ class SymbolMapper:
                 netNewSymbolsCount += 1
                 newSymbolBranchTrace = {}
 
-                for fileName in localBranchTraces.keys():
-                    if len(localBranchTraces[fileName]):
-                        branchTrace = scipy.sparse.csc_matrix((numpy.ones(len(localBranchTraces[fileName])), (list(branchTrace), numpy.zeros(len(localBranchTraces[fileName]), dtype=numpy.int32)) ))
+                for fileName in localBranchTraceIndexSets.keys():
+                    if len(localBranchTraceIndexSets[fileName]):
+                        branchTrace = scipy.sparse.csc_matrix(
+                            (numpy.ones(len(localBranchTraceIndexSets[fileName])), (list(localBranchTraceIndexSets[fileName]), numpy.zeros(len(localBranchTraceIndexSets[fileName]), dtype=numpy.int32)) ),
+                            shape=trace.branchTrace[fileName].shape
+                        )
                         newSymbolBranchTrace[fileName] = branchTrace
 
                 newSymbolMap = LineOfCodeSymbolMapping(newSymbolBranchTrace, None, None)
@@ -345,6 +352,9 @@ class SymbolMapper:
         for newLocSymbolMapping, oldLocSymbolMapping in zip(newSymbolMaps, newSymbolMapAssociatedOriginalSymbolMaps):
             nextSymbolIndex = self.nextSymbolIndex
             self.nextSymbolIndex += 1
+
+            if self.nextSymbolIndex >= self.config['symbol_dictionary_size']:
+                break
 
             if oldLocSymbolMapping is not None and oldLocSymbolMapping.recentSymbolIndex is not None:
                 # When splitting a symbol mapping, we base the new tensor on the original tensor, but add in 20% random noise
@@ -360,6 +370,9 @@ class SymbolMapper:
 
             nextSymbolIndex = self.nextSymbolIndex
             self.nextSymbolIndex += 1
+
+            if self.nextSymbolIndex >= self.config['symbol_dictionary_size']:
+                break
 
             if oldLocSymbolMapping is not None and oldLocSymbolMapping.coverageSymbolIndex is not None:
                 # When splitting a symbol mapping, we base the new tensor on the original tensor, but add in 20% random noise
