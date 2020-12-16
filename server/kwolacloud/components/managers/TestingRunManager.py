@@ -635,20 +635,22 @@ class TestingRunManager:
 
             totalNewSymbols = 0
             totalSplitSymbols = 0
-    
+            traces = []
+
             for testingStepId in testingStepIdsToProcess:
                 testingStep = TestingStep.loadFromDisk(testingStepId, config)
                 for executionSessionId in testingStep.executionSessions:
                     executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
                     if executionSession.status == "completed":
-                        traces = []
                         for executionTraceId in executionSession.executionTraces:
                             traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
+                    if len(traces) > 1000:
                         newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
                         totalNewSymbols += newSymbols
                         totalSplitSymbols += splitSymbols
+                        traces = []
 
             logging.info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
 
