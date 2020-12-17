@@ -638,7 +638,7 @@ class TestingRunManager:
             totalSplitSymbols = 0
             traceFutures = []
 
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=16)
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
 
             for testingStepId in testingStepIdsToProcess:
                 testingStep = TestingStep.loadFromDisk(testingStepId, config)
