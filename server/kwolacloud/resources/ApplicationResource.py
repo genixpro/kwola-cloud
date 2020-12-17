@@ -328,6 +328,21 @@ class ApplicationSingle(Resource):
                     postToKwolaSlack(f"User {email} has unsubscribed.", error=False)
 
             application.save()
+
+            if 'defaultRunConfiguration' in data:
+                createdTestingRuns = TestingRun.objects(owner=application.owner, applicationId=application.id, status='created')
+                for run in createdTestingRuns:
+                    run.configuration = RunConfiguration(**data['defaultRunConfiguration'])
+                    run.save()
+                runningTestingRuns = TestingRun.objects(owner=application.owner, applicationId=application.id, status='running')
+                for run in runningTestingRuns:
+                    run.configuration = RunConfiguration(**data['defaultRunConfiguration'])
+                    run.save()
+                pausedTestingRuns = TestingRun.objects(owner=application.owner, applicationId=application.id, status='paused')
+                for run in pausedTestingRuns:
+                    run.configuration = RunConfiguration(**data['defaultRunConfiguration'])
+                    run.save()
+
             return ""
         else:
             abort(404)
