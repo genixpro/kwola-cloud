@@ -39,6 +39,7 @@ import time
 import io
 import traceback
 import zipfile
+import concurrent.futures
 from mongoengine.queryset.visitor import Q
 
 
@@ -635,7 +636,9 @@ class TestingRunManager:
 
             totalNewSymbols = 0
             totalSplitSymbols = 0
-            traces = []
+            traceFutures = []
+
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=16)
 
             for testingStepId in testingStepIdsToProcess:
                 testingStep = TestingStep.loadFromDisk(testingStepId, config)
@@ -644,15 +647,17 @@ class TestingRunManager:
 
                     if executionSession.status == "completed":
                         for executionTraceId in executionSession.executionTraces:
-                            traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
+                            traceFutures.append(executor.submit(ExecutionTrace.loadFromDisk, executionTraceId, config, applicationId=testingStep.applicationId))
 
-                    if len(traces) > 1000:
-                        newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
+                    if len(traceFutures) > 1000:
+                        newSymbols, splitSymbols = symbolMap.assignNewSymbols([
+                            future.result() for future in traceFutures
+                        ])
                         totalNewSymbols += newSymbols
                         totalSplitSymbols += splitSymbols
-                        traces = []
+                        traceFutures = []
 
-            newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
+            newSymbols, splitSymbols = symbolMap.assignNewSymbols(traceFutures)
             totalNewSymbols += newSymbols
             totalSplitSymbols += splitSymbols
 
