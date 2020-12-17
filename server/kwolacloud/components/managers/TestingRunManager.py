@@ -657,9 +657,13 @@ class TestingRunManager:
                         totalSplitSymbols += splitSymbols
                         traceFutures = []
 
-            newSymbols, splitSymbols = symbolMap.assignNewSymbols(traceFutures)
+            newSymbols, splitSymbols = symbolMap.assignNewSymbols([
+                future.result() for future in traceFutures
+            ])
             totalNewSymbols += newSymbols
             totalSplitSymbols += splitSymbols
+
+            executor.shutdown()
 
             logging.info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
 
