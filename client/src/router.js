@@ -16,16 +16,7 @@ class RestrictedRoute extends Component
     render()
     {
         let isLoggedIn = Auth0.isAuthenticated();
-
-        // Adding in this special check here because on very rare occasions, isLoggedIn can be true but
-        // we still have no user data
-        const userData = Auth.getUserInfo();
-        if (!userData)
-        {
-            isLoggedIn = false;
-        }
-
-        if(!this.props.isLoggedIn)
+        if(!isLoggedIn)
         {
             window.localStorage.setItem("returnTo", window.location.path);
         }

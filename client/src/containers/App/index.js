@@ -21,6 +21,7 @@ import Auth0 from "../../helpers/auth0";
 import {Elements} from '@stripe/react-stripe-js';
 import stripePromise from '../../stripe';
 import '../../styles/customStyles.css';
+import {Redirect} from "react-router-dom";
 const { toggleAll } = appActions;
 const { switchActivation } = themeActions;
 
@@ -37,6 +38,18 @@ class App extends Component {
 
 
   render() {
+    let isLoggedIn = Auth0.isAuthenticated();
+    if(!isLoggedIn)
+    {
+      window.localStorage.setItem("returnTo", window.location.path);
+      return <Redirect
+          to={{
+            pathname: '/app/signin',
+            state: {from: this.props.location},
+          }}
+      />;
+    }
+
     const anchor = rtl === 'rtl' ? 'right' : 'left';
     const {
       classes,

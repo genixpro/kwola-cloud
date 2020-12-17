@@ -9,6 +9,9 @@ class Auth0Helper {
   isValid = Auth0Config.clientID && Auth0Config.domain;
 
   constructor() {
+    this.webAuth = new auth0.WebAuth(Auth0Config);
+    this.userInfo = null;
+
     this.login = this.login.bind(this);
     this.logout = this.logout.bind(this);
     this.handleAuthentication = this.handleAuthentication.bind(this);
@@ -19,8 +22,6 @@ class Auth0Helper {
     this.updateGoogleAnalyticsIdentity();
     this.updateAcquisitionUrl();
     this.emailVerified();
-    this.webAuth = new auth0.WebAuth(Auth0Config);
-    this.userInfo = null;
   }
   login(handleLogin)
   {
@@ -99,6 +100,11 @@ class Auth0Helper {
 
   isAdmin()
   {
+    if (this.getUserInfo() === null)
+    {
+      this.logout();
+    }
+
     return this.getUserInfo()["https://kwola.io/admin"];
   }
 
@@ -109,6 +115,11 @@ class Auth0Helper {
 
   isUserAllowedFreeRuns()
   {
+    if (this.getUserInfo() === null)
+    {
+      this.logout();
+    }
+
     return this.getUserInfo()['https://kwola.io/freeRuns'];
   }
 
@@ -141,6 +152,10 @@ class Auth0Helper {
 
   isAuthenticated() {
     if (localStorage.getItem('expires_at') === null)
+    {
+      return false;
+    }
+    else if (this.getUserInfo() === null)
     {
       return false;
     }
