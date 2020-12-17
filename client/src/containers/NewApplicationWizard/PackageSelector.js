@@ -125,8 +125,9 @@ class PackageSelector extends Component {
                 <PackageInfo
                     title={"Recurring Testing"}
                     pricing={monthlyPrice}
-                    pricingSubText={<span>Extra runs for {extraRunPrice}</span>}
+                    pricingSubText={<span>First month is Free</span>}
                     packageDescriptions={[
+                        `Extra runs for ${extraRunPrice}`,
                         "Get 5 testing runs each month included",
                         "Launch Kwola every week, on specific dates of the month, manually through the UI, or based on API calls",
                         "Kwola's AI gets smarter and smarter over time, making it more and more likely it will find obscure and rare bugs",
