@@ -37,6 +37,39 @@ from ..utils.deunique import deuniqueString
 from ...datamodels.CustomIDField import CustomIDField
 
 class RewriteProxy:
+    """
+    Rewrite proxy sits as a man in the middle between the web browser and the backend, and will dynamically rewrite any of the code that it sees travelling
+    through it.
+
+    There are a bunch of competing goals that this system has to fulfill, listed here:
+    1) Rewrite the javascript code to inject kwola instrumentation, such as line counting and event handler tracking
+    2) Rewrite the HTML to eliminate "integrity" attributes, which screw with Kwola's ability to dynamically rewrite the javascript
+    3) Keep a record of all resources that go through the proxy, including images, videos, api endpoints, javascript, css, html, and any other resources
+    4) Associate successive versions of the same resource with each other, e.g. successive versions of the javascript code as the underlying application is being updated
+        a) do the above even considering when developers add hashes and unique ids to the ends of their file names or in path segments in the URL
+        b) do the above even if there are unique ids or dates being baked into the contents of javascript files
+        c) when the resource is javascript code, the branch indexes in successive versions of the javascript should be realigned with each other, so the same
+           code in two different versions of the javascript file map to the same branch indexes. This allows the neural network to preserve its learning.
+    5) Keep track of precisely how and why a particular resource was rewritten or not rewritten
+    6) Keep copies of the data for resources that would be required to rerender the frozen HTML pages created by WebEnvironmentSession.saveHTML
+    7) Keep copies of the data for resources that we want to show within the user interface for the user
+    8) Keep copies of the rewritten html & javascript files in a cache to reduce compute time required to rewrite said files every single time they are seen
+    9) Ignore JSONP style javascript files (these are just one line javascript responses that call an existing local function)
+    10) Ignore javascript files that are marked on various ignore lists in the config file (including ignore by domain and ignore by keyword)
+    11) [maybe, conflicts with other goals] Don't store copies of versions of the same resource if they only differ because of unique ids / hashes / cache busting / xsrf tokens being baked into those files
+    12) Don't store exact copies of resources it they are JSON API Endpoints or JSONP javascript files. Instead, these should be processed in a way that allows
+        analyzing the endpoint as a whole, such a list of all fields observed within the endpoint.
+    13) Modular - there should be specific components / plugins for processing different types of resources
+    14) [eventually] preserve and rewrite javascript 'map' files
+    15) [eventually] Keep track of stats like how often particular resources are requested and how long it took the server to respond
+    16) Minimize the amount of times we have to contact google cloud storage, the local file system, and mongodb while the proxy is running
+    17) Keep response times fast as requests flow through the proxy
+    18) Append headers to outgoing requests that allow the server-side system to identify any traffic coming from Kwola
+    19) Automatically decompress the data any requests that are gzipped and process them as if they were their plaintext counterparts
+    20) Do not cause any changes in behaviour whatsoever in the underlying application while doing all of this
+    21) [Maybe] Have old copies of resources automatically expire / self delete after a certain amount of time
+    """
+
     pathNumericalIdSegmentRegex = re.compile(r"/\d+")
 
     def __init__(self, config, plugins, testingRunId=None, testingStepId=None, executionSessionId=None):
