@@ -409,15 +409,6 @@ def trainAgent(config, exitOnFail=False):
     agent.save()
     del agent
 
-    browsers = getAvailableBrowsers(config)
-
-    # Create and destroy an environment, which forces a lot of the initial javascript in the application
-    # to be loaded and translated. It also just verifies that the system can access the target URL prior
-    # to trying to run a full sequence
-    environment = WebEnvironment(config, sessionLimit=1, browser=browsers[0])
-    environment.shutdown()
-    del environment
-
     files = [fileName for fileName in os.listdir(config.getKwolaUserDataDirectory("training_sequences")) if ".lock" not in fileName]
 
     if len(files) == 0:
@@ -438,6 +429,17 @@ def trainAgent(config, exitOnFail=False):
         trainingSequence = TrainingSequence.loadFromDisk(sequenceId, config)
 
     testingSteps = [step for step in TrainingManager.loadAllTestingSteps(config) if step.status == "completed"]
+
+    if len(testingSteps) == 0:
+        browsers = getAvailableBrowsers(config)
+
+        # Create and destroy an environment, which forces a lot of the initial javascript in the application
+        # to be loaded and translated. It also just verifies that the system can access the target URL prior
+        # to trying to run a full sequence
+        environment = WebEnvironment(config, sessionLimit=1, browser=browsers[0])
+        environment.shutdown()
+        del environment
+
     if len(testingSteps) < config['training_random_initialization_sequences']:
         runRandomInitialization(config, trainingSequence, exitOnFail=exitOnFail)
         trainingSequence.saveToDisk(config)
