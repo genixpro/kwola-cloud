@@ -251,8 +251,9 @@ class RewriteProxy:
                     self.originalRewriteItemsBySize[size].append((unzippedFileContents, flow.request.url))
 
             if foundSimilarOriginal:
-                # We don't translate it or save it in the cache. Just leave as is.
-                getLogger().warning(f"Decided not to translate file {flow.request.url} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system.")
+                if self.config['web_session_print_javascript_translation_info']:
+                    # We don't translate it or save it in the cache. Just leave as is.
+                    getLogger().warning(f"Decided not to translate file {flow.request.url} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system.")
 
                 self.memoryCache[fileHash] = originalFileContents
                 self.resourcesByURL[fileURL] = originalFileContents

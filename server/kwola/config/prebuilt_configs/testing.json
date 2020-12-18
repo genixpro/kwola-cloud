@@ -334,6 +334,7 @@
     "date_js",
     "dojo",
     "ember",
+    "ext-all",
     "firebug",
     "flot",
     "ga_js",
@@ -386,6 +387,9 @@
     "vue",
     "webix",
     "worker"
+  ],
+  "web_session_ignore_javascript_keywords": [
+    "recaptcha"
   ],
   "web_session_ignore_javascript_domains": [
     "ads.travelaudience.com",

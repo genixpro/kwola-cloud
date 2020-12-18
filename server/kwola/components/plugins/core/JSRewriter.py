@@ -115,6 +115,14 @@ class JSRewriter(ProxyPluginBase):
                                  f"domain name '{foundIgnoreHost}' which is marked to be ignored in the config file.")
             return fileData
 
+        ignoreKeyword = self.findMatchingJavascriptFilenameIgnoreKeyword(cleanedFileName)
+        if ignoreKeyword is not None:
+            if self.config['web_session_print_javascript_translation_info']:
+                getLogger().info(f"Warning: Ignoring javascript file {url} because it contained the keyword "
+                                 f"'{ignoreKeyword}' which is marked to be fully ignored in the config file. "
+                                 f"If this is wrong, please update 'web_session_ignore_javascript_keywords' in the config file.")
+            return fileData
+
         environment = dict(os.environ)
 
         environment['KWOLA_ENABLE_LINE_COUNTING'] = 'true'
@@ -193,6 +201,13 @@ class JSRewriter(ProxyPluginBase):
 
     def findMatchingJavascriptFilenameNoLineCountingKeyword(self, fileName):
         for ignoreKeyword in self.config['web_session_no_line_counting_javascript_file_keywords']:
+            if ignoreKeyword in fileName:
+                return ignoreKeyword
+
+        return None
+
+    def findMatchingJavascriptFilenameIgnoreKeyword(self, fileName):
+        for ignoreKeyword in self.config['web_session_ignore_javascript_keywords']:
             if ignoreKeyword in fileName:
                 return ignoreKeyword
 
