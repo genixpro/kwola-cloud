@@ -16,6 +16,8 @@ class JSRewriter(ProxyPluginBase):
         Represents a plugin for the rewrite proxy
     """
 
+    rewriteMode = "javascript"
+
     knownResponseWrappers = [
         (b"""<!--/*--><html><body><script type="text/javascript"><!--//*/""",
          b"""""")
@@ -212,11 +214,5 @@ class JSRewriter(ProxyPluginBase):
                 return ignoreKeyword
 
         return None
-
-
-
-    def observeRequest(self, url, statusCode, contentType, headers, origFileData, transformedFileData, didTransform):
-        pass
-
 
 

@@ -21,6 +21,7 @@
 
 from ...config.logger import getLogger
 from mitmproxy.script import concurrent
+import datetime
 import os
 import os.path
 import traceback
@@ -29,6 +30,10 @@ import filetype
 import re
 from pprint import pformat
 from ..plugins.base.ProxyPluginBase import ProxyPluginBase
+from ...datamodels.ResourceModel import Resource
+from ...datamodels.ResourceVersionModel import ResourceVersion
+from ..utils.deunique import deuniqueString
+from ...datamodels.CustomIDField import CustomIDField
 
 class RewriteProxy:
     def __init__(self, config, plugins, testingRunId=None, testingStepId=None, executionSessionId=None):
@@ -42,14 +47,17 @@ class RewriteProxy:
         self.executionSessionId = executionSessionId
         self.executionTraceId = None
 
-        self.resourcesByURL = {}
+        self.resourcesByCanonicalURL = {}
 
-        self.filesAvailableInMemoryCache = set()
+        self.allResources = Resource.loadAllResources(config)
+        for resource in self.allResources:
+            self.resourcesByCanonicalURL[resource.canonicalUrl] = resource
 
-        for fileName in self.config.listAllFilesInFolder("proxy_cache"):
-            self.filesAvailableInMemoryCache.add(self.getHashFromCacheFileName(fileName))
+        getLogger().info(f"Loaded data for {len(self.allResources)} resources")
 
-        getLogger().info(f"Loaded {len(self.filesAvailableInMemoryCache)} files into the memory cache.")
+    @staticmethod
+    def canonicalizeUrl(url):
+        return deuniqueString(url)
 
     def getHashFromCacheFileName(self, fileName):
         hash = fileName.split("_")[-1].split(".")[0]
@@ -79,13 +87,6 @@ class RewriteProxy:
         cacheFileName = fileNameRoot[:100] + "_" + fileHash + "." + extension
 
         return cacheFileName
-
-    def saveInCache(self, fileHash, fileURL, data):
-        cacheFileName = self.getCacheFileName(fileHash, fileURL)
-        try:
-            return self.config.saveKwolaFileData("proxy_cache", cacheFileName, data)
-        except FileExistsError:
-            pass
 
     def request(self, flow):
         flow.request.headers['Accept-Encoding'] = 'identity'
@@ -123,22 +124,6 @@ class RewriteProxy:
         except Exception as e:
             getLogger().error(traceback.format_exc())
 
-    @concurrent
-    def responseheaders(self, flow):
-        """
-            The full HTTP response has been read.
-        """
-
-        # Check to see if there is an integrity verification header, if so, delete it
-        headers = set(flow.response.headers.keys())
-        #
-        # if "Integrity" in headers:
-        #     getLogger().info("Deleting an Integrity header")
-        #     del flow.response.headers['Integrity']
-        # if "integrity" in headers:
-        #     getLogger().info("Deleting an Integrity header")
-        #     del flow.response.headers['integrity']
-
 
     def decompressDataIfNeeded(self, data):
         gzipped = False
@@ -172,53 +157,64 @@ class RewriteProxy:
 
             # Don't attempt to transform if its not a 2xx, just let it pass through
             if flow.response.status_code < 200 or flow.response.status_code >= 300:
-                for plugin in self.plugins:
-                    plugin.observeRequest(url=flow.request.url,
-                                          statusCode=flow.response.status_code,
-                                          contentType=contentType,
-                                          headers=flow.request.headers,
-                                          origFileData=bytes(flow.response.data.content),
-                                          transformedFileData=bytes(flow.response.data.content),
-                                          didTransform=False
-                                          )
                 return
 
+            canonicalUrl = self.canonicalizeUrl(flow.request.url)
+            resource = self.resourcesByCanonicalURL.get(canonicalUrl, None)
             fileHash = ProxyPluginBase.computeHash(bytes(flow.response.data.content))
+            canonicalFileHash = ProxyPluginBase.computeHash(bytes(deuniqueString(flow.response.data.content), 'utf8'))
+            versionId = None
 
-            cacheFileName = self.getCacheFileName(fileHash, flow.request.url)
-            cached = self.memoryCache.get(fileHash)
-            if cached is None and fileHash in self.filesAvailableInMemoryCache:
-                cached = self.config.loadKwolaFileData("proxy_cache", cacheFileName, printErrorOnFailure=False)
-                self.memoryCache[fileHash] = cached
+            if resource is not None:
+                if not resource.didRewriteResource:
+                    return
+                else:
+                    versionId = resource.getVersionId(fileHash)
+                    transformedContents = None
 
-            if cached is not None:
-                flow.response.data.headers['Content-Length'] = str(len(cached))
-                flow.response.data.content = cached
-                self.resourcesByURL[flow.request.url] = cached
+                    if versionId in self.memoryCache:
+                        transformedContents = self.memoryCache[versionId]
+                    else:
+                        resourceVersion = ResourceVersion.loadFromDisk(versionId, self.config, printErrorOnFailure=False)
+                        if resourceVersion is not None:
+                            transformedContents = resourceVersion.loadTranslatedResourceContents(self.config)
+                            self.memoryCache[versionId] = transformedContents
 
-                for plugin in self.plugins:
-                    plugin.observeRequest(url=flow.request.url,
-                                          statusCode=flow.response.status_code,
-                                          contentType=contentType,
-                                          headers=flow.request.headers,
-                                          origFileData=bytes(flow.response.data.content),
-                                          transformedFileData=cached,
-                                          didTransform=(len(flow.response.data.content) != len(cached)) # Cheap hack, should fix this to do a proper recording of whether
-                                                                                                        # The transform happened
-                                          )
-                return
+                    if transformedContents is not None:
+                        flow.response.data.headers['Content-Length'] = str(len(transformedContents))
+                        flow.response.data.content = transformedContents
+
+                        return
+            else:
+                resourceId = ProxyPluginBase.getCleanedFileName(canonicalUrl)
+                if 'applicationId' in self.config:
+                    resourceId = self.config['applicationId'] + "-" + resourceId
+
+                resource = Resource(
+                    id=resourceId,
+                    owner=(self.config['owner'] if 'owner' in self.config else None),
+                    applicationId=(self.config['applicationId'] if 'applicationId' in self.config else None),
+                    url=flow.request.url,
+                    canonicalUrl=canonicalUrl,
+                    creationDate=datetime.datetime.now(),
+                    rewriteMode=None,
+                    didRewriteResource=False,
+                    contentType=contentType
+                )
+
+                resource.saveToDisk(self.config)
+
+                self.resourcesByCanonicalURL[canonicalUrl] = resource
+
+                versionId = resource.getVersionId(fileHash)
 
             fileURL = flow.request.url
-        except Exception as e:
-            getLogger().error(traceback.format_exc())
-            return
 
-        try:
             originalFileContents = bytes(flow.response.data.content)
-
             unzippedFileContents, gzipped = self.decompressDataIfNeeded(originalFileContents)
 
             if len(unzippedFileContents) == 0:
+                self.memoryCache[versionId] = unzippedFileContents
                 return
 
             chosenPlugin = None
@@ -250,59 +246,60 @@ class RewriteProxy:
                 if not foundSimilarOriginal:
                     self.originalRewriteItemsBySize[size].append((unzippedFileContents, flow.request.url))
 
+            resourceVersion = ResourceVersion(
+                id=resource.getVersionId(fileHash),
+                owner=(self.config['owner'] if 'owner' in self.config else None),
+                applicationId=(self.config['applicationId'] if 'applicationId' in self.config else None),
+                testingRunId=(self.config['testingRunId'] if 'testingRunId' in self.config else None),
+                resourceId=resource.id,
+                fileHash=fileHash,
+                canonicalFileHash=canonicalFileHash,
+                creationDate=datetime.datetime.now(),
+                url=flow.request.url,
+                canonicalUrl=canonicalUrl,
+                contentType=contentType,
+                didRewriteResource=False
+            )
+
             if foundSimilarOriginal:
                 if self.config['web_session_print_javascript_translation_info']:
                     # We don't translate it or save it in the cache. Just leave as is.
                     getLogger().warning(f"Decided not to translate file {flow.request.url} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system.")
 
-                self.memoryCache[fileHash] = originalFileContents
-                self.resourcesByURL[fileURL] = originalFileContents
+                self.memoryCache[versionId] = originalFileContents
 
-                for plugin in self.plugins:
-                    plugin.observeRequest(url=flow.request.url,
-                                          statusCode=flow.response.status_code,
-                                          contentType=contentType,
-                                          headers=flow.request.headers,
-                                          origFileData=originalFileContents,
-                                          transformedFileData=originalFileContents,
-                                          didTransform=False
-                                          )
+                resourceVersion.didRewriteResource = False
+                resourceVersion.saveOriginalResourceContents(self.config, unzippedFileContents)
+                resourceVersion.saveToDisk(self.config)
+
             elif chosenPlugin is not None:
-                transformed = chosenPlugin.rewriteFile(fileURL, contentType, unzippedFileContents)
+                transformedContents = chosenPlugin.rewriteFile(fileURL, contentType, unzippedFileContents)
 
                 if gzipped:
-                    transformed = gzip.compress(transformed, compresslevel=9)
+                    transformedContents = gzip.compress(transformedContents, compresslevel=9)
 
-                self.saveInCache(fileHash, fileURL, transformed)
-                self.memoryCache[fileHash] = transformed
-                self.resourcesByURL[fileURL] = transformed
+                resource.rewriteMode = chosenPlugin.rewriteMode
+                resource.didRewriteResource = True
+                # Note! this extra resource save might be creating too much load. Eventually we should improve this.
+                resource.saveToDisk(self.config)
 
-                flow.response.data.headers['Content-Length'] = str(len(transformed))
-                flow.response.data.content = transformed
+                resourceVersion.didRewriteResource = True
+                resourceVersion.saveToDisk(self.config)
 
-                for plugin in self.plugins:
-                    plugin.observeRequest(url=flow.request.url,
-                                          statusCode=flow.response.status_code,
-                                          contentType=contentType,
-                                          headers=flow.request.headers,
-                                          origFileData=originalFileContents,
-                                          transformedFileData=transformed,
-                                          didTransform=True
-                                          )
+                resourceVersion.saveOriginalResourceContents(self.config, unzippedFileContents)
+                resourceVersion.saveTranslatedResourceContents(self.config, transformedContents)
+
+                self.memoryCache[versionId] = transformedContents
+
+                flow.response.data.headers['Content-Length'] = str(len(transformedContents))
+                flow.response.data.content = transformedContents
 
             else:
-                self.memoryCache[fileHash] = originalFileContents
-                self.resourcesByURL[fileURL] = originalFileContents
+                self.memoryCache[versionId] = originalFileContents
 
-                for plugin in self.plugins:
-                    plugin.observeRequest(url=flow.request.url,
-                                          statusCode=flow.response.status_code,
-                                          contentType=contentType,
-                                          headers=flow.request.headers,
-                                          origFileData=originalFileContents,
-                                          transformedFileData=originalFileContents,
-                                          didTransform=False
-                                          )
+                resourceVersion.didRewriteResource = False
+                resourceVersion.saveOriginalResourceContents(self.config, originalFileContents)
+                resourceVersion.saveToDisk(self.config)
 
         except Exception as e:
             getLogger().error(traceback.format_exc())

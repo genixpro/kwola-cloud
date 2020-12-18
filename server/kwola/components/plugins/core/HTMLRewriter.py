@@ -8,6 +8,8 @@ class HTMLRewriter(ProxyPluginBase):
         Represents a plugin for the rewrite proxy
     """
 
+    rewriteMode = "html"
+
     def __init__(self, config):
         self.config = config
 
@@ -48,10 +50,3 @@ class HTMLRewriter(ProxyPluginBase):
         bytesData = bytes(stringData, "utf8")
 
         return bytesData
-
-
-
-
-    def observeRequest(self, url, statusCode, contentType, headers, origFileData, transformedFileData, didTransform):
-        pass
-
