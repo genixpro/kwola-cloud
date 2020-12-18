@@ -30,6 +30,15 @@ from .DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from mongoengine import *
 
 class BugModel(Document):
+    meta = {
+        'indexes': [
+            ('owner', 'testingRunId',),
+            ('owner', 'applicationId',),
+            ('applicationId',),
+            ('testingRunId', ),
+        ]
+    }
+
     id = CustomIDField()
 
     owner = StringField()
