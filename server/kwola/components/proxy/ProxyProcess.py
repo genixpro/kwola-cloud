@@ -130,6 +130,16 @@ class ProxyProcess:
         self.commandQueue.put("getDotNetRPCErrors")
         return pickle.loads(self.resultQueue.get())
 
+    def getResourceData(self, url):
+        self.commandQueue.put("getResourceData")
+        self.commandQueue.put(url)
+        return self.resultQueue.get()
+
+    def saveResourceData(self, url, data):
+        self.commandQueue.put("saveResourceData")
+        self.commandQueue.put((url, data))
+        return
+
     @autoretry(logRetries=False)
     def checkProxyFunctioning(self):
         proxies = {
@@ -202,6 +212,15 @@ class ProxyProcess:
                 traceId = commandQueue.get()
                 codeRewriter.executionTraceId = traceId
                 resultQueue.put(None)
+
+            if message == "getResourceData":
+                resourceUrl = commandQueue.get()
+                data = codeRewriter.resourcesByURL.get(resourceUrl)
+                resultQueue.put(data)
+
+            if message == "saveResourceData":
+                (resourceUrl, data) = commandQueue.get()
+                codeRewriter.resourcesByURL[resourceUrl] = data
 
             if message == "getUserAgent":
                 resultQueue.put(userAgentTracer.lastUserAgent)

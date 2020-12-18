@@ -49,7 +49,11 @@ from ..utils.video import chooseBestFfmpegVideoCodec
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from ..proxy.ProxyProcess import ProxyProcess
 from ..utils.retry import autoretry
+from bs4 import BeautifulSoup
+import urllib.parse
 import cv2
+import base64
+import requests
 import hashlib
 import traceback
 import numpy
@@ -1031,7 +1035,7 @@ class WebEnvironmentSession:
             actionExecutionTimes['checkOffsite-first-networkWaitTime'] = networkWaitTime
             actionExecutionTimes['checkOffsite-first-body'] = ((datetime.now() - startTime).total_seconds() - networkWaitTime)
 
-            executionTrace = ExecutionTrace(id=str(self.executionSession.id) + "_trace_" + str(self.traceNumber))
+            executionTrace = ExecutionTrace(id=str(self.executionSession.id) + "-trace-" + str(self.traceNumber))
             executionTrace.actionExecutionTimes = actionExecutionTimes
             executionTrace.time = datetime.now()
             executionTrace.actionPerformed = action
@@ -1147,3 +1151,160 @@ class WebEnvironmentSession:
         for plugin in self.plugins:
             plugin.browserSessionFinished(self.driver, self.proxy, self.executionSession)
 
+
+    def saveHTML(self, fileName="test.html", folder="testfiles"):
+        try:
+            cssUrlRegex = re.compile(b"url\\s*\\(\\s*['\"]([^\\)'\"]+)['\"]\\s*\\)")
+            saveFolder = folder
+            saveOutputFileName = fileName
+
+            os.mkdir("test/" + folder)
+
+            countSavedFiles = 0
+
+            def modifyHTML(data, baseURL):
+                soup = BeautifulSoup(data, features="html.parser")
+
+                base = soup.find('base')
+                if base is not None and 'href' in base.attrs:
+                    baseURL = urllib.parse.urljoin(baseURL, base['href'])
+
+                for jsCodeElement in soup.find_all('script', recursive=True):
+                    jsCodeElement.extract()
+
+                for baseTagElement in soup.find_all('base', recursive=True):
+                    baseTagElement.extract()
+
+                for elementIndex, element in enumerate(soup.find_all('link', recursive=True)):
+                    if 'rel' in element.attrs and element['rel'][0] == 'stylesheet':
+                        modifyElementResourceReference(element, baseURL, modifyCSS)
+                    else:
+                        modifyElementResourceReference(element, baseURL)
+
+                for elementIndex, element in enumerate(soup.find_all('img', recursive=True)):
+                    modifyElementResourceReference(element, baseURL)
+
+                for elementIndex, element in enumerate(soup.find_all('video', recursive=True)):
+                    modifyElementResourceReference(element, baseURL)
+
+                for elementIndex, element in enumerate(soup.find_all('audio', recursive=True)):
+                    modifyElementResourceReference(element, baseURL)
+
+                for elementIndex, element in enumerate(soup.find_all('source', recursive=True)):
+                    modifyElementResourceReference(element, baseURL)
+
+                for elementIndex, element in enumerate(soup.find_all('track', recursive=True)):
+                    modifyElementResourceReference(element, baseURL)
+
+                for elementIndex, element in enumerate(soup.find_all('embed', recursive=True)):
+                    modifyElementResourceReference(element, baseURL)
+
+                for elementIndex, element in enumerate(soup.find_all('iframe', recursive=True)):
+                    modifyElementResourceReference(element, baseURL, modifyHTML)
+
+                return str(soup.prettify())
+
+            def modifyElementResourceReference(element, baseURL, resourceDataModifyFunc=None):
+                attributeForResource = None
+                if 'href' in element.attrs:
+                    attributeForResource = 'href'
+                elif 'src' in element.attrs:
+                    attributeForResource = 'src'
+
+                if attributeForResource is not None and element[attributeForResource]:
+                    resourceURL = element[attributeForResource]
+                    newURL = saveResourceLocally(resourceURL, baseURL, resourceDataModifyFunc)
+                    if newURL is not None:
+                        element[attributeForResource] = newURL
+                    else:
+                        element[attributeForResource] = "data:,"
+
+            def saveResourceLocally(resourceURL, baseURL, resourceDataModifyFunc=None):
+                nonlocal countSavedFiles
+
+                resourceURL = urllib.parse.urljoin(baseURL, resourceURL)
+                data = self.proxy.getResourceData(resourceURL)
+                if data is None:
+                    try:
+                        response = requests.get(resourceURL)
+                        if response.status_code == 200:
+                            data = response.content
+                            self.proxy.saveResourceData(resourceURL, data)
+                        else:
+                            self.proxy.saveResourceData(resourceURL, None)
+                    except requests.exceptions.RequestException:
+                        pass
+
+                if data is None:
+                    getLogger().error(f"ERROR! Failed to grab the resource at URL: {resourceURL}")
+                    return None
+                else:
+                    urlPath = urllib.parse.urlparse(resourceURL).path
+                    extension = os.path.splitext(urlPath)[1]
+
+                    if resourceDataModifyFunc is not None:
+                        data = resourceDataModifyFunc(data, resourceURL)
+
+                    base64ExtraCharacters = bytes("--", 'utf8')
+                    longHash = str(base64.b64encode(hashlib.sha256(data).digest(), altchars=base64ExtraCharacters), 'utf8')
+                    longHash = longHash.replace("-", "")
+                    longHash = longHash.replace("=", "")
+                    longHash = longHash[:8]
+
+                    countSavedFiles += 1
+                    localFileName = f"resource-{longHash}{extension}"
+                    with open(os.path.join("test", saveFolder, localFileName), "wb") as f:
+                        f.write(data)
+
+                    return f"{saveFolder}/{localFileName}"
+
+            def modifyCSS(data, baseURL):
+                matches = cssUrlRegex.findall(data)
+                for match in matches:
+                    resourceURL = match
+                    newURL = saveResourceLocally(str(resourceURL, 'utf8'), baseURL)
+                    if newURL is not None:
+                        newURL = newURL[len(saveFolder)+1:]
+                        data = data.replace(resourceURL, bytes(newURL, 'utf8'))
+
+                return data
+
+            self.driver.execute_script("""
+                const domElements = document.querySelectorAll("*");
+                for(let element of domElements)
+                {
+                    element.setAttribute("value", element.value);
+                }
+            """)
+
+            pageUrl = self.driver.current_url
+            source = str(self.driver.page_source)
+
+            getLogger().info(f"Saving HTML of page {pageUrl}")
+
+            self.driver.save_screenshot("test/" + saveOutputFileName + ".png")
+
+            with open("test/" + saveOutputFileName, "wt") as f:
+                f.write(modifyHTML(source, pageUrl))
+
+            if countSavedFiles < 10:
+                getLogger().error(f"ERROR ON PAGE {pageUrl}")
+            getLogger().info(f"Saved files for {folder}: {countSavedFiles}")
+
+            return None
+        except urllib3.exceptions.MaxRetryError:
+            self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during saveHTML: {traceback.format_exc()}"
+            return
+        except selenium.common.exceptions.WebDriverException:
+            self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during saveHTML: {traceback.format_exc()}"
+            return
+        except urllib3.exceptions.ProtocolError:
+            self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during saveHTML: {traceback.format_exc()}"
+            return
+        except AttributeError:
+            self.hasBrowserDied = True
+            self.browserDeathReason = f"Following fatal error occurred during saveHTML: {traceback.format_exc()}"
+            return

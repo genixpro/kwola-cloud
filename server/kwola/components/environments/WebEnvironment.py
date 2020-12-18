@@ -278,3 +278,24 @@ class WebEnvironment:
                 minNoActivityTimeout = min(minNoActivityTimeout, session.noActivityTimeout)
         for session in self.sessions:
             session.noActivityTimeout = minNoActivityTimeout
+
+    def saveHTML(self):
+        results = []
+        saveHTMLFutures = []
+        for session in self.sessions:
+            future = AsyncThreadFuture(session.saveHTML, [], timeout=self.config['testing_save_html_timeout'])
+            saveHTMLFutures.append(future)
+
+        for future, session in zip(saveHTMLFutures, self.sessions):
+            try:
+                result = future.result()
+            except TimeoutError:
+                getLogger().warning("Warning: timeout exceeded in WebEnvironment.saveHTML")
+                result = None
+                session.hasBrowserDied = True
+                session.browserDeathReason = f"The browser timed out while inside WebEnvironment.saveHTML"
+
+            results.append(result)
+
+        return results
+

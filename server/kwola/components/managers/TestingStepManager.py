@@ -117,7 +117,7 @@ class TestingStepManager:
     def createExecutionSessions(self):
         self.executionSessions = [
             ExecutionSession(
-                id=str(self.testStep.id) + "_session_" + str(sessionN),
+                id=str(self.testStep.id) + "-session-" + str(sessionN),
                 owner=self.testStep.owner,
                 status="running",
                 testingStepId=self.testStep.id,
@@ -224,7 +224,7 @@ class TestingStepManager:
             actions, times = self.agent.nextBestActions(self.step, images, envActionMaps, self.executionSessionTraces, shouldBeRandom=self.shouldBeRandom)
             actionDecisionTime = (datetime.now() - taskStartTime).total_seconds()
 
-            if actionDecisionTime > 15.0:
+            if actionDecisionTime > 1.0:
                 msg = f"Finished agent.nextBestActions after {actionDecisionTime} seconds. Subtimes:"
                 for key, time in times.items():
                     msg += f"\n    {key}: {time:.5f}"

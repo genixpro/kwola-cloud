@@ -213,6 +213,7 @@
   "testing_repeat_action_pixel_overlap_tolerance": 4,
   "testing_reset_agent_period": 1,
   "testing_run_action_timeout": 120,
+  "testing_save_html_timeout": 30,
   "testing_sequence_length": 100,
   "testing_sequences_in_parallel_per_training_loop": 2,
   "testing_sequences_per_training_loop": 2,

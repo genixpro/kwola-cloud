@@ -42,6 +42,8 @@ class RewriteProxy:
         self.executionSessionId = executionSessionId
         self.executionTraceId = None
 
+        self.resourcesByURL = {}
+
         self.filesAvailableInMemoryCache = set()
 
         for fileName in self.config.listAllFilesInFolder("proxy_cache"):
@@ -192,6 +194,7 @@ class RewriteProxy:
             if cached is not None:
                 flow.response.data.headers['Content-Length'] = str(len(cached))
                 flow.response.data.content = cached
+                self.resourcesByURL[flow.request.url] = cached
 
                 for plugin in self.plugins:
                     plugin.observeRequest(url=flow.request.url,
@@ -251,6 +254,9 @@ class RewriteProxy:
                 # We don't translate it or save it in the cache. Just leave as is.
                 getLogger().warning(f"Decided not to translate file {flow.request.url} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system.")
 
+                self.memoryCache[fileHash] = originalFileContents
+                self.resourcesByURL[fileURL] = originalFileContents
+
                 for plugin in self.plugins:
                     plugin.observeRequest(url=flow.request.url,
                                           statusCode=flow.response.status_code,
@@ -268,6 +274,7 @@ class RewriteProxy:
 
                 self.saveInCache(fileHash, fileURL, transformed)
                 self.memoryCache[fileHash] = transformed
+                self.resourcesByURL[fileURL] = transformed
 
                 flow.response.data.headers['Content-Length'] = str(len(transformed))
                 flow.response.data.content = transformed
@@ -283,6 +290,9 @@ class RewriteProxy:
                                           )
 
             else:
+                self.memoryCache[fileHash] = originalFileContents
+                self.resourcesByURL[fileURL] = originalFileContents
+
                 for plugin in self.plugins:
                     plugin.observeRequest(url=flow.request.url,
                                           statusCode=flow.response.status_code,

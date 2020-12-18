@@ -157,11 +157,11 @@ class TestingRunManager:
         return job
 
     def launchTestingStep(self):
-        logging.info(f"Starting a testing step for run {self.run.id}")
-
         completedTestingSteps = int(self.run.testingSessionsCompleted / self.config['web_session_parallel_execution_sessions'])
 
         jobId = f"{self.run.id}-testingstep-{''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for n in range(5))}"
+
+        logging.info(f"Starting a testing step for run {self.run.id} with job id {jobId}")
 
         if self.cloudConfigData['features']['localRuns']:
             job = ManagedTaskSubprocess(["python3", "-m", "kwolacloud.tasks.SingleTestingStepTaskLocal"], {

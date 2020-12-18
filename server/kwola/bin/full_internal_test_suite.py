@@ -35,5 +35,6 @@ def main():
         exit(1)
 
     runner = unittest.TextTestRunner(verbosity=3)
+    runner.run(unittest.defaultTestLoader.loadTestsFromName("kwola.tests.test_html_saver.TestHTMLSaver"))
     runner.run(unittest.defaultTestLoader.loadTestsFromName("kwola.tests.test_training_loop.TestTrainingLoop"))
     runner.run(unittest.defaultTestLoader.loadTestsFromName("kwola.tests.test_end_to_end.TestEndToEnd"))
