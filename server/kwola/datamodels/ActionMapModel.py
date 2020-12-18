@@ -47,6 +47,10 @@ class ActionMap(EmbeddedDocument):
 
     canScroll = BooleanField()
 
+    canScrollUp = BooleanField()
+
+    canScrollDown = BooleanField()
+
     elementType = StringField()
     
     keywords = StringField()
@@ -56,6 +60,8 @@ class ActionMap(EmbeddedDocument):
     attributes = DictField(StringField(null=True))
 
     eventHandlers = ListField(StringField())
+
+    isOnTop = BooleanField()
 
     def doesOverlapWith(self, other, tolerancePixels=0):
         if abs(self.left - other.left) > tolerancePixels:
