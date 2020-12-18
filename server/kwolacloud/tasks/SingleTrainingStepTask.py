@@ -34,7 +34,7 @@ def runOneTrainingStepForRun(testingRunId, trainingStepsCompleted):
     try:
         gpu = 0
 
-        config = run.configuration.createKwolaCoreConfiguration(run.applicationId)
+        config = run.configuration.createKwolaCoreConfiguration(run.owner, run.applicationId, run.id)
 
         result = RunTrainingStep.runTrainingStep(config, testingRunId, trainingStepsCompleted, gpu=gpu, testingRunId=testingRunId, applicationId=run.applicationId, gpuWorldSize=1)
 

@@ -47,7 +47,7 @@ def postBugToCustomerJIRA(bug, application):
     else:
         issueId = jiraAPIResponse.json()['id']
 
-        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.id)
+        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, None)
 
         videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"),
                                      f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')

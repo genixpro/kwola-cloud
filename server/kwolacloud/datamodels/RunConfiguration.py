@@ -101,10 +101,12 @@ class RunConfiguration(EmbeddedDocument):
 
     enableWindowSizeMobile = BooleanField(default=False)
 
-    def createKwolaCoreConfiguration(self, applicationId):
+    def createKwolaCoreConfiguration(self, owner, applicationId, testingRunId):
         kwolaConfigData = getKwolaConfigurationData()
 
+        kwolaConfigData['owner'] = owner
         kwolaConfigData['applicationId'] = applicationId
+        kwolaConfigData['testingRunId'] = testingRunId
         kwolaConfigData['url'] = self.url
         kwolaConfigData['email'] = self.email
         kwolaConfigData['password'] = self.password

@@ -56,7 +56,7 @@ def sendBugFoundNotification(application, bug):
         "bugUrl": f"{configData['frontend']['url']}app/dashboard/bugs/{bug.id}"
     }
 
-    config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.id)
+    config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, None)
 
     videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"), f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
 
