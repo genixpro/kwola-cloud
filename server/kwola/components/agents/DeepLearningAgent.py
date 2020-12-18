@@ -764,7 +764,7 @@ class DeepLearningAgent:
         modelDownscale = self.config['model_image_downscale_ratio']
 
         zippedValues = zip(range(len(processedImages)), processedImages, symbolLists, symbolWeights, envActionMaps, recentActions)
-        for sampleIndex, image, sampleSymbolList, sampleSymbolWeights, filteredSampleActionMaps, sampleRecentActions in zippedValues:
+        for sampleIndex, image, sampleSymbolList, sampleSymbolWeights, sampleActionMaps, sampleRecentActions in zippedValues:
             # Ok here is a very important mechanism. Technically what is being calculated below is the "epsilon" value from classical
             # Q-learning. I'm just giving it a different name which suits my style. The "epsilon" is just the probability that the
             # algorithm will choose a random action instead of the prediction. In our situation, we have two values, because we have
@@ -785,7 +785,7 @@ class DeepLearningAgent:
             weightedRandomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.25 * (1 + (stepNumber / self.config['testing_sequence_length']))
 
             # Filter the action maps to reduce instances where the algorithm is repeating itself over and over again.
-            filteredSampleActionMaps, sampleActionRecentActionCounts = self.filterActionMapsToPreventRepeatActions(filteredSampleActionMaps, sampleRecentActions, width, height)
+            filteredSampleActionMaps, sampleActionRecentActionCounts = self.filterActionMapsToPreventRepeatActions(sampleActionMaps, sampleRecentActions, width, height)
 
             # Create the pixel action map, which is basically a pixel by pixel representation of what actions are available to the algorithm.
             pixelActionMap = self.createPixelActionMap(filteredSampleActionMaps, height, width)
@@ -800,7 +800,7 @@ class DeepLearningAgent:
                 symbolListOffsets.append(len(symbolListBatch))
                 symbolListBatch.extend(sampleSymbolList)
                 symbolWeightBatch.extend(sampleSymbolWeights)
-                originalActionMapsBatch.append(filteredSampleActionMaps)
+                originalActionMapsBatch.append(sampleActionMaps)
                 filteredActionMapsBatch.append(filteredSampleActionMaps)
                 pixelActionMapsBatch.append(pixelActionMap)
                 recentActionsBatch.append(sampleRecentActions)
