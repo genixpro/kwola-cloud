@@ -35,6 +35,8 @@ if (process.env.REACT_APP_ENABLE_SENTRY_TRACKING === 'true')
     Sentry.init({dsn: "https://263fefbc56504ff3b2c5ab6f7c7ba885@o436249.ingest.sentry.io/5396968"});
 }
 
+document.title = process.env.REACT_APP_ENVIRONMENT_TITLE;
+
 ReactDOM.render(<MaterialAdmin />, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
