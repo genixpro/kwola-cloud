@@ -48,7 +48,11 @@ class Resource(Document):
 
     didRewriteResource = BooleanField()
 
+    rewritePluginName = StringField()
+
     rewriteMode = StringField()
+
+    rewriteMessage = StringField()
 
     contentType = StringField()
 

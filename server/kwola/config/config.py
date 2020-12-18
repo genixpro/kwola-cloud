@@ -223,7 +223,7 @@ class KwolaCoreConfiguration:
             return data
 
     @autoretry()
-    def saveKwolaFileData(self, folder, fileName, fileData):
+    def saveKwolaFileData(self, folder, fileName, fileData, useCacheBucket=False):
         filePath = os.path.join(folder, fileName)
 
         if self['data_file_storage_method'] == 'local':
@@ -244,14 +244,17 @@ class KwolaCoreConfiguration:
                 raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
 
             storageClient = getSharedGCSStorageClient()
-            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
+            bucketId = "kwola-testing-run-data-" + self.applicationId
+            if useCacheBucket:
+                bucketId += "-cache"
+            applicationStorageBucket = storage.Bucket(storageClient, bucketId)
             objectBlob = storage.Blob(filePath, applicationStorageBucket)
             objectBlob.upload_from_string(fileData)
         else:
             raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for configuration data_file_storage_method")
 
     @autoretry()
-    def loadKwolaFileData(self, folder, fileName, printErrorOnFailure=True):
+    def loadKwolaFileData(self, folder, fileName, printErrorOnFailure=True, useCacheBucket=False):
         filePath = os.path.join(folder, fileName)
 
         try:
@@ -264,7 +267,10 @@ class KwolaCoreConfiguration:
                     raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
 
                 storageClient = getSharedGCSStorageClient()
-                applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
+                bucketId = "kwola-testing-run-data-" + self.applicationId
+                if useCacheBucket:
+                    bucketId += "-cache"
+                applicationStorageBucket = storage.Bucket(storageClient, bucketId)
                 objectBlob = storage.Blob(filePath, applicationStorageBucket)
                 data = objectBlob.download_as_string()
                 return data
@@ -284,7 +290,7 @@ class KwolaCoreConfiguration:
             return
 
     @autoretry()
-    def deleteKwolaFileData(self, folder, fileName):
+    def deleteKwolaFileData(self, folder, fileName, useCacheBucket=False):
         filePath = os.path.join(folder, fileName)
 
         try:
@@ -295,7 +301,10 @@ class KwolaCoreConfiguration:
                     raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
 
                 storageClient = getSharedGCSStorageClient()
-                applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
+                bucketId = "kwola-testing-run-data-" + self.applicationId
+                if useCacheBucket:
+                    bucketId += "-cache"
+                applicationStorageBucket = storage.Bucket(storageClient, bucketId)
                 objectBlob = storage.Blob(filePath, applicationStorageBucket)
                 objectBlob.delete()
                 return
@@ -307,7 +316,7 @@ class KwolaCoreConfiguration:
             return
 
     @autoretry()
-    def listAllFilesInFolder(self, folder):
+    def listAllFilesInFolder(self, folder, useCacheBucket=False):
         if self['data_file_storage_method'] == 'local':
             dir = os.path.join(self.configurationDirectory, folder)
             if os.path.exists(dir):
@@ -319,7 +328,11 @@ class KwolaCoreConfiguration:
                 raise RuntimeError("Can't load object from google cloud storage without an applicationId, which is used to indicate the bucket.")
 
             storageClient = getSharedGCSStorageClient()
-            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + self.applicationId)
+
+            bucketId = "kwola-testing-run-data-" + self.applicationId
+            if useCacheBucket:
+                bucketId += "-cache"
+            applicationStorageBucket = storage.Bucket(storageClient, bucketId)
 
             blobs = applicationStorageBucket.list_blobs(prefix=folder, delimiter="")
 

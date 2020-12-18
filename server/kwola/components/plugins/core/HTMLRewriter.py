@@ -8,13 +8,16 @@ class HTMLRewriter(ProxyPluginBase):
         Represents a plugin for the rewrite proxy
     """
 
-    rewriteMode = "html"
+    rewritePluginName = "html"
 
     def __init__(self, config):
         self.config = config
 
+        # We want to strip out any "integrity" attributes that we see on html elements
+        self.integrityRegex = re.compile(r"integrity\w*=\w*['\"]sha\d\d?\d?-[a-zA-Z0-9+/=]+['\"]")
 
-    def willRewriteFile(self, url, contentType, fileData):
+
+    def shouldHandleFile(self, url, contentType, fileData):
         if '.js' not in url and not ".json" in url and ".css" not in url:
             kind = filetype.guess(fileData)
             mime = ''
@@ -39,14 +42,14 @@ class HTMLRewriter(ProxyPluginBase):
             return False
 
 
+    def getRewriteMode(self, url, contentType, fileData):
+        return "integrity_attribute_replacement", None
+
 
     def rewriteFile(self, url, contentType, fileData):
         stringData = str(fileData, 'utf8')
 
-        # We want to strip out any "integrity" attributes that we see on html elements
-        integrityRegex = re.compile(r"integrity\w*=\w*['\"]sha\d\d?\d?-[a-zA-Z0-9+/=]+['\"]")
-
-        stringData = re.sub(integrityRegex, "", stringData)
+        stringData = re.sub(self.integrityRegex, "", stringData)
         bytesData = bytes(stringData, "utf8")
 
         return bytesData

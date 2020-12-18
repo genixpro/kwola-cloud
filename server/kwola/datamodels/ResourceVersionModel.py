@@ -56,6 +56,16 @@ class ResourceVersion(Document):
 
     didRewriteResource = BooleanField()
 
+    rewritePluginName = StringField()
+
+    rewriteMode = StringField()
+
+    rewriteMessage = StringField()
+
+    originalLength = IntField()
+
+    rewrittenLength = IntField()
+
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
         saveObjectToDisk(self, "resource_versions", config, overrideSaveFormat=overrideSaveFormat, overrideCompression=overrideCompression)
 
@@ -64,14 +74,14 @@ class ResourceVersion(Document):
         return loadObjectFromDisk(ResourceVersion, id, "resource_versions", config, printErrorOnFailure=printErrorOnFailure)
 
     def loadOriginalResourceContents(self, config):
-        return config.loadKwolaFileData("resource_original_contents", self.id)
+        return config.loadKwolaFileData("resource_original_contents", self.id, useCacheBucket=True)
 
     def saveOriginalResourceContents(self, config, data):
-        return config.saveKwolaFileData("resource_original_contents", self.id, data)
+        return config.saveKwolaFileData("resource_original_contents", self.id, data, useCacheBucket=True)
 
     def loadTranslatedResourceContents(self, config):
-        return config.loadKwolaFileData("resource_translated_contents", self.id)
+        return config.loadKwolaFileData("resource_translated_contents", self.id, useCacheBucket=True)
 
     def saveTranslatedResourceContents(self, config, data):
-        return config.saveKwolaFileData("resource_translated_contents", self.id, data)
+        return config.saveKwolaFileData("resource_translated_contents", self.id, data, useCacheBucket=True)
 

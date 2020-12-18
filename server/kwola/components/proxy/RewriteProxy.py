@@ -178,9 +178,9 @@ class RewriteProxy:
                         resourceVersion = ResourceVersion.loadFromDisk(versionId, self.config, printErrorOnFailure=False)
                         if resourceVersion is not None:
                             transformedContents = resourceVersion.loadTranslatedResourceContents(self.config)
-                            self.memoryCache[versionId] = transformedContents
 
                     if transformedContents is not None:
+                        self.memoryCache[versionId] = transformedContents
                         flow.response.data.headers['Content-Length'] = str(len(transformedContents))
                         flow.response.data.content = transformedContents
 
@@ -197,9 +197,11 @@ class RewriteProxy:
                     url=flow.request.url,
                     canonicalUrl=canonicalUrl,
                     creationDate=datetime.datetime.now(),
-                    rewriteMode=None,
                     didRewriteResource=False,
-                    contentType=contentType
+                    contentType=contentType,
+                    rewritePluginName=None,
+                    rewriteMode=None,
+                    rewriteMessage=None
                 )
 
                 resource.saveToDisk(self.config)
@@ -213,39 +215,6 @@ class RewriteProxy:
             originalFileContents = bytes(flow.response.data.content)
             unzippedFileContents, gzipped = self.decompressDataIfNeeded(originalFileContents)
 
-            if len(unzippedFileContents) == 0:
-                self.memoryCache[versionId] = unzippedFileContents
-                return
-
-            chosenPlugin = None
-            for plugin in self.plugins:
-                if plugin.willRewriteFile(fileURL, contentType, unzippedFileContents):
-                    chosenPlugin = plugin
-                    break
-
-            foundSimilarOriginal = False
-            foundOriginalFileURL = None
-            if chosenPlugin is not None:
-                size = len(unzippedFileContents)
-                if size not in self.originalRewriteItemsBySize:
-                    self.originalRewriteItemsBySize[size] = []
-
-                for sameSizedOriginal, originalFileURL in self.originalRewriteItemsBySize[size]:
-                    charsDifferent = 0
-                    for chr, otherChr in zip(unzippedFileContents, sameSizedOriginal):
-                        if chr != otherChr:
-                            charsDifferent += 1
-                    portionDifferent = charsDifferent / size
-                    if portionDifferent < 0.20:
-                        # Basically we are looking at what is effectively the same file with some minor differences.
-                        # This is common with ad-serving, tracking tags and JSONP style responses.
-                        foundSimilarOriginal = True
-                        foundOriginalFileURL = originalFileURL
-                        break
-
-                if not foundSimilarOriginal:
-                    self.originalRewriteItemsBySize[size].append((unzippedFileContents, flow.request.url))
-
             resourceVersion = ResourceVersion(
                 id=resource.getVersionId(fileHash),
                 owner=(self.config['owner'] if 'owner' in self.config else None),
@@ -258,36 +227,69 @@ class RewriteProxy:
                 url=flow.request.url,
                 canonicalUrl=canonicalUrl,
                 contentType=contentType,
-                didRewriteResource=False
+                didRewriteResource=False,
+                rewritePluginName=None,
+                rewriteMode=None,
+                rewriteMessage=None,
+                originalLength=len(unzippedFileContents),
+                rewrittenLength=None
             )
 
-            if foundSimilarOriginal:
-                if self.config['web_session_print_javascript_translation_info']:
-                    # We don't translate it or save it in the cache. Just leave as is.
-                    getLogger().warning(f"Decided not to translate file {flow.request.url} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system.")
+            resourceVersion.saveToDisk(self.config)
 
-                self.memoryCache[versionId] = originalFileContents
+            if len(unzippedFileContents) == 0:
+                self.memoryCache[versionId] = unzippedFileContents
 
-                resourceVersion.didRewriteResource = False
-                resourceVersion.saveOriginalResourceContents(self.config, unzippedFileContents)
+                resource.saveToDisk(self.config)
                 resourceVersion.saveToDisk(self.config)
 
-            elif chosenPlugin is not None:
+                return
+
+            chosenPlugin = None
+            for plugin in self.plugins:
+                if plugin.shouldHandleFile(fileURL, contentType, unzippedFileContents):
+                    chosenPlugin = plugin
+                    break
+
+            if chosenPlugin is not None:
+                resource.rewritePluginName = chosenPlugin.rewritePluginName
+                resourceVersion.rewritePluginName = chosenPlugin.rewritePluginName
+
+                foundSimilarOriginal, foundOriginalFileURL = self.findSimilarOriginal(fileURL, unzippedFileContents)
+
+                if foundSimilarOriginal:
+                    rewriteMessage = f"Decided not to translate file {flow.request.url} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system."
+
+                    resource.rewriteMode = None
+                    resource.rewriteMessage = rewriteMessage
+                    resource.didRewriteResource = False
+
+                    resourceVersion.rewriteMode = None
+                    resourceVersion.rewriteMessage = rewriteMessage
+                    resourceVersion.didRewriteResource = True
+
+                else:
+                    rewriteMode, rewriteMessage = chosenPlugin.getRewriteMode(fileURL, contentType, unzippedFileContents)
+                    resource.rewriteMode = rewriteMode
+                    resource.rewriteMessage = rewriteMessage
+                    resourceVersion.rewriteMode = rewriteMode
+                    resourceVersion.rewriteMessage = rewriteMessage
+                    if rewriteMode is not None:
+                        resource.didRewriteResource = True
+                        resourceVersion.didRewriteResource = True
+
+            if resourceVersion.rewriteMode is not None:
+                if self.config['web_session_print_javascript_translation_info'] and resourceVersion.rewriteMessage:
+                    getLogger().info(resourceVersion.rewriteMessage)
+
                 transformedContents = chosenPlugin.rewriteFile(fileURL, contentType, unzippedFileContents)
 
                 if gzipped:
                     transformedContents = gzip.compress(transformedContents, compresslevel=9)
 
-                resource.rewriteMode = chosenPlugin.rewriteMode
-                resource.didRewriteResource = True
-                # Note! this extra resource save might be creating too much load. Eventually we should improve this.
-                resource.saveToDisk(self.config)
-
-                resourceVersion.didRewriteResource = True
-                resourceVersion.saveToDisk(self.config)
-
                 resourceVersion.saveOriginalResourceContents(self.config, unzippedFileContents)
                 resourceVersion.saveTranslatedResourceContents(self.config, transformedContents)
+                resourceVersion.rewrittenLength = len(transformedContents)
 
                 self.memoryCache[versionId] = transformedContents
 
@@ -295,13 +297,44 @@ class RewriteProxy:
                 flow.response.data.content = transformedContents
 
             else:
+                if self.config['web_session_print_javascript_translation_info'] and resourceVersion.rewriteMessage:
+                    getLogger().warning(resourceVersion.rewriteMessage)
+
                 self.memoryCache[versionId] = originalFileContents
 
-                resourceVersion.didRewriteResource = False
                 resourceVersion.saveOriginalResourceContents(self.config, originalFileContents)
-                resourceVersion.saveToDisk(self.config)
+
+            # Note! this extra resource save might be creating too much load. Eventually we should improve this.
+            resource.saveToDisk(self.config)
+            resourceVersion.saveToDisk(self.config)
 
         except Exception as e:
             getLogger().error(traceback.format_exc())
             return
 
+
+    def findSimilarOriginal(self, fileURL, unzippedFileContents):
+        foundSimilarOriginal = False
+        foundOriginalFileURL = None
+
+        size = len(unzippedFileContents)
+        if size not in self.originalRewriteItemsBySize:
+            self.originalRewriteItemsBySize[size] = []
+
+        for sameSizedOriginal, originalFileURL in self.originalRewriteItemsBySize[size]:
+            charsDifferent = 0
+            for chr, otherChr in zip(unzippedFileContents, sameSizedOriginal):
+                if chr != otherChr:
+                    charsDifferent += 1
+            portionDifferent = charsDifferent / size
+            if portionDifferent < 0.20:
+                # Basically we are looking at what is effectively the same file with some minor differences.
+                # This is common with ad-serving, tracking tags and JSONP style responses.
+                foundSimilarOriginal = True
+                foundOriginalFileURL = originalFileURL
+                break
+
+        if not foundSimilarOriginal:
+            self.originalRewriteItemsBySize[size].append((unzippedFileContents, fileURL))
+
+        return foundSimilarOriginal, foundOriginalFileURL
