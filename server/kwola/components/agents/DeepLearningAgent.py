@@ -1113,9 +1113,11 @@ class DeepLearningAgent:
                     actionTypes.append(self.actionsSorted.index("clear"))
 
         if actionMap['canScroll']:
-            for actionName in self.actionsSorted:
-                if actionName.startswith("scroll"):
-                    actionTypes.append(self.actionsSorted.index(actionName))
+            if actionMap['canScrollUp'] and 'scrollUp' in self.actionsSorted:
+                actionTypes.append(self.actionsSorted.index('scrollUp'))
+
+            if actionMap['canScrollDown'] and 'scrollDown' in self.actionsSorted:
+                actionTypes.append(self.actionsSorted.index('scrollDown'))
 
         return actionTypes
 

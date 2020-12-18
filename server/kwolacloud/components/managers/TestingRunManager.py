@@ -39,6 +39,7 @@ import time
 import io
 import traceback
 import zipfile
+import concurrent.futures
 from mongoengine.queryset.visitor import Q
 
 
@@ -635,20 +636,34 @@ class TestingRunManager:
 
             totalNewSymbols = 0
             totalSplitSymbols = 0
-    
+            traceFutures = []
+
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
+
             for testingStepId in testingStepIdsToProcess:
                 testingStep = TestingStep.loadFromDisk(testingStepId, config)
                 for executionSessionId in testingStep.executionSessions:
                     executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
 
                     if executionSession.status == "completed":
-                        traces = []
                         for executionTraceId in executionSession.executionTraces:
-                            traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
+                            traceFutures.append(executor.submit(ExecutionTrace.loadFromDisk, executionTraceId, config, applicationId=testingStep.applicationId))
 
-                        newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
+                    if len(traceFutures) > 1000:
+                        newSymbols, splitSymbols = symbolMap.assignNewSymbols([
+                            future.result() for future in traceFutures
+                        ])
                         totalNewSymbols += newSymbols
                         totalSplitSymbols += splitSymbols
+                        traceFutures = []
+
+            newSymbols, splitSymbols = symbolMap.assignNewSymbols([
+                future.result() for future in traceFutures
+            ])
+            totalNewSymbols += newSymbols
+            totalSplitSymbols += splitSymbols
+
+            executor.shutdown()
 
             logging.info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from the testing steps: {', '.join(testingStepIdsToProcess)}")
 

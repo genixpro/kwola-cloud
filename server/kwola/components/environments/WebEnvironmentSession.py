@@ -577,7 +577,7 @@ class WebEnvironmentSession:
             if self.hasBrowserDied:
                 return []
 
-            elementActionMaps = self.driver.execute_script("""
+            elementActionMaps, error = self.driver.execute_script("""
                 function isFunction(functionToCheck) {
                  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
                 }
@@ -591,201 +591,233 @@ class WebEnvironmentSession:
                 }
             
                 const actionMaps = [];
-                const domElements = document.querySelectorAll("*");
-                
-                for(let element of domElements)
+                try
                 {
-                    const bounds = element.getBoundingClientRect();
-                   
-                    if (bounds.bottom < 0 || bounds.right < 0)
-                        continue;
+                    const domElements = document.querySelectorAll("*");
+                    
+                    for(let element of domElements)
+                    {
+                        const bounds = element.getBoundingClientRect();
+                       
+                        if (bounds.bottom < 0 || bounds.right < 0)
+                            continue;
+                            
+                        if (bounds.top > window.innerHeight || bounds.left > window.innerWidth)
+                            continue;
                         
-                    if (bounds.top > window.innerHeight || bounds.left > window.innerWidth)
-                        continue;
-                    
-                    const paddingLeft = Number(window.getComputedStyle(element, null).getPropertyValue('padding-left').replace("px", ""));
-                    const paddingRight = Number(window.getComputedStyle(element, null).getPropertyValue('padding-right').replace("px", ""));
-                    const paddingTop = Number(window.getComputedStyle(element, null).getPropertyValue('padding-top').replace("px", ""));
-                    const paddingBottom = Number(window.getComputedStyle(element, null).getPropertyValue('padding-bottom').replace("px", ""));
-                    
-                    const data = {
-                        canClick: false,
-                        canRightClick: false,
-                        canType: false,
-                        canScroll: false,
-                        left: bounds.left + paddingLeft + 3,
-                        right: bounds.right - paddingRight - 3,
-                        top: bounds.top + paddingTop + 3,
-                        bottom: bounds.bottom - paddingBottom - 3,
-                        width: bounds.width - paddingLeft - paddingRight - 6,
-                        height: bounds.height - paddingTop - paddingBottom - 6,
-                        elementType: element.tagName.toLowerCase(),
-                        keywords: ( element.innerText + " " + element.getAttribute("class") + " " +
-                                    element.getAttribute("name") + " " + element.getAttribute("id") + " " + 
-                                    element.getAttribute("type") + " " + element.getAttribute("placeholder") + " " + 
-                                    element.getAttribute("title") + " " + element.getAttribute("aria-label") + " " + 
-                                    element.getAttribute("aria-placeholder") + " " + element.getAttribute("aria-roledescription")
-                                  ).toLowerCase().replace(/\\s+/g, " ").replace(/null/g, "").replace(/undefined/g, "").trim(),
-                        inputValue: String(element.value).replace(/undefined/g, "").replace("null", ""),
-                        attributes: {
-                            "href": String(element.getAttribute("href")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "src": String(element.getAttribute("src")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "class": String(element.getAttribute("class")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "name": String(element.getAttribute("name")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "id": String(element.getAttribute("id")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "type": String(element.getAttribute("type")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "placeholder": String(element.getAttribute("placeholder")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "title": String(element.getAttribute("title")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "aria-label": String(element.getAttribute("aria-label")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "aria-placeholder": String(element.getAttribute("aria-placeholder")).replace(/null/g, "").replace(/undefined/g, ""),
-                            "aria-roledescription": String(element.getAttribute("aria-roledescription")).replace(/null/g, "").replace(/undefined/g, "")
-                        },
-                        eventHandlers: []
-                    };
+                        const paddingLeft = Number(window.getComputedStyle(element, null).getPropertyValue('padding-left').replace("px", ""));
+                        const paddingRight = Number(window.getComputedStyle(element, null).getPropertyValue('padding-right').replace("px", ""));
+                        const paddingTop = Number(window.getComputedStyle(element, null).getPropertyValue('padding-top').replace("px", ""));
+                        const paddingBottom = Number(window.getComputedStyle(element, null).getPropertyValue('padding-bottom').replace("px", ""));
+                        
+                        const data = {
+                            canClick: false,
+                            canRightClick: false,
+                            canType: false,
+                            canScroll: false,
+                            canScrollUp: false,
+                            canScrollDown: false,
+                            left: bounds.left + paddingLeft + 3,
+                            right: bounds.right - paddingRight - 3,
+                            top: bounds.top + paddingTop + 3,
+                            bottom: bounds.bottom - paddingBottom - 3,
+                            width: bounds.width - paddingLeft - paddingRight - 6,
+                            height: bounds.height - paddingTop - paddingBottom - 6,
+                            elementType: element.tagName.toLowerCase(),
+                            keywords: ( element.innerText + " " + element.getAttribute("class") + " " +
+                                        element.getAttribute("name") + " " + element.getAttribute("id") + " " + 
+                                        element.getAttribute("type") + " " + element.getAttribute("placeholder") + " " + 
+                                        element.getAttribute("title") + " " + element.getAttribute("aria-label") + " " + 
+                                        element.getAttribute("aria-placeholder") + " " + element.getAttribute("aria-roledescription")
+                                      ).toLowerCase().replace(/\\s+/g, " ").replace(/null/g, "").replace(/undefined/g, "").trim(),
+                            inputValue: String(element.value).replace(/undefined/g, "").replace("null", ""),
+                            attributes: {
+                                "href": String(element.getAttribute("href")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "src": String(element.getAttribute("src")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "class": String(element.getAttribute("class")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "name": String(element.getAttribute("name")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "id": String(element.getAttribute("id")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "type": String(element.getAttribute("type")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "placeholder": String(element.getAttribute("placeholder")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "title": String(element.getAttribute("title")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "aria-label": String(element.getAttribute("aria-label")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "aria-placeholder": String(element.getAttribute("aria-placeholder")).replace(/null/g, "").replace(/undefined/g, ""),
+                                "aria-roledescription": String(element.getAttribute("aria-roledescription")).replace(/null/g, "").replace(/undefined/g, "")
+                            },
+                            eventHandlers: []
+                        };
+                        
+                        const elementAtPosition = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+                        if (elementAtPosition === null || element.contains(elementAtPosition) || elementAtPosition.contains(element))
+                        {
+                            data.isOnTop = true;
+                        }
+                        else
+                        {
+                            data.isOnTop = false;
+                        }
+    
+                        if (window.kwolaEvents && window.kwolaEvents.has(element))
+                        {
+                            data.eventHandlers = uniques(window.kwolaEvents.get(element));
+                        }
+                        
+                        if ( element.tagName === "BUTTON"
+                                || element.tagName === "A"
+                                || element.tagName === "AREA"
+                                || element.tagName === "AUDIO"
+                                || element.tagName === "VIDEO"
+                                || element.tagName === "OPTION"
+                                || element.tagName === "SELECT")
+                            data.canClick = true;
+                            
+                        if (element.tagName === "INPUT" && !(element.getAttribute("type") === "text" 
+                                                             || element.getAttribute("type") === "" 
+                                                             || element.getAttribute("type") === "password"
+                                                             || element.getAttribute("type") === "email"
+                                                             || element.getAttribute("type") === null 
+                                                             || element.getAttribute("type") === undefined 
+                                                             || !element.getAttribute("type")
+                                                          ))
+                            data.canClick = true;
+                        
+                        const elemStyle = window.getComputedStyle(element);
+                        if ((elemStyle.getPropertyValue("overflow-y") === "scroll" || elemStyle.getPropertyValue("overflow-y") === "auto" ||
+                            (elemStyle.getPropertyValue("overflow-y") === "visible" && (element.tagName.toLowerCase() === "html" || element.tagName.toLowerCase() === "body") )
+                           )
+                             && element.scrollHeight > element.clientHeight)
+                            data.canScroll = true;
 
-                    if (window.kwolaEvents && window.kwolaEvents.has(element))
-                    {
-                        data.eventHandlers = uniques(window.kwolaEvents.get(element));
+                            if(element.scrollHeight - element.scrollTop - element.clientHeight >= 5)
+                            {
+                                data.canScrollDown = true;
+                            }
+
+                            if(element.scrollTop > 5)
+                            {
+                                data.canScrollUp = true;
+                            }
+                        
+                        if (element.tagName === "TEXTAREA")
+                            data.canType = true;
+                            
+                        if (element.tagName === "INPUT" && (element.getAttribute("type") === "text" 
+                                                             || element.getAttribute("type") === "" 
+                                                             || element.getAttribute("type") === "password"
+                                                             || element.getAttribute("type") === "email"
+                                                             || element.getAttribute("type") === null 
+                                                             || element.getAttribute("type") === undefined 
+                                                             || !element.getAttribute("type")
+                                                          ))
+                            data.canType = true;
+                            
+                        if (element.contentEditable === 'true' || element.contentEditable === true)
+                            data.canType = true;
+                        
+                        // Determine whether this element is full screen
+                        var fullScreen = false;
+                        if (data.width > (window.innerWidth * 0.80) && data.height > (window.innerHeight * 0.80))
+                        {
+                            fullScreen = true;
+                        }
+                            
+                        if (element.tagName !== "HTML" && element.tagName !== "BODY" && !fullScreen)
+                        {
+                            if (isFunction(element.onclick) 
+                                || isFunction(element.onmousedown)
+                                || isFunction(element.onmouseup)
+                                || isFunction(element.onpointerdown)
+                                || isFunction(element.onpointerup)
+                                || isFunction(element.ontouchend)
+                                || isFunction(element.ontouchstart))
+                                data.canClick = true;
+                            
+                            if (isFunction(element.oncontextmenu)
+                                || isFunction(element.onauxclick))
+                                data.canRightClick = true;
+                            
+                            if (isFunction(element.onkeydown) 
+                                || isFunction(element.onkeypress) 
+                                || isFunction(element.onkeyup))
+                                data.canType = true;
+                            
+                            if (data.eventHandlers.indexOf("click") != -1)
+                            {
+                                data.canClick = true;
+                            }
+                            if (data.eventHandlers.indexOf("contextmenu") != -1)
+                            {
+                                data.canRightClick = true;
+                            }
+                            if (data.eventHandlers.indexOf("dblclick") != -1)
+                            {
+                                data.canClick = true;
+                            }
+                            
+                            if (data.eventHandlers.indexOf("mousedown") != -1)
+                            {
+                                data.canClick = true;
+                                data.canRightClick = true;
+                            }
+                            if (data.eventHandlers.indexOf("mouseup") != -1)
+                            {
+                                data.canClick = true;
+                                data.canRightClick = true;
+                            }
+                            
+                            if (data.eventHandlers.indexOf("pointerdown") != -1)
+                            {
+                                data.canClick = true;
+                                data.canRightClick = true;
+                            }
+                            if (data.eventHandlers.indexOf("pointerup") != -1)
+                            {
+                                data.canClick = true;
+                                data.canRightClick = true;
+                            }
+                            
+                            if (data.eventHandlers.indexOf("touchend") != -1)
+                            {
+                                data.canClick = true;
+                            }
+                            if (data.eventHandlers.indexOf("touchstart") != -1)
+                            {
+                                data.canClick = true;
+                            }
+                            
+                            if (data.eventHandlers.indexOf("auxclick") != -1)
+                            {
+                                data.canRightClick = true;
+                            }
+                            
+                            if (data.eventHandlers.indexOf("keydown") != -1)
+                            {
+                                data.canType = true;
+                            }
+                            if (data.eventHandlers.indexOf("keypress") != -1)
+                            {
+                                data.canType = true;
+                            }
+                            if (data.eventHandlers.indexOf("keyup") != -1)
+                            {
+                                data.canType = true;
+                            }
+                        }
+                        
+                        if (data.width >= 1 && data.height >= 1)
+                            actionMaps.push(data);
                     }
-                    
-                    if ( element.tagName === "BUTTON"
-                            || element.tagName === "A"
-                            || element.tagName === "AREA"
-                            || element.tagName === "AUDIO"
-                            || element.tagName === "VIDEO"
-                            || element.tagName === "OPTION"
-                            || element.tagName === "SELECT")
-                        data.canClick = true;
-                        
-                    if (element.tagName === "INPUT" && !(element.getAttribute("type") === "text" 
-                                                         || element.getAttribute("type") === "" 
-                                                         || element.getAttribute("type") === "password"
-                                                         || element.getAttribute("type") === "email"
-                                                         || element.getAttribute("type") === null 
-                                                         || element.getAttribute("type") === undefined 
-                                                         || !element.getAttribute("type")
-                                                      ))
-                        data.canClick = true;
-                    
-                    const elemStyle = window.getComputedStyle(element);
-                    if ((elemStyle.getPropertyValue("overflow-y") === "scroll" || elemStyle.getPropertyValue("overflow-y") === "auto" ||
-                        (elemStyle.getPropertyValue("overflow-y") === "visible" && (element.tagName.toLowerCase() === "html" || element.tagName.toLowerCase() === "body") )
-                       )
-                         && element.scrollHeight > element.clientHeight)
-                        data.canScroll = true;
-                    
-                    if (element.tagName === "TEXTAREA")
-                        data.canType = true;
-                        
-                    if (element.tagName === "INPUT" && (element.getAttribute("type") === "text" 
-                                                         || element.getAttribute("type") === "" 
-                                                         || element.getAttribute("type") === "password"
-                                                         || element.getAttribute("type") === "email"
-                                                         || element.getAttribute("type") === null 
-                                                         || element.getAttribute("type") === undefined 
-                                                         || !element.getAttribute("type")
-                                                      ))
-                        data.canType = true;
-                        
-                    if (element.contentEditable === 'true' || element.contentEditable === true)
-                        data.canType = true;
-                    
-                    // Determine whether this element is full screen
-                    var fullScreen = false;
-                    if (data.width > (window.innerWidth * 0.90) && data.height > (window.innerHeight * 0.90))
-                    {
-                        fullScreen = true;
-                    }
-                        
-                    if (element.tagName !== "HTML" && element.tagName !== "BODY" && !fullScreen)
-                    {
-                        if (isFunction(element.onclick) 
-                            || isFunction(element.onmousedown)
-                            || isFunction(element.onmouseup)
-                            || isFunction(element.onpointerdown)
-                            || isFunction(element.onpointerup)
-                            || isFunction(element.ontouchend)
-                            || isFunction(element.ontouchstart))
-                            data.canClick = true;
-                        
-                        if (isFunction(element.oncontextmenu)
-                            || isFunction(element.onauxclick))
-                            data.canRightClick = true;
-                        
-                        if (isFunction(element.onkeydown) 
-                            || isFunction(element.onkeypress) 
-                            || isFunction(element.onkeyup))
-                            data.canType = true;
-                        
-                        if (data.eventHandlers.indexOf("click") != -1)
-                        {
-                            data.canClick = true;
-                        }
-                        if (data.eventHandlers.indexOf("contextmenu") != -1)
-                        {
-                            data.canRightClick = true;
-                        }
-                        if (data.eventHandlers.indexOf("dblclick") != -1)
-                        {
-                            data.canClick = true;
-                        }
-                        
-                        if (data.eventHandlers.indexOf("mousedown") != -1)
-                        {
-                            data.canClick = true;
-                            data.canRightClick = true;
-                        }
-                        if (data.eventHandlers.indexOf("mouseup") != -1)
-                        {
-                            data.canClick = true;
-                            data.canRightClick = true;
-                        }
-                        
-                        if (data.eventHandlers.indexOf("pointerdown") != -1)
-                        {
-                            data.canClick = true;
-                            data.canRightClick = true;
-                        }
-                        if (data.eventHandlers.indexOf("pointerup") != -1)
-                        {
-                            data.canClick = true;
-                            data.canRightClick = true;
-                        }
-                        
-                        if (data.eventHandlers.indexOf("touchend") != -1)
-                        {
-                            data.canClick = true;
-                        }
-                        if (data.eventHandlers.indexOf("touchstart") != -1)
-                        {
-                            data.canClick = true;
-                        }
-                        
-                        if (data.eventHandlers.indexOf("auxclick") != -1)
-                        {
-                            data.canRightClick = true;
-                        }
-                        
-                        if (data.eventHandlers.indexOf("keydown") != -1)
-                        {
-                            data.canType = true;
-                        }
-                        if (data.eventHandlers.indexOf("keypress") != -1)
-                        {
-                            data.canType = true;
-                        }
-                        if (data.eventHandlers.indexOf("keyup") != -1)
-                        {
-                            data.canType = true;
-                        }
-                    }
-                    
-                    if (data.width >= 1 && data.height >= 1)
-                        actionMaps.push(data);
-                }
                 
-                return actionMaps;
+                    return [actionMaps, ""];
+                }
+                catch(err)
+                {
+                    return [actionMaps, err.toString()];
+                }
             """)
+
+            if error:
+                raise RuntimeError(f"Error in the javascript within WebEnvironmentSession.getActionMaps: {error}")
 
             actionMaps = []
 
@@ -817,11 +849,14 @@ class WebEnvironmentSession:
                         overlapMap.elementType = actionMap.elementType
 
                     overlapMap.canScroll = overlapMap.canScroll or actionMap.canScroll
+                    overlapMap.canScrollUp = overlapMap.canScrollUp or actionMap.canScrollUp
+                    overlapMap.canScrollDown = overlapMap.canScrollDown or actionMap.canScrollDown
                     overlapMap.canClick = overlapMap.canClick or actionMap.canClick
                     overlapMap.canType = overlapMap.canType or actionMap.canType
                     overlapMap.canRightClick = overlapMap.canRightClick or actionMap.canRightClick
                     overlapMap.keywords = overlapMap.keywords + " " + actionMap.keywords
                     overlapMap.inputValue = overlapMap.inputValue + " " + actionMap.inputValue
+                    overlapMap.isOnTop = overlapMap.isOnTop or actionMap.isOnTop
 
                     attributeKeys = set(overlapMap.attributes.keys()).union(set(actionMap.attributes.keys()))
                     for key in attributeKeys:
@@ -833,7 +868,7 @@ class WebEnvironmentSession:
 
             filteredActionMaps = []
             for actionMap in actionMaps:
-                if actionMap.canType or actionMap.canClick or actionMap.canRightClick or actionMap.canScroll:
+                if ((actionMap.canType or actionMap.canClick or actionMap.canRightClick) and actionMap.isOnTop) or actionMap.canScroll:
                     filteredActionMaps.append(actionMap)
 
             return filteredActionMaps

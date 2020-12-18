@@ -712,11 +712,13 @@ class TrainingManager:
 
             # We use this mechanism to force parallel preloading of all the execution traces. Otherwise it just takes forever...
             executionSessionIds = []
+            executionSessionCount = 0
             with concurrent.futures.ThreadPoolExecutor(max_workers=int(config['training_max_initialization_workers'] / config['training_batch_prep_subprocesses'])) as executor:
                 executionSessionFutures = []
                 for testStepIndex, testStep in enumerate(testingSteps):
-                    if testStepIndex % config['training_batch_prep_subprocesses'] == subprocessIndex:
-                        for sessionId in testStep.executionSessions:
+                    for sessionId in testStep.executionSessions:
+                        executionSessionCount += 1
+                        if executionSessionCount % config['training_batch_prep_subprocesses'] == subprocessIndex:
                             executionSessionIds.append(str(sessionId))
                             executionSessionFutures.append(executor.submit(TrainingManager.loadExecutionSession, sessionId, config))
 
