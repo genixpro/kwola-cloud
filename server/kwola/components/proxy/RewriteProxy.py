@@ -28,6 +28,7 @@ import traceback
 import gzip
 import filetype
 import re
+import json
 from pprint import pformat
 from ..plugins.base.ProxyPluginBase import ProxyPluginBase
 from ...datamodels.ResourceModel import Resource
@@ -36,6 +37,8 @@ from ..utils.deunique import deuniqueString
 from ...datamodels.CustomIDField import CustomIDField
 
 class RewriteProxy:
+    pathNumericalIdSegmentRegex = re.compile(r"/\d+")
+
     def __init__(self, config, plugins, testingRunId=None, testingStepId=None, executionSessionId=None):
         self.config = config
 
@@ -57,7 +60,9 @@ class RewriteProxy:
 
     @staticmethod
     def canonicalizeUrl(url):
-        return deuniqueString(url)
+        url = deuniqueString(url)
+        url = RewriteProxy.pathNumericalIdSegmentRegex.sub("/:id", url)
+        return url
 
     def getHashFromCacheFileName(self, fileName):
         hash = fileName.split("_")[-1].split(".")[0]
@@ -164,6 +169,9 @@ class RewriteProxy:
             fileHash = ProxyPluginBase.computeHash(bytes(flow.response.data.content))
             canonicalFileHash = ProxyPluginBase.computeHash(bytes(deuniqueString(flow.response.data.content), 'utf8'))
             versionId = None
+            fileURL = flow.request.url
+            originalFileContents = bytes(flow.response.data.content)
+            unzippedFileContents, gzipped = self.decompressDataIfNeeded(originalFileContents)
 
             if resource is not None:
                 if not resource.didRewriteResource:
@@ -194,26 +202,33 @@ class RewriteProxy:
                     id=resourceId,
                     owner=(self.config['owner'] if 'owner' in self.config else None),
                     applicationId=(self.config['applicationId'] if 'applicationId' in self.config else None),
-                    url=flow.request.url,
+                    url=fileURL,
                     canonicalUrl=canonicalUrl,
                     creationDate=datetime.datetime.now(),
                     didRewriteResource=False,
                     contentType=contentType,
                     rewritePluginName=None,
                     rewriteMode=None,
-                    rewriteMessage=None
+                    rewriteMessage=None,
+                    versionSaveMode="all"
                 )
+
+                if "application/json" in contentType \
+                        or "_json" in ProxyPluginBase.getCleanedFileName(fileURL) \
+                        or "_jsp" in ProxyPluginBase.getCleanedFileName(fileURL):
+                    resource.versionSaveMode = "never"
+                else:
+                    try:
+                        json.loads(unzippedFileContents)
+                        resource.versionSaveMode = "never"
+                    except json.JSONDecodeError:
+                        pass
 
                 resource.saveToDisk(self.config)
 
                 self.resourcesByCanonicalURL[canonicalUrl] = resource
 
                 versionId = resource.getVersionId(fileHash)
-
-            fileURL = flow.request.url
-
-            originalFileContents = bytes(flow.response.data.content)
-            unzippedFileContents, gzipped = self.decompressDataIfNeeded(originalFileContents)
 
             resourceVersion = ResourceVersion(
                 id=resource.getVersionId(fileHash),
@@ -224,7 +239,7 @@ class RewriteProxy:
                 fileHash=fileHash,
                 canonicalFileHash=canonicalFileHash,
                 creationDate=datetime.datetime.now(),
-                url=flow.request.url,
+                url=fileURL,
                 canonicalUrl=canonicalUrl,
                 contentType=contentType,
                 didRewriteResource=False,
@@ -235,13 +250,12 @@ class RewriteProxy:
                 rewrittenLength=None
             )
 
-            resourceVersion.saveToDisk(self.config)
-
             if len(unzippedFileContents) == 0:
                 self.memoryCache[versionId] = unzippedFileContents
 
                 resource.saveToDisk(self.config)
-                resourceVersion.saveToDisk(self.config)
+                if resource.versionSaveMode != "never":
+                    resourceVersion.saveToDisk(self.config)
 
                 return
 
@@ -258,7 +272,7 @@ class RewriteProxy:
                 foundSimilarOriginal, foundOriginalFileURL = self.findSimilarOriginal(fileURL, unzippedFileContents)
 
                 if foundSimilarOriginal:
-                    rewriteMessage = f"Decided not to translate file {flow.request.url} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system."
+                    rewriteMessage = f"Decided not to translate file {fileURL} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system."
 
                     resource.rewriteMode = None
                     resource.rewriteMessage = rewriteMessage
@@ -287,9 +301,10 @@ class RewriteProxy:
                 if gzipped:
                     transformedContents = gzip.compress(transformedContents, compresslevel=9)
 
-                resourceVersion.saveOriginalResourceContents(self.config, unzippedFileContents)
-                resourceVersion.saveTranslatedResourceContents(self.config, transformedContents)
-                resourceVersion.rewrittenLength = len(transformedContents)
+                if resource.versionSaveMode != "never":
+                    resourceVersion.saveOriginalResourceContents(self.config, unzippedFileContents)
+                    resourceVersion.saveTranslatedResourceContents(self.config, transformedContents)
+                    resourceVersion.rewrittenLength = len(transformedContents)
 
                 self.memoryCache[versionId] = transformedContents
 
@@ -302,11 +317,13 @@ class RewriteProxy:
 
                 self.memoryCache[versionId] = originalFileContents
 
-                resourceVersion.saveOriginalResourceContents(self.config, originalFileContents)
+                if resource.versionSaveMode != "never":
+                    resourceVersion.saveOriginalResourceContents(self.config, originalFileContents)
 
             # Note! this extra resource save might be creating too much load. Eventually we should improve this.
             resource.saveToDisk(self.config)
-            resourceVersion.saveToDisk(self.config)
+            if resource.versionSaveMode != "never":
+                resourceVersion.saveToDisk(self.config)
 
         except Exception as e:
             getLogger().error(traceback.format_exc())
