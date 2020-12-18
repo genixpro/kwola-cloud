@@ -20,7 +20,7 @@
 
 
 from mongoengine import *
-from ...components.utils.regex import sharedNonJavascriptCodeUrlRegex, sharedHexUuidRegex, sharedMongoObjectIdRegex, sharedISO8601DateRegex, sharedStandardBase64Regex, sharedAlphaNumericalCodeRegex, sharedISO8601TimeRegex, sharedIPAddressRegex, sharedLongNumberRegex
+from ...components.utils.deunique import deuniqueString
 import re
 import datetime
 import functools
@@ -46,25 +46,7 @@ class BaseError(EmbeddedDocument):
     @staticmethod
     @functools.lru_cache(maxsize=1024)
     def computeReducedErrorComparisonMessage(message):
-        if isinstance(message, bytes):
-            message = str(message, 'utf8')
-
-        deduplicationIgnoreRegexes = [
-            sharedNonJavascriptCodeUrlRegex,
-            sharedHexUuidRegex,
-            sharedMongoObjectIdRegex,
-            sharedISO8601DateRegex,
-            sharedISO8601TimeRegex,
-            sharedIPAddressRegex,
-            sharedLongNumberRegex,
-            sharedStandardBase64Regex,
-            sharedAlphaNumericalCodeRegex
-        ]
-
-        for regex in deduplicationIgnoreRegexes:
-            message = re.sub(regex, "", message)
-
-        return str(message.encode('ascii', 'xmlcharrefreplace'), 'ascii')
+        return deuniqueString(message)
 
     @staticmethod
     def computeErrorMessageSimilarity(message, otherMessage):
