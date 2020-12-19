@@ -46,7 +46,7 @@ class BaseError(EmbeddedDocument):
     @staticmethod
     @functools.lru_cache(maxsize=1024)
     def computeReducedErrorComparisonMessage(message):
-        return deuniqueString(message)
+        return deuniqueString(message, deuniqueMode="error")
 
     @staticmethod
     def computeErrorMessageSimilarity(message, otherMessage):

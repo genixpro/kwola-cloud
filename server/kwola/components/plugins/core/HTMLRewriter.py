@@ -17,8 +17,8 @@ class HTMLRewriter(ProxyPluginBase):
         self.integrityRegex = re.compile(r"integrity\w*=\w*['\"]sha\d\d?\d?-[a-zA-Z0-9+/=]+['\"]")
 
 
-    def shouldHandleFile(self, url, contentType, fileData):
-        if '.js' not in url and not ".json" in url and ".css" not in url:
+    def shouldHandleFile(self, resource, fileData):
+        if '.js' not in resource.url and not ".json" in resource.url and ".css" not in resource.url:
             kind = filetype.guess(fileData)
             mime = ''
             if kind is not None:
@@ -42,11 +42,11 @@ class HTMLRewriter(ProxyPluginBase):
             return False
 
 
-    def getRewriteMode(self, url, contentType, fileData):
+    def getRewriteMode(self, resource, fileData, priorResourceVersion):
         return "integrity_attribute_replacement", None
 
 
-    def rewriteFile(self, url, contentType, fileData):
+    def rewriteFile(self, resource, fileData, priorResourceVersion):
         stringData = str(fileData, 'utf8')
 
         stringData = re.sub(self.integrityRegex, "", stringData)

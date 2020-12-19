@@ -2,27 +2,41 @@ from ...components.utils.regex import sharedNonJavascriptCodeUrlRegex, sharedHex
 import re
 
 
-def deuniqueString(string):
+def deuniqueString(string, addSubstituteReferences=False, deuniqueMode="error"):
     if isinstance(string, bytes):
         try:
             string = str(string, 'utf8')
         except UnicodeDecodeError:
             string = str(string)
 
-    deduplicationIgnoreRegexes = [
-        sharedNonJavascriptCodeUrlRegex,
-        sharedHexUuidRegex,
-        sharedMongoObjectIdRegex,
-        sharedISO8601DateRegex,
-        sharedISO8601TimeRegex,
-        sharedIPAddressRegex,
-        sharedLongNumberRegex,
-        sharedStandardBase64Regex,
-        sharedAlphaNumericalCodeRegex
-    ]
+    deduplicationIgnoreRegexes = []
 
-    for regex in deduplicationIgnoreRegexes:
-        string = re.sub(regex, "", string)
+    validDeuniqueModes = ['error', 'url']
+    if deuniqueMode not in validDeuniqueModes:
+        raise ValueError(f"deuniqueMode must be one of {validDeuniqueModes}")
+
+    if deuniqueMode == 'error':
+        deduplicationIgnoreRegexes.extend([
+            (sharedNonJavascriptCodeUrlRegex, 'URL')
+        ])
+
+    deduplicationIgnoreRegexes.extend([
+        (sharedHexUuidRegex, 'HEXID'),
+        (sharedMongoObjectIdRegex, 'MONGOID'),
+        (sharedISO8601DateRegex, 'DATE'),
+        (sharedISO8601TimeRegex, 'TIME'),
+        (sharedIPAddressRegex, 'IP'),
+        (sharedLongNumberRegex, 'LONG'),
+        (sharedStandardBase64Regex, 'BASE64'),
+        (sharedAlphaNumericalCodeRegex, 'ALPHANUMCODE')
+    ])
+
+    for regex, name in deduplicationIgnoreRegexes:
+        substitution = ""
+        if addSubstituteReferences:
+            substitution = "[<" + name + ">]"
+
+        string = re.sub(regex, substitution, string)
 
     return str(string.encode('ascii', 'xmlcharrefreplace'), 'ascii')
 

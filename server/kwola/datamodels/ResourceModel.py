@@ -58,6 +58,8 @@ class Resource(Document):
 
     versionSaveMode = StringField()
 
+    latestVersionId = StringField()
+
 
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
         saveObjectToDisk(self, "resources", config, overrideSaveFormat=overrideSaveFormat, overrideCompression=overrideCompression)

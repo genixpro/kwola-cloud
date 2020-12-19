@@ -11,15 +11,15 @@ class ProxyPluginBase:
 
     rewriteMode = None
 
-    def shouldHandleFile(self, url, contentType, fileData):
+    def shouldHandleFile(self, resource, fileData):
         pass
 
 
-    def getRewriteMode(self, url, contentType, fileData):
+    def getRewriteMode(self, resource, fileData, priorResourceVersion):
         pass
 
 
-    def rewriteFile(self, url, contentType, fileData):
+    def rewriteFile(self, resource, fileData, priorResourceVersion):
         pass
 
 

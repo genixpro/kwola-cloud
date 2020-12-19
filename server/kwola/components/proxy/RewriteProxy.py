@@ -99,8 +99,8 @@ class RewriteProxy:
 
     @staticmethod
     def canonicalizeUrl(url):
-        url = deuniqueString(url)
-        url = RewriteProxy.pathNumericalIdSegmentRegex.sub("/:id", url)
+        url = deuniqueString(url, addSubstituteReferences=True, deuniqueMode="url")
+        url = RewriteProxy.pathNumericalIdSegmentRegex.sub("/[<ID>]", url)
         return url
 
     def getHashFromCacheFileName(self, fileName):
@@ -206,7 +206,7 @@ class RewriteProxy:
             canonicalUrl = self.canonicalizeUrl(flow.request.url)
             resource = self.resourcesByCanonicalURL.get(canonicalUrl, None)
             fileHash = ProxyPluginBase.computeHash(bytes(flow.response.data.content))
-            canonicalFileHash = ProxyPluginBase.computeHash(bytes(deuniqueString(flow.response.data.content), 'utf8'))
+            canonicalFileHash = ProxyPluginBase.computeHash(bytes(deuniqueString(flow.response.data.content, deuniqueMode="error"), 'utf8'))
             versionId = None
             fileURL = flow.request.url
             originalFileContents = bytes(flow.response.data.content)
@@ -224,6 +224,7 @@ class RewriteProxy:
                     else:
                         resourceVersion = ResourceVersion.loadFromDisk(versionId, self.config, printErrorOnFailure=False)
                         if resourceVersion is not None:
+                            # print(resourceVersion.to_json())
                             transformedContents = resourceVersion.loadTranslatedResourceContents(self.config)
 
                     if transformedContents is not None:
@@ -234,7 +235,7 @@ class RewriteProxy:
                         return
             else:
                 resourceId = ProxyPluginBase.getCleanedFileName(canonicalUrl)
-                if 'applicationId' in self.config:
+                if 'applicationId' in self.config and self.config['applicationId'] is not None:
                     resourceId = self.config['applicationId'] + "-" + resourceId
 
                 resource = Resource(
@@ -261,6 +262,8 @@ class RewriteProxy:
                         json.loads(unzippedFileContents)
                         resource.versionSaveMode = "never"
                     except json.JSONDecodeError:
+                        pass
+                    except UnicodeDecodeError:
                         pass
 
                 self.resourcesByCanonicalURL[canonicalUrl] = resource
@@ -290,19 +293,25 @@ class RewriteProxy:
             if len(unzippedFileContents) == 0:
                 self.memoryCache[versionId] = unzippedFileContents
 
-                self.backgroundSaveExecutor.submit(resource.saveToDisk, self.config)
                 if resource.versionSaveMode != "never":
+                    resource.latestVersionId = resourceVersion.id
                     self.backgroundSaveExecutor.submit(resourceVersion.saveToDisk, self.config)
+                self.backgroundSaveExecutor.submit(resource.saveToDisk, self.config)
 
                 return
 
             chosenPlugin = None
             for plugin in self.plugins:
-                if plugin.shouldHandleFile(fileURL, contentType, unzippedFileContents):
+                if plugin.shouldHandleFile(resource, unzippedFileContents):
                     chosenPlugin = plugin
                     break
 
+            priorVersion = None
+
             if chosenPlugin is not None:
+                if resource.latestVersionId is not None:
+                    priorVersion = ResourceVersion.loadFromDisk(resource.latestVersionId, self.config)
+
                 resource.rewritePluginName = chosenPlugin.rewritePluginName
                 resourceVersion.rewritePluginName = chosenPlugin.rewritePluginName
 
@@ -320,7 +329,7 @@ class RewriteProxy:
                     resourceVersion.didRewriteResource = True
 
                 else:
-                    rewriteMode, rewriteMessage = chosenPlugin.getRewriteMode(fileURL, contentType, unzippedFileContents)
+                    rewriteMode, rewriteMessage = chosenPlugin.getRewriteMode(resource, unzippedFileContents, priorVersion)
                     resource.rewriteMode = rewriteMode
                     resource.rewriteMessage = rewriteMessage
                     resourceVersion.rewriteMode = rewriteMode
@@ -333,7 +342,7 @@ class RewriteProxy:
                 if self.config['web_session_print_javascript_translation_info'] and resourceVersion.rewriteMessage:
                     getLogger().info(resourceVersion.rewriteMessage)
 
-                transformedContents = chosenPlugin.rewriteFile(fileURL, contentType, unzippedFileContents)
+                transformedContents = chosenPlugin.rewriteFile(resource, unzippedFileContents, priorVersion)
 
                 if gzipped:
                     transformedContents = gzip.compress(transformedContents, compresslevel=9)
@@ -357,10 +366,12 @@ class RewriteProxy:
                 if resource.versionSaveMode != "never":
                     self.backgroundSaveExecutor.submit(resourceVersion.saveOriginalResourceContents, self.config, originalFileContents)
 
+            if resource.versionSaveMode != "never":
+                resource.latestVersionId = resourceVersion.id
+                self.backgroundSaveExecutor.submit(resourceVersion.saveToDisk, self.config)
+
             # Note! this extra resource save might be creating too much load. Eventually we should improve this.
             self.backgroundSaveExecutor.submit(resource.saveToDisk, self.config)
-            if resource.versionSaveMode != "never":
-                self.backgroundSaveExecutor.submit(resourceVersion.saveToDisk, self.config)
 
         except Exception as e:
             getLogger().error(traceback.format_exc())
