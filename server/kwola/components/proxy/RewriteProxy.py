@@ -35,6 +35,7 @@ from ...datamodels.ResourceModel import Resource
 from ...datamodels.ResourceVersionModel import ResourceVersion
 from ..utils.deunique import deuniqueString
 from ...datamodels.CustomIDField import CustomIDField
+from concurrent.futures import ThreadPoolExecutor
 
 class RewriteProxy:
     """
@@ -54,8 +55,8 @@ class RewriteProxy:
     6) Keep copies of the data for resources that would be required to rerender the frozen HTML pages created by WebEnvironmentSession.saveHTML
     7) Keep copies of the data for resources that we want to show within the user interface for the user
     8) Keep copies of the rewritten html & javascript files in a cache to reduce compute time required to rewrite said files every single time they are seen
-    9) Ignore JSONP style javascript files (these are just one line javascript responses that call an existing local function)
-    10) Ignore javascript files that are marked on various ignore lists in the config file (including ignore by domain and ignore by keyword)
+    9) Do not rewrite JSONP style javascript files (these are just one line javascript responses that call an existing local function)
+    10) Do not rewrite javascript files that are marked on various ignore lists in the config file (including ignore by domain and ignore by keyword)
     11) [maybe, conflicts with other goals] Don't store copies of versions of the same resource if they only differ because of unique ids / hashes / cache busting / xsrf tokens being baked into those files
     12) Don't store exact copies of resources it they are JSON API Endpoints or JSONP javascript files. Instead, these should be processed in a way that allows
         analyzing the endpoint as a whole, such a list of all fields observed within the endpoint.
@@ -83,13 +84,18 @@ class RewriteProxy:
         self.executionSessionId = executionSessionId
         self.executionTraceId = None
 
+        self.backgroundSaveExecutor = ThreadPoolExecutor()
+
         self.resourcesByCanonicalURL = {}
 
-        self.allResources = Resource.loadAllResources(config)
-        for resource in self.allResources:
+        allResources = Resource.loadAllResources(config)
+        for resource in allResources:
             self.resourcesByCanonicalURL[resource.canonicalUrl] = resource
 
-        getLogger().info(f"Loaded data for {len(self.allResources)} resources")
+        getLogger().info(f"Loaded data for {len(allResources)} resources")
+
+    def __del__(self):
+        self.backgroundSaveExecutor.shutdown()
 
     @staticmethod
     def canonicalizeUrl(url):
@@ -257,8 +263,6 @@ class RewriteProxy:
                     except json.JSONDecodeError:
                         pass
 
-                resource.saveToDisk(self.config)
-
                 self.resourcesByCanonicalURL[canonicalUrl] = resource
 
                 versionId = resource.getVersionId(fileHash)
@@ -286,9 +290,9 @@ class RewriteProxy:
             if len(unzippedFileContents) == 0:
                 self.memoryCache[versionId] = unzippedFileContents
 
-                resource.saveToDisk(self.config)
+                self.backgroundSaveExecutor.submit(resource.saveToDisk, self.config)
                 if resource.versionSaveMode != "never":
-                    resourceVersion.saveToDisk(self.config)
+                    self.backgroundSaveExecutor.submit(resourceVersion.saveToDisk, self.config)
 
                 return
 
@@ -335,8 +339,8 @@ class RewriteProxy:
                     transformedContents = gzip.compress(transformedContents, compresslevel=9)
 
                 if resource.versionSaveMode != "never":
-                    resourceVersion.saveOriginalResourceContents(self.config, unzippedFileContents)
-                    resourceVersion.saveTranslatedResourceContents(self.config, transformedContents)
+                    self.backgroundSaveExecutor.submit(resourceVersion.saveOriginalResourceContents, self.config, unzippedFileContents)
+                    self.backgroundSaveExecutor.submit(resourceVersion.saveTranslatedResourceContents, self.config, transformedContents)
                     resourceVersion.rewrittenLength = len(transformedContents)
 
                 self.memoryCache[versionId] = transformedContents
@@ -351,12 +355,12 @@ class RewriteProxy:
                 self.memoryCache[versionId] = originalFileContents
 
                 if resource.versionSaveMode != "never":
-                    resourceVersion.saveOriginalResourceContents(self.config, originalFileContents)
+                    self.backgroundSaveExecutor.submit(resourceVersion.saveOriginalResourceContents, self.config, originalFileContents)
 
             # Note! this extra resource save might be creating too much load. Eventually we should improve this.
-            resource.saveToDisk(self.config)
+            self.backgroundSaveExecutor.submit(resource.saveToDisk, self.config)
             if resource.versionSaveMode != "never":
-                resourceVersion.saveToDisk(self.config)
+                self.backgroundSaveExecutor.submit(resourceVersion.saveToDisk, self.config)
 
         except Exception as e:
             getLogger().error(traceback.format_exc())
