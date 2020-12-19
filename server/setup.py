@@ -54,6 +54,7 @@ setup(
             'kwola_run_train_step = kwola.bin.run_train_step:main',
             'kwola_run_test_step = kwola.bin.run_test_step:main',
             'kwola_rapid_local_test_suite = kwola.bin.rapid_local_test_suite:main',
+            'kwola_reset = kwola.bin.reset:main',
             'kwola_full_internal_test_suite = kwola.bin.full_internal_test_suite:main',
             'kwola_test_chromedriver = kwola.bin.test_chromedriver:main',
             'kwola_test_javascript_rewriting = kwola.bin.test_javascript_rewriting:main',
