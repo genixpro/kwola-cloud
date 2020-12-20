@@ -99,7 +99,7 @@ def sendFeedbackRequestEmails():
 def evaluateRecurringTestingTriggers():
     triggers = RecurringTestingTrigger.objects()
 
-    logging.info(f"Processing {len(triggers)} recurring testing triggers that need a feedback request sent for them.")
+    logging.info(f"Processing {len(triggers)} recurring testing triggers.")
 
     triggersToDelete = []
 

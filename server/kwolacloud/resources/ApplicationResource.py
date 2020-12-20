@@ -86,7 +86,9 @@ class ApplicationGroup(Resource):
             creationDate=datetime.now(),
             defaultRunConfiguration=runConfiguration,
             package=data['package'],
-            promoCode=data.get('promoCode')
+            promoCode=data.get('promoCode'),
+            # we need to remove this field, its a relic from when creating the application and launching first testing run occurred separately.
+            hasFirstTestingRunLaunched=True
         )
 
         newApplication.defaultRunConfiguration.testingSequenceLength = 100
