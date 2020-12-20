@@ -29,6 +29,7 @@ import gzip
 import filetype
 import re
 import json
+import urllib.parse
 from pprint import pformat
 from ..plugins.base.ProxyPluginBase import ProxyPluginBase
 from ...datamodels.ResourceModel import Resource
@@ -86,11 +87,11 @@ class RewriteProxy:
 
         self.backgroundSaveExecutor = ThreadPoolExecutor()
 
-        self.resourcesByCanonicalURL = {}
+        self.resourcesById = {}
 
         allResources = Resource.loadAllResources(config)
         for resource in allResources:
-            self.resourcesByCanonicalURL[resource.canonicalUrl] = resource
+            self.resourcesById[resource.id] = resource
 
         getLogger().info(f"Loaded data for {len(allResources)} resources")
 
@@ -99,16 +100,26 @@ class RewriteProxy:
 
     @staticmethod
     def canonicalizeUrl(url):
-        url = deuniqueString(url, addSubstituteReferences=True, deuniqueMode="url")
-        url = RewriteProxy.pathNumericalIdSegmentRegex.sub("/[<ID>]", url)
-        return url
+        parsed = list(urllib.parse.urlparse(url))
+
+        parsed[3] = ""
+        parsed[4] = ""
+        parsed[5] = ""
+
+        path = parsed[2]
+        path = deuniqueString(path, addSubstituteReferences=True, deuniqueMode="url")
+        path = RewriteProxy.pathNumericalIdSegmentRegex.sub("/[<ID>]", path)
+
+        parsed[2] = path
+
+        return urllib.parse.urlunparse(parsed)
 
     def getHashFromCacheFileName(self, fileName):
         hash = fileName.split("_")[-1].split(".")[0]
         return hash
 
     def getCacheFileName(self, fileHash, fileURL):
-        fileName = ProxyPluginBase.getCleanedFileName(fileURL)
+        fileName = ProxyPluginBase.getCleanedURL(fileURL)
 
         fileNameSplit = fileName.split("_")
 
@@ -189,6 +200,21 @@ class RewriteProxy:
 
         return data, gzipped
 
+    def getResourceIdForUrl(self, url):
+        canonicalUrl = self.canonicalizeUrl(url)
+        cleanedURL = ProxyPluginBase.getCleanedURL(canonicalUrl)
+        canonicalUrlHash = ProxyPluginBase.computeHash(bytes(canonicalUrl, 'utf8'))
+
+        cleanedURL = re.sub("_+", "_", cleanedURL)
+
+        resourceId = cleanedURL[-150:] + "_" + canonicalUrlHash[:10]
+
+        if 'applicationId' in self.config and self.config['applicationId'] is not None:
+            resourceId = self.config['applicationId'] + "-" + resourceId
+
+        return resourceId
+
+
     @concurrent
     def response(self, flow):
         """
@@ -204,7 +230,8 @@ class RewriteProxy:
                 return
 
             canonicalUrl = self.canonicalizeUrl(flow.request.url)
-            resource = self.resourcesByCanonicalURL.get(canonicalUrl, None)
+            resourceId = self.getResourceIdForUrl(flow.request.url)
+            resource = self.resourcesById.get(resourceId, None)
             fileHash = ProxyPluginBase.computeHash(bytes(flow.response.data.content))
             canonicalFileHash = ProxyPluginBase.computeHash(bytes(deuniqueString(flow.response.data.content, deuniqueMode="error"), 'utf8'))
             versionId = None
@@ -234,10 +261,6 @@ class RewriteProxy:
 
                         return
             else:
-                resourceId = ProxyPluginBase.getCleanedFileName(canonicalUrl)
-                if 'applicationId' in self.config and self.config['applicationId'] is not None:
-                    resourceId = self.config['applicationId'] + "-" + resourceId
-
                 resource = Resource(
                     id=resourceId,
                     owner=(self.config['owner'] if 'owner' in self.config else None),
@@ -253,9 +276,9 @@ class RewriteProxy:
                     versionSaveMode="all"
                 )
 
-                if "application/json" in contentType \
-                        or "_json" in ProxyPluginBase.getCleanedFileName(fileURL) \
-                        or "_jsp" in ProxyPluginBase.getCleanedFileName(fileURL):
+                if (contentType and "application/json" in contentType) \
+                        or "_json" in ProxyPluginBase.getCleanedURL(fileURL) \
+                        or "_jsp" in ProxyPluginBase.getCleanedURL(fileURL):
                     resource.versionSaveMode = "never"
                 else:
                     try:
@@ -266,7 +289,7 @@ class RewriteProxy:
                     except UnicodeDecodeError:
                         pass
 
-                self.resourcesByCanonicalURL[canonicalUrl] = resource
+                self.resourcesById[resourceId] = resource
 
                 versionId = resource.getVersionId(fileHash)
 

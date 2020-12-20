@@ -34,7 +34,7 @@ def deuniqueString(string, addSubstituteReferences=False, deuniqueMode="error"):
     for regex, name in deduplicationIgnoreRegexes:
         substitution = ""
         if addSubstituteReferences:
-            substitution = "[<" + name + ">]"
+            substitution = "__" + name + "__"
 
         string = re.sub(regex, substitution, string)
 

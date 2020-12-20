@@ -42,7 +42,7 @@ class JSRewriter(ProxyPluginBase):
             "text/ecmascript"
         ]
 
-        cleanedFileName = self.getCleanedFileName(resource.url)
+        cleanedFileName = self.getCleanedURL(resource.url)
 
         if ('_js' in cleanedFileName
                 and not "_json" in cleanedFileName
@@ -76,7 +76,7 @@ class JSRewriter(ProxyPluginBase):
             return False
 
     def getRewriteMode(self, resource, fileData, priorResourceVersion):
-        cleanedFileName = self.getCleanedFileName(resource.url)
+        cleanedFileName = self.getCleanedURL(resource.url)
 
         parsedURL = urllib.parse.urlparse(resource.url)
         foundIgnoreHost = False
@@ -148,10 +148,10 @@ class JSRewriter(ProxyPluginBase):
                 wrapperStart = wrapper[0]
                 wrapperEnd = wrapper[1]
 
-        cleanedFileName = self.getCleanedFileName(resource.canonicalUrl)
+        cleanedFileName = self.getCleanedURL(resource.canonicalUrl)
         shortResourceIdHash = ProxyPluginBase.computeHash(bytes(resource.id, 'utf8'))[:10]
 
-        fileNameForBabel = cleanedFileName + "_" + shortResourceIdHash
+        fileNameForBabel = str(resource.id)
 
         environment = dict(os.environ)
 

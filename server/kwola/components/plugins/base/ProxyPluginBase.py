@@ -1,7 +1,7 @@
 import urllib.parse
 import hashlib
 import base64
-
+import re
 
 
 class ProxyPluginBase:
@@ -24,13 +24,23 @@ class ProxyPluginBase:
 
 
     @staticmethod
-    def getCleanedFileName(path):
-        fileName = urllib.parse.unquote(path.split("/")[-1])
-        if "?" in fileName:
-            fileName = fileName.split("?")[0]
-        if "#" in fileName:
-            fileName = fileName.split("#")[0]
+    def getCleanedURL(url):
+        parts = urllib.parse.urlparse(url)
+
+        path = parts.path
+        if path == "" or path == "/":
+            fileName = "root"
+        else:
+            if path.endswith("/"):
+                path = path[:-1]
+
+            fileName = path.replace("/", "_")
+
+        fileName = parts.hostname + "_" + fileName
+
         fileName = fileName.replace(".", "_")
+        fileName = re.sub(r"\W", "_", fileName)
+
         return fileName
 
     @staticmethod
