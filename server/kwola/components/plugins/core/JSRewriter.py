@@ -217,7 +217,7 @@ class JSRewriter(ProxyPluginBase):
                 if remappedFileData is not None:
                     transformed = remappedFileData
             else:
-                message = f"Successfully transformed {resource.url} with Kwola modifications."
+                message = f"Successfully transformed {resource.url} with Kwola modifications. Resource id: {resource.id}"
                 if noLineCountingKeyword is None:
                     jsCounterSize = self.getBranchCounterArraySize(transformed)
                     message += f" There were {jsCounterSize} branch indexes in the file."
@@ -248,7 +248,7 @@ class JSRewriter(ProxyPluginBase):
             return fileData
 
 
-    def getPrettifiedJavascript(self, fileData):
+    def getPrettifiedJavascript(self, resource, fileData):
         npmCmd = 'npm'
         if sys.platform == "win32" or sys.platform == "win64":
             npmCmd = 'npm.cmd'
@@ -266,7 +266,7 @@ class JSRewriter(ProxyPluginBase):
         if result.returncode != 0:
             cutoffLength = 250
 
-            message = f"Unable to to prettify the Javascript code. See the following error:\n"
+            message = f"Unable to to prettify the Javascript code for resource {resource.id}. See the following error:\n"
 
             if len(result.stdout) > 0:
                 message += str(result.stdout[:cutoffLength]) + "\n"
@@ -328,14 +328,15 @@ class JSRewriter(ProxyPluginBase):
         tempPriorJSFileId, tempPriorJSFileName = tempfile.mkstemp(suffix=".js")
         tempCurrentJSFileId, tempCurrentJSFileName = tempfile.mkstemp(suffix=".js")
 
-        prettyPriorJSData, messagePriorJS = self.getPrettifiedJavascript(priorResourceVersionData)
-        prettyCurrentJSData, messageCurrentJS = self.getPrettifiedJavascript(transformedFileData)
+        prettyPriorJSData, messagePriorJS = self.getPrettifiedJavascript(resource, priorResourceVersionData)
+        prettyCurrentJSData, messageCurrentJS = self.getPrettifiedJavascript(resource, transformedFileData)
 
         if messagePriorJS:
             return None, messagePriorJS
         if messageCurrentJS:
             return None, messageCurrentJS
 
+        priorJSCounterSize = self.getBranchCounterArraySize(prettyPriorJSData)
         currentJSCounterSize = self.getBranchCounterArraySize(prettyCurrentJSData)
 
         with open(tempPriorJSFileId, 'wb') as f:
@@ -412,6 +413,6 @@ class JSRewriter(ProxyPluginBase):
 
         newFile = b"".join(updatedLines)
 
-        message = f"Successfully transformed and remapped the javascript resource {resource.id} from the prior version. Total new branch indexes: {currentJSCounterSize} Remapped indexes: {len(remappedIndexes)}. Deleted indexes: {len(deletedCodeIndexes)}. New indexes: {len(newCodeIndexes)}"
+        message = f"Successfully transformed and remapped the javascript resource {resource.id} from the prior version. Total branch indexes in new file: {currentJSCounterSize} Changes v.s. prior version: Preserved indexes: {priorJSCounterSize - (len(remappedIndexes) + len(deletedCodeIndexes))}. Remapped indexes: {len(remappedIndexes)}. Deleted indexes: {len(deletedCodeIndexes)}. New indexes: {len(newCodeIndexes)}"
 
         return newFile, message

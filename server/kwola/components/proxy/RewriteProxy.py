@@ -277,8 +277,7 @@ class RewriteProxy:
                 )
 
                 if (contentType and "application/json" in contentType) \
-                        or "_json" in ProxyPluginBase.getCleanedURL(fileURL) \
-                        or "_jsp" in ProxyPluginBase.getCleanedURL(fileURL):
+                        or "_json" in ProxyPluginBase.getCleanedURL(fileURL):
                     resource.versionSaveMode = "never"
                 else:
                     try:
