@@ -71,21 +71,6 @@ def generateRewardChart(config, applicationId):
     pool.join()
 
 
-def averageCoverageForTestingStep(config, testingStepId):
-    testingStep = TestingStep.loadFromDisk(testingStepId, config)
-
-    stepCoverage = []
-    for sessionId in testingStep.executionSessions:
-        session = ExecutionSession.loadFromDisk(sessionId, config)
-        if session.status == "completed":
-            lastTrace = ExecutionTrace.loadFromDisk(session.executionTraces[-1], config)
-            stepCoverage.append(lastTrace.cumulativeBranchCoverage)
-
-    if len(stepCoverage) > 0:
-        return numpy.mean(stepCoverage)
-    else:
-        return None
-
 def generateCoverageChart(config, applicationId):
     getLogger().info(f"Generating the coverage chart")
 
@@ -100,16 +85,16 @@ def generateCoverageChart(config, applicationId):
     pool = multiprocessing.Pool(config['chart_generation_dataload_workers'])
 
     for step in testingSteps:
-        coverageValueFutures.append(pool.apply_async(averageCoverageForTestingStep, [config, step.id]))
+        coverageValueFutures.append(pool.apply_async(computeCumulativeCoverageForTestingSteps, [[step.id], config]))
 
-    coverageValues = [future.get() for future in coverageValueFutures if future.get() is not None]
+    coverageValues = [future.get()[0] for future in coverageValueFutures]
+    executedLinesValues = [future.get()[1] for future in coverageValueFutures]
+    totalLinesValues = [future.get()[2] for future in coverageValueFutures]
 
     coverageValues = scipy.signal.medfilt(coverageValues, kernel_size=9)
 
     fig, ax = plt.subplots()
-
     ax.plot(range(len(coverageValues)), coverageValues, color='green')
-
     ax.set(xlabel='Testing Step #', ylabel='Coverage',
            title='Code Coverage')
     ax.grid()
@@ -118,6 +103,19 @@ def generateCoverageChart(config, applicationId):
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
         config.saveKwolaFileData("charts", "coverage_chart.png", f.read())
+    os.unlink(localFilePath)
+
+    fig, ax = plt.subplots()
+    ax.plot(range(len(executedLinesValues)), executedLinesValues, color='green')
+    ax.plot(range(len(totalLinesValues)), totalLinesValues, color='red')
+    ax.set(xlabel='Testing Step #', ylabel='Coverage',
+           title='Code Coverage')
+    ax.grid()
+
+    _, localFilePath = tempfile.mkstemp(suffix=".png")
+    fig.savefig(localFilePath)
+    with open(localFilePath, 'rb') as f:
+        config.saveKwolaFileData("charts", "lines_triggered.png", f.read())
     os.unlink(localFilePath)
 
     pool.close()
@@ -240,11 +238,11 @@ def computeCumulativeCoverageForTestingSteps(testingStepIds, config):
     pool.close()
     pool.join()
 
-    return float(executedAtleastOnce) / float(total)
+    return float(executedAtleastOnce) / float(total), executedAtleastOnce, total
 
 
-def generateCumulativeCoverageChart(config, applicationId=None):
-    getLogger().info(f"Generating the cumulative coverage chart")
+def generateCumulativeCoverageChart(config, applicationId=None, numberOfTestingStepsPerValue=100):
+    getLogger().info(f"Generating the cumulative coverage chart using {numberOfTestingStepsPerValue} testing steps per value")
 
     config = KwolaCoreConfiguration(config)
 
@@ -252,31 +250,43 @@ def generateCumulativeCoverageChart(config, applicationId=None):
         [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
         key=lambda step: step.startTime, reverse=False)
 
-    numberOfTestingStepsPerValue = 100
-
+    cumulativeLinesExecutedValues = []
+    cumulativeTotalLinesValues = []
     cumulativeCoverageValues = []
     for n in range(int(len(testingSteps) / numberOfTestingStepsPerValue) + 1):
         testingStepsForValue = testingSteps[n * numberOfTestingStepsPerValue:(n+1)*numberOfTestingStepsPerValue]
 
-        coverage = computeCumulativeCoverageForTestingSteps([step.id for step in testingStepsForValue], config)
+        coverage, linesExecuted, totalLines = computeCumulativeCoverageForTestingSteps([step.id for step in testingStepsForValue], config)
 
         cumulativeCoverageValues.append(coverage)
+        cumulativeLinesExecutedValues.append(linesExecuted)
+        cumulativeTotalLinesValues.append(totalLines)
 
     fig, ax = plt.subplots()
-
-    ax.plot(range(len(cumulativeCoverageValues)), cumulativeCoverageValues, color='green')
-
-    ax.set(xlabel='Testing Steps Completed (x1000)', ylabel='Cumulative Coverage', title="Cumulative Coverage Chart")
+    ax.plot(numpy.array(range(len(cumulativeLinesExecutedValues))) * numberOfTestingStepsPerValue, cumulativeCoverageValues, color='green')
+    ax.set(xlabel='Testing Steps Completed (x1000)', ylabel='Cumulative Coverage', title=f"Cumulative Coverage Chart, Group Size: {numberOfTestingStepsPerValue}")
     ax.grid()
 
     _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
     with open(localFilePath, 'rb') as f:
-        config.saveKwolaFileData("charts", "cumulative_coverage_chart.png", f.read())
-
+        config.saveKwolaFileData("charts", f"cumulative_coverage_chart_groupsize_{numberOfTestingStepsPerValue}.png", f.read())
     os.unlink(localFilePath)
 
-    getLogger().info(f"Best Cumulative Coverage: {numpy.max(cumulativeCoverageValues)}")
+
+    fig, ax = plt.subplots()
+    ax.plot(numpy.array(range(len(cumulativeLinesExecutedValues))) * numberOfTestingStepsPerValue, cumulativeLinesExecutedValues, color='green')
+    ax.plot(numpy.array(range(len(cumulativeTotalLinesValues))) * numberOfTestingStepsPerValue, cumulativeTotalLinesValues, color='red')
+    ax.set(xlabel='Testing Steps Completed', ylabel='Cumulative Total Lines Triggered', title=f"Cumulative Lines Triggered Chart, Group Size: {numberOfTestingStepsPerValue}")
+    ax.grid()
+
+    _, localFilePath = tempfile.mkstemp(suffix=".png")
+    fig.savefig(localFilePath)
+    with open(localFilePath, 'rb') as f:
+        config.saveKwolaFileData("charts", f"cumulative_lines_triggered_groupsize_{numberOfTestingStepsPerValue}.png", f.read())
+    os.unlink(localFilePath)
+
+    getLogger().info(f"Best Cumulative Coverage: {numpy.max(cumulativeLinesExecutedValues)} / {numpy.max(cumulativeTotalLinesValues)} = {numpy.max(cumulativeCoverageValues)}")
 
 def loadAllBugs(config, applicationId=None):
     if config['data_serialization_method']['default'] == 'mongo':
@@ -358,7 +368,10 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
     futures = []
 
     if config['chart_enable_cumulative_coverage_chart'] and enableCumulativeCoverage:
-        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId]))
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 100]))
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 25]))
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 10]))
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 5]))
 
     futures.append(pool.apply_async(generateRewardChart, [config.serialize(), applicationId]))
     futures.append(pool.apply_async(generateCoverageChart, [config.serialize(), applicationId]))
