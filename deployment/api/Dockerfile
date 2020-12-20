@@ -196,7 +196,7 @@ USER kwola:kwola
 
 
 # Setup and configure systemd
-ENTRYPOINT ["bash", "-c", "gunicorn -t 600 -w 4 -b 0.0.0.0:3000 kwolacloud.app"]
+ENTRYPOINT ["bash", "-c", "gunicorn -t 600 -w 16 -b 0.0.0.0:3000 kwolacloud.app"]
 
 EXPOSE 3000
 
