@@ -192,6 +192,7 @@ class TestingRunManager:
             self.run.testingSessionsCompleted += result['successfulExecutionSessions']
             self.run.testingSteps.append(result['testingStepId'])
             self.run.testingStepsNeedingSymbolProcessing.append(result['testingStepId'])
+            self.run.bugsFound = BugModel.objects(owner=self.application.owner, applicationId=self.run.applicationId, testingRunId=self.run.id, isMuted=False).count()
 
             for bug in BugModel.objects(owner=self.run.owner,
                                         applicationId=self.run.applicationId,

@@ -48,6 +48,8 @@ class TestingRun(Document):
 
     launchSource = StringField()
 
+    bugsFound = IntField()
+
     # Deprecated
     testingSessionsRemaining = IntField(default=0)
 
