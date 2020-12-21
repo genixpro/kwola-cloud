@@ -38,6 +38,7 @@ from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import billiard as multiprocessing
+from kwolacloud.components.core.RegressionTester import RegressionTester
 import os
 import os.path
 import time
@@ -264,7 +265,14 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         getLogger().error(f"Testing task subprocess appears to have failed. {traceback.format_exc()}")
         raise
 
+regressionTester = None
 def updateModelSymbols(config, testingStepId):
+    global regressionTester
+
+    if regressionTester is None:
+        regressionTester = RegressionTester(config)
+        regressionTester.loadCumulativeBranchTrace()
+
     symbolMap = SymbolMapper(config)
     symbolMap.load()
 
@@ -280,11 +288,13 @@ def updateModelSymbols(config, testingStepId):
             traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
         if len(traces) > 1000:
+            regressionTester.computeExecutionSessionIdsForRegressionTesting(traces)
             newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
             totalNewSymbols += newSymbols
             totalSplitSymbols += splitSymbols
             traces = []
 
+    regressionTester.computeExecutionSessionIdsForRegressionTesting(traces)
     newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
     totalNewSymbols += newSymbols
     totalSplitSymbols += splitSymbols
@@ -293,6 +303,8 @@ def updateModelSymbols(config, testingStepId):
     getLogger().info(f"There were {totalNewSymbols} new symbols and {totalSplitSymbols} split symbols from testing step {testingStepId}")
 
     symbolMap.save()
+
+    regressionTester.saveCumulativeBranchTrace()
 
 def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     stepStartTime = datetime.now()

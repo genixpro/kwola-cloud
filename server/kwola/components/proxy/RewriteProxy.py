@@ -245,6 +245,7 @@ class RewriteProxy:
                 self.seenResourceVersionsByURL[flow.request.url] = versionId
 
                 if not resource.didRewriteResource:
+                    self.memoryCache[versionId] = originalFileContents
                     return
                 else:
                     transformedContents = None
@@ -316,7 +317,6 @@ class RewriteProxy:
             )
 
             self.seenResourceVersionsByURL[flow.request.url] = versionId
-            print("STORING", flow.request.url)
 
             if len(unzippedFileContents) == 0:
                 self.memoryCache[versionId] = unzippedFileContents

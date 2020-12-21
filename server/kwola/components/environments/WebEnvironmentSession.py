@@ -1095,8 +1095,6 @@ class WebEnvironmentSession:
             executionTrace.testingRunId = str(self.executionSession.testingRunId)
             executionTrace.owner = self.executionSession.owner
 
-            # self.saveHTML(executionTrace.id + ".html", executionTrace.id + "_folder")
-
             # Set the execution trace id in the proxy. The proxy will add on headers
             # to all http requests sent by the browser with information identifying
             # which execution trace that particular request is associated with
@@ -1189,204 +1187,46 @@ class WebEnvironmentSession:
             plugin.browserSessionFinished(self.driver, self.proxy, self.executionSession)
 
 
-    def saveHTML(self, fileName="test.html", folder="testfiles"):
-        try:
-            cssUrlRegex = re.compile(b"url\\s*\\(\\s*['\"]([^\\)'\"]+)['\"]\\s*\\)")
-            saveFolder = folder
-            saveOutputFileName = fileName
+    def createReproductionActionFromOriginal(self, action):
+        actionMaps = self.getActionMaps()
 
-            if not os.path.exists("test/" + folder):
-                os.mkdir("test/" + folder)
+        closestOriginal = None
+        closestCurrent = None
+        closestKeywordSimilarity = None
+        closestCornerDist = None
+        for currentActionMap in actionMaps:
+            if not currentActionMap.canRunAction(action):
+                continue
 
-            countSavedFiles = 0
+            keywords = set(currentActionMap.keywords.split())
+            for originalActionMap in action.intersectingActionMaps:
+                if not originalActionMap.canRunAction(action):
+                    continue
 
-            def modifyHTML(data, baseURL):
-                soup = BeautifulSoup(data, features="html.parser")
+                originalKeywords = set(originalActionMap.keywords.split())
+                similarity = len(keywords.intersection(originalKeywords)) / max(1, len(keywords.union(originalKeywords)))
+                cornerDist = abs(currentActionMap.left - originalActionMap.left) + \
+                             abs(currentActionMap.right - originalActionMap.right) + \
+                             abs(currentActionMap.top - originalActionMap.top) + \
+                             abs(currentActionMap.bottom - originalActionMap.bottom)
 
-                base = soup.find('base')
-                if base is not None and 'href' in base.attrs:
-                    baseURL = urllib.parse.urljoin(baseURL, base['href'])
+                if closestCurrent is None or similarity > closestKeywordSimilarity:
+                    closestKeywordSimilarity = similarity
+                    closestCornerDist = cornerDist
+                    closestCurrent = currentActionMap
+                    closestOriginal = originalActionMap
+                elif similarity == closestKeywordSimilarity and cornerDist < closestCornerDist:
+                    closestKeywordSimilarity = similarity
+                    closestCornerDist = cornerDist
+                    closestCurrent = currentActionMap
+                    closestOriginal = originalActionMap
 
-                for jsCodeElement in soup.find_all('script', recursive=True):
-                    jsCodeElement.extract()
+        if closestOriginal is not None:
+            # print("FOUND!", closestOriginal.to_json(), closestCurrent.to_json(), closestKeywordSimilarity, closestCornerDist)
+            action = copy.deepcopy(action)
+            action.x += closestCurrent.left - closestOriginal.left
+            action.y += closestCurrent.top - closestOriginal.top
+        # else:
+        #     print(action.to_json())
 
-                for baseTagElement in soup.find_all('base', recursive=True):
-                    baseTagElement.extract()
-
-                for elementIndex, element in enumerate(soup.find_all('link', recursive=True)):
-                    if 'rel' in element.attrs and element['rel'][0] == 'stylesheet':
-                        modifyElementResourceReference(element, baseURL, modifyCSS)
-                    else:
-                        modifyElementResourceReference(element, baseURL)
-
-                for elementIndex, element in enumerate(soup.find_all('img', recursive=True)):
-                    modifyElementResourceReference(element, baseURL)
-
-                for elementIndex, element in enumerate(soup.find_all('video', recursive=True)):
-                    modifyElementResourceReference(element, baseURL)
-
-                for elementIndex, element in enumerate(soup.find_all('audio', recursive=True)):
-                    modifyElementResourceReference(element, baseURL)
-
-                for elementIndex, element in enumerate(soup.find_all('source', recursive=True)):
-                    modifyElementResourceReference(element, baseURL)
-
-                for elementIndex, element in enumerate(soup.find_all('track', recursive=True)):
-                    modifyElementResourceReference(element, baseURL)
-
-                for elementIndex, element in enumerate(soup.find_all('embed', recursive=True)):
-                    modifyElementResourceReference(element, baseURL)
-
-                for elementIndex, element in enumerate(soup.find_all('iframe', recursive=True)):
-                    modifyElementResourceReference(element, baseURL, modifyHTML)
-
-                return str(soup.prettify())
-
-            def modifyElementResourceReference(element, baseURL, resourceDataModifyFunc=None):
-                attributeForResource = None
-                if 'href' in element.attrs:
-                    attributeForResource = 'href'
-                elif 'src' in element.attrs:
-                    attributeForResource = 'src'
-
-                if attributeForResource is not None and element[attributeForResource]:
-                    resourceURL = element[attributeForResource]
-                    newURL = saveResourceLocally(resourceURL, baseURL, resourceDataModifyFunc)
-                    if newURL is not None:
-                        element[attributeForResource] = newURL
-                    else:
-                        element[attributeForResource] = "data:,"
-
-            def urlWithoutFragment(url):
-                parsed = list(urllib.parse.urlparse(url))
-                parsed[5] = ""
-                return urllib.parse.urlunparse(parsed)
-
-            def saveResourceLocally(resourceURL, baseURL, resourceDataModifyFunc=None):
-                nonlocal countSavedFiles
-
-                resourceURL = urlWithoutFragment(urllib.parse.urljoin(baseURL, resourceURL))
-
-                versionId, data = self.proxy.getResourceVersion(resourceURL)
-                if versionId is None:
-                    try:
-                        proxies = {
-                            'http': f'http://127.0.0.1:{self.proxy.port}',
-                            'https': f'http://127.0.0.1:{self.proxy.port}',
-                        }
-                        response = requests.get(resourceURL, proxies=proxies, verify=False)
-                        versionId, data = self.proxy.getResourceVersion(resourceURL)
-                    except requests.exceptions.RequestException:
-                        pass
-
-                if data is None:
-                    getLogger().error(f"ERROR! Failed to grab the resource at URL: {resourceURL}")
-                    return None
-                else:
-                    urlPath = urllib.parse.urlparse(resourceURL).path
-                    extension = os.path.splitext(urlPath)[1]
-
-                    if resourceDataModifyFunc is not None:
-                        data = resourceDataModifyFunc(data, resourceURL)
-
-                    countSavedFiles += 1
-                    localFileName = f"{versionId}{extension}"
-                    with open(os.path.join("test", saveFolder, localFileName), "wb") as f:
-                        f.write(data)
-
-                    return f"{saveFolder}/{localFileName}"
-
-            def modifyCSS(data, baseURL):
-                matches = cssUrlRegex.findall(data)
-                for match in matches:
-                    resourceURL = match
-                    newURL = saveResourceLocally(str(resourceURL, 'utf8'), baseURL)
-                    if newURL is not None:
-                        newURL = newURL[len(saveFolder)+1:]
-                        data = data.replace(resourceURL, bytes(newURL, 'utf8'))
-
-                return data
-
-            self.driver.execute_script("""
-                function uniques(a)
-                {
-                    var seen = {};
-                    return a.filter(function(item) {
-                        return seen.hasOwnProperty(item) ? false : (seen[item] = true);
-                    });
-                }
-                
-                const domElements = document.querySelectorAll("*");
-                for(let element of domElements)
-                {
-                    element.setAttribute("value", element.value);
-                    const bounds = element.getBoundingClientRect();
-                    
-                    element.setAttribute("data-kwola-left", bounds.left);
-                    element.setAttribute("data-kwola-top", bounds.top);
-                    element.setAttribute("data-kwola-bottom", bounds.bottom);
-                    element.setAttribute("data-kwola-right", bounds.right);
-                    
-                    if (window.kwolaEvents && window.kwolaEvents.has(element))
-                    {
-                        element.setAttribute("data-kwola-event-handlers", window.kwolaEvents.get(element).toString());
-                    }
-                    
-                    const elementAtPosition = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
-                    if (elementAtPosition === null || element.contains(elementAtPosition) || elementAtPosition.contains(element))
-                    {
-                        element.setAttribute("data-kwola-is-on-top", "true");
-                    }
-                    else
-                    {
-                        element.setAttribute("data-kwola-is-on-top", "false");
-                    }
-                    
-                    const isVisible = !!( element.offsetWidth || element.offsetHeight || element.getClientRects().length );
-                    element.setAttribute("data-kwola-is-visible", isVisible.toString());
-                    
-                    element.setAttribute("data-kwola-scroll-top", element.scrollTop);
-                    if (element.scrollTop)
-                    {
-                        let onload = element.getAttribute("onload");
-                        
-                        if (!onload)
-                        {
-                            onload = "";
-                        }               
-                        onload = `this.scrollTop = ${element.scrollTop}`;     
-                    }
-                }
-            """)
-
-            pageUrl = self.driver.current_url
-            source = str(self.driver.page_source)
-
-            getLogger().info(f"Saving HTML of page {pageUrl}")
-
-            self.driver.save_screenshot("test/" + saveOutputFileName + ".png")
-
-            with open("test/" + saveOutputFileName, "wt") as f:
-                f.write(modifyHTML(source, pageUrl))
-
-            if countSavedFiles < 10:
-                getLogger().error(f"ERROR ON PAGE {pageUrl}")
-            getLogger().info(f"Saved files for {folder}: {countSavedFiles}")
-
-            return None
-        except urllib3.exceptions.MaxRetryError:
-            self.hasBrowserDied = True
-            self.browserDeathReason = f"Following fatal error occurred during saveHTML: {traceback.format_exc()}"
-            return
-        except selenium.common.exceptions.WebDriverException:
-            self.hasBrowserDied = True
-            self.browserDeathReason = f"Following fatal error occurred during saveHTML: {traceback.format_exc()}"
-            return
-        except urllib3.exceptions.ProtocolError:
-            self.hasBrowserDied = True
-            self.browserDeathReason = f"Following fatal error occurred during saveHTML: {traceback.format_exc()}"
-            return
-        except AttributeError:
-            self.hasBrowserDied = True
-            self.browserDeathReason = f"Following fatal error occurred during saveHTML: {traceback.format_exc()}"
-            return
+        return action

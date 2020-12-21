@@ -165,10 +165,9 @@ class BugReproducer:
 
         for actionIndex in range(longestActionList):
             actions = []
-            actionMapLists = environment.getActionMaps()
-            for actionList, actionMaps in zip(actionLists, actionMapLists):
+            for actionList, session in zip(actionLists, environment.sessions):
                 if actionIndex < len(actionList):
-                    action = self.createReproductionActionFromOriginal(actionList[actionIndex], actionMaps)
+                    action = session.createReproductionActionFromOriginal(actionList[actionIndex])
 
                     actions.append(action)
                 else:
@@ -199,46 +198,3 @@ class BugReproducer:
 
         return [didReproduceSuccessfully.get(index, False) for index in range(len(actionLists))]
 
-
-
-    def createReproductionActionFromOriginal(self, action, actionMaps):
-        closestOriginal = None
-        closestCurrent = None
-        closestKeywordSimilarity = None
-        closestCornerDist = None
-        for currentActionMap in actionMaps:
-            if not currentActionMap.canRunAction(action):
-                continue
-
-            keywords = set(currentActionMap.keywords.split())
-            for originalActionMap in action.intersectingActionMaps:
-                if not originalActionMap.canRunAction(action):
-                    continue
-
-                originalKeywords = set(originalActionMap.keywords.split())
-                similarity = len(keywords.intersection(originalKeywords)) / max(1, len(keywords.union(originalKeywords)))
-                cornerDist = abs(currentActionMap.left - originalActionMap.left) + \
-                             abs(currentActionMap.right - originalActionMap.right) + \
-                             abs(currentActionMap.top - originalActionMap.top) + \
-                             abs(currentActionMap.bottom - originalActionMap.bottom)
-
-                if closestCurrent is None or similarity > closestKeywordSimilarity:
-                    closestKeywordSimilarity = similarity
-                    closestCornerDist = cornerDist
-                    closestCurrent = currentActionMap
-                    closestOriginal = originalActionMap
-                elif similarity == closestKeywordSimilarity and cornerDist < closestCornerDist:
-                    closestKeywordSimilarity = similarity
-                    closestCornerDist = cornerDist
-                    closestCurrent = currentActionMap
-                    closestOriginal = originalActionMap
-
-        if closestOriginal is not None:
-            # print("FOUND!", closestOriginal.to_json(), closestCurrent.to_json(), closestKeywordSimilarity, closestCornerDist)
-            action = copy.deepcopy(action)
-            action.x += closestCurrent.left - closestOriginal.left
-            action.y += closestCurrent.top - closestOriginal.top
-        # else:
-        #     print(action.to_json())
-
-        return action
