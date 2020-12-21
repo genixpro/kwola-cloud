@@ -379,6 +379,7 @@ class DeepLearningAgent:
 
         fileData = self.config.loadKwolaFileData("models", self.modelFileName, printErrorOnFailure=False)
         if fileData is None:
+            getLogger().warning("I was unable to load the model from disk. Initializing a fresh model!")
             # Initialize a fresh model if we are unable to load a model from disk.
             self.model.initialize()
         else:
@@ -398,6 +399,8 @@ class DeepLearningAgent:
             # for the updates made to the main model.
             if self.targetNetwork is not None:
                 self.targetNetwork.load_state_dict(stateDict)
+
+            getLogger().info("I have successfully loaded the model from disk. ")
 
     @autoretry()
     def save(self, saveName=""):
