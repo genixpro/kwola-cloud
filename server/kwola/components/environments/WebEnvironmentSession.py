@@ -1095,6 +1095,8 @@ class WebEnvironmentSession:
             executionTrace.testingRunId = str(self.executionSession.testingRunId)
             executionTrace.owner = self.executionSession.owner
 
+            # self.saveHTML(executionTrace.id + ".html", executionTrace.id + "_folder")
+
             # Set the execution trace id in the proxy. The proxy will add on headers
             # to all http requests sent by the browser with information identifying
             # which execution trace that particular request is associated with
@@ -1193,7 +1195,8 @@ class WebEnvironmentSession:
             saveFolder = folder
             saveOutputFileName = fileName
 
-            os.mkdir("test/" + folder)
+            if not os.path.exists("test/" + folder):
+                os.mkdir("test/" + folder)
 
             countSavedFiles = 0
 
@@ -1254,19 +1257,25 @@ class WebEnvironmentSession:
                     else:
                         element[attributeForResource] = "data:,"
 
+            def urlWithoutFragment(url):
+                parsed = list(urllib.parse.urlparse(url))
+                parsed[5] = ""
+                return urllib.parse.urlunparse(parsed)
+
             def saveResourceLocally(resourceURL, baseURL, resourceDataModifyFunc=None):
                 nonlocal countSavedFiles
 
-                resourceURL = urllib.parse.urljoin(baseURL, resourceURL)
-                data = self.proxy.getResourceData(resourceURL)
-                if data is None:
+                resourceURL = urlWithoutFragment(urllib.parse.urljoin(baseURL, resourceURL))
+
+                versionId, data = self.proxy.getResourceVersion(resourceURL)
+                if versionId is None:
                     try:
-                        response = requests.get(resourceURL)
-                        if response.status_code == 200:
-                            data = response.content
-                            self.proxy.saveResourceData(resourceURL, data)
-                        else:
-                            self.proxy.saveResourceData(resourceURL, None)
+                        proxies = {
+                            'http': f'http://127.0.0.1:{self.proxy.port}',
+                            'https': f'http://127.0.0.1:{self.proxy.port}',
+                        }
+                        response = requests.get(resourceURL, proxies=proxies, verify=False)
+                        versionId, data = self.proxy.getResourceVersion(resourceURL)
                     except requests.exceptions.RequestException:
                         pass
 
@@ -1280,14 +1289,8 @@ class WebEnvironmentSession:
                     if resourceDataModifyFunc is not None:
                         data = resourceDataModifyFunc(data, resourceURL)
 
-                    base64ExtraCharacters = bytes("--", 'utf8')
-                    longHash = str(base64.b64encode(hashlib.sha256(data).digest(), altchars=base64ExtraCharacters), 'utf8')
-                    longHash = longHash.replace("-", "")
-                    longHash = longHash.replace("=", "")
-                    longHash = longHash[:8]
-
                     countSavedFiles += 1
-                    localFileName = f"resource-{longHash}{extension}"
+                    localFileName = f"{versionId}{extension}"
                     with open(os.path.join("test", saveFolder, localFileName), "wb") as f:
                         f.write(data)
 
@@ -1305,10 +1308,54 @@ class WebEnvironmentSession:
                 return data
 
             self.driver.execute_script("""
+                function uniques(a)
+                {
+                    var seen = {};
+                    return a.filter(function(item) {
+                        return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+                    });
+                }
+                
                 const domElements = document.querySelectorAll("*");
                 for(let element of domElements)
                 {
                     element.setAttribute("value", element.value);
+                    const bounds = element.getBoundingClientRect();
+                    
+                    element.setAttribute("data-kwola-left", bounds.left);
+                    element.setAttribute("data-kwola-top", bounds.top);
+                    element.setAttribute("data-kwola-bottom", bounds.bottom);
+                    element.setAttribute("data-kwola-right", bounds.right);
+                    
+                    if (window.kwolaEvents && window.kwolaEvents.has(element))
+                    {
+                        element.setAttribute("data-kwola-event-handlers", window.kwolaEvents.get(element).toString());
+                    }
+                    
+                    const elementAtPosition = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+                    if (elementAtPosition === null || element.contains(elementAtPosition) || elementAtPosition.contains(element))
+                    {
+                        element.setAttribute("data-kwola-is-on-top", "true");
+                    }
+                    else
+                    {
+                        element.setAttribute("data-kwola-is-on-top", "false");
+                    }
+                    
+                    const isVisible = !!( element.offsetWidth || element.offsetHeight || element.getClientRects().length );
+                    element.setAttribute("data-kwola-is-visible", isVisible.toString());
+                    
+                    element.setAttribute("data-kwola-scroll-top", element.scrollTop);
+                    if (element.scrollTop)
+                    {
+                        let onload = element.getAttribute("onload");
+                        
+                        if (!onload)
+                        {
+                            onload = "";
+                        }               
+                        onload = `this.scrollTop = ${element.scrollTop}`;     
+                    }
                 }
             """)
 

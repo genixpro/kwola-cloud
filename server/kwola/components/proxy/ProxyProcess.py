@@ -26,6 +26,8 @@ from ...components.proxy.DotNetRPCErrorTracer import DotNetRPCErrorTracer
 from ...config.logger import getLogger, setupLocalLogging
 from ..plugins.core.JSRewriter import JSRewriter
 from ..plugins.core.HTMLRewriter import HTMLRewriter
+from ..plugins.base.ProxyPluginBase import ProxyPluginBase
+from ...datamodels.ResourceModel import Resource
 from contextlib import closing
 import pickle
 from threading import Thread
@@ -130,15 +132,10 @@ class ProxyProcess:
         self.commandQueue.put("getDotNetRPCErrors")
         return pickle.loads(self.resultQueue.get())
 
-    def getResourceData(self, url):
-        self.commandQueue.put("getResourceData")
+    def getResourceVersion(self, url):
+        self.commandQueue.put("getResourceVersion")
         self.commandQueue.put(url)
         return self.resultQueue.get()
-
-    def saveResourceData(self, url, data):
-        self.commandQueue.put("saveResourceData")
-        self.commandQueue.put((url, data))
-        return
 
     @autoretry(logRetries=False)
     def checkProxyFunctioning(self):
@@ -213,14 +210,14 @@ class ProxyProcess:
                 codeRewriter.executionTraceId = traceId
                 resultQueue.put(None)
 
-            if message == "getResourceData":
+            if message == "getResourceVersion":
                 resourceUrl = commandQueue.get()
-                data = codeRewriter.resourcesByURL.get(resourceUrl)
-                resultQueue.put(data)
-
-            if message == "saveResourceData":
-                (resourceUrl, data) = commandQueue.get()
-                codeRewriter.resourcesByURL[resourceUrl] = data
+                versionId = codeRewriter.seenResourceVersionsByURL.get(resourceUrl)
+                if versionId is not None:
+                    data = codeRewriter.memoryCache[versionId]
+                else:
+                    data = None
+                resultQueue.put((versionId, data))
 
             if message == "getUserAgent":
                 resultQueue.put(userAgentTracer.lastUserAgent)

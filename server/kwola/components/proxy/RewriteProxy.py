@@ -88,6 +88,7 @@ class RewriteProxy:
         self.backgroundSaveExecutor = ThreadPoolExecutor()
 
         self.resourcesById = {}
+        self.seenResourceVersionsByURL = {}
 
         allResources = Resource.loadAllResources(config)
         for resource in allResources:
@@ -240,10 +241,12 @@ class RewriteProxy:
             unzippedFileContents, gzipped = self.decompressDataIfNeeded(originalFileContents)
 
             if resource is not None:
+                versionId = resource.getVersionId(fileHash)
+                self.seenResourceVersionsByURL[flow.request.url] = versionId
+
                 if not resource.didRewriteResource:
                     return
                 else:
-                    versionId = resource.getVersionId(fileHash)
                     transformedContents = None
 
                     if versionId in self.memoryCache:
@@ -293,7 +296,7 @@ class RewriteProxy:
                 versionId = resource.getVersionId(fileHash)
 
             resourceVersion = ResourceVersion(
-                id=resource.getVersionId(fileHash),
+                id=versionId,
                 owner=(self.config['owner'] if 'owner' in self.config else None),
                 applicationId=(self.config['applicationId'] if 'applicationId' in self.config else None),
                 testingRunId=(self.config['testingRunId'] if 'testingRunId' in self.config else None),
@@ -311,6 +314,9 @@ class RewriteProxy:
                 originalLength=len(unzippedFileContents),
                 rewrittenLength=None
             )
+
+            self.seenResourceVersionsByURL[flow.request.url] = versionId
+            print("STORING", flow.request.url)
 
             if len(unzippedFileContents) == 0:
                 self.memoryCache[versionId] = unzippedFileContents
