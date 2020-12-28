@@ -38,6 +38,12 @@ import SettingsIcon from "@material-ui/icons/Settings";
 import Menus, {MenuItem} from "../../components/uielements/menus";
 import {Link} from "react-router-dom";
 import LoaderButton from "../../components/LoaderButton";
+import Tabs, { Tab } from '../../components/uielements/tabs';
+import BugReportIcon from '@material-ui/icons/BugReport';
+import LinearScaleIcon from '@material-ui/icons/LinearScale';
+import AppBar from '../../components/uielements/appbar';
+import WebIcon from '@material-ui/icons/Web';
+import ChangesViewer from "./ChangesViewer";
 
 class ViewTestingRun extends Component {
     state = {
@@ -48,7 +54,8 @@ class ViewTestingRun extends Component {
         setPage:0,
         bugs:[],
         isAdmin: Auth.isAdmin(),
-        settingsMenuOpen: false
+        settingsMenuOpen: false,
+        tab: 0
     };
 
     loadAllData()
@@ -142,6 +149,11 @@ class ViewTestingRun extends Component {
         return axios.post(`/testing_runs/${this.props.match.params.id}/resume`).then((response) => {
             this.loadAllData();
         });
+    }
+
+    changeTab(evt, newTab)
+    {
+        this.setState({tab: newTab});
     }
 
 
@@ -301,30 +313,52 @@ class ViewTestingRun extends Component {
 
                         <Row>
                             <FullColumn>
-                                <Papersheet title={"Bugs Found"} tooltip={bugsTooltip}>
-                                    <span>Total bugs Found: {this.state.bugs ? this.state.bugs.length: "0"}</span><br/>
-                                    <span>Download CSV: {downloadCSVButton}</span><br/>
-                                    {
-                                        this.state.testingRun.status === "completed" ?
-                                            <span>Download Zip File: <a href={zipFileLink}><Icon color="primary" className="fontSizeSmall">get_app</Icon></a></span>
-                                        : null
-                                    }
-                                    <br/>
-                                    <br/>
-                                    <BugsTable {...this.props} data={this.state.bugs} />
-                                </Papersheet>
+                                <AppBar position="static" color="default">
+                                    <Tabs
+                                        value={this.state.tab}
+                                        onChange={this.changeTab.bind(this)}
+                                        variant="scrollable"
+                                        scrollButtons="on"
+                                        indicatorColor="primary"
+                                        textColor="primary"
+                                    >
+                                        <Tab label="Bugs" icon={<BugReportIcon />} />
+                                        <Tab label="Changes" icon={<LinearScaleIcon />} />
+                                        <Tab label="Sessions" icon={<WebIcon />} />
+                                    </Tabs>
+                                </AppBar>
+
+                                {
+                                    this.state.tab === 0 ?
+                                        <Papersheet style={{"borderRadius": "0"}}>
+                                            <span>Total bugs Found: {this.state.bugs ? this.state.bugs.length: "0"}</span><br/>
+                                            <span>Download CSV: {downloadCSVButton}</span><br/>
+                                            {
+                                                this.state.testingRun.status === "completed" ?
+                                                    <span>Download Zip File: <a href={zipFileLink}><Icon color="primary" className="fontSizeSmall">get_app</Icon></a></span>
+                                                    : null
+                                            }
+                                            <br/>
+                                            <br/>
+                                            <BugsTable {...this.props} data={this.state.bugs} />
+                                        </Papersheet> : null
+                                }
+                                {
+                                    this.state.tab === 1 ?
+                                        <Papersheet style={{"borderRadius": "0"}}>
+                                            <h1>Changes</h1>
+
+                                            <ChangesViewer testingRun={this.state.testingRun} />
+                                        </Papersheet> : null
+                                }
+                                {
+                                    this.state.tab === 2 ?
+                                    <Papersheet style={{"borderRadius": "0"}}>
+                                        <SessionTable {...this.props} data={this.state.executionSessions} />
+                                    </Papersheet> : null
+                                }
                             </FullColumn>
                         </Row>
-
-
-                        <Row>
-                            <FullColumn>
-                                <Papersheet title={"Web Browsers"} tooltip={sessionsTooltip}>
-                                   <SessionTable {...this.props} data={this.state.executionSessions} />
-                                </Papersheet>
-                            </FullColumn>
-                        </Row>
-
                     </FullColumn>
                 </LayoutWrapper>
                 : null

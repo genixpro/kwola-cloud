@@ -18,6 +18,7 @@ import logging
 import flask
 from kwola.config.config import KwolaCoreConfiguration
 from kwolacloud.config.config import loadCloudConfiguration
+from kwolacloud.tasks.BehaviourChangeDetectionTask import runBehaviourChangeDetectionJob
 import os.path
 from ..tasks.utils import getSharedGCSStorageClient
 from ..auth import authenticate, isAdmin
@@ -184,3 +185,25 @@ class ExecutionSessionSingleTrace(Resource):
         return {"executionTrace": json.loads(trace.to_json())}
 
 
+
+class ExecutionSessionTriggerChangeDetection(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+
+    def post(self, execution_session_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": execution_session_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        session = ExecutionSession.objects(**queryParams).first()
+
+        if session is None:
+            return abort(404)
+
+        runBehaviourChangeDetectionJob(session.testingRunId, session.id)
+
+        return {}

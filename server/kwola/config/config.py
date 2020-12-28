@@ -275,7 +275,7 @@ class KwolaCoreConfiguration:
                 data = objectBlob.download_as_string()
                 return data
             else:
-                raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for uration data_file_storage_method")
+                raise RuntimeError(f"Unexpected value {self['data_file_storage_method']} for configuration data_file_storage_method")
         except FileNotFoundError:
             if printErrorOnFailure:
                 getLogger().info(f"Error: Failed to load file {filePath}. File not found. Usually implies the file failed to write. "

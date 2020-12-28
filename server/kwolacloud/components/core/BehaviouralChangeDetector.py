@@ -39,7 +39,7 @@ from bs4 import BeautifulSoup, NavigableString
 
 
 
-class RegressionTester:
+class BehaviourChangeDetector:
     """
         This class manages the regression testing process.
     """
@@ -147,7 +147,7 @@ class RegressionTester:
         environment = WebEnvironment(config=self.config, sessionLimit=1, executionSessions=[session], plugins=[], browser=priorExecutionSession.browser, windowSize=priorExecutionSession.windowSize)
 
         for traceId in priorExecutionSession.executionTraces:
-            oldTrace = ExecutionTrace.loadFromDisk(traceId, self.config)
+            oldTrace = ExecutionTrace.loadFromDisk(traceId, self.config, applicationId=priorExecutionSession.applicationId)
 
             action = environment.sessions[0].createReproductionActionFromOriginal(oldTrace.actionPerformed)
 

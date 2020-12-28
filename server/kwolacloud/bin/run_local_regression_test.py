@@ -11,7 +11,7 @@ import time
 from kwola.config.logger import getLogger, setupLocalLogging
 import logging
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
-from kwolacloud.components.core.RegressionTester import RegressionTester
+from kwolacloud.components.core.BehaviouralChangeDetector import BehaviourChangeDetector
 import cProfile
 import pstats
 
@@ -27,7 +27,7 @@ def main():
     configDir = getConfigurationDirFromCommandLineArgs()
     config = KwolaCoreConfiguration.loadConfigurationFromDirectory(configDir)
 
-    regressionTester = RegressionTester(config)
+    regressionTester = BehaviourChangeDetector(config)
 
     executionSessionFiles = config.listAllFilesInFolder("execution_sessions")
 

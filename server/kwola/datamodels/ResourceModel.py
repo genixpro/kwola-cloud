@@ -75,7 +75,7 @@ class Resource(Document):
         if dataFormat == "mongo":
             if applicationId is None:
                 applicationId = config['applicationId']
-            objects = Resource.objects({"applicationId": applicationId})
+            objects = Resource.objects(applicationId=applicationId)
             return objects
         else:
             resourceFiles = config.listAllFilesInFolder("resources")

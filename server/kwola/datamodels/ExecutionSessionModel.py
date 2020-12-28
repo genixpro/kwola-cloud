@@ -61,6 +61,10 @@ class ExecutionSession(Document):
 
     windowSize = StringField()
 
+    useForFutureChangeDetection = BooleanField()
+
+    isChangeDetectionSession = BooleanField()
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "execution_sessions", config)
 

@@ -83,18 +83,6 @@ def runBugReproductionAlgorithm(bugId):
     try:
         config = run.configuration.createKwolaCoreConfiguration(run.owner, run.applicationId, run.id)
 
-        config['web_session_height'] = {
-            "desktop": 768,
-            "tablet": 1024,
-            "mobile": 740
-          }
-
-        config['web_session_width'] = {
-            "desktop": 1024,
-            "tablet": 800,
-            "mobile": 460
-          }
-
         reproducer = BugReproducer(config)
 
         success, shortestActionSequence = reproducer.findShortestPathReproduction(bug)
@@ -127,7 +115,7 @@ def runBugReproductionAlgorithm(bugId):
             newActions = []
 
             for action in shortestActionSequence:
-                modifiedAction = reproducer.createReproductionActionFromOriginal(action, environment.getActionMaps()[0])
+                modifiedAction = environment.sessions[0].createReproductionActionFromOriginal(action)
                 newActions.append(modifiedAction)
                 trace = environment.runActions([modifiedAction])[0]
                 trace.saveToDisk(config)

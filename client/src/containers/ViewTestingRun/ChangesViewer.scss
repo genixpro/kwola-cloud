@@ -1,0 +1,33 @@
+
+
+
+.differences-screenshot-wrapper
+{
+  width: 100%;
+  border: 1px solid grey;
+}
+
+.differences-screenshot
+{
+  width: 100%;
+}
+
+.difference-viewer-control-button
+{
+  margin: 10px 10px;
+  min-width: 24px;
+  padding: 5px;
+}
+
+.difference-viewer-frame-indicator
+{
+  position: relative;
+  top: 8px;
+}
+
+.difference-viewer-control-buttons-wrapper
+{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}

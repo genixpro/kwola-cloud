@@ -6,8 +6,9 @@
 
 from mongoengine import *
 from kwola.datamodels.CustomIDField import CustomIDField
-from ..config.config import getKwolaConfigurationData
+from ..config.config import getKwolaConfigurationData, loadCloudConfiguration
 from kwola.config.config import KwolaCoreConfiguration
+import os
 
 
 class RunConfiguration(EmbeddedDocument):
@@ -150,5 +151,9 @@ class RunConfiguration(EmbeddedDocument):
         kwolaConfigData['web_session_enable_window_size_desktop'] = self.enableWindowSizeDesktop
         kwolaConfigData['web_session_enable_window_size_tablet'] = self.enableWindowSizeTablet
         kwolaConfigData['web_session_enable_window_size_mobile'] = self.enableWindowSizeMobile
+
+        cloudConfig = loadCloudConfiguration()
+        if cloudConfig['features']['localRuns']:
+            kwolaConfigData['configurationDirectory'] = os.path.join("data", applicationId)
 
         return KwolaCoreConfiguration(kwolaConfigData)
