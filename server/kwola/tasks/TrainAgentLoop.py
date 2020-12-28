@@ -38,7 +38,7 @@ from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import billiard as multiprocessing
-from kwolacloud.components.core.RegressionTester import RegressionTester
+from kwolacloud.components.core.BehaviouralChangeDetector import BehaviourChangeDetector
 import os
 import os.path
 import time
@@ -270,7 +270,7 @@ def updateModelSymbols(config, testingStepId):
     global regressionTester
 
     if regressionTester is None:
-        regressionTester = RegressionTester(config)
+        regressionTester = BehaviourChangeDetector(config)
         regressionTester.loadCumulativeBranchTrace()
 
     symbolMap = SymbolMapper(config)

@@ -3,13 +3,41 @@
 
 .differences-screenshot-wrapper
 {
+  position: relative;
   width: 100%;
   border: 1px solid grey;
-}
 
-.differences-screenshot
-{
-  width: 100%;
+  .differences-screenshot
+  {
+    width: 100%;
+  }
+
+  .differences-video
+  {
+    width: 100%;
+  }
+
+  .difference-box
+  {
+    position: absolute;
+    border: 1px solid black;
+    opacity: 0.2;
+  }
+
+  .changed_text
+  {
+    background: yellow;
+  }
+
+  .deleted_text
+  {
+    background: red;
+  }
+
+  .added_text
+  {
+    background: green;
+  }
 }
 
 .difference-viewer-control-button
@@ -30,4 +58,12 @@
   width: 100%;
   display: flex;
   justify-content: center;
+}
+
+.difference-row
+{
+  &.selected
+  {
+    background-color: #999;
+  }
 }

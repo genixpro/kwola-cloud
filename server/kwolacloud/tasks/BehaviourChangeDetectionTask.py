@@ -90,8 +90,10 @@ def runBehaviourChangeDetectionAlgorithm(testingRunId, executionSessionId=None):
 
         changeDetector = BehaviourChangeDetector(config)
 
+        seenDifferenceHashes = set()
+
         for priorSession in priorExecutionSessions:
-            changeDetector.findAllChangesForExecutionSession(priorSession)
+            changeDetector.findAllChangesForExecutionSession(priorSession, seenDifferenceHashes)
 
         if executionSessionId is None:
             logging.info(f"Finished change detection for testing run {testingRunId}")

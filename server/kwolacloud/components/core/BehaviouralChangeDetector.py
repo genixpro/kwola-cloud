@@ -22,7 +22,7 @@ from kwola.components.environments.WebEnvironment import WebEnvironment
 from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
-from kwolacloud.datamodels.RegressionDifference import RegressionDifference
+from kwolacloud.datamodels.BehaviouralDifference import BehaviouralDifference
 from kwola.config.logger import getLogger
 from kwolacloud.datamodels.id_utility import generateKwolaId
 from datetime import datetime
@@ -128,7 +128,7 @@ class BehaviourChangeDetector:
         return sessionIdsWithNewBranches
 
 
-    def findAllChangesForExecutionSession(self, priorExecutionSession):
+    def findAllChangesForExecutionSession(self, priorExecutionSession, seenDifferenceHashes):
         session = ExecutionSession(
             id=str(priorExecutionSession.id) + "_regression_test",
             owner=priorExecutionSession.owner,
@@ -141,7 +141,11 @@ class BehaviourChangeDetector:
             tabNumber=0,
             executionTraces=[],
             browser=priorExecutionSession.browser,
-            windowSize=priorExecutionSession.windowSize
+            windowSize=priorExecutionSession.windowSize,
+            useForFutureChangeDetection=False,
+            isChangeDetectionSession=True,
+            changeDetectionPriorExecutionSessionId=priorExecutionSession.id,
+            executionTracesWithChanges=[]
         )
 
         environment = WebEnvironment(config=self.config, sessionLimit=1, executionSessions=[session], plugins=[], browser=priorExecutionSession.browser, windowSize=priorExecutionSession.windowSize)
@@ -158,7 +162,22 @@ class BehaviourChangeDetector:
 
             differences = self.compareHtml(originalHtml, oldTrace, newHtml, newTrace)
 
-            # environment.sessions[0].driver.save_screenshot(traceId + ".png")
+            newDifference = False
+            for difference in differences:
+                hash = difference.computeDifferenceHash()
+                if hash not in seenDifferenceHashes:
+                    difference.saveToDisk(self.config)
+                    seenDifferenceHashes.add(hash)
+                    newDifference = True
+
+            if newDifference:
+                session.executionTracesWithChanges.append(traceId)
+
+        session.saveToDisk(self.config)
+
+        environment.runSessionCompletedHooks()
+
+        environment.shutdown()
 
 
     def compareHtml(self, oldHtml, oldExecutionTrace, newHtml, newExecutionTrace):
@@ -196,20 +215,30 @@ class BehaviourChangeDetector:
 
         differences = []
 
+        allOldIndexes = list(range(len(oldStringDatas)))
+        allNewIndexes = list(range(len(newStringDatas)))
+
         for oldIndex, newIndex in zip(oldIndexes, newIndexes):
             oldStringData = oldStringDatas[oldIndex]
             newStringData = newStringDatas[newIndex]
             distScore = distScoreMatrix[oldIndex][newIndex]
 
+            allOldIndexes.remove(oldIndex)
+            allNewIndexes.remove(newIndex)
+
             if distScore < 20:
                 if oldStringData['text'] != newStringData['text']:
-                    differenceObject = RegressionDifference(
-                        id=CustomIDField.generateNewUUID(RegressionDifference, self.config),
-                        # id=generateKwolaId(RegressionDifference, str(newExecutionTrace.owner), self.config),
+                    differenceObject = BehaviouralDifference(
+                        id=CustomIDField.generateNewUUID(BehaviouralDifference, self.config),
+                        # id=generateKwolaId(BehaviouralDifference, str(newExecutionTrace.owner), self.config),
                         owner=newExecutionTrace.owner,
                         applicationId=newExecutionTrace.applicationId,
                         priorTestingRunId=oldExecutionTrace.testingRunId,
                         newTestingRunId=newExecutionTrace.testingRunId,
+                        priorExecutionSessionId=oldExecutionTrace.executionSessionId,
+                        newExecutionSessionId=newExecutionTrace.executionSessionId,
+                        priorExecutionTraceId=oldExecutionTrace.id,
+                        newExecutionTraceId=newExecutionTrace.id,
                         differenceType="changed_text",
                         priorLeft=oldStringData['left'],
                         priorTop=oldStringData['top'],
@@ -224,6 +253,65 @@ class BehaviourChangeDetector:
                     )
 
                     differences.append(differenceObject)
+
+        for oldIndex in allOldIndexes:
+            oldStringData = oldStringDatas[oldIndex]
+
+            differenceObject = BehaviouralDifference(
+                id=CustomIDField.generateNewUUID(BehaviouralDifference, self.config),
+                # id=generateKwolaId(BehaviouralDifference, str(newExecutionTrace.owner), self.config),
+                owner=newExecutionTrace.owner,
+                applicationId=newExecutionTrace.applicationId,
+                priorTestingRunId=oldExecutionTrace.testingRunId,
+                newTestingRunId=newExecutionTrace.testingRunId,
+                priorExecutionSessionId=oldExecutionTrace.executionSessionId,
+                newExecutionSessionId=newExecutionTrace.executionSessionId,
+                priorExecutionTraceId=oldExecutionTrace.id,
+                newExecutionTraceId=newExecutionTrace.id,
+                differenceType="deleted_text",
+                priorLeft=oldStringData['left'],
+                priorTop=oldStringData['top'],
+                priorBottom=oldStringData['bottom'],
+                priorRight=oldStringData['right'],
+                newLeft=None,
+                newTop=None,
+                newBottom=None,
+                newRight=None,
+                priorText=oldStringData['text'],
+                newText=None
+            )
+
+            differences.append(differenceObject)
+
+
+        for newIndex in allNewIndexes:
+            newStringData = newStringDatas[newIndex]
+
+            differenceObject = BehaviouralDifference(
+                id=CustomIDField.generateNewUUID(BehaviouralDifference, self.config),
+                # id=generateKwolaId(BehaviouralDifference, str(newExecutionTrace.owner), self.config),
+                owner=newExecutionTrace.owner,
+                applicationId=newExecutionTrace.applicationId,
+                priorTestingRunId=oldExecutionTrace.testingRunId,
+                newTestingRunId=newExecutionTrace.testingRunId,
+                priorExecutionSessionId=oldExecutionTrace.executionSessionId,
+                newExecutionSessionId=newExecutionTrace.executionSessionId,
+                priorExecutionTraceId=oldExecutionTrace.id,
+                newExecutionTraceId=newExecutionTrace.id,
+                differenceType="added_text",
+                priorLeft=None,
+                priorTop=None,
+                priorBottom=None,
+                priorRight=None,
+                newLeft=newStringData['left'],
+                newTop=newStringData['top'],
+                newBottom=newStringData['bottom'],
+                newRight=newStringData['right'],
+                priorText=None,
+                newText=newStringData['text']
+            )
+
+            differences.append(differenceObject)
 
         return differences
 

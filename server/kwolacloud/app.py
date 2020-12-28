@@ -55,6 +55,7 @@ from .resources.FeedbackSubmissionResource import FeedbackSubmissionsGroup, Feed
 from .resources.RecurringTestingTriggerResource import RecurringTestingTriggerGroup, RecurringTestingTriggerSingle
 from .resources.InternalSlackNotification import InternalSlackNotification
 from .resources.SelfTest import AutologinForSelfTest
+from .resources.BehaviouralDifferencesResource import BehaviouralDifferencesGroup
 
 api.add_resource(ApplicationGroup, '/api/application')
 api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
@@ -121,6 +122,7 @@ api.add_resource(FeedbackSubmissionSingle, '/api/feedback_submission/<string:fee
 api.add_resource(RecurringTestingTriggerGroup, '/api/recurring_testing_trigger')
 api.add_resource(RecurringTestingTriggerSingle, '/api/recurring_testing_trigger/<string:recurring_testing_trigger_id>')
 api.add_resource(InternalSlackNotification, '/api/internal_slack_notification')
+api.add_resource(BehaviouralDifferencesGroup, '/api/behavioural_differences')
 
 if cloudConfig['features']['enableSelfTestLoginEndpoint']:
     api.add_resource(AutologinForSelfTest, '/api/self_test_login')

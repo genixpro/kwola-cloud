@@ -39,7 +39,9 @@ def main():
 
         # profile.enable()
 
-        differences = regressionTester.findAllChangesForExecutionSession(executionSession)
+        seenDifferenceHashes = set()
+
+        differences = regressionTester.findAllChangesForExecutionSession(executionSession, seenDifferenceHashes)
         #
         # profile.disable()
         #

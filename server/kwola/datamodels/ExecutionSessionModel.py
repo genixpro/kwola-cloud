@@ -61,9 +61,13 @@ class ExecutionSession(Document):
 
     windowSize = StringField()
 
-    useForFutureChangeDetection = BooleanField()
+    useForFutureChangeDetection = BooleanField(default=False)
 
-    isChangeDetectionSession = BooleanField()
+    isChangeDetectionSession = BooleanField(default=False)
+
+    changeDetectionPriorExecutionSessionId = StringField()
+
+    executionTracesWithChanges = ListField(StringField())
 
     def saveToDisk(self, config):
         saveObjectToDisk(self, "execution_sessions", config)
