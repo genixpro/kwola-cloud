@@ -27,10 +27,12 @@ import Auth from "../../helpers/auth0/index"
 import ActionList from "../ActionList/index";
 import edgeBlackSquare from "../../images/edge-black-square.png"
 import axios from "axios";
+import LoaderButton from "../../components/LoaderButton";
 
 class ViewExecutionSession extends Component {
     state = {
         result: '',
+        isAdmin: Auth.isAdmin()
     };
 
     componentDidMount()
@@ -43,6 +45,17 @@ class ViewExecutionSession extends Component {
         axios.get(`/execution_sessions/${this.props.match.params.id}/traces`).then((response) =>
         {
             this.setState({executionTraces: response.data.executionTraces})
+        });
+    }
+
+    triggerChangeDetectionJob()
+    {
+        return axios.post(`/execution_sessions/${this.props.match.params.id}/start_change_detection_job`, {}).then((response) =>
+        {
+
+        }, (error) =>
+        {
+            console.error("Error occurred while triggering the change detection job.");
         });
     }
 
@@ -98,6 +111,23 @@ class ViewExecutionSession extends Component {
                                             <span>Window Size: {this.state.executionSession.windowSize}<br/><br/></span> : null
                                     }
                                 </Papersheet>
+
+                                <br/>
+
+                                {
+                                    this.state.isAdmin && process.env.REACT_APP_DISABLE_ADMIN_VIEW !== "true" ?
+                                        [
+                                            <Papersheet title={`Admin`} key={1}>
+                                                <LoaderButton onClick={() => this.triggerChangeDetectionJob()}>
+                                                    Trigger Change Detection Job
+                                                    <Icon className="rightIcon">send</Icon>
+                                                </LoaderButton>
+                                            </Papersheet>,
+                                            <br key={2}/>
+                                        ]
+                                        : null
+                                }
+
                             </HalfColumn>
                         </Row>
 
