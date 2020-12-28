@@ -205,6 +205,11 @@ RUN python3 setup.py install && \
     rm -rf /root/.cache && \
     chmod +r+r+r -R /usr/lib/python3/
 
+# Install any dependencies specified in package.json
+RUN sudo npm install -g && \
+    sudo npm install && \
+    rm -rf /root/.npm/_cacache
+
 ARG KWOLA_ENV
 ARG REVISION_ID
 ENV KWOLA_ENV=${KWOLA_ENV}
