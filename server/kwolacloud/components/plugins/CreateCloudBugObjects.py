@@ -248,7 +248,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             value = localFuture.get(timeout=self.config['debug_video_generation_timeout'])
             if value:
                 getLogger().error(value)
-            break
+            # break
             # except billiard.exceptions.WorkerLostError:
             #     if retry == 4:
             #         raise
