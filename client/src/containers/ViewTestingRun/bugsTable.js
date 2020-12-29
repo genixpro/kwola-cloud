@@ -142,35 +142,6 @@ class BugsTable extends Component{
 
 	 	return(
 	 		<div>
-                {/*<Table>style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word"}}
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Message</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {(this.props.data ? this.props.data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : []).map(bug => {
-                            return (
-
-                                <TableRow key={bug._id} hover={true} onClick={() => this.props.history.push(`/app/dashboard/bugs/${bug._id}`)} >
-                                    <TableCell>{bug.error.message}</TableCell>
-                                </TableRow>
-
-                            );
-                        })}
-                    </TableBody>
-
-                </Table>
-                <TablePagination
-                  rowsPerPageOptions={[5, 10, 25]}
-                  component="div"
-                  count={this.props.data ? this.props.data.length : 0}
-                  rowsPerPage={rowsPerPage}
-                  page={page}
-                  onChangePage={this.handleChangePage}
-                  onChangeRowsPerPage={this.handleChangeRowsPerPage}
-                />
-                */}
                 <MaterialTable
                   columns={[
                     { title: 'id', field: '_id', hidden:true },
@@ -186,16 +157,20 @@ class BugsTable extends Component{
                         },
                         cellStyle: {
                             width:'15%'
-                        }
+                        },
+                        grouping: false
                     },
-                    { title: 'Type', field: '_cls',
+                    {
+                        title: 'Type', field: '_cls',
                         width:'10%',
                         cellStyle: {
                           width:'10%'
-                        },
+                        }
                      },
-                    { title: 'Message', field: 'message',
+                    {
+                        title: 'Message', field: 'message',
                         width: "50%",
+                        grouping: false,
                         cellStyle: {
                           width: "50%",
                           maxWidth: "500px",
@@ -203,7 +178,8 @@ class BugsTable extends Component{
                         },
                         render: (rowData) => <div style={{"maxHeight": "90px", "overflow": "hidden"}}><span style={{"whiteSpace": 'pre-wrap'}}>{rowData.message.trim()}</span></div>
                      },
-                      { title: 'Importance', field: 'importanceLevel',
+                      {
+                          title: 'Importance', field: 'importanceLevel',
                           width: "15%",
                           cellStyle: {
                               width: "15%"
@@ -221,8 +197,9 @@ class BugsTable extends Component{
 
                       },
                   {
-                      field: 'url',
+                      // field: 'options',
                       title: 'Options',
+                      grouping: false,
                       render: (rowData) => <Button variant="contained"
                                                             size="small"
                                                             color={!this.state.muted[rowData._id] ? "default" : "primary"}
@@ -234,12 +211,15 @@ class BugsTable extends Component{
                       cellStyle: {
                           width: '10%'
                       }
-                  }
+                  },
+                  { title: 'Page', field: 'canonicalPageUrl', hidden:true, defaultGroupOrder: 0 },
                   ]}
                   data={tableData}
                   title=""
                   onRowClick={this.handleRowClick}
+                  components={{Groupbar: () => null}}
                   options={{
+                    grouping: true,
                     pageSize:10,
                     pageSizeOptions:[5,10,20,50],
                     rowStyle: {

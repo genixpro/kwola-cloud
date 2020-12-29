@@ -28,6 +28,7 @@ from .actions.BaseAction import BaseAction
 from .CustomIDField import CustomIDField
 from .DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from mongoengine import *
+from kwola.components.utils.deunique import deuniqueString
 
 class BugModel(Document):
     meta = {
@@ -94,6 +95,8 @@ class BugModel(Document):
     isBugNew = BooleanField()
 
     reproducible = BooleanField(default=False)
+
+    canonicalPageUrl = StringField()
 
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
         saveObjectToDisk(self, "bugs", config, overrideSaveFormat=overrideSaveFormat, overrideCompression=overrideCompression)
@@ -165,4 +168,12 @@ class BugModel(Document):
 
         self.importanceLevel = minimumSeverity + int(round(bugTypeWeight * (1.0 - self.bugTypeSeverityScore) + codePrevelanceWeight * (1.0 - codePrevalence) ))
         self.originalImportanceLevel = self.importanceLevel
+
+
+    def recomputeCanonicalPageUrl(self):
+        pageUrl = self.error.page
+        if pageUrl[-1] == "/":
+            pageUrl = pageUrl[:-1]
+
+        self.canonicalPageUrl = deuniqueString(pageUrl, addSubstituteReferences=True, deuniqueMode="url", substituteReferenceWrapperCharacters="[]")
 

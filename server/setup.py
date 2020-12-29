@@ -71,7 +71,8 @@ setup(
             'kwolacloud_run_migrations = kwolacloud.bin.run_migrations:main',
             'kwolacloud_load_demo_db = kwolacloud.bin.load_demo_db:main',
             'kwolacloud_generate_bug_message_csv = kwolacloud.bin.generate_bug_message_csv:main',
-            'kwolacloud_run_local_regression_test = kwolacloud.bin.run_local_regression_test:main'
+            'kwolacloud_run_local_regression_test = kwolacloud.bin.run_local_regression_test:main',
+            'kwolacloud_migrate_bug_canonical_url = kwolacloud.bin.migrate_bug_object_canonical_url:main'
         ]
     },
 )

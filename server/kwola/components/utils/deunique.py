@@ -2,7 +2,7 @@ from ...components.utils.regex import sharedNonJavascriptCodeUrlRegex, sharedHex
 import re
 
 
-def deuniqueString(string, addSubstituteReferences=False, deuniqueMode="error"):
+def deuniqueString(string, addSubstituteReferences=False, deuniqueMode="error", substituteReferenceWrapperCharacters="__"):
     if isinstance(string, bytes):
         try:
             string = str(string, 'utf8')
@@ -21,8 +21,8 @@ def deuniqueString(string, addSubstituteReferences=False, deuniqueMode="error"):
         ])
 
     deduplicationIgnoreRegexes.extend([
-        (sharedHexUuidRegex, 'HEXID'),
         (sharedMongoObjectIdRegex, 'MONGOID'),
+        (sharedHexUuidRegex, 'HEXID'),
         (sharedISO8601DateRegex, 'DATE'),
         (sharedISO8601TimeRegex, 'TIME'),
         (sharedIPAddressRegex, 'IP'),
@@ -34,7 +34,9 @@ def deuniqueString(string, addSubstituteReferences=False, deuniqueMode="error"):
     for regex, name in deduplicationIgnoreRegexes:
         substitution = ""
         if addSubstituteReferences:
-            substitution = "__" + name + "__"
+            leftChar = substituteReferenceWrapperCharacters[0]
+            rightChar = substituteReferenceWrapperCharacters[1]
+            substitution = f"{leftChar}{leftChar}" + name + f"{rightChar}{rightChar}"
 
         string = re.sub(regex, substitution, string)
 

@@ -11,6 +11,7 @@ import billiard as multiprocessing
 import os
 import numpy
 import billiard.exceptions
+from kwola.components.utils.deunique import deuniqueString
 
 
 
@@ -107,6 +108,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
             bug.browser = executionSessionsById[executionSessionId].browser
             bug.userAgent = executionSessionsById[executionSessionId].userAgent
             bug.windowSize = executionSessionsById[executionSessionId].windowSize
+            bug.recomputeCanonicalPageUrl()
             tracesForScore = [
                 trace for trace in self.executionSessionTraces[executionSessionId][max(0, stepNumber-5):(stepNumber + 1)]
                 if trace.codePrevalenceScore is not None

@@ -50,7 +50,7 @@ class BugsGroup(Resource):
 
         queryParams["isMuted"] = False
 
-        fields = ["id", "error", "isMuted", "importanceLevel", "status", "isBugNew"]
+        fields = ["id", "error", "isMuted", "importanceLevel", "status", "isBugNew", "canonicalPageUrl"]
         bugs = BugModel.objects(**queryParams).no_dereference().order_by("importanceLevel", "-codePrevalenceScore").only(*fields)
 
         return {"bugs": json.loads(bugs.to_json())}

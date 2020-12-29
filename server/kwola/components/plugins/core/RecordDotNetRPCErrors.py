@@ -19,7 +19,7 @@ class RecordDotNetRPCErrors(WebEnvironmentPluginBase):
 
     def afterActionRuns(self, webDriver, proxy, executionSession, executionTrace, actionExecuted):
         for rpcError in proxy.getDotNetRPCErrors():
-            rpcError.page = executionTrace.startURL
+            rpcError.page = executionTrace.finishURL
             executionTrace.errorsDetected.append(rpcError)
             errorHash = rpcError.computeHash()
 
