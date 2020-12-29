@@ -27,6 +27,8 @@ from kwolacloud.helpers.slack import postToCustomerSlack, postToKwolaSlack
 from kwolacloud.helpers.webhook import sendCustomerWebhook
 from kwola.components.utils.charts import generateAllCharts
 from kwola.config.config import getSharedGCSStorageClient
+from kwolacloud.components.core.BehaviouralChangeDetector import BehaviourChangeDetector
+from kwolacloud.tasks.BehaviourChangeDetectionTask import createBehaviourChangeDetectionKubernetesJobObject
 from pprint import pformat
 import datetime
 import google
@@ -101,12 +103,15 @@ class TestingRunManager:
             if self.application.testingRunStartedWebhookURL:
                 sendCustomerWebhook(self.application, "testingRunStartedWebhookURL", json.loads(self.run.to_json()))
 
-            self.run.save()
-
             self.config = self.run.configuration.createKwolaCoreConfiguration(self.run.owner, self.run.applicationId, self.run.id)
 
             self.doInitialBrowserSession()
             self.ensureAgentModelExists()
+
+            changeDetector = BehaviourChangeDetector(self.config)
+            changeDetector.resetCumulativeBranchTrace()
+
+            self.run.save()
 
     def launchTestingStepsIfNeeded(self):
         logging.info(f"Launching testing steps if needed. Number to launch: {self.calculateNumberOfTestingSessionsToStart()}")
@@ -641,6 +646,14 @@ class TestingRunManager:
 
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
 
+            # This change detector code has been thrown in updateModelSymbols but doesn't totally belong here.
+            # We should either rename the updateModelSymbols function or move this to another function.
+            # It was put here because its convenient and efficient to the cumulative branch trace at the same
+            # time as updating model symbols
+            changeDetector = BehaviourChangeDetector(self.config)
+            changeDetector.loadCumulativeBranchTrace()
+            sessionIdsForChangeDetection = set()
+
             for testingStepId in testingStepIdsToProcess:
                 testingStep = TestingStep.loadFromDisk(testingStepId, config)
                 for executionSessionId in testingStep.executionSessions:
@@ -651,16 +664,24 @@ class TestingRunManager:
                             traceFutures.append(executor.submit(ExecutionTrace.loadFromDisk, executionTraceId, config, applicationId=testingStep.applicationId))
 
                     if len(traceFutures) > 1000:
-                        newSymbols, splitSymbols = symbolMap.assignNewSymbols([
+                        traces = [
                             future.result() for future in traceFutures
-                        ])
+                        ]
+
+                        sessionIdsForChangeDetection.update(set(changeDetector.computeExecutionSessionIdsForChangeDetection(traces)))
+
+                        newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
                         totalNewSymbols += newSymbols
                         totalSplitSymbols += splitSymbols
                         traceFutures = []
 
-            newSymbols, splitSymbols = symbolMap.assignNewSymbols([
+            traces = [
                 future.result() for future in traceFutures
-            ])
+            ]
+
+            sessionIdsForChangeDetection.update(set(changeDetector.computeExecutionSessionIdsForChangeDetection(traces)))
+
+            newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
             totalNewSymbols += newSymbols
             totalSplitSymbols += splitSymbols
 
@@ -670,6 +691,111 @@ class TestingRunManager:
 
             symbolMap.save()
             logging.info(f"Saved the updated symbol map!")
+
+            for executionSessionId in sessionIdsForChangeDetection:
+                executionSession = ExecutionSession.loadFromDisk(executionSessionId, config)
+                executionSession.useForFutureChangeDetection = True
+                executionSession.saveToDisk(config)
+
+            changeDetector.saveCumulativeBranchTrace()
+            logging.info(f"Saved the change detector cumulative branch trace")
+
+    def launchBehaviourChangeDetectionTaskIfNeeded(self):
+        if self.run.runningChangeDetectionJobId is None and not self.run.hasCompletedChangeDetectionJob and self.run.failedChangeDetectionTasks < 5:
+            priorTestingRun = TestingRun.objects(applicationId=self.run.applicationId, status="completed").order_by("-startTime").first()
+            if priorTestingRun is not None:
+                logging.info(f"Starting the change detection task for run {self.run.id}")
+
+                job = createBehaviourChangeDetectionKubernetesJobObject(testingRunId=self.testingRunId)
+                job.start()
+
+                self.run.runningChangeDetectionJobId = job.referenceId
+                self.run.runningChangeDetectionJobStartTime = datetime.datetime.now()
+                self.run.save()
+
+                logging.info(f"Started a change detection task with job id {job.referenceId}")
+
+
+    def reviewRunningChangeDetectionTask(self):
+        logging.info(f"Reviewing the running change detection task. Job id: {self.run.runningChangeDetectionJobId}")
+        didChangeDetectionTaskFinish = False
+        if self.run.runningChangeDetectionJobId is not None:
+            job = createBehaviourChangeDetectionKubernetesJobObject(self.testingRunId)
+
+            timeElapsed = (datetime.datetime.now() - self.run.runningChangeDetectionJobStartTime).total_seconds()
+
+            if not job.doesJobStillExist():
+                logging.info(f"Job {job.kubeJobName()} was unexpectedly destroyed. We can't find its object in the kubernetes cluster.")
+                self.run.runningChangeDetectionJobId = None
+                self.run.runningChangeDetectionJobStartTime = None
+                self.run.save()
+                didChangeDetectionTaskFinish = True
+            elif job.ready():
+                logging.info(f"Finished change detection for run {self.run.id}")
+                self.run.runningChangeDetectionJobId = None
+                self.run.runningChangeDetectionJobStartTime = None
+                didChangeDetectionTaskFinish = True
+
+                if job.successful():
+                    resultObj = job.getResult()
+                    if resultObj is None or resultObj.result is None:
+                        errorMessage = f"The change detection task appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. The job did not produce a result object."
+                        logging.error(errorMessage)
+                        self.run.failedChangeDetectionTasks += 1
+                    elif resultObj.result['success']:
+                        self.run.hasCompletedChangeDetectionJob = True
+                    else:
+                        errorMessage = f"The change detection task appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
+                        if 'exception' in resultObj.result:
+                            errorMessage += "\n\n" + resultObj.result['exception']
+
+                        logging.error(errorMessage)
+
+                        self.run.failedChangeDetectionTasks += 1
+                else:
+                    errorMessage = f"The change detection task appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. The job did not produce a result object."
+                    logging.error(errorMessage)
+                    self.run.failedChangeDetectionTasks += 1
+
+                job.cleanup()
+            elif timeElapsed > self.config['change_detection_task_timeout']:
+                logging.error(f"The change detection task appears to have timed out on testing run {self.run.id} with job name {job.kubeJobName()}")
+                job.cleanup()
+                self.run.runningChangeDetectionJobId = None
+                self.run.runningChangeDetectionJobStartTime = None
+                didChangeDetectionTaskFinish = True
+                self.run.failedChangeDetectionTasks += 1
+            elif not job.ready() and job.getResult() is not None:
+                resultObj = job.getResult()
+
+                timePassed = abs((datetime.datetime.now() - resultObj.time).total_seconds())
+                # Make sure at least 60 seconds has passed before we evaluate this result object.
+                # This is to give the server enough time to shut down cleanly before we force
+                # kill it as a timed out process.
+                if timePassed > 60:
+                    self.run.runningChangeDetectionJobId = None
+                    self.run.runningChangeDetectionJobStartTime = None
+                    didChangeDetectionTaskFinish = True
+
+                    if resultObj.result is None or not resultObj.result['success']:
+                        errorMessage = f"The change detection task appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}. It also appears to have hung on exit and had to be forcibly shut down."
+                        if resultObj.result is not None and 'exception' in resultObj.result:
+                            errorMessage += "\n\n" + resultObj.result['exception']
+
+                        logging.error(errorMessage)
+
+                        self.run.failedChangeDetectionTasks += 1
+                    else:
+                        warningMessage = f"The change detection task has succeeded for testing run {self.run.id} with job name {job.kubeJobName()}. But it also appears to have hung on exit and had to be forcibly shut down."
+                        logging.warning(warningMessage)
+
+                        self.run.hasCompletedChangeDetectionJob = True
+
+                    job.cleanup()
+
+            self.run.save()
+
+        return int(didChangeDetectionTaskFinish)
 
     def runTesting(self):
         self.loadTestingRun()
@@ -701,6 +827,9 @@ class TestingRunManager:
                 countFinished += self.reviewRunningBugReproductionJobIds()
                 self.launchBugReproductionJobsIfNeeded()
 
+                countFinished += self.reviewRunningChangeDetectionTask()
+                self.launchBehaviourChangeDetectionTaskIfNeeded()
+
                 self.updateModelSymbols(self.config, self.run.testingStepsNeedingSymbolProcessing)
                 self.run.testingStepsNeedingSymbolProcessing = []
 
@@ -728,6 +857,24 @@ class TestingRunManager:
 
                 countFinished = self.reviewRunningTrainingSteps()
                 self.launchTrainingStepIfNeeded()
+
+                countFinished += self.reviewRunningChangeDetectionTask()
+                self.launchBehaviourChangeDetectionTaskIfNeeded()
+
+                # save on every step - just in case it was changed.
+                self.run.save()
+
+                time.sleep(60)
+
+            logging.info(f"Finished the bug reproductions for testing run {self.run.id}")
+
+            # Now make sure the change detection task finishes.
+            while self.run.runningChangeDetectionJobId is not None:
+                countFinished = self.reviewRunningTrainingSteps()
+                self.launchTrainingStepIfNeeded()
+
+                countFinished += self.reviewRunningChangeDetectionTask()
+                self.launchBehaviourChangeDetectionTaskIfNeeded()
 
                 # save on every step - just in case it was changed.
                 self.run.save()

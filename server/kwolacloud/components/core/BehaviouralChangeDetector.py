@@ -80,7 +80,7 @@ class BehaviourChangeDetector:
         self.saveCumulativeBranchTrace()
 
 
-    def computeExecutionSessionIdsForRegressionTesting(self, executionTraces):
+    def computeExecutionSessionIdsForChangeDetection(self, executionTraces):
         tracesWithNewBranches = set()
         allSessionIds = set()
         sessionIdsWithNewBranches = set()
@@ -129,13 +129,13 @@ class BehaviourChangeDetector:
         return sessionIdsWithNewBranches
 
     @autoretry()
-    def findAllChangesForExecutionSession(self, priorExecutionSession, seenDifferenceHashes):
+    def findAllChangesForExecutionSession(self, priorExecutionSession, seenDifferenceHashes, newTestingRunId):
         session = ExecutionSession(
             id=str(priorExecutionSession.id) + "-behaviour-change-detection",
             owner=priorExecutionSession.owner,
             status="running",
-            testingStepId=priorExecutionSession.testingStepId,
-            testingRunId=priorExecutionSession.testingRunId,
+            testingStepId=None,
+            testingRunId=newTestingRunId,
             applicationId=priorExecutionSession.applicationId,
             startTime=datetime.now(),
             endTime=None,
@@ -150,6 +150,8 @@ class BehaviourChangeDetector:
         )
 
         environment = WebEnvironment(config=self.config, sessionLimit=1, executionSessions=[session], plugins=[], browser=priorExecutionSession.browser, windowSize=priorExecutionSession.windowSize)
+
+        allDifferences = []
 
         for traceId in priorExecutionSession.executionTraces:
             getLogger().info(f"Detecting changes for trace {traceId}")
@@ -177,8 +179,7 @@ class BehaviourChangeDetector:
                 else:
                     difference.isDuplicate = True
 
-                difference.saveToDisk(self.config)
-
+                allDifferences.append(difference)
 
             if newDifference:
                 session.executionTracesWithChanges.append(newTrace.id)
@@ -187,6 +188,9 @@ class BehaviourChangeDetector:
         session.endTime = datetime.now()
 
         session.saveToDisk(self.config)
+
+        for difference in allDifferences:
+            difference.saveToDisk(self.config)
 
         environment.runSessionCompletedHooks()
 
@@ -242,8 +246,7 @@ class BehaviourChangeDetector:
 
                 if oldStringData['text'] != newStringData['text']:
                     differenceObject = BehaviouralDifference(
-                        id=CustomIDField.generateNewUUID(BehaviouralDifference, self.config),
-                        # id=generateKwolaId(BehaviouralDifference, str(newExecutionTrace.owner), self.config),
+                        id=generateKwolaId(BehaviouralDifference, str(newExecutionTrace.owner), self.config),
                         owner=newExecutionTrace.owner,
                         applicationId=newExecutionTrace.applicationId,
                         priorTestingRunId=oldExecutionTrace.testingRunId,
@@ -271,8 +274,8 @@ class BehaviourChangeDetector:
             oldStringData = oldStringDatas[oldIndex]
 
             differenceObject = BehaviouralDifference(
-                id=CustomIDField.generateNewUUID(BehaviouralDifference, self.config),
-                # id=generateKwolaId(BehaviouralDifference, str(newExecutionTrace.owner), self.config),
+                # id=CustomIDField.generateNewUUID(BehaviouralDifference, self.config),
+                id=generateKwolaId(BehaviouralDifference, str(newExecutionTrace.owner), self.config),
                 owner=newExecutionTrace.owner,
                 applicationId=newExecutionTrace.applicationId,
                 priorTestingRunId=oldExecutionTrace.testingRunId,
@@ -301,8 +304,8 @@ class BehaviourChangeDetector:
             newStringData = newStringDatas[newIndex]
 
             differenceObject = BehaviouralDifference(
-                id=CustomIDField.generateNewUUID(BehaviouralDifference, self.config),
-                # id=generateKwolaId(BehaviouralDifference, str(newExecutionTrace.owner), self.config),
+                # id=CustomIDField.generateNewUUID(BehaviouralDifference, self.config),
+                id=generateKwolaId(BehaviouralDifference, str(newExecutionTrace.owner), self.config),
                 owner=newExecutionTrace.owner,
                 applicationId=newExecutionTrace.applicationId,
                 priorTestingRunId=oldExecutionTrace.testingRunId,

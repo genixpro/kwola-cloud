@@ -265,14 +265,7 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         getLogger().error(f"Testing task subprocess appears to have failed. {traceback.format_exc()}")
         raise
 
-regressionTester = None
 def updateModelSymbols(config, testingStepId):
-    global regressionTester
-
-    if regressionTester is None:
-        regressionTester = BehaviourChangeDetector(config)
-        regressionTester.loadCumulativeBranchTrace()
-
     symbolMap = SymbolMapper(config)
     symbolMap.load()
 
@@ -288,13 +281,11 @@ def updateModelSymbols(config, testingStepId):
             traces.append(ExecutionTrace.loadFromDisk(executionTraceId, config, applicationId=testingStep.applicationId))
 
         if len(traces) > 1000:
-            regressionTester.computeExecutionSessionIdsForRegressionTesting(traces)
             newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
             totalNewSymbols += newSymbols
             totalSplitSymbols += splitSymbols
             traces = []
 
-    regressionTester.computeExecutionSessionIdsForRegressionTesting(traces)
     newSymbols, splitSymbols = symbolMap.assignNewSymbols(traces)
     totalNewSymbols += newSymbols
     totalSplitSymbols += splitSymbols

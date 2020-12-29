@@ -97,6 +97,14 @@ class TestingRun(Document):
 
     runningBugReproductionStartTimes = DictField(DateTimeField(), default={})
 
+    runningChangeDetectionJobId = StringField(default=None)
+
+    runningChangeDetectionJobStartTime = DateTimeField()
+
+    hasCompletedChangeDetectionJob = BooleanField(default=False)
+
+    failedChangeDetectionTasks = IntField(default=0)
+
     def saveToDisk(self, config):
         self.save()
 

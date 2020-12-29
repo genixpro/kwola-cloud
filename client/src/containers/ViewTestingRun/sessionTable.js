@@ -23,7 +23,7 @@ class SessionTable extends Component{
     	if(data){
     		data.map(session=>{
 	    		let sTime = session.startTime ? moment(new Date(session.startTime.$date)).format('HH:mm MMM Do') : null
-	    		rdata.push({_id:session._id,startTime:sTime, totalReward:session.totalReward.toFixed(2)})
+	    		rdata.push({_id:session._id,startTime:sTime, totalReward:(session.totalReward ? session.totalReward.toFixed(2) : "N/A")})
 	    	})
     	}
     	return rdata;

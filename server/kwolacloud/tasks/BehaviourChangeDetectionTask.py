@@ -83,7 +83,7 @@ def runBehaviourChangeDetectionAlgorithm(testingRunId, executionSessionId=None):
                                                          applicationId=run.applicationId,
                                                          testingRunId=priorTestingRun.id,
                                                          status="completed",
-                                                         useForChangeDetection=True,
+                                                         useForFutureChangeDetection=True,
                                                          )
         else:
             priorExecutionSessions = ExecutionSession.objects(id=executionSessionId)
@@ -93,7 +93,17 @@ def runBehaviourChangeDetectionAlgorithm(testingRunId, executionSessionId=None):
         seenDifferenceHashes = set()
 
         for priorSession in priorExecutionSessions:
-            changeDetector.findAllChangesForExecutionSession(priorSession, seenDifferenceHashes)
+            # Try to see if we already ran change detection on this prior session,
+            # e.g. if the process crashed and restarted, we don't want to rerun
+            # change detection
+            existingChangeDetectionSession = ExecutionSession.objects(owner=priorTestingRun.owner,
+                                                                      testingRunId=testingRunId,
+                                                                      status="completed",
+                                                                      changeDetectionPriorExecutionSessionId=priorSession.id,
+                                                                      isChangeDetectionSession=True).first()
+
+            if existingChangeDetectionSession is None:
+                changeDetector.findAllChangesForExecutionSession(priorSession, seenDifferenceHashes, testingRunId)
 
         if executionSessionId is None:
             logging.info(f"Finished change detection for testing run {testingRunId}")

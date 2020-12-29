@@ -18,6 +18,7 @@
   "chart_generation_dataload_workers": 2,
   "chart_generation_frequency": 5,
   "chart_generation_workers": 1,
+  "change_detection_task_timeout": 36000,
   "custom_typing_action_strings": [],
   "data_compress_level": {
     "default": 0,
