@@ -12,6 +12,12 @@ import axios from "axios";
 import Promise from "bluebird";
 import Auth from "../../helpers/auth0";
 import "./bugsTable.scss"
+import Select from '@material-ui/core/Select';
+import { FormControl } from '../../components/uielements/form';
+import Input, { InputLabel } from '../../components/uielements/input';
+import { MenuItem } from '../../components/uielements/menus';
+import {FullColumn, HalfColumn, OneThirdColumn, Column, Row, TwoThirdColumn} from "../../components/utility/rowColumn";
+
 
 class BugsTable extends Component{
 	state = {
@@ -46,7 +52,37 @@ class BugsTable extends Component{
         let rdata = []
         if(data)
         {
-            data.map(bug=>{
+            data.forEach((bug) =>
+            {
+                if (this.state.bugTypeFilter && bug.error._cls !== this.state.bugTypeFilter)
+                {
+                    return;
+                }
+                if (this.state.importanceFilter && bug.importanceLevel !== this.state.importanceFilter)
+                {
+                    return;
+                }
+                if (this.state.browserFilter && bug.browser !== this.state.browserFilter)
+                {
+                    return;
+                }
+                if (this.state.windowSizeFilter && bug.windowSize !== this.state.windowSizeFilter)
+                {
+                    return;
+                }
+                if (this.state.httpErrorCodeFilter && bug.error.statusCode !== this.state.httpErrorCodeFilter)
+                {
+                    return;
+                }
+                if (this.state.messageFilter && bug.error.message.toLowerCase().indexOf(this.state.messageFilter.toLowerCase()) === -1)
+                {
+                    return;
+                }
+                if (this.state.statusFilter && bug.status !== this.state.statusFilter)
+                {
+                    return;
+                }
+
                 bug._cls = bug.error._cls;
                 bug.message = bug.error.message;
                 rdata.push(bug)
@@ -132,6 +168,42 @@ class BugsTable extends Component{
         });
     }
 
+    onBugTypeFilterChanged(newValue)
+    {
+        this.setState({bugTypeFilter: newValue});
+    }
+
+    onImportanceFilterChanged(newValue)
+    {
+        this.setState({importanceFilter: newValue});
+    }
+
+    onBrowserFilterChanged(newValue)
+    {
+        this.setState({browserFilter: newValue});
+    }
+
+    onWindowSizeFilterChanged(newValue)
+    {
+        this.setState({windowSizeFilter: newValue});
+    }
+
+    onStatusFilterChanged(newValue)
+    {
+        this.setState({statusFilter: newValue});
+    }
+
+    onHttpErrorCodeFilterChanged(newValue)
+    {
+        this.setState({httpErrorCodeFilter: newValue});
+    }
+
+    onMessageFilterChanged(newValue)
+    {
+        this.setState({messageFilter: newValue});
+    }
+
+
 	render()
     {
         const setRowsPerPage = 10;
@@ -140,14 +212,137 @@ class BugsTable extends Component{
         const rowsPerPage = this.state.rowsPerPage
         const tableData = this.processData(this.props.data)
 
-	 	return(
+        const bugTypeForm = <FormControl className={"bug-filter"}>
+            <InputLabel htmlFor="bug-type-filter">Bug Type&nbsp;&nbsp;</InputLabel>
+            <Select
+                value={this.state.bugTypeFilter}
+                onChange={(evt) => this.onBugTypeFilterChanged(evt.target.value)}
+                input={<Input id="bug-type-filter" />}
+            >
+                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value="ExceptionError">ExceptionError</MenuItem>
+                <MenuItem value="LogError">LogError</MenuItem>
+                <MenuItem value="HttpError">HttpError</MenuItem>
+                <MenuItem value="DotNetRPCError">RPC Error</MenuItem>
+            </Select>
+        </FormControl>;
+
+        const importanceFilter = <FormControl className={"bug-filter"}>
+            <InputLabel htmlFor="importance-filter">Importance&nbsp;&nbsp;</InputLabel>
+            <Select
+                value={this.state.importanceFilter}
+                onChange={(evt) => this.onImportanceFilterChanged(evt.target.value)}
+                input={<Input id="importance-filter" />}
+            >
+                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value={1}>1 (highest)</MenuItem>
+                <MenuItem value={2}>2</MenuItem>
+                <MenuItem value={3}>3</MenuItem>
+                <MenuItem value={4}>4</MenuItem>
+                <MenuItem value={5}>5 (lowest) </MenuItem>
+            </Select>
+        </FormControl>;
+
+        const browserFilter = <FormControl className={"bug-filter"}>
+            <InputLabel htmlFor="browser-filter">Browser&nbsp;&nbsp;</InputLabel>
+            <Select
+                value={this.state.browserFilter}
+                onChange={(evt) => this.onBrowserFilterChanged(evt.target.value)}
+                input={<Input id="browser-filter" />}
+            >
+                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value="chrome">Chrome</MenuItem>
+                <MenuItem value="firefox">Firefox</MenuItem>
+                <MenuItem value="edge">Edge</MenuItem>
+            </Select>
+        </FormControl>;
+
+        const windowSizeFilter = <FormControl className={"bug-filter"}>
+            <InputLabel htmlFor="window-size-filter">Window Size&nbsp;&nbsp;</InputLabel>
+            <Select
+                value={this.state.windowSizeFilter}
+                onChange={(evt) => this.onWindowSizeFilterChanged(evt.target.value)}
+                input={<Input id="window-size-filter" />}
+            >
+                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value="desktop">Desktop</MenuItem>
+                <MenuItem value="tablet">Tablet</MenuItem>
+                <MenuItem value="mobile">Mobile</MenuItem>
+            </Select>
+        </FormControl>;
+
+        const statusFilter = <FormControl className={"bug-filter"}>
+            <InputLabel htmlFor="status-filter">Status&nbsp;&nbsp;</InputLabel>
+            <Select
+                value={this.state.statusFilter}
+                onChange={(evt) => this.onStatusFilterChanged(evt.target.value)}
+                input={<Input id="status-filter" />}
+            >
+                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value="new">New</MenuItem>
+                <MenuItem value="triage">Triage</MenuItem>
+                <MenuItem value="fix_in_progress">Fix In Progress</MenuItem>
+                <MenuItem value="needs_testing">Needs Testing</MenuItem>
+                <MenuItem value="closed">Closed</MenuItem>
+            </Select>
+        </FormControl>;
+
+        const httpErrorStatusCodeFilter = <FormControl className={"bug-filter"}>
+            <InputLabel htmlFor="status-filter">HTTP Error Code&nbsp;&nbsp;</InputLabel>
+            <Select
+                value={this.state.httpErrorCodeFilter}
+                onChange={(evt) => this.onHttpErrorCodeFilterChanged(evt.target.value)}
+                input={<Input id="status-filter" />}
+            >
+                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value={400}>400</MenuItem>
+                <MenuItem value={401}>401</MenuItem>
+                <MenuItem value={403}>403</MenuItem>
+                <MenuItem value={404}>404</MenuItem>
+                <MenuItem value={500}>500</MenuItem>
+                <MenuItem value={501}>501</MenuItem>
+                <MenuItem value={502}>502</MenuItem>
+                <MenuItem value={503}>503</MenuItem>
+                <MenuItem value={504}>504</MenuItem>
+            </Select>
+        </FormControl>;
+
+        const messageFilter = <FormControl className={"bug-message-filter"}>
+            <InputLabel htmlFor="message-filter">Message&nbsp;&nbsp;</InputLabel>
+            <Input
+                value={this.state.messageFilter}
+                onChange={(evt) => this.onMessageFilterChanged(evt.target.value)}
+                input={<Input id="message-filter" />}
+            />
+        </FormControl>;
+
+        return(
 	 		<div>
+                <div className={"bug-filter-controls"}>
+                    <div className={"bug-filter-controls-label-wrapper"}>
+                        <span className={"bug-filter-controls-label"}>Filters: </span>
+                    </div>
+                    <div className={"bug-filter-controls-inputs-wrapper"}>
+                        {statusFilter}
+                        {bugTypeForm}
+                        {importanceFilter}
+                        {browserFilter}
+                        {windowSizeFilter}
+                        {httpErrorStatusCodeFilter}
+                        {messageFilter}
+                    </div>
+                </div>
                 <MaterialTable
                   columns={[
-                    { title: 'id', field: '_id', hidden:true },
+                    {
+                        title: 'id',
+                        field: '_id',
+                        hidden: true,
+                        grouping: false
+                    },
                     {
                         title: 'Bug Screenshot',
-                        field: 'image',
+                        field: "image",
                         width:'15%',
                         render: (rowData) => {
                             return <div className={"bugs-table-bug-screenshot-wrapper"}>
@@ -161,8 +356,10 @@ class BugsTable extends Component{
                         grouping: false
                     },
                     {
-                        title: 'Type', field: '_cls',
+                        title: 'Type',
+                        field: '_cls',
                         width:'10%',
+                        grouping: true,
                         cellStyle: {
                           width:'10%'
                         }
@@ -181,6 +378,7 @@ class BugsTable extends Component{
                       {
                           title: 'Importance', field: 'importanceLevel',
                           width: "15%",
+                          grouping: false,
                           cellStyle: {
                               width: "15%"
                           },
@@ -212,14 +410,26 @@ class BugsTable extends Component{
                           width: '10%'
                       }
                   },
-                  { title: 'Page', field: 'canonicalPageUrl', hidden:true, defaultGroupOrder: 0 },
+                  {
+                      title: 'Page',
+                      field: 'canonicalPageUrl',
+                      hidden:true,
+                      defaultGroupOrder: 0,
+                      grouping: false,
+                  },
                   ]}
                   data={tableData}
                   title=""
                   onRowClick={this.handleRowClick}
-                  components={{Groupbar: () => null}}
+                  components={
+                      {
+                          Groupbar: () => null,
+                          Toolbar: () => null
+                      }
+                  }
                   options={{
                     grouping: true,
+                    search: false,
                     pageSize:10,
                     pageSizeOptions:[5,10,20,50],
                     rowStyle: {

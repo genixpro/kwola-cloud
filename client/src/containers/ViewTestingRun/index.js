@@ -351,8 +351,6 @@ class ViewTestingRun extends Component {
                                                     <span>Download Zip File: <a href={zipFileLink}><Icon color="primary" className="fontSizeSmall">get_app</Icon></a></span>
                                                     : null
                                             }
-                                            <br/>
-                                            <br/>
                                             <BugsTable {...this.props} data={this.state.bugs} />
                                         </Papersheet> : null
                                 }
