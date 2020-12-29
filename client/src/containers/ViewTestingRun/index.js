@@ -44,6 +44,7 @@ import LinearScaleIcon from '@material-ui/icons/LinearScale';
 import AppBar from '../../components/uielements/appbar';
 import WebIcon from '@material-ui/icons/Web';
 import ChangesViewer from "./ChangesViewer";
+import { LinearProgress } from '../../components/uielements/progress';
 
 class ViewTestingRun extends Component {
     state = {
@@ -72,7 +73,10 @@ class ViewTestingRun extends Component {
         });
 
         axios.get(`/execution_sessions`, {
-            params: {"testingRunId": this.props.match.params.id}
+            params: {
+                "testingRunId": this.props.match.params.id,
+                "isChangeDetectionSession": false
+            }
         }).then((response) => {
             this.setState({executionSessions: response.data.executionSessions});
         });
@@ -240,8 +244,6 @@ class ViewTestingRun extends Component {
 
                                     <span>Testing Browsers Completed: {this.state.testingRun.testingSessionsCompleted}<br/></span>
 
-                                    <span># of Actions per Browser: {this.state.testingRun.configuration.testingSequenceLength}<br/></span>
-
                                     {
                                         this.state.testingRun.startTime ?
                                             <span>Start Time: {moment(this.state.testingRun.startTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
@@ -255,6 +257,17 @@ class ViewTestingRun extends Component {
                                             this.state.testingRun.predictedEndTime ?
                                             <span>Predicted End Time: {moment(this.state.testingRun.predictedEndTime.$date).format('h:mm:ss a MMM Do, YYYY')}<br/></span>
                                             : <span />
+                                    }
+                                    <br/>
+                                    {
+                                        this.state.testingRun.status !== "completed" && this.state.testingRun.status !== "failed" ?
+                                            <div>
+                                                <span>{(100 * this.state.testingRun.testingSessionsCompleted / this.state.testingRun.configuration.totalTestingSessions).toFixed(1)}% completed</span>
+                                                <LinearProgress value={100 * this.state.testingRun.testingSessionsCompleted / this.state.testingRun.configuration.totalTestingSessions}
+                                                                variant={"determinate"}
+                                                />
+                                            </div>
+                                            : null
                                     }
                                     {
                                         this.state.testingRun.status === "running" ?
@@ -323,7 +336,7 @@ class ViewTestingRun extends Component {
                                         textColor="primary"
                                     >
                                         <Tab label="Bugs" icon={<BugReportIcon />} />
-                                        <Tab label="Changes" icon={<LinearScaleIcon />} />
+                                        <Tab label="Changes [BETA]" icon={<LinearScaleIcon />} />
                                         <Tab label="Sessions" icon={<WebIcon />} />
                                     </Tabs>
                                 </AppBar>
