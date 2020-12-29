@@ -287,20 +287,6 @@ class TestingStepManager:
 
         del traces
 
-    @autoretry()
-    def savePlainVideoFiles(self):
-        getLogger().info(f"Creating movies for the execution sessions of this testing sequence.")
-
-        moviePlugin = [plugin for plugin in self.environment.plugins if isinstance(plugin, RecordScreenshots)][0]
-        localVideoPaths = [moviePlugin.movieFilePath(executionSession) for executionSession in self.executionSessions]
-
-
-        for executionSession, sessionN, localVideoPath in zip(self.executionSessions, range(len(localVideoPaths)), localVideoPaths):
-            with open(localVideoPath, 'rb') as origFile:
-                fileName = f'{str(executionSession.id)}.mp4'
-                self.config.saveKwolaFileData("videos", fileName, origFile.read())
-
-
     def shutdownEnvironment(self):
         self.environment.shutdown()
         del self.environment
@@ -449,8 +435,6 @@ class TestingStepManager:
             self.traceSaveExecutor.shutdown()
 
             self.environment.runSessionCompletedHooks()
-
-            self.savePlainVideoFiles()
 
             for session in self.executionSessions:
                 session.endTime = datetime.now()

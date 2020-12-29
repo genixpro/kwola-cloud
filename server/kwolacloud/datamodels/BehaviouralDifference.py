@@ -54,6 +54,7 @@ class BehaviouralDifference(Document):
 
     newText = StringField()
 
+    isDuplicate = BooleanField()
 
     def saveToDisk(self, config):
         saveObjectToDisk(self, "behavioural_differences", config)

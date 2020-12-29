@@ -24,6 +24,7 @@ from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwolacloud.datamodels.BehaviouralDifference import BehaviouralDifference
 from kwola.config.logger import getLogger
+from kwola.components.utils.retry import autoretry
 from kwolacloud.datamodels.id_utility import generateKwolaId
 from datetime import datetime
 import random
@@ -127,10 +128,10 @@ class BehaviourChangeDetector:
 
         return sessionIdsWithNewBranches
 
-
+    @autoretry()
     def findAllChangesForExecutionSession(self, priorExecutionSession, seenDifferenceHashes):
         session = ExecutionSession(
-            id=str(priorExecutionSession.id) + "_regression_test",
+            id=str(priorExecutionSession.id) + "-behaviour-change-detection",
             owner=priorExecutionSession.owner,
             status="running",
             testingStepId=priorExecutionSession.testingStepId,
@@ -151,11 +152,15 @@ class BehaviourChangeDetector:
         environment = WebEnvironment(config=self.config, sessionLimit=1, executionSessions=[session], plugins=[], browser=priorExecutionSession.browser, windowSize=priorExecutionSession.windowSize)
 
         for traceId in priorExecutionSession.executionTraces:
+            getLogger().info(f"Detecting changes for trace {traceId}")
             oldTrace = ExecutionTrace.loadFromDisk(traceId, self.config, applicationId=priorExecutionSession.applicationId)
 
             action = environment.sessions[0].createReproductionActionFromOriginal(oldTrace.actionPerformed)
-
             newTrace = environment.runActions([action])[0]
+            if newTrace is None or environment.sessions[0].hasBrowserDied:
+                raise RuntimeError(f"The web browser session has died while trying to reproduce and perform change detection on trace {traceId} for prior session {priorExecutionSession.id}")
+
+            session.executionTraces.append(str(newTrace.id))
 
             originalHtml = bz2.decompress(self.config.loadKwolaFileData("saved_pages", traceId + ".html"))
             newHtml = bz2.decompress(self.config.loadKwolaFileData("saved_pages", newTrace.id + ".html"))
@@ -166,12 +171,20 @@ class BehaviourChangeDetector:
             for difference in differences:
                 hash = difference.computeDifferenceHash()
                 if hash not in seenDifferenceHashes:
-                    difference.saveToDisk(self.config)
+                    difference.isDuplicate = False
                     seenDifferenceHashes.add(hash)
                     newDifference = True
+                else:
+                    difference.isDuplicate = True
+
+                difference.saveToDisk(self.config)
+
 
             if newDifference:
-                session.executionTracesWithChanges.append(traceId)
+                session.executionTracesWithChanges.append(newTrace.id)
+
+        session.status = "completed"
+        session.endTime = datetime.now()
 
         session.saveToDisk(self.config)
 
@@ -223,10 +236,10 @@ class BehaviourChangeDetector:
             newStringData = newStringDatas[newIndex]
             distScore = distScoreMatrix[oldIndex][newIndex]
 
-            allOldIndexes.remove(oldIndex)
-            allNewIndexes.remove(newIndex)
-
             if distScore < 20:
+                allOldIndexes.remove(oldIndex)
+                allNewIndexes.remove(newIndex)
+
                 if oldStringData['text'] != newStringData['text']:
                     differenceObject = BehaviouralDifference(
                         id=CustomIDField.generateNewUUID(BehaviouralDifference, self.config),

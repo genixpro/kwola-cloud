@@ -3,6 +3,7 @@
 
 .differences-screenshot-wrapper
 {
+  display: flex;
   position: relative;
   width: 100%;
   border: 1px solid grey;
@@ -22,6 +23,16 @@
     position: absolute;
     border: 1px solid black;
     opacity: 0.2;
+
+    &.hilighted
+    {
+      opacity: 0.4;
+    }
+
+    &.suppressed
+    {
+      opacity: 0.05;
+    }
   }
 
   .changed_text
@@ -62,8 +73,39 @@
 
 .difference-row
 {
+  display: flex;
+  flex-direction: row;
+
+  margin-top: -15px;
+  margin-bottom: -15px;
+  margin-left: -15px;
+  margin-right: -15px;
+
+  padding-top: 15px;
+  padding-bottom: 15px;
+  padding-left: 15px;
+  padding-right: 15px;
+
+  width: 100%;
+  height: 100%;
+
+  .duplicate-icon-wrapper
+  {
+    margin-right: 10px;
+  }
+
   &.selected
   {
     background-color: #999;
+  }
+
+  &.hilighted
+  {
+    background-color: #ccc;
+  }
+
+  &.suppressed
+  {
+    opacity: 0.5;
   }
 }

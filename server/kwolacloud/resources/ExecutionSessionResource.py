@@ -92,15 +92,7 @@ class ExecutionSessionSingle(Resource):
 
 
 
-class ExecutionSessionVideo(Resource):
-    def __init__(self):
-        self.postParser = reqparse.RequestParser()
-        # self.postParser.add_argument('version', help='This field cannot be blank', required=True)
-        # self.postParser.add_argument('startTime', help='This field cannot be blank', required=True)
-        # self.postParser.add_argument('endTime', help='This field cannot be blank', required=True)
-        # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=True)
-        # self.postParser.add_argument('status', help='This field cannot be blank', required=True)
-
+class ExecutionSessionAnnotatedVideo(Resource):
     @cache.cached(timeout=36000)
     def get(self, execution_session_id):
         user = authenticate()
@@ -129,7 +121,40 @@ class ExecutionSessionVideo(Resource):
 
             return response
         except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing execution session video: {objectPath}")
+            logging.error(f"Error! Missing execution session annotated video: {objectPath}")
+            return abort(404)
+
+
+class ExecutionSessionRawVideo(Resource):
+    @cache.cached(timeout=36000)
+    def get(self, execution_session_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": execution_session_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        executionSession = ExecutionSession.objects(**queryParams).first()
+
+        if executionSession is None:
+            return abort(404)
+
+        storageClient = getSharedGCSStorageClient()
+        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + executionSession.applicationId)
+        objectPath = f"videos/{str(execution_session_id)}.mp4"
+        objectBlob = storage.Blob(objectPath, applicationStorageBucket)
+
+        try:
+            videoData = objectBlob.download_as_string()
+
+            response = flask.make_response(videoData)
+            response.headers['content-type'] = 'video/mp4'
+
+            return response
+        except google.cloud.exceptions.NotFound:
+            logging.error(f"Error! Missing execution session raw video: {objectPath}")
             return abort(404)
 
 

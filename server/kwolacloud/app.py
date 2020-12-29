@@ -41,7 +41,7 @@ from .resources.ApplicationResource import ApplicationGroup, ApplicationSingle, 
     ApplicationSubscribeToSlack, ApplicationTestSlack, ApplicationIntegrateWithJIRA,\
     ApplicationTestWebhook, NewApplicationTestImage, AttachCardToUser, TestAutoLogin
 from .resources.TestingStepResource import TestingStepsGroup, TestingStepsSingle
-from .resources.ExecutionSessionResource import ExecutionSessionGroup, ExecutionSessionSingle, ExecutionSessionVideo, ExecutionSessionTraces, ExecutionSessionSingleTrace, ExecutionSessionTriggerChangeDetection
+from .resources.ExecutionSessionResource import ExecutionSessionGroup, ExecutionSessionSingle, ExecutionSessionAnnotatedVideo, ExecutionSessionTraces, ExecutionSessionSingleTrace, ExecutionSessionTriggerChangeDetection, ExecutionSessionRawVideo
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
 from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSingle
 from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle, TestingRunsRestart, TestingRunsRestartTraining, TestingRunsDownloadZip, PauseTestingRun, ResumeTestingRun
@@ -79,7 +79,8 @@ api.add_resource(TrainingSequencesSingle, '/api/training_sequences/<string:train
 
 api.add_resource(ExecutionSessionGroup, '/api/execution_sessions')
 api.add_resource(ExecutionSessionSingle, '/api/execution_sessions/<string:execution_session_id>')
-api.add_resource(ExecutionSessionVideo, '/api/execution_sessions/<string:execution_session_id>/video')
+api.add_resource(ExecutionSessionAnnotatedVideo, '/api/execution_sessions/<string:execution_session_id>/video')
+api.add_resource(ExecutionSessionRawVideo, '/api/execution_sessions/<string:execution_session_id>/raw_video')
 api.add_resource(ExecutionSessionTraces, '/api/execution_sessions/<string:execution_session_id>/traces')
 api.add_resource(ExecutionSessionSingleTrace, '/api/execution_sessions/<string:execution_session_id>/traces/<string:execution_trace_id>')
 api.add_resource(ExecutionSessionTriggerChangeDetection, '/api/execution_sessions/<string:execution_session_id>/start_change_detection_job')

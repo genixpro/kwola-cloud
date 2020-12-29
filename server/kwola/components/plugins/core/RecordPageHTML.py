@@ -151,7 +151,11 @@ class RecordPageHTML(WebEnvironmentPluginBase):
                 const domElements = document.querySelectorAll("*");
                 for(let element of domElements)
                 {
-                    element.setAttribute("value", element.value);
+                    if (element.tagName === "INPUT")
+                    {
+                        element.setAttribute("value", element.value);
+                    }
+                    
                     const bounds = element.getBoundingClientRect();
 
                     element.setAttribute("data-kwola-left", bounds.left);

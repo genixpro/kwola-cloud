@@ -68,7 +68,7 @@ class WebEnvironment:
             RecordPageURLs(),
             RecordAllPaths(),
             RecordBranchTrace(),
-            RecordScreenshots(),
+            RecordScreenshots(config),
             RecordPageHTML(config)
         ]
 

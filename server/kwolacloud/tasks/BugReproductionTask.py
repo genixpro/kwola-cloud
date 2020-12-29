@@ -123,15 +123,12 @@ def runBugReproductionAlgorithm(bugId):
 
             environment.runSessionCompletedHooks()
 
-            moviePlugin = [plugin for plugin in environment.plugins if isinstance(plugin, RecordScreenshots)][0]
-            localVideoPath = moviePlugin.movieFilePath(executionSession)
-
-            with open(localVideoPath, 'rb') as f:
-                videoData = f.read()
-
+            executionSession.status = "completed"
+            executionSession.endTime = datetime.now()
 
             fileName = f'{str(executionSession.id)}.mp4'
-            config.saveKwolaFileData("videos", fileName, videoData)
+
+            videoData = config.loadKwolaFileData("videos", fileName)
             config.saveKwolaFileData("bugs", bug.id + ".mp4",  videoData)
 
             bug.executionSessionId = executionSession.id

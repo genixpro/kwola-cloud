@@ -139,7 +139,7 @@ class BugReproducer:
     def testReproductions(self, actionLists, bug):
         executionSessions = [
             ExecutionSession(
-                id=str(bug.id) + "_reproduction_" + str(listIndex),
+                id=str(bug.id) + "-reproduction-" + str(listIndex),
                 owner=bug.owner,
                 status="running",
                 testingStepId=bug.testingStepId,
@@ -175,7 +175,8 @@ class BugReproducer:
 
             logging.info(f"Running action {actionIndex}")
             traces = environment.runActions(actions)
-            for actionListIndex, actionList, trace in zip(range(len(actionLists)), actionLists, traces):
+            for actionListIndex, actionList, trace, session in zip(range(len(actionLists)), actionLists, traces, executionSessions):
+                session.executionTraces.append(str(trace.id))
                 if actionIndex == (len(actionList) - 1):
                     if trace is None:
                         logging.info(f"Trace is None at {actionIndex}")
@@ -191,6 +192,10 @@ class BugReproducer:
                             didReproduceSuccessfully[actionListIndex] = True
                         else:
                             didReproduceSuccessfully[actionListIndex] = False
+
+        for executionSession in executionSessions:
+            executionSession.status = "completed"
+            executionSession.endTime = datetime.now()
 
         environment.runSessionCompletedHooks()
 
