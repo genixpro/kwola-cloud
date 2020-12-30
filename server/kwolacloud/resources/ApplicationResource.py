@@ -182,12 +182,14 @@ class ApplicationGroup(Resource):
             promoCode=newApplication.promoCode,
             status="created",
             startTime=datetime.now(),
-            predictedEndTime=(datetime.now() + relativedelta(hours=(runConfiguration.hours + 1), minute=30, second=0, microsecond=0)),
+            predictedEndTime=None,
             recurringTestingTriggerId=None,
             isRecurring=False,
             configuration=runConfiguration,
             launchSource=launchSource
         )
+
+        newTestingRun.updatePredictedEndTime()
 
         newTestingRun.save()
 

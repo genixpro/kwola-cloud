@@ -95,8 +95,7 @@ class TestingRunManager:
             if self.run.startTime is None:
                 self.run.startTime = datetime.datetime.now()
 
-            if self.run.predictedEndTime is None:
-                self.run.predictedEndTime = self.run.startTime + relativedelta(hours=self.run.configuration.hours + 1, minute=30, second=0, microsecond=0)
+            self.run.updatePredictedEndTime()
 
             self.run.status = "running"
 

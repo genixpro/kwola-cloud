@@ -11,7 +11,8 @@ from mongoengine import *
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from ..config.config import getKwolaConfiguration
 from ..config.config import loadCloudConfiguration
-
+from dateutil.relativedelta import relativedelta
+import math
 
 
 class TestingRun(Document):
@@ -149,3 +150,13 @@ class TestingRun(Document):
 
             job.start()
 
+
+    def updatePredictedEndTime(self):
+        ratio = 1.0
+
+        if self.configuration.maxParallelSessions < 120:
+            ratio = 120 / self.configuration.maxParallelSessions
+
+        portionComplete = self.testingSessionsCompleted / self.configuration.totalTestingSessions
+
+        self.predictedEndTime = self.startTime + relativedelta(hours=int(math.ceil(self.configuration.hours * (1.0 - portionComplete)) * ratio) + 1, minute=30, second=0, microsecond=0)

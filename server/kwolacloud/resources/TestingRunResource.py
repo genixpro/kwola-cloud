@@ -94,12 +94,14 @@ class TestingRunsGroup(Resource):
             promoCode=application.promoCode,
             status="created",
             startTime=datetime.datetime.now(),
-            predictedEndTime=(datetime.datetime.now() + relativedelta(hours=(application.defaultRunConfiguration.hours + 1), minute=30, second=0, microsecond=0)),
+            predictedEndTime=None,
             recurringTestingTriggerId=None,
             isRecurring=False,
             configuration=application.defaultRunConfiguration,
             launchSource="manual"
         )
+
+        newTestingRun.updatePredictedEndTime()
 
         newTestingRun.save()
 
@@ -330,11 +332,7 @@ class ResumeTestingRun(Resource):
 
         testingRun.status = "running"
 
-        portionComplete = testingRun.testingSessionsCompleted / testingRun.configuration.totalTestingSessions
-        testingRun.predictedEndTime = datetime.datetime.now() + relativedelta(hours=int(math.ceil(testingRun.configuration.hours * (1.0 - portionComplete))) + 1,
-                                                                              minute=30,
-                                                                              second=0,
-                                                                              microsecond=0)
+        testingRun.updatePredictedEndTime()
 
         testingRun.save()
         testingRun.runJob()
