@@ -40,14 +40,14 @@
       .bugs-table-bug-screenshot-wrapper
       {
         position: relative;
-        width: 200px;
-        height: 200px;
+        width: 150px;
+        height: 150px;
       }
 
       .bugs-table-bug-screenshot
       {
-        width: 200px;
-        height: 200px;
+        width: 150px;
+        height: 150px;
         border: 1px solid lightgray;
       }
 
@@ -86,7 +86,7 @@
       {
         margin-left: 10px;
         flex-grow: 1;
-        max-height: 185px;
+        max-height: 140px;
         overflow: hidden;
 
         .bug-message-label
