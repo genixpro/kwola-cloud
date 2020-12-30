@@ -73,7 +73,7 @@ class Resource(Document):
         dataFormat, compression = getDataFormatAndCompressionForClass(Resource, config)
 
         if dataFormat == "mongo":
-            if applicationId is None:
+            if applicationId is None and 'applicationId' in config:
                 applicationId = config['applicationId']
             objects = Resource.objects(applicationId=applicationId)
             return objects
