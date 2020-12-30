@@ -78,6 +78,10 @@ class BugsTable extends Component
                 {
                     return;
                 }
+                if (this.state.pageFilter && bug.error.message.toLowerCase().indexOf(this.state.pageFilter.toLowerCase()) === -1)
+                {
+                    return;
+                }
                 if (this.state.statusFilter && bug.status !== this.state.statusFilter)
                 {
                     return;
