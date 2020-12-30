@@ -161,6 +161,19 @@ class ViewTestingRun extends Component {
     }
 
 
+    getHumanFriendlyStatusText(status)
+    {
+        if (status === "running" || status === "created")
+        {
+            return "in progress";
+        }
+        else
+        {
+            return status;
+        }
+    }
+
+
     render()
     {
         const { result } = this.state;
@@ -206,7 +219,7 @@ class ViewTestingRun extends Component {
                                                     : null
                                             }
                                         </div>}
-                                    subtitle={this.state.testingRun.status}
+                                    subtitle={this.getHumanFriendlyStatusText(this.state.testingRun.status)}
                                     button={
                                         <div>
                                             <Button variant="contained"

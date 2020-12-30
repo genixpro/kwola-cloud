@@ -3,7 +3,7 @@ from kwolacloud.datamodels.MutedError import MutedError
 from kwola.datamodels.BugModel import BugModel
 from kwolacloud.datamodels.TestingRun import TestingRun
 from kwola.datamodels.CustomIDField import CustomIDField
-from kwola.components.utils.debug_video import createDebugVideoSubProcess
+from kwola.components.utils.debug_video import createDebugVideoSubProcess, addDebugActionCursorToImage
 from kwola.components.plugins.base.TestingStepPluginBase import TestingStepPluginBase
 from kwola.components.agents.DeepLearningAgent import DeepLearningAgent
 from kwola.components.utils.retry import autoretry
@@ -322,19 +322,6 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
         cropped = numpy.copy(image[top:bottom, left:right])
 
-        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 5, shape=[cropHeight, cropWidth])
-        cropped[centerCoords] = (255, 0, 0)
-
-        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 10, shape=[cropHeight, cropWidth])
-        cropped[centerCoords] = (255, 0, 0)
-
-        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 15, shape=[cropHeight, cropWidth])
-        cropped[centerCoords] = (255, 0, 0)
-
-        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 20, shape=[cropHeight, cropWidth])
-        cropped[centerCoords] = (255, 0, 0)
-
-        centerCoords = skimage.draw.circle_perimeter(int(action.y - top), int(action.x - left), 25, shape=[cropHeight, cropWidth])
-        cropped[centerCoords] = (255, 0, 0)
+        addDebugActionCursorToImage(image, [int(action.y - top), int(action.x - left)], action.type)
 
         return cropped

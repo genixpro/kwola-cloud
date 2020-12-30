@@ -43,6 +43,7 @@ import numpy
 import os
 import os.path
 import os.path
+import pkg_resources
 import scipy.signal
 import scipy.special
 import shutil
@@ -1738,6 +1739,8 @@ class DeepLearningAgent:
 
             :return: None
         """
+        from ..utils.debug_video import addDebugActionCursorToImage
+        
         setupLocalLogging(self.config)
 
         mpl.use('Agg')
@@ -1771,28 +1774,6 @@ class DeepLearningAgent:
 
             presentReward = presentRewards[traceIndex]
             discountedFutureReward = discountedFutureRewards[traceIndex]
-
-            def addDebugCircleToImage(image, trace):
-                targetCircleCoords1 = skimage.draw.circle_perimeter(int(topSize + trace.actionPerformed.y),
-                                                                           int(leftSize + trace.actionPerformed.x), self.config.debug_video_target_circle_1_radius,
-                                                                           shape=[int(imageWidth + extraWidth),
-                                                                                  int(imageHeight + extraHeight)])
-                targetCircleCoords2 = skimage.draw.circle_perimeter(int(topSize + trace.actionPerformed.y),
-                                                                           int(leftSize + trace.actionPerformed.x), self.config.debug_video_target_circle_2_radius,
-                                                                           shape=[int(imageWidth + extraWidth),
-                                                                                  int(imageHeight + extraHeight)])
-                targetCircleCoords3 = skimage.draw.circle_perimeter(int(topSize + trace.actionPerformed.y),
-                                                                           int(leftSize + trace.actionPerformed.x), self.config.debug_video_target_circle_3_radius,
-                                                                           shape=[int(imageWidth + extraWidth),
-                                                                                  int(imageHeight + extraHeight)])
-                targetCircleCoords4 = skimage.draw.circle_perimeter(int(topSize + trace.actionPerformed.y),
-                                                                          int(leftSize + trace.actionPerformed.x), self.config.debug_video_target_circle_4_radius,
-                                                                          shape=[int(imageWidth + extraWidth),
-                                                                                 int(imageHeight + extraHeight)])
-                image[targetCircleCoords1] = [self.config.debug_video_target_circle_color_r, self.config.debug_video_target_circle_color_g, self.config.debug_video_target_circle_color_b]
-                image[targetCircleCoords2] = [self.config.debug_video_target_circle_color_r, self.config.debug_video_target_circle_color_g, self.config.debug_video_target_circle_color_b]
-                image[targetCircleCoords3] = [self.config.debug_video_target_circle_color_r, self.config.debug_video_target_circle_color_g, self.config.debug_video_target_circle_color_b]
-                image[targetCircleCoords4] = [self.config.debug_video_target_circle_color_r, self.config.debug_video_target_circle_color_g, self.config.debug_video_target_circle_color_b]
 
             def addCropViewToImage(image, trace):
                 imageCropWidth = imageWidth * self.config['model_image_downscale_ratio']
@@ -2190,7 +2171,7 @@ class DeepLearningAgent:
 
             newImage[topSize:-bottomSize, leftSize:-rightSize] = lastRawImage
             addDebugTextToImage(newImage, trace)
-            addDebugCircleToImage(newImage, trace)
+            addDebugActionCursorToImage(newImage, [topSize + trace.actionPerformed.y, leftSize + trace.actionPerformed.x], trace.actionPerformed.type)
             addCropViewToImage(newImage, trace)
             if includeNetPresentRewardChart:
                 addBottomRewardChartToImage(newImage, trace)

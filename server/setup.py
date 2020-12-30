@@ -35,7 +35,8 @@ setup(
     },
     package_data={
         'kwola': [
-            'config/prebuilt_configs/*.json'
+            'config/prebuilt_configs/*.json',
+            'images/*.png'
         ],
         'kwolacloud': [
             "config/core/*.json",

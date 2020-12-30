@@ -22,12 +22,26 @@ class TestingRunsTable extends Component{
     	let rdata = []
     	if(data){
     		data.map(testingRun=>{
+	    		testingRun.humanFriendlyStatus = this.getHumanFriendlyStatusText(testingRun.status);
 	    		testingRun.startTimeFormatted = testingRun.startTime ? moment(new Date(testingRun.startTime.$date)).format('HH:mm MMM Do') : null
 	    		rdata.push(testingRun)
 	    	})
     	}
     	return rdata;
     }
+
+
+	getHumanFriendlyStatusText(status)
+	{
+		if (status === "running" || status === "created")
+		{
+			return "in progress";
+		}
+		else
+		{
+			return status;
+		}
+	}
 
 	render()
 	{
@@ -41,7 +55,7 @@ class TestingRunsTable extends Component{
 		     	<MaterialTable
 		          columns={[
 		            { title: 'Start Time', field: 'startTimeFormatted' },
-		            { title: 'Status', field: 'status' },
+		            { title: 'Status', field: 'humanFriendlyStatus' },
 		            { title: 'Bugs Found', field: 'bugsFound' },
 		            { title: 'id', field: '_id', hidden:true },
 		          ]}

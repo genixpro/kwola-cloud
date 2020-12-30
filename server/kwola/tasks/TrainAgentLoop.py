@@ -295,8 +295,6 @@ def updateModelSymbols(config, testingStepId):
 
     symbolMap.save()
 
-    regressionTester.saveCumulativeBranchTrace()
-
 def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     stepStartTime = datetime.now()
 
