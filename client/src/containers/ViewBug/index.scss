@@ -1,5 +1,64 @@
 
 
+.bug-details-grid
+{
+  display: grid;
+  grid-template-columns: auto auto;
+
+
+  .bug-detail-label
+  {
+    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: 500;
+
+    &.bug-detail-select-label
+    {
+      position: relative;
+      top: 6px;
+    }
+
+    &.bug-detail-browser-label
+    {
+      position: relative;
+      top: 4px;
+    }
+  }
+
+  .bug-detail-value
+  {
+    margin-left: 15px;
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+
+  .bug-message-label
+  {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 10px;
+
+  }
+
+  .bug-message-value
+  {
+    margin-left: 15px;
+    font-size: 11px;
+    font-family: monospace;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+}
+
+.bug-message-area
+{
+  display: flex;
+  flex-direction: column;
+
+}
+
+
 
 .video-control-button
 {

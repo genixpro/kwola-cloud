@@ -137,15 +137,11 @@ class ViewBug extends Component {
         if(!this.state.player) return false;
         this.state.player.restart()
 
-        const browser = detect();
-        if (browser.name === "firefox")
-        {
-            this.state.player.forward(actionNumber)
-        }
-        else
-        {
-            this.state.player.forward(actionNumber + 0.5)
-        }
+        // We add 0.25 here so that we don't set the video playback to a position that is right on the boundary
+        // between two frames, since different browsers may show that differently. There is one frame every 0.5 seconds
+        // So by adding 0.25, we ensure that we ensure the video playback is set within a frame and not at the start
+        // or end of it.
+        this.state.player.forward(actionNumber + 0.25);
     }
 
     goToActionClicked(index)
@@ -248,73 +244,109 @@ class ViewBug extends Component {
                                     title={`Bug ${this.state.bug._id}`}
                                     // subtitle={}
                                 >
-                                    <span>Bug Type: {this.state.bug.error._cls || "Unknown"}</span><br/><br/>
-                                    <span>Page: {this.state.bug.error.page || "Unknown"}</span><br/><br/>
-                                    {
-                                        this.state.bug.error._cls === "LogError" ?
-                                            <span>Log Level: {this.state.bug.error.logLevel || "N/A"}<br/><br/></span>
-                                            : null
-                                    }
-                                    {
-                                        this.state.bug.error._cls === "HttpError" ?
-                                            <span>HTTP Status Code: {this.state.bug.error.statusCode || "N/A"}<br/><br/></span>
-                                            : null
-                                    }
-                                    {
-                                        this.state.bug.error._cls === "HttpError" ?
-                                            <span>HTTP Request URL: {this.state.bug.error.url || "N/A"}<br/><br/></span>
-                                            : null
-                                    }
-                                    {
-                                        this.state.bug.browser === "chrome" ?
-                                            <span>Browser: <i className="devicon-chrome-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Chrome<br/><br/></span> : null
-                                    }
-                                    {
-                                        this.state.bug.browser === "firefox" ?
-                                            <span>Browser: <i className="devicon-firefox-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Firefox<br/><br/></span> : null
-                                    }
-                                    {
-                                        this.state.bug.browser === "edge" ?
-                                            <span>Browser: <img src={edgeBlackSquare}  style={{"width":"20px", "position": "relative", "top": "3px"}} /> Edge<br/><br/></span> : null
-                                    }
-                                    {
-                                        this.state.bug.userAgent ?
-                                            <span>User Agent: {this.state.bug.userAgent}<br/><br/></span> : null
-                                    }
-                                    {
-                                        this.state.bug.windowSize ?
-                                            <span>Window Size: {this.state.bug.windowSize}<br/><br/></span> : null
-                                    }
+                                    <div className={"bug-details-grid"}>
+                                        <span className={"bug-detail-label"}>Bug Type:</span>
+                                        <span className={"bug-detail-value"}>{this.state.bug.error._cls || "Unknown"}</span>
 
-                                    <span>Importance Level:
-                                    <select value={this.state.bug.importanceLevel}
-                                            onChange={(evt) => this.changeBugImportanceLevel(evt.target.value)}
-                                    >
-                                          <option value={1}>1 (highest)</option>
-                                          <option value={2}>2</option>
-                                          <option value={3}>3</option>
-                                          <option value={4}>4</option>
-                                          <option value={5}>5 (lowest)</option>
-                                      </select>
-                                        <br/><br/>
-                                    </span>
+                                        <span className={"bug-detail-label"}>Page:</span>
+                                        <span className={"bug-detail-value"}>{this.state.bug.error.page || "Unknown"}</span>
 
-                                    <span>Status:
-                                        <select value={this.state.bug.status}
-                                                onChange={(evt) => this.changeBugStatus(evt.target.value)}>
+                                        {
+                                            this.state.bug.error._cls === "LogError" ?
+                                                <span className={"bug-detail-label"}>Log Level:</span>
+                                                : null
+                                        }
+                                        {
+                                            this.state.bug.error._cls === "LogError" ?
+                                                <span className={"bug-detail-value"}>{this.state.bug.error.logLevel || "N/A"}</span>
+                                                : null
+                                        }
+
+
+                                        {
+                                            this.state.bug.error._cls === "HttpError" ?
+                                                <span className={"bug-detail-label"}>HTTP Status Code:</span>
+                                                : null
+                                        }
+                                        {
+                                            this.state.bug.error._cls === "HttpError" ?
+                                                <span className={"bug-detail-value"}>{this.state.bug.error.statusCode || "N/A"}</span>
+                                                : null
+                                        }
+
+
+                                        {
+                                            this.state.bug.error._cls === "HttpError" ?
+                                                <span className={"bug-detail-label"}>HTTP Request URL:</span>
+                                                : null
+                                        }
+                                        {
+                                            this.state.bug.error._cls === "HttpError" ?
+                                                <span className={"bug-detail-value"}>{this.state.bug.error.url || "N/A"}</span>
+                                                : null
+                                        }
+
+
+                                        <span className={"bug-detail-label bug-detail-browser-label"}>Browser:</span>
+                                        {
+                                            this.state.bug.browser === "chrome" ?
+                                                <span className={"bug-detail-value"}><i className="devicon-chrome-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Chrome</span> : null
+                                        }
+                                        {
+                                            this.state.bug.browser === "firefox" ?
+                                                <span className={"bug-detail-value"}><i className="devicon-firefox-plain" style={{"fontSize":"20px", "position": "relative", "top": "2px"}} /> Firefox</span> : null
+                                        }
+                                        {
+                                            this.state.bug.browser === "edge" ?
+                                                <span className={"bug-detail-value"}><img src={edgeBlackSquare}  style={{"width":"20px", "position": "relative", "top": "3px"}} /> Edge</span> : null
+                                        }
+
+                                        <span className={"bug-detail-label"}>Window Size:</span>
+                                        <span className={"bug-detail-value"}>{this.state.bug.windowSize}</span>
+
+                                        <span className={"bug-detail-label"}>User Agent:</span>
+                                        <span className={"bug-detail-value"}>{this.state.bug.userAgent}</span>
+
+                                        <span className={"bug-detail-label bug-detail-select-label"}>Importance:</span>
+                                        <span className={"bug-detail-value"}>
+                                            <select value={this.state.bug.importanceLevel}
+                                                    onChange={(evt) => this.changeBugImportanceLevel(evt.target.value)}
+                                            >
+                                              <option value={1}>1 (highest)</option>
+                                              <option value={2}>2</option>
+                                              <option value={3}>3</option>
+                                              <option value={4}>4</option>
+                                              <option value={5}>5 (lowest)</option>
+                                            </select>
+                                        </span>
+
+                                        <span className={"bug-detail-label bug-detail-select-label"}>Status:</span>
+                                        <span className={"bug-detail-value"}>
+                                            <select value={this.state.bug.status}
+                                                    onChange={(evt) => this.changeBugStatus(evt.target.value)}
+                                            >
                                               <option value={'new'}>New</option>
                                               <option value={'triage'}>In triage</option>
                                               <option value={'fix_in_progress'}>Fix in progress</option>
                                               <option value={'needs_testing'}>Fixed, needs testing</option>
                                               <option value={'closed'}>Closed</option>
-                                          </select>
-                                        <br/><br/>
-                                    </span>
+                                            </select>
+                                        </span>
 
-                                    <span>Message:</span><br/>
-                                    <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.message || "N/A"}</pre>
+                                        <span className={"bug-message-label"}>Message:</span>
+                                        <span className={"bug-message-value"}>{this.state.bug.error.message || "N/A"}</span>
 
-                                    <pre style={{"whiteSpace":"pre-wrap"}}>{this.state.bug.error.stacktrace}</pre>
+                                        {
+                                            this.state.bug.error.stacktrace ?
+                                                <span className={"bug-message-label"}>Stacktrace:</span> : null
+                                        }
+                                        {
+                                            this.state.bug.error.stacktrace ?
+                                                <span className={"bug-message-value"}>{this.state.bug.error.stacktrace}</span> : null
+                                        }
+                                    </div>
+                                    {/*<div className={"bug-message-area"}>*/}
+                                    {/*</div>*/}
                                 </Papersheet>
                                 <br/>
 
