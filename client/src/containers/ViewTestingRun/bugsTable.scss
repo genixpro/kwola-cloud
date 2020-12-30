@@ -1,18 +1,122 @@
 
 
-.bugs-table-bug-screenshot-wrapper
+.groups-list
 {
-  position: relative;
-  width: 150px;
-  height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
+
+  .bugs-list
+  {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+
+    .bug-row
+    {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+
+      padding-left: 15px;
+      padding-top: 15px;
+      padding-bottom: 15px;
+      width: 100%;
+
+      cursor: pointer;
+
+      &:hover
+      {
+        background-color: #eee;
+      }
+
+      &:not(:last-child)
+      {
+        border-bottom: 1px solid lightgray;
+      }
+
+      .bugs-table-bug-screenshot-wrapper
+      {
+        position: relative;
+        width: 200px;
+        height: 200px;
+      }
+
+      .bugs-table-bug-screenshot
+      {
+        width: 200px;
+        height: 200px;
+      }
+
+      .bugs-table-basic-details
+      {
+        margin-left: 15px;
+        display: grid;
+        grid-template-rows: auto auto auto auto auto;
+        grid-template-columns: auto auto;
+        align-items: last baseline;
+
+        .bug-detail-label
+        {
+          white-space: nowrap;
+          margin-bottom: 10px;
+          margin-right: 10px;
+          font-weight: 500;
+        }
+
+        .bug-detail-value
+        {
+          font-size: 12px;
+        }
+
+        select
+        {
+          font-size: 12px;
+          width: 100%;
+          min-width: 150px;
+        }
+
+      }
+
+      .bugs-table-message
+      {
+        margin-left: 10px;
+        flex-grow: 1;
+        max-height: 185px;
+        overflow: hidden;
+
+        .bug-message-label
+        {
+          font-size: 14px;
+          font-weight: 500;
+        }
+        .bug-message-value
+        {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-family: monospace;
+          font-size: 12px;
+          white-space: pre;
+          word-break: break-all;
+        }
+      }
+
+      .bugs-table-controls
+      {
+        margin-left: 15px;
+        margin-right: 15px;
+        align-self: center;
+      }
+    }
+  }
 }
 
-.bugs-table-bug-screenshot
+.no-bugs-found-message-container
 {
-  width: 150px;
-  height: 150px;
+  padding: 15px;
 }
-
 
 
 /* common */
@@ -73,8 +177,8 @@
 {
   display: flex;
   flex-direction: row;
-  padding: 15px;
   align-items: baseline;
+  margin-bottom: 15px;
 
   .bug-filter-controls-label-wrapper
   {
@@ -95,21 +199,21 @@
   {
 
   }
-}
 
-.bug-filter
-{
-  margin-left: 25px;
-  margin-right: 25px;
-  margin-bottom: 15px;
-  flex-basis: 250px;
-}
+  .bug-filter
+  {
+    margin-left: 25px;
+    margin-right: 25px;
+    margin-bottom: 15px;
+    flex-basis: 250px;
+  }
 
-.bug-message-filter
-{
-  flex-shrink: 1;
-  margin-left: 25px;
-  margin-right: 25px;
-  margin-bottom: 15px;
-  flex-basis: 550px;
+  .bug-message-filter, .bug-page-filter
+  {
+    flex-shrink: 1;
+    margin-left: 25px;
+    margin-right: 25px;
+    margin-bottom: 15px;
+    flex-basis: 550px;
+  }
 }

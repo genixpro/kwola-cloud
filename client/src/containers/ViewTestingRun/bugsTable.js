@@ -4,7 +4,6 @@ import {Table} from "../ListApplications/materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow, TablePagination} from "../../components/uielements/table";
 import moment from 'moment';
 import {connect, Provider} from 'react-redux';
-import MaterialTable from 'material-table'
 import Icon from "../../components/uielements/icon";
 import Button from "../../components/uielements/button";
 import VolumeOffIcon from '@material-ui/icons/VolumeOff';
@@ -16,16 +15,24 @@ import Select from '@material-ui/core/Select';
 import { FormControl } from '../../components/uielements/form';
 import Input, { InputLabel } from '../../components/uielements/input';
 import { MenuItem } from '../../components/uielements/menus';
+import _ from "underscore";
+import ExpansionPanel, {
+    ExpansionPanelSummary,
+    ExpansionPanelDetails,
+} from '../../components/uielements/expansionPanel';
+import Typography from '../../components/uielements/typography';
+
 import {FullColumn, HalfColumn, OneThirdColumn, Column, Row, TwoThirdColumn} from "../../components/utility/rowColumn";
+import Papersheet from "../../components/utility/papersheet/papersheet.style";
 
 
-class BugsTable extends Component{
+class BugsTable extends Component
+{
 	state = {
-        newPage:0,
-        setPage:0,
-        rowsPerPage:10,
         muted: {},
-        importanceLevels: {}
+        importanceLevels: {},
+        bugStatuses: {},
+        openedBugList: null
     };
 
     constructor(props)
@@ -34,21 +41,14 @@ class BugsTable extends Component{
         this.mutedErrorIds = {};
     }
 
-
-
-	// handleChangePage = (event, newPage) => {
- //            this.setState({newPage:newPage})
- //    };
-
- //    handleChangeRowsPerPage  = (event, rowsPerPage) => {
- //        this.setState({rowsPerPage:rowsPerPage.props.value})
- //    }
-
-    handleRowClick = (event, rowData)=>{
+    handleRowClick(event, rowData)
+    {
         this.props.history.push(`/app/dashboard/bugs/${rowData._id}`)
     }
 
-    processData = (data) => {
+
+    filterBugs(data)
+    {
         let rdata = []
         if(data)
         {
@@ -168,6 +168,20 @@ class BugsTable extends Component{
         });
     }
 
+    changeBugStatus(bug, newStatus)
+    {
+        const bugStatuses = this.state.bugStatuses;
+        bugStatuses[bug._id] = newStatus;
+        this.setState({bugStatuses});
+
+        axios.post(`/bugs/${bug._id}`, {status: newStatus}).then((response) => {
+
+        }, (error) =>
+        {
+            console.error("Error occurred while updating bug status.");
+        });
+    }
+
     onBugTypeFilterChanged(newValue)
     {
         this.setState({bugTypeFilter: newValue});
@@ -203,14 +217,28 @@ class BugsTable extends Component{
         this.setState({messageFilter: newValue});
     }
 
+    onPageFilterChanged(newValue)
+    {
+        this.setState({pageFilter: newValue});
+    }
+
+
+    openBugList(canonicalUrl)
+    {
+        if (this.state.openedBugList === canonicalUrl)
+        {
+            this.setState({openedBugList: null});
+        }
+        else
+        {
+            this.setState({openedBugList: canonicalUrl})
+        }
+    }
 
 	render()
     {
-        const setRowsPerPage = 10;
-        const page = this.state.newPage
-        let setPage = this.state.setPage
-        const rowsPerPage = this.state.rowsPerPage
-        const tableData = this.processData(this.props.data)
+        const tableData = this.filterBugs(this.props.data)
+        const groupedBugs = _.groupBy(tableData, (bug) => bug.canonicalPageUrl)
 
         const bugTypeForm = <FormControl className={"bug-filter"}>
             <InputLabel htmlFor="bug-type-filter">Bug Type&nbsp;&nbsp;</InputLabel>
@@ -316,6 +344,15 @@ class BugsTable extends Component{
             />
         </FormControl>;
 
+        const pageFilter = <FormControl className={"bug-page-filter"}>
+            <InputLabel htmlFor="page-filter">Page&nbsp;&nbsp;</InputLabel>
+            <Input
+                value={this.state.pageFilter}
+                onChange={(evt) => this.onPageFilterChanged(evt.target.value)}
+                input={<Input id="page-filter" />}
+            />
+        </FormControl>;
+
         return(
 	 		<div>
                 <div className={"bug-filter-controls"}>
@@ -323,121 +360,124 @@ class BugsTable extends Component{
                         <span className={"bug-filter-controls-label"}>Filters: </span>
                     </div>
                     <div className={"bug-filter-controls-inputs-wrapper"}>
+                        {messageFilter}
+                        {pageFilter}
                         {statusFilter}
                         {bugTypeForm}
                         {importanceFilter}
                         {browserFilter}
                         {windowSizeFilter}
                         {httpErrorStatusCodeFilter}
-                        {messageFilter}
                     </div>
                 </div>
-                <MaterialTable
-                  columns={[
+                <div className={"groups-list"}>
                     {
-                        title: 'id',
-                        field: '_id',
-                        hidden: true,
-                        grouping: false
-                    },
-                    {
-                        title: 'Bug Screenshot',
-                        field: "image",
-                        width:'15%',
-                        render: (rowData) => {
-                            return <div className={"bugs-table-bug-screenshot-wrapper"}>
-                                {rowData.isBugNew ? <div className="new-bug-ribbon"><span>NEW</span></div> : null}
-                                <img className={"bugs-table-bug-screenshot"} alt={"Bug Screenshot"} src={`${process.env.REACT_APP_BACKEND_API_URL}bugs/${rowData._id}/error_frame?token=${Auth.getQueryParameterToken()}`} />
-                            </div>
-                        },
-                        cellStyle: {
-                            width:'15%'
-                        },
-                        grouping: false
-                    },
-                    {
-                        title: 'Type',
-                        field: '_cls',
-                        width:'10%',
-                        grouping: true,
-                        cellStyle: {
-                          width:'10%'
-                        }
-                     },
-                    {
-                        title: 'Message', field: 'message',
-                        width: "50%",
-                        grouping: false,
-                        cellStyle: {
-                          width: "50%",
-                          maxWidth: "500px",
-                          overflow: "hidden"
-                        },
-                        render: (rowData) => <div style={{"maxHeight": "90px", "overflow": "hidden"}}><span style={{"whiteSpace": 'pre-wrap'}}>{rowData.message.trim()}</span></div>
-                     },
-                      {
-                          title: 'Importance', field: 'importanceLevel',
-                          width: "15%",
-                          grouping: false,
-                          cellStyle: {
-                              width: "15%"
-                          },
-                          render: (rowData) => <select value={this.state.importanceLevels[rowData._id] || rowData.importanceLevel}
-                                                                onClick={(evt) => evt.stopPropagation()}
-                                                                onChange={(evt) => this.changeBugImportanceLevel(rowData, evt.target.value)}
-                                                        >
-                              <option value={1}>1 (highest)</option>
-                              <option value={2}>2</option>
-                              <option value={3}>3</option>
-                              <option value={4}>4</option>
-                              <option value={5}>5 (lowest)</option>
-                          </select>
+                        _.sortBy(Object.keys(groupedBugs), (v) => v).map((group) =>
+                        {
+                            return <ExpansionPanel
+                                key={group}
+                                expanded={this.state.openedBugList === group}
+                                onChange={() => this.openBugList(group)}
+                            >
+                                <ExpansionPanelSummary expandIcon={<Icon>expand_more</Icon>}>
+                                    <span><strong>Page: </strong> {group}</span>
+                                </ExpansionPanelSummary>
+                                <ExpansionPanelDetails>
+                                    <div className={"bugs-list"}>
+                                        {
+                                            groupedBugs[group].map((bug) =>
+                                            {
+                                                return <div key={bug._id} className={"bug-row"} onClick={(evt) => this.handleRowClick(evt, bug)}>
+                                                             <div className={"bugs-table-bug-screenshot-wrapper"}>
+                                                                 {bug.isBugNew ? <div className="new-bug-ribbon"><span>NEW</span></div> : null}
+                                                                 <img className={"bugs-table-bug-screenshot"} alt={"Bug Screenshot"} src={`${process.env.REACT_APP_BACKEND_API_URL}bugs/${bug._id}/error_frame?token=${Auth.getQueryParameterToken()}`} />
+                                                             </div>
 
-                      },
-                  {
-                      // field: 'options',
-                      title: 'Options',
-                      grouping: false,
-                      render: (rowData) => <Button variant="contained"
-                                                            size="small"
-                                                            color={!this.state.muted[rowData._id] ? "default" : "primary"}
-                                                            title={!this.state.muted[rowData._id] ? "Mute this error" : "Unmute this error"}
-                                                            onClick={(evt) => this.toggleMuteError(evt, rowData)}>
-                          <VolumeOffIcon />
-                      </Button>,
-                      width:'10%',
-                      cellStyle: {
-                          width: '10%'
-                      }
-                  },
-                  {
-                      title: 'Page',
-                      field: 'canonicalPageUrl',
-                      hidden:true,
-                      defaultGroupOrder: 0,
-                      grouping: false,
-                  },
-                  ]}
-                  data={tableData}
-                  title=""
-                  onRowClick={this.handleRowClick}
-                  components={
-                      {
-                          Groupbar: () => null,
-                          Toolbar: () => null
-                      }
-                  }
-                  options={{
-                    grouping: true,
-                    search: false,
-                    pageSize:10,
-                    pageSizeOptions:[5,10,20,50],
-                    rowStyle: {
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal",wordWrap: "break-word",
-                      fontSize:"14px"
+                                                            <div className={"bugs-table-basic-details"}>
+                                                                <span className={"bug-detail-label"}>Type:</span>
+                                                                <span className={"bug-detail-value"}>{bug.error._cls}</span>
+                                                                {
+                                                                    bug.error._cls === "HttpError" ?
+                                                                        <span className={"bug-detail-label"}>HTTP Status:</span>
+                                                                        : null
+                                                                }
+                                                                {
+                                                                    bug.error._cls === "HttpError" ?
+                                                                        <span className={"bug-detail-value"}>{bug.error.statusCode}</span>
+                                                                        : null
+                                                                }
+                                                                <span className={"bug-detail-label"}>Importance:</span>
+                                                                <div>
+                                                                    <select value={this.state.importanceLevels[bug._id] || bug.importanceLevel}
+                                                                            onClick={(evt) => evt.stopPropagation()}
+                                                                            onChange={(evt) => this.changeBugImportanceLevel(bug, evt.target.value)}
+                                                                    >
+                                                                        <option value={1}>1 (highest)</option>
+                                                                        <option value={2}>2</option>
+                                                                        <option value={3}>3</option>
+                                                                        <option value={4}>4</option>
+                                                                        <option value={5}>5 (lowest)</option>
+                                                                    </select>
+                                                                </div>
+                                                                <span className={"bug-detail-label"}>Status:</span>
+                                                                <div>
+                                                                    <select value={this.state.bugStatuses[bug._id] || bug.status}
+                                                                            onClick={(evt) => evt.stopPropagation()}
+                                                                            onChange={(evt) => this.changeBugStatus(bug, evt.target.value)}>
+                                                                        <option value={'new'}>New</option>
+                                                                        <option value={'triage'}>In triage</option>
+                                                                        <option value={'fix_in_progress'}>Fix in progress</option>
+                                                                        <option value={'needs_testing'}>Fixed, needs testing</option>
+                                                                        <option value={'closed'}>Closed</option>
+                                                                    </select>
+                                                                </div>
+                                                                <span className={"bug-detail-label"}>Browser:</span>
+                                                                <span className={"bug-detail-value"}>{bug.browser}</span>
+                                                                <span className={"bug-detail-label"}>Window Size:</span>
+                                                                <span className={"bug-detail-value"}>{bug.windowSize}</span>
+                                                            </div>
+                                                            <div className={"bugs-table-message"}>
+                                                                {
+                                                                    bug.error._cls === "HttpError" ?
+                                                                        <span className={"bug-message-label"}>URL:<br/></span>
+                                                                        : null
+                                                                }
+                                                                {
+                                                                    bug.error._cls === "HttpError" ?
+                                                                        <span className={"bug-message-value"}>{bug.error.url}<br/><br/></span>
+                                                                        : null
+                                                                }
+                                                                <span className={"bug-message-label"}>Message:</span>
+                                                                <br/>
+                                                                <div className={"bug-message-value"}>{bug.error.message}</div>
+                                                            </div>
+
+
+                                                            <div className={"bugs-table-controls"}>
+                                                                <Button variant="contained"
+                                                                        size="small"
+                                                                        color={!this.state.muted[bug._id] ? "default" : "primary"}
+                                                                        title={!this.state.muted[bug._id] ? "Mute this error" : "Unmute this error"}
+                                                                        onClick={(evt) => this.toggleMuteError(evt, bug)}>
+                                                                    <VolumeOffIcon />
+                                                                </Button>
+                                                            </div>
+                                                         </div>;
+                                            })
+                                        }
+                                    </div>
+                                </ExpansionPanelDetails>
+                            </ExpansionPanel>
+                        })
                     }
-                  }}
-                />
+                    {
+                        Object.keys(groupedBugs).length === 0 ?
+                            <Papersheet className={"no-bugs-found-message-container"}>
+                                There were no bugs found matching the filters you have provided.
+                            </Papersheet> : null
+                    }
+
+                </div>
             </div>
 	    )
 	}
