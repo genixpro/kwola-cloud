@@ -48,21 +48,24 @@ from kwola.datamodels.errors.LogError import LogError
 from kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
 
 def processBug(bugId):
-    bug = BugModel.objects(id=bugId).first()
+    try:
+        bug = BugModel.objects(id=bugId).first()
 
-    run = TestingRun.objects(id=bug.testingRunId).first()
-    config = run.configuration.createKwolaCoreConfiguration(run.owner, run.applicationId, run.id)
+        run = TestingRun.objects(id=bug.testingRunId).first()
+        config = run.configuration.createKwolaCoreConfiguration(run.owner, run.applicationId, run.id)
 
-    session = ExecutionSession.objects(id=bug.executionSessionId).first()
-    traceId = session.executionTraces[bug.stepNumber]
-    trace = ExecutionTrace.loadFromDisk(traceId, config, applicationId=run.applicationId)
-    bug.error.page = trace.finishURL
+        session = ExecutionSession.objects(id=bug.executionSessionId).first()
+        traceId = session.executionTraces[bug.stepNumber]
+        trace = ExecutionTrace.loadFromDisk(traceId, config, applicationId=run.applicationId)
+        bug.error.page = trace.finishURL
 
-    bug.recomputeCanonicalPageUrl()
-    bug.save()
+        bug.recomputeCanonicalPageUrl()
+        bug.save()
 
-    logging.info(f"Processed bug {bug.id}")
+        logging.info(f"Processed bug {bug.id}")
 
+    except Exception as e:
+        logging.error(f"Received an error while running the migration task: {traceback.format_exc()}")
 
 def main():
     try:
