@@ -101,23 +101,23 @@ class JSRewriter(ProxyPluginBase):
 
             return None, message
 
-        noLineCountingKeyword = self.findMatchingJavascriptFilenameNoLineCountingKeyword(cleanedFileName)
-        if noLineCountingKeyword is not None:
-            message = f"Warning: Not installing line counting in the javascript file '{cleanedFileName}' because it matches the " \
-                    f"javascript no line counting keyword '{noLineCountingKeyword}'. Event handler tracking will still be installed." \
-                    f"This means that no learnings will take place on the code in this file. If this file is actually part of your " \
-                    f"application and should be learned on, then please modify your config file kwola.json and remove the ignore " \
-                    f"keyword '{noLineCountingKeyword}' from the variable 'web_session_no_line_counting_javascript_file_keywords'. This file will be " \
-                    f"cached without Kwola line counting installed. Its faster to install line counting only in the files that need " \
-                    f"it."
-
-            return "no_line_counting", message
-
         translated, translationMessage = self.getRewrittenJavascript(resource, fileData, priorResourceVersion)
         if translated is None:
             return None, translationMessage
         else:
-            return "full", translationMessage
+            noLineCountingKeyword = self.findMatchingJavascriptFilenameNoLineCountingKeyword(cleanedFileName)
+            if noLineCountingKeyword is not None:
+                message = f"Warning: Not installing line counting in the javascript file '{cleanedFileName}' because it matches the " \
+                          f"javascript no line counting keyword '{noLineCountingKeyword}'. Event handler tracking will still be installed." \
+                          f"This means that no learnings will take place on the code in this file. If this file is actually part of your " \
+                          f"application and should be learned on, then please modify your config file kwola.json and remove the ignore " \
+                          f"keyword '{noLineCountingKeyword}' from the variable 'web_session_no_line_counting_javascript_file_keywords'. This file will be " \
+                          f"cached without Kwola line counting installed. Its faster to install line counting only in the files that need " \
+                          f"it."
+
+                return "no_line_counting", message
+            else:
+                return "full", translationMessage
 
     def checkIfRewrittenJSFileHasMultipleBranches(self, rewrittenJSFileData):
         # This method is used to check if the given javascript file, which has already been rewritten,

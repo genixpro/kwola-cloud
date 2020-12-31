@@ -994,11 +994,16 @@ class WebEnvironmentSession:
         return success, networkWaitTime
 
     def normalizeLinkURL(self, url, currentPageURL):
-        parsed = urllib.parse.urlparse(url)
-        if not parsed.scheme or not parsed.netloc or not parsed.path:
-            url = urllib.parse.urljoin(currentPageURL, url)
+        try:
+            parsed = urllib.parse.urlparse(url)
 
-        return url
+            if not parsed.scheme or not parsed.netloc or not parsed.path:
+                url = urllib.parse.urljoin(currentPageURL, url)
+
+            return url
+        except ValueError as e:
+            getLogger().error(f"Error normalizing link url {url}. Received exception: {traceback.format_exc()}. Returning link unnormalized.")
+            return url
 
     def isURLOffsite(self, url, currentPageURL=None):
         if currentPageURL is None:
