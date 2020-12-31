@@ -325,7 +325,7 @@ class JSRewriter(ProxyPluginBase):
     def remapTransformedJavascriptFile(self, resource, transformedFileData, priorResourceVersion):
         priorResourceVersionData = priorResourceVersion.loadTranslatedResourceContents(self.config)
 
-        if priorResourceVersionData:
+        if priorResourceVersionData is None:
             return None, f"Error fetching the contents data for the prior resource version with id {priorResourceVersion.id}"
 
         tempPriorJSFileId, tempPriorJSFileName = tempfile.mkstemp(suffix=".js")
