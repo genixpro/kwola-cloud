@@ -61,11 +61,11 @@ class WebEnvironment:
 
         defaultPlugins = [
             RecordCursorAtAction(),
+            RecordPageURLs(),
             RecordExceptions(),
             RecordLogEntriesAndLogErrors(config),
             RecordNetworkErrors(),
             RecordDotNetRPCErrors(),
-            RecordPageURLs(),
             RecordAllPaths(),
             RecordBranchTrace(),
             RecordScreenshots(config),
