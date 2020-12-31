@@ -172,8 +172,12 @@ class BugModel(Document):
 
     def recomputeCanonicalPageUrl(self):
         pageUrl = self.error.page
-        if pageUrl[-1] == "/":
-            pageUrl = pageUrl[:-1]
 
-        self.canonicalPageUrl = deuniqueString(pageUrl, addSubstituteReferences=True, deuniqueMode="url", substituteReferenceWrapperCharacters="[]")
+        if pageUrl is None:
+            self.canonicalPageUrl = ""
+        else:
+            if pageUrl[-1] == "/":
+                pageUrl = pageUrl[:-1]
+
+            self.canonicalPageUrl = deuniqueString(pageUrl, addSubstituteReferences=True, deuniqueMode="url", substituteReferenceWrapperCharacters="[]")
 
