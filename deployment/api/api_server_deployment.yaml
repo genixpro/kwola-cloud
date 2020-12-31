@@ -27,25 +27,25 @@ spec:
         imagePullPolicy: Always
         name: kwola-cloud-sha256
         readinessProbe:
-          failureThreshold: 3
+          failureThreshold: 1
           httpGet:
             path: /api/home
             port: 3000
             scheme: HTTP
-          initialDelaySeconds: 30
+          initialDelaySeconds: 5
           periodSeconds: 3
           successThreshold: 1
           timeoutSeconds: 5
         livenessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /api/home
             port: 3000
             scheme: HTTP
           initialDelaySeconds: 30
-          periodSeconds: 3
+          periodSeconds: 5
           successThreshold: 1
-          timeoutSeconds: 5
+          timeoutSeconds: 15
         resources:
           limits:
             cpu: "3"
