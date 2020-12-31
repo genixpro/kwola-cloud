@@ -11,6 +11,7 @@ from ..datamodels.ApplicationModel import ApplicationModel
 from ..datamodels.id_utility import generateKwolaId
 import random
 from ..datamodels.TestingRun import TestingRun
+from ..datamodels.RunConfiguration import RunConfiguration
 from ..helpers.slack import postToKwolaSlack
 from ..helpers.email import sendStartTestingRunEmail
 from flask_restful import Resource, reqparse, abort
@@ -86,6 +87,8 @@ class TestingRunsGroup(Resource):
         stripeCustomerId = claims['https://kwola.io/stripeCustomerId']
         allowFreeRuns = claims['https://kwola.io/freeRuns']
 
+        runConfiguration = RunConfiguration.from_json(application.defaultRunConfiguration.to_json())
+
         newTestingRun = TestingRun(
             id=generateKwolaId(modelClass=TestingRun, kwolaConfig=getKwolaConfiguration(), owner=application.owner),
             owner=application.owner,
@@ -97,7 +100,7 @@ class TestingRunsGroup(Resource):
             predictedEndTime=None,
             recurringTestingTriggerId=None,
             isRecurring=False,
-            configuration=application.defaultRunConfiguration,
+            configuration=runConfiguration,
             launchSource="manual"
         )
 
