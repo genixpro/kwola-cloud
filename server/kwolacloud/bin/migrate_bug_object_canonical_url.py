@@ -50,13 +50,22 @@ from kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugOb
 def processBug(bugId):
     try:
         bug = BugModel.objects(id=bugId).first()
+        if bug is None:
+            return
 
         run = TestingRun.objects(id=bug.testingRunId).first()
+        if run is None:
+            return
+
         config = run.configuration.createKwolaCoreConfiguration(run.owner, run.applicationId, run.id)
 
         session = ExecutionSession.objects(id=bug.executionSessionId).first()
+        if session is None:
+            return
         traceId = session.executionTraces[bug.stepNumber]
         trace = ExecutionTrace.loadFromDisk(traceId, config, applicationId=run.applicationId)
+        if trace is None:
+            return
         bug.error.page = trace.finishURL
 
         bug.recomputeCanonicalPageUrl()
