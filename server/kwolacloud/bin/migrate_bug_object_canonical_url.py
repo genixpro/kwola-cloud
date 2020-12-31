@@ -47,23 +47,36 @@ from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.errors.LogError import LogError
 from kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
 
+def processBug(bugId):
+    bug = BugModel.objects(id=bugId).first()
+
+    run = TestingRun.objects(id=bug.testingRunId).first()
+    config = run.configuration.createKwolaCoreConfiguration(run.owner, run.applicationId, run.id)
+
+    session = ExecutionSession.objects(id=bug.executionSessionId).first()
+    traceId = session.executionTraces[bug.stepNumber]
+    trace = ExecutionTrace.loadFromDisk(traceId, config, applicationId=run.applicationId)
+    bug.error.page = trace.finishURL
+
+    bug.recomputeCanonicalPageUrl()
+    bug.save()
+
+    logging.info(f"Processed bug {bug.id}")
+
+
 def main():
     try:
         initializeKwolaCloudProcess()
 
-        for bug in BugModel.objects():
-            run = TestingRun.objects(id=bug.testingRunId).first()
-            config = run.configuration.createKwolaCoreConfiguration(run.owner, run.applicationId, run.id)
+        ctx = multiprocessing.get_context('spawn')
+        pool = ctx.Pool(processes=4, initializer=initializeKwolaCloudProcess, maxtasksperchild=100)
 
-            session = ExecutionSession.objects(id=bug.executionSessionId).first()
-            traceId = session.executionTraces[bug.stepNumber]
-            trace = ExecutionTrace.loadFromDisk(traceId, config, applicationId=run.applicationId)
-            bug.error.page = trace.finishURL
+        for bug in BugModel.objects().only("id"):
+            pool.apply_async(processBug, args=[bug.id])
 
-            bug.recomputeCanonicalPageUrl()
-            bug.save()
-            logging.info(f"Processed bug {bug.id}")
+        pool.close()
+        pool.join()
 
     except Exception as e:
-        logging.info(f"Received an error while running the migration task: {traceback.format_exc()}")
+        logging.error(f"Received an error while running the migration task: {traceback.format_exc()}")
 
