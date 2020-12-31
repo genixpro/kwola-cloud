@@ -176,12 +176,12 @@ class BugReproducer:
             logging.info(f"Running action {actionIndex}")
             traces = environment.runActions(actions)
             for actionListIndex, actionList, trace, session in zip(range(len(actionLists)), actionLists, traces, executionSessions):
-                session.executionTraces.append(str(trace.id))
                 if actionIndex == (len(actionList) - 1):
                     if trace is None:
                         logging.info(f"Trace is None at {actionIndex}")
                         didReproduceSuccessfully[actionListIndex] = False
                     else:
+                        session.executionTraces.append(str(trace.id))
                         didOneMatch = False
                         for error in trace.errorsDetected:
                             if error.isDuplicateOf(bug.error):
