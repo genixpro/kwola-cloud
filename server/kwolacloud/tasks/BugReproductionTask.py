@@ -118,6 +118,9 @@ def runBugReproductionAlgorithm(bugId):
                 modifiedAction = environment.sessions[0].createReproductionActionFromOriginal(action)
                 newActions.append(modifiedAction)
                 trace = environment.runActions([modifiedAction])[0]
+                if trace is None or environment.sessions[0].hasBrowserDied:
+                    raise RuntimeError(f"Error! Browser has crashed while creating video for the shortest reproduction sequence. Received the following message: {environment.sessions[0].browserDeathReason}")
+
                 trace.saveToDisk(config)
                 executionSession.executionTraces.append(str(trace.id))
 
