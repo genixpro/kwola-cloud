@@ -260,7 +260,7 @@ class RewriteProxy:
 
                     if transformedContents is not None:
                         self.memoryCache[versionId] = transformedContents
-                        if 'Content-Length' in flow.response.data.headers:
+                        if 'Content-Length' in flow.response.data.headers or 'content-length' in flow.response.data.headers:
                             flow.response.data.headers['Content-Length'] = str(len(transformedContents))
                         flow.response.data.content = transformedContents
 
@@ -383,7 +383,7 @@ class RewriteProxy:
 
                 self.memoryCache[versionId] = transformedContents
 
-                if 'Content-Length' in flow.response.data.headers:
+                if 'Content-Length' in flow.response.data.headers or 'content-length' in flow.response.data.headers:
                     flow.response.data.headers['Content-Length'] = str(len(transformedContents))
                 flow.response.data.content = transformedContents
 
