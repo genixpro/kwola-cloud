@@ -39,7 +39,7 @@
   "features": {
     "enableGoogleCloudLogging": false,
     "enableSlackLogging": false,
-    "enableRuns": true,
+    "enableRuns": false,
     "localRuns": false,
     "enableSupportOfferEmailsOnUsers": false,
     "enableSelfTestLoginEndpoint": true,
