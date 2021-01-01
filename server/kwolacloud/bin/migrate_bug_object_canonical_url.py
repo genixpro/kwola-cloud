@@ -81,10 +81,15 @@ def main():
         initializeKwolaCloudProcess()
 
         ctx = multiprocessing.get_context('spawn')
-        pool = ctx.Pool(processes=4, initializer=initializeKwolaCloudProcess, maxtasksperchild=100)
+        pool = ctx.Pool(processes=4, initializer=initializeKwolaCloudProcess, maxtasksperchild=1)
 
+        futures = []
         for bug in BugModel.objects().only("id"):
-            pool.apply_async(processBug, args=[bug.id])
+            future = pool.apply_async(processBug, args=[bug.id])
+            futures.append(future)
+        
+        for future in futures:
+            future.get()
 
         pool.close()
         pool.join()
