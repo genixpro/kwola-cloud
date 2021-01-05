@@ -322,6 +322,6 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
         cropped = numpy.copy(image[top:bottom, left:right])
 
-        addDebugActionCursorToImage(image, [int(action.y - top), int(action.x - left)], action.type)
+        addDebugActionCursorToImage(cropped, [int(action.y - top), int(action.x - left)], action.type)
 
         return cropped
