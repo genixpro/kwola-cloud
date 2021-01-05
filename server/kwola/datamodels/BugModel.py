@@ -174,7 +174,7 @@ class BugModel(Document):
     def recomputeCanonicalPageUrl(self):
         pageUrl = self.error.page
 
-        if pageUrl is None or pageUrl:
+        if pageUrl is None or not pageUrl:
             self.canonicalPageUrl = ""
         else:
             self.canonicalPageUrl = RewriteProxy.canonicalizeUrl(pageUrl)
