@@ -177,4 +177,4 @@ class BugModel(Document):
         if pageUrl is None or not pageUrl:
             self.canonicalPageUrl = ""
         else:
-            self.canonicalPageUrl = RewriteProxy.canonicalizeUrl(pageUrl)
+            self.canonicalPageUrl = RewriteProxy.canonicalizeUrl(pageUrl, substituteReferenceWrapperCharacters="[]")

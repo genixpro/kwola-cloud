@@ -100,7 +100,7 @@ class RewriteProxy:
         self.backgroundSaveExecutor.shutdown()
 
     @staticmethod
-    def canonicalizeUrl(url):
+    def canonicalizeUrl(url, substituteReferenceWrapperCharacters="__"):
         parsed = list(urllib.parse.urlparse(url))
 
         parsed[3] = ""
@@ -108,8 +108,8 @@ class RewriteProxy:
         parsed[5] = ""
 
         path = parsed[2]
-        path = deuniqueString(path, addSubstituteReferences=True, deuniqueMode="url", substituteReferenceWrapperCharacters="[]")
-        path = RewriteProxy.pathNumericalIdSegmentRegex.sub("/[<ID>]", path)
+        path = deuniqueString(path, addSubstituteReferences=True, deuniqueMode="url", substituteReferenceWrapperCharacters=substituteReferenceWrapperCharacters)
+        path = RewriteProxy.pathNumericalIdSegmentRegex.sub("/__ID__", path)
 
         parsed[2] = path
 
