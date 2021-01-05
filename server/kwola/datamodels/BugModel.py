@@ -29,6 +29,7 @@ from .CustomIDField import CustomIDField
 from .DiskUtilities import saveObjectToDisk, loadObjectFromDisk
 from mongoengine import *
 from kwola.components.utils.deunique import deuniqueString
+from kwola.components.proxy.RewriteProxy import RewriteProxy
 
 class BugModel(Document):
     meta = {
@@ -173,11 +174,7 @@ class BugModel(Document):
     def recomputeCanonicalPageUrl(self):
         pageUrl = self.error.page
 
-        if pageUrl is None:
+        if pageUrl is None or pageUrl:
             self.canonicalPageUrl = ""
         else:
-            if pageUrl[-1] == "/":
-                pageUrl = pageUrl[:-1]
-
-            self.canonicalPageUrl = deuniqueString(pageUrl, addSubstituteReferences=True, deuniqueMode="url", substituteReferenceWrapperCharacters="[]")
-
+            self.canonicalPageUrl = RewriteProxy.canonicalizeUrl(pageUrl)

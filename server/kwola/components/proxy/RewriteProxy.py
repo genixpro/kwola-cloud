@@ -108,7 +108,7 @@ class RewriteProxy:
         parsed[5] = ""
 
         path = parsed[2]
-        path = deuniqueString(path, addSubstituteReferences=True, deuniqueMode="url")
+        path = deuniqueString(path, addSubstituteReferences=True, deuniqueMode="url", substituteReferenceWrapperCharacters="[]")
         path = RewriteProxy.pathNumericalIdSegmentRegex.sub("/[<ID>]", path)
 
         parsed[2] = path
