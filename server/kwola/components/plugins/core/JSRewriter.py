@@ -305,11 +305,14 @@ class JSRewriter(ProxyPluginBase):
         if len(matches) == 0:
             return None
 
-        return [int(match[1]) for match in matches]
+        return sorted(list(set([int(match[1]) for match in matches])))
 
     def replaceBranchIndexInLine(self, line, oldBranchIndex, newBranchIndex):
         matches = list(self.branchIndexExtractorRegex.finditer(line))
 
+        # Todo - this is inefficient, because we are iterating through all possible
+        # branch indexes in the file just to do a single replacement. Should update
+        # this at some point.
         for match in matches:
             if int(match[1]) == oldBranchIndex:
                 matchText = match[0]
@@ -403,14 +406,18 @@ class JSRewriter(ProxyPluginBase):
             lineBranchIndexes = self.getBranchIndexesForLine(line)
 
             if counterSize is not None:
-                newLine = self.replaceCounterArraySizeInLine(line, currentJSCounterSize + len(newCodeIndexes))
-            elif lineBranchIndexes is not None:
+                newLine = self.replaceCounterArraySizeInLine(newLine, currentJSCounterSize + len(newCodeIndexes))
+
+            if lineBranchIndexes is not None:
+                # First handle any remaps for new code indexes
                 for branchIndex in lineBranchIndexes:
                     if branchIndex in newCodeIndexes:
-                        newLine = self.replaceBranchIndexInLine(line, branchIndex, currentNewBranchIndex)
+                        newLine = self.replaceBranchIndexInLine(newLine, branchIndex, currentNewBranchIndex)
                         currentNewBranchIndex += 1
-                    elif branchIndex in remappedIndexes:
-                        newLine = self.replaceBranchIndexInLine(line, branchIndex, remappedIndexes[branchIndex])
+                # Then handle remaps for existing code indexes
+                for branchIndex in lineBranchIndexes:
+                    if branchIndex in remappedIndexes:
+                        newLine = self.replaceBranchIndexInLine(newLine, branchIndex, remappedIndexes[branchIndex])
 
             updatedLines.append(newLine)
 
