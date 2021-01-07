@@ -190,7 +190,9 @@ class RecordPageHTML(WebEnvironmentPluginBase):
                         {
                             onload = "";
                         }               
-                        onload = `this.scrollTop = ${element.scrollTop}`;     
+                        onload = `this.scrollTop = ${element.scrollTop}; ${onload}`;
+                             
+                        element.setAttribute("onload", onload);
                     }
                 }
             """)

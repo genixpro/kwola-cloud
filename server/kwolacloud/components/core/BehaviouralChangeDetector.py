@@ -37,6 +37,7 @@ import pickle
 import bz2
 import scipy.optimize
 from bs4 import BeautifulSoup, NavigableString
+from pprint import pformat
 
 
 
@@ -338,6 +339,10 @@ class BehaviourChangeDetector:
         for tag in soup.strings:
             text = self.whitespaceRegex.sub(" ", str(tag).strip())
             if not text:
+                continue
+
+            if 'data-kwola-left' not in tag.parent.attrs:
+                getLogger().warning(f"Warning! Found an HTML element that didn't have the kwola positioning variables saved as attributes. Skipping this HTML element in the HTML comparison. Tag name: {tag.name}. Attributes: {pformat(dict(tag.attrs))}")
                 continue
 
             matchKeywords = {text.lower()}
