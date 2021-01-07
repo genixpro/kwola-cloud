@@ -308,19 +308,15 @@ class JSRewriter(ProxyPluginBase):
         return sorted(list(set([int(match[1]) for match in matches])))
 
     def replaceBranchIndexInLine(self, line, oldBranchIndex, newBranchIndex):
-        matches = list(self.branchIndexExtractorRegex.finditer(line))
+        match = self.branchIndexExtractorRegex.search(line)
 
-        # Todo - this is inefficient, because we are iterating through all possible
-        # branch indexes in the file just to do a single replacement. Should update
-        # this at some point.
-        for match in matches:
-            if int(match[1]) == oldBranchIndex:
-                matchText = match[0]
-                matchLeft = matchText.split(b"[")[0]
-                matchRight = matchText.split(b"]")[1]
-                newMatchText = matchLeft + b"[" + bytes(str(newBranchIndex), 'utf8') + b"]" + matchRight
-                line = line.replace(matchText, newMatchText)
-                break
+        matchText = match[0]
+        matchLeft = matchText.split(b"[")[0]
+        matchRight = matchText.split(b"]")[1]
+        oldBranchText = matchLeft + b"[" + bytes(str(oldBranchIndex), 'utf8') + b"]" + matchRight
+        newBranchText = matchLeft + b"[" + bytes(str(newBranchIndex), 'utf8') + b"]" + matchRight
+
+        line = line.replace(oldBranchText, newBranchText)
 
         return line
 
