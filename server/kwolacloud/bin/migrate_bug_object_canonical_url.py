@@ -30,6 +30,7 @@ from google.cloud import storage
 import json
 import billiard as multiprocessing
 from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
+from kwola.components.utils.retry import autoretry
 
 # Do not remove the following unused imports, as they are actually required
 # For the migration script to function correctly.
@@ -46,7 +47,9 @@ from kwola.datamodels.errors.DotNetRPCError import DotNetRPCError
 from kwola.datamodels.errors.HttpError import HttpError
 from kwola.datamodels.errors.LogError import LogError
 from kwolacloud.components.plugins.CreateCloudBugObjects import CreateCloudBugObjects
+from pymongo.errors import WriteConcernError
 
+@autoretry()
 def processBug(bugId):
     try:
         bug = BugModel.objects(id=bugId).first()
@@ -73,6 +76,8 @@ def processBug(bugId):
 
         logging.info(f"Processed bug {bug.id}")
 
+    except WriteConcernError:
+        raise # Let this exception pass through, triggering autoretry
     except Exception as e:
         logging.error(f"Received an error while running the migration task: {traceback.format_exc()}")
 
