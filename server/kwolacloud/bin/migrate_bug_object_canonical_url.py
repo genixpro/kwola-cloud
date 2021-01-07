@@ -60,6 +60,9 @@ def processBug(bugId):
         if run is None:
             return
 
+        if run.configuration is None:
+            return
+
         config = run.configuration.createKwolaCoreConfiguration(run.owner, run.applicationId, run.id)
 
         session = ExecutionSession.objects(id=bug.executionSessionId).first()
