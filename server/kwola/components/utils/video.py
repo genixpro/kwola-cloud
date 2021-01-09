@@ -36,10 +36,11 @@ def getAvailableFfmpegCodecs():
     return codecs
 
 
-def chooseBestFfmpegVideoCodec():
+def chooseBestFfmpegVideoCodec(losslessPreferred=False):
     availableVideoCodecs = getAvailableFfmpegCodecs()
 
     codecPriorityList = [
+        'libx264rgb',
         'x264',
         "libx264",
         'mpeg4',
@@ -49,6 +50,9 @@ def chooseBestFfmpegVideoCodec():
         'mjpeg',
         'gif',
     ]
+
+    if losslessPreferred:
+        codecPriorityList = ['libx264rgb'] + codecPriorityList
 
     codec = ''
     for possibleCodec in codecPriorityList:
