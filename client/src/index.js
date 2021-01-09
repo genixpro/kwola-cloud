@@ -7,7 +7,7 @@ import mixpanel from 'mixpanel-browser';
 import * as Sentry from '@sentry/react';
 import Auth0 from './helpers/auth0';
 
-mixpanel.init(process.env.REACT_APP_MIXPANEL_TOKEN);
+// mixpanel.init(process.env.REACT_APP_MIXPANEL_TOKEN);
 axios.defaults.baseURL = process.env.REACT_APP_BACKEND_API_URL;
 // axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
 // axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';

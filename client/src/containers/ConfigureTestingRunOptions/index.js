@@ -22,7 +22,7 @@ import _ from "underscore";
  */
 class ConfigureTestingRunOptions extends Component {
     state = {
-
+        application: null
     };
 
     componentDidMount()
@@ -30,12 +30,23 @@ class ConfigureTestingRunOptions extends Component {
         axios.get(`/application/${this.getApplicationId()}`).then((response) =>
         {
             this.setState({application: response.data});
+
+            if (!response.data.defaultRunConfiguration)
+            {
+                console.error(`Application object is missing defaultRunConfiguration. Object JSON: ${JSON.stringify(response.data)}`)
+            }
         });
     }
 
     changeRunConfiguration(newValues)
     {
         const application = this.state.application;
+        if (!application.defaultRunConfiguration)
+        {
+            console.error(`Application object is missing defaultRunConfiguration. Object JSON: ${JSON.stringify(application)}`)
+            return;
+        }
+
         Object.keys(newValues).forEach((key) =>
         {
             application.defaultRunConfiguration[key] = newValues[key];

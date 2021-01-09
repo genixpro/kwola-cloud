@@ -89,7 +89,7 @@ class PackageSelector extends Component {
 
     enterpriseClicked()
     {
-        window.open("https://kwola.io/book-a-demo");
+        window.open("https://calendly.com/kwola-brad");
     }
     render()
     {

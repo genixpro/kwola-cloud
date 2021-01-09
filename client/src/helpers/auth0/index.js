@@ -180,7 +180,7 @@ class Auth0Helper {
     const userData = this.getUserInfo();
     if (userData)
     {
-      mixpanel.identify(userData.sub);
+      // mixpanel.identify(userData.sub);
     }
   }
 
