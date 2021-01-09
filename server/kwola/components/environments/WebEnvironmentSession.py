@@ -1166,6 +1166,8 @@ class WebEnvironmentSession:
 
             image[0:decoded.shape[0], 0:decoded.shape[1], :] = decoded
 
+            image /= 255.0 # Rescale the image so that it falls between 0 and 255
+
             return image
         except urllib3.exceptions.MaxRetryError:
             self.hasBrowserDied = True
