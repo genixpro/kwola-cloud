@@ -56,7 +56,7 @@ class RecordScreenshots(WebEnvironmentPluginBase):
         getLogger().info(f"Creating movie file for the execution session {executionSession.id}")
 
         result = subprocess.run(['ffmpeg', '-f', 'image2', "-r", "3", '-i', 'kwola-screenshot-%05d.png', '-vcodec',
-                                 chooseBestFfmpegVideoCodec(), '-pix_fmt', 'yuv420p', '-crf', '15', '-preset',
+                                 chooseBestFfmpegVideoCodec(losslessPreferred=True), '-crf', '0', '-preset',
                                  'veryslow', self.movieFileName(executionSession)],
                                 cwd=self.screenshotDirectory[executionSession.id], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 

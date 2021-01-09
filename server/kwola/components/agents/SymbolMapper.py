@@ -143,11 +143,15 @@ class SymbolMapper:
             else:
                 trace.codePrevalenceScore = float(sortedSymbolCounts.index(symbolCount) / len(sortedSymbolCounts))
 
-    def computeCoverageSymbolsList(self, executionTrace):
+    def computeCoverageSymbolsList(self, executionTrace, beforeOrAfter):
         symbolIndexes = []
         weights = []
 
-        locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedStartCumulativeBranchTrace)
+        if beforeOrAfter == "before":
+            locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedStartCumulativeBranchTrace)
+        elif beforeOrAfter == "after":
+            locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedEndCumulativeBranchTrace)
+
         for locSymbolMapping in locSymbols:
             symbolIndexes.append(locSymbolMapping.coverageSymbolIndex)
             weights.append(1.0)
@@ -155,11 +159,17 @@ class SymbolMapper:
         return symbolIndexes, weights
 
 
-    def computeDecayingBranchTraceSymbolsList(self, executionTrace):
+    def computeDecayingBranchTraceSymbolsList(self, executionTrace, beforeOrAfter):
         symbolIndexes = []
         weights = []
 
-        locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedStartDecayingBranchTrace)
+        locSymbols, locBranchValues, locFileNames = None, None, None
+
+        if beforeOrAfter == "before":
+            locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedStartDecayingBranchTrace)
+        elif beforeOrAfter == "after":
+            locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedEndDecayingBranchTrace)
+
         for locSymbolMapping, branchValue, fileName in zip(locSymbols, locBranchValues, locFileNames):
             symbolIndexes.append(locSymbolMapping.recentSymbolIndex)
             weights.append(float(branchValue))
@@ -167,11 +177,17 @@ class SymbolMapper:
         return symbolIndexes, weights
 
 
-    def computeDecayingFutureBranchTraceSymbolsList(self, executionTrace):
+    def computeDecayingFutureBranchTraceSymbolsList(self, executionTrace, beforeOrAfter):
         symbolIndexes = []
         weights = []
 
-        locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedEndDecayingFutureBranchTrace)
+        locSymbols, locBranchValues, locFileNames = None, None, None
+
+        if beforeOrAfter == "before":
+            locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedStartDecayingFutureBranchTrace)
+        elif beforeOrAfter == "after":
+            locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedEndDecayingFutureBranchTrace)
+
         for locSymbolMapping, branchValue, fileName in zip(locSymbols, locBranchValues, locFileNames):
             symbolIndexes.append(locSymbolMapping.recentSymbolIndex)
             weights.append(float(branchValue))
@@ -179,15 +195,15 @@ class SymbolMapper:
         return symbolIndexes, weights
 
 
-    def computeAllSymbolsForTrace(self, executionTrace):
+    def computeAllSymbolsForTrace(self, executionTrace, place):
         allSymbolList = []
         allWeightList = []
 
-        symbols, weights = self.computeCoverageSymbolsList(executionTrace)
+        symbols, weights = self.computeCoverageSymbolsList(executionTrace, place)
         allSymbolList.extend(symbols)
         allWeightList.extend(weights)
 
-        symbols, weights = self.computeDecayingBranchTraceSymbolsList(executionTrace)
+        symbols, weights = self.computeDecayingBranchTraceSymbolsList(executionTrace, place)
         allSymbolList.extend(symbols)
         allWeightList.extend(weights)
 

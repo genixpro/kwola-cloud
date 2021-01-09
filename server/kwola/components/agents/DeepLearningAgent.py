@@ -732,7 +732,7 @@ class DeepLearningAgent:
         symbolWeights = []
         for pastExecutionTraceList in pastExecutionTraces:
             if len(pastExecutionTraceList) > 0:
-                symbols, weights = self.symbolMapper.computeAllSymbolsForTrace(pastExecutionTraceList[-1])
+                symbols, weights = self.symbolMapper.computeAllSymbolsForTrace(pastExecutionTraceList[-1], "after")
             else:
                 symbols = [0]
                 weights = [1]
@@ -1469,8 +1469,6 @@ class DeepLearningAgent:
 
         tempScreenshotDirectory = tempfile.mkdtemp()
 
-        lastRawImage = rawImagesFiltered.pop(0)
-
         mpl.use('Agg')
         mpl.rcParams['figure.max_open_warning'] = 1000
 
@@ -1608,6 +1606,7 @@ class DeepLearningAgent:
         
         outputIdenticalFramesPerTrace = 4
 
+        lastRawImage = rawImagesFiltered.pop(0)
         imageGenerationFutures = []
         for trace, traceIndex, rawImage, networkOutput in zip(executionTracesFiltered, range(len(executionTracesFiltered)), rawImagesFiltered, networkOutputs):
             if trace is not None:
@@ -1663,7 +1662,11 @@ class DeepLearningAgent:
 
         uniqueActions = set([tuple(data) for data in numpy.reshape(numpy.transpose(pixelActionMap), newshape=[-1, len(self.actionsSorted)])])
 
-        symbols, weights = self.symbolMapper.computeAllSymbolsForTrace(trace)
+        if trace.traceNumber > 0:
+            symbols, weights = self.symbolMapper.computeAllSymbolsForTrace(trace, "before")
+        else:
+            symbols = [0]
+            weights = [1]
 
         symbolListBatch = symbols
         symbolWeightBatch = weights
@@ -2380,14 +2383,18 @@ class DeepLearningAgent:
             width = processedImage.shape[2]
             height = processedImage.shape[1]
 
-            # Compute the symbols and weights for the current trace
-            symbols, weights = self.symbolMapper.computeAllSymbolsForTrace(trace)
+            # Compute the symbols and weights based on the prior trace.
+            if trace.traceNumber > 0:
+                symbols, weights = self.symbolMapper.computeAllSymbolsForTrace(trace, "before")
+            else:
+                symbols = [0]
+                weights = [1]
 
             # Compute the decaying future symbols and decaying future weights for the current trace
-            decayingFutureSymbolIndexes, decayingFutureSymbolWeights = self.symbolMapper.computeDecayingFutureBranchTraceSymbolsList(trace)
+            decayingFutureSymbolIndexes, decayingFutureSymbolWeights = self.symbolMapper.computeDecayingFutureBranchTraceSymbolsList(trace, "before")
 
-            # We do the same for the next trace
-            nextSymbols, nextWeights = self.symbolMapper.computeAllSymbolsForTrace(nextTrace)
+            # We do the same for the next trace.
+            nextSymbols, nextWeights = self.symbolMapper.computeAllSymbolsForTrace(nextTrace, "before")
 
             # Create the pixel action maps for both of the traces
             pixelActionMap = self.createPixelActionMap(trace.actionMaps, height, width)
