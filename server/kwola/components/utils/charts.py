@@ -109,7 +109,7 @@ def generateCoverageChart(config, applicationId):
     ax.plot(range(len(executedLinesValues)), executedLinesValues, color='green')
     ax.plot(range(len(totalLinesValues)), totalLinesValues, color='red')
     ax.set(xlabel='Testing Step #', ylabel='Coverage',
-           title='Code Coverage')
+           title='Lines Available / Lines Triggered')
     ax.grid()
 
     _, localFilePath = tempfile.mkstemp(suffix=".png")
