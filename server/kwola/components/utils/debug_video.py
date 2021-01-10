@@ -67,6 +67,9 @@ def addDebugActionCursorToImage(image, position, actionType):
     elif actionType.startswith("scroll"):
         cursorImage = skimage.io.imread(pkg_resources.resource_filename("kwola", "images/scroll.png"))
         cursorImageOriginPos = (16, 16)
+    elif actionType.startswith("clear"):
+        cursorImage = skimage.io.imread(pkg_resources.resource_filename("kwola", "images/clear.png"))
+        cursorImageOriginPos = (16, 19)
     else:
         cursorImage = skimage.io.imread(pkg_resources.resource_filename("kwola", "images/click.png"))
         cursorImageOriginPos = (9, 9)
