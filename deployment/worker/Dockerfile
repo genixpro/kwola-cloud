@@ -163,7 +163,7 @@ RUN useradd -s /bin/bash --home-dir /home/kwola kwola && \
 
 # Set the working directory to /app
 WORKDIR /kwola
-COPY server/requirements-frozen.txt .
+COPY server/requirements.txt .
 
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
@@ -171,7 +171,7 @@ RUN pip3 install --upgrade pip && \
     pip3 install --upgrade setuptools && \
     pip3 install --upgrade cryptography && \
     pip3 install torch==1.5.0+cu101 torchvision==0.6.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html && \
-    pip3 install -r requirements-frozen.txt && \
+    pip3 install -r requirements.txt && \
     chmod +r+r+r -R /usr/lib/python3/ && \
     rm -rf /root/.cache
 
