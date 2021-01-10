@@ -110,7 +110,7 @@ RUN useradd -s /bin/bash --home-dir /home/kwola kwola && \
 
 # Set the working directory to /app
 WORKDIR /kwola
-COPY server/requirements.txt .
+COPY server/requirements-frozen.txt .
 
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
