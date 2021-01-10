@@ -40,7 +40,6 @@ def chooseBestFfmpegVideoCodec(losslessPreferred=False):
     availableVideoCodecs = getAvailableFfmpegCodecs()
 
     codecPriorityList = [
-        'libx264rgb',
         'x264',
         "libx264",
         'mpeg4',
