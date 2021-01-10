@@ -1388,6 +1388,7 @@ class DeepLearningAgent:
             if ret:
                 # OpenCV reads everything in BGR format for some reason so flip to RGB
                 rawImage = numpy.flip(rawImage, axis=2)
+                rawImage = numpy.array(rawImage, dtype=numpy.float32) / 255.0
                 rawImages.append(rawImage)
             else:
                 break
@@ -2177,7 +2178,7 @@ class DeepLearningAgent:
                 firstImage[:, :] += hilightColor * hilight
 
             addDebugTextToImage(firstImage, trace)
-            firstImage[topSize:-bottomSize, leftSize:-rightSize] = lastRawImage
+            firstImage[topSize:-bottomSize, leftSize:-rightSize] = lastRawImage * 255
 
             if includeNetPresentRewardChart:
                 addBottomRewardChartToImage(firstImage, trace)
@@ -2189,7 +2190,7 @@ class DeepLearningAgent:
             addDebugActionCursorToImage(firstImage, [topSize + trace.actionPerformed.y, leftSize + trace.actionPerformed.x], trace.actionPerformed.type)
             addCropViewToImage(firstImage, trace)
 
-            secondImage[topSize:-bottomSize, leftSize:-rightSize] = rawImage
+            secondImage[topSize:-bottomSize, leftSize:-rightSize] = rawImage * 255
 
             firstImagePath = None
             for outputFrame in range(outputIdenticalFramesPerTrace):
