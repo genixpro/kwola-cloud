@@ -2188,7 +2188,8 @@ class DeepLearningAgent:
             secondImage = numpy.copy(firstImage)
 
             addDebugActionCursorToImage(firstImage, [topSize + trace.actionPerformed.y, leftSize + trace.actionPerformed.x], trace.actionPerformed.type)
-            addCropViewToImage(firstImage, trace)
+            if includeNeuralNetworkCharts:
+                addCropViewToImage(firstImage, trace)
 
             secondImage[topSize:-bottomSize, leftSize:-rightSize] = rawImage * 255
 
