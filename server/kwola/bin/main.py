@@ -117,7 +117,9 @@ def getConfigurationDirFromCommandLineArgs(askTuneQuestion=True):
                 questionary.Choice("Enable type random paragraph command?", checked=False),
                 questionary.Choice("Enable type random date time command?", checked=False),
                 questionary.Choice("Enable type random credit card command?", checked=False),
-                questionary.Choice("Enable type random url command?", checked=False)
+                questionary.Choice("Enable type random url command?", checked=False),
+                questionary.Choice("Enable type login email?", checked=False),
+                questionary.Choice("Enable type login password?", checked=False)
             ]
 
             results = questionary.checkbox("Please select which commands you want to enable", choices=commandChoices).ask()
@@ -139,6 +141,8 @@ def getConfigurationDirFromCommandLineArgs(askTuneQuestion=True):
             enableRandomDateTimeCommand = bool(commandChoices[12].title in results)
             enableRandomCreditCardCommand = bool(commandChoices[13].title in results)
             enableRandomURLCommand = bool(commandChoices[14].title in results)
+            enableTypeEmail = bool(commandChoices[15].title in results)
+            enableTypePassword = bool(commandChoices[16].title in results)
 
             browserChoices = [
                 questionary.Choice("Chrome", checked=True),
@@ -199,8 +203,8 @@ def getConfigurationDirFromCommandLineArgs(askTuneQuestion=True):
                                                                             password=password,
                                                                             name=name,
                                                                             paragraph=paragraph,
-                                                                            enableTypeEmail=True,
-                                                                            enableTypePassword=True,
+                                                                            enableTypeEmail=enableTypeEmail,
+                                                                            enableTypePassword=enableTypePassword,
                                                                             enableRandomNumberCommand=enableRandomNumberCommand,
                                                                             enableRandomBracketCommand=enableRandomBracketCommand,
                                                                             enableRandomMathCommand=enableRandomMathCommand,
