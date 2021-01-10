@@ -1127,6 +1127,8 @@ class WebEnvironmentSession:
             self.checkLoadFailure(priorURL=executionTrace.startURL)
             actionExecutionTimes['checkLoadFailure'] = (datetime.now() - startTime).total_seconds()
 
+            self.hideInputCaret()
+
             for plugin in self.plugins:
                 startTime = datetime.now()
                 plugin.afterActionRuns(self.driver, self.proxy, self.executionSession, executionTrace, action)
@@ -1154,12 +1156,31 @@ class WebEnvironmentSession:
         rect = self.driver.get_window_rect()
         return rect
 
+    def hideInputCaret(self):
+        """
+        This method is used to hide the blinking caret that is usually on text input elements when they are active.
+
+        This is to help ensure that screenshots stay consistent rather then being affected by whether the blinking caret is showing
+        on a particular frame or not.
+        """
+
+        # We remove the blinking caret because it results in inconsistent screenshots depending on whether you took the screenshot
+        # while the caret is visible v.s. invisible.
+        self.driver.execute_script("""
+            if (document.activeElement)
+            {
+                document.activeElement.style.caretColor = "transparent";
+            }
+        """)
+
     def getImage(self):
         try:
             image = numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
 
             if self.hasBrowserDied:
                 return image
+
+            self.hideInputCaret()
 
             decoded = cv2.imdecode(numpy.frombuffer(self.driver.get_screenshot_as_png(), numpy.uint8), -1)
             decoded = numpy.flip(decoded[:, :, :3], axis=2)  # OpenCV always reads things in BGR for some reason, so we have to flip into RGB ordering
