@@ -63,6 +63,7 @@ import torch.nn as nn
 import torch.optim as optim
 import traceback
 import pickle
+import shutil
 import billiard as multiprocessing
 import copy
 from ..utils.retry import autoretry
@@ -2023,27 +2024,30 @@ class DeepLearningAgent:
                 stamp = networkOutput['stamp']
 
                 for actionIndex, action in enumerate(self.actionsSorted):
-                    actionY = actionProbabilities[0][actionIndex].max(axis=1).argmax(axis=0)
-                    actionX = actionProbabilities[0][actionIndex, actionY].argmax(axis=0)
+                    predictionsNoImpossible = actionProbabilities[0][actionIndex][actionProbabilities[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
-                    actionX = int(actionX / self.config["model_image_downscale_ratio"])
-                    actionY = int(actionY / self.config["model_image_downscale_ratio"])
+                    if len(predictionsNoImpossible) > 0:
+                        actionY = actionProbabilities[0][actionIndex].max(axis=1).argmax(axis=0)
+                        actionX = actionProbabilities[0][actionIndex, actionY].argmax(axis=0)
 
-                    targetCircleCoords1 = skimage.draw.circle_perimeter(int(topSize + actionY),
-                                                                               int(leftSize + actionX), self.config.debug_video_action_prediction_circle_1_radius,
-                                                                               shape=[int(imageWidth + extraWidth),
-                                                                                      int(imageHeight + extraHeight)])
+                        actionX = int(actionX / self.config["model_image_downscale_ratio"])
+                        actionY = int(actionY / self.config["model_image_downscale_ratio"])
 
-                    targetCircleCoords2 = skimage.draw.circle_perimeter(int(topSize + actionY),
-                                                                              int(leftSize + actionX), self.config.debug_video_action_prediction_circle_2_radius,
-                                                                              shape=[int(imageWidth + extraWidth),
-                                                                                     int(imageHeight + extraHeight)])
-                    plotImage[targetCircleCoords1] = [self.config.debug_video_action_prediction_circle_color_r,
-                                                             self.config.debug_video_action_prediction_circle_color_g,
-                                                             self.config.debug_video_action_prediction_circle_color_b]
-                    plotImage[targetCircleCoords2] = [self.config.debug_video_action_prediction_circle_color_r,
-                                                             self.config.debug_video_action_prediction_circle_color_g,
-                                                             self.config.debug_video_action_prediction_circle_color_b]
+                        targetCircleCoords1 = skimage.draw.circle_perimeter(int(topSize + actionY),
+                                                                                   int(leftSize + actionX), self.config.debug_video_action_prediction_circle_1_radius,
+                                                                                   shape=[int(imageWidth + extraWidth),
+                                                                                          int(imageHeight + extraHeight)])
+
+                        targetCircleCoords2 = skimage.draw.circle_perimeter(int(topSize + actionY),
+                                                                                  int(leftSize + actionX), self.config.debug_video_action_prediction_circle_2_radius,
+                                                                                  shape=[int(imageWidth + extraWidth),
+                                                                                         int(imageHeight + extraHeight)])
+                        plotImage[targetCircleCoords1] = [self.config.debug_video_action_prediction_circle_color_r,
+                                                                 self.config.debug_video_action_prediction_circle_color_g,
+                                                                 self.config.debug_video_action_prediction_circle_color_b]
+                        plotImage[targetCircleCoords2] = [self.config.debug_video_action_prediction_circle_color_r,
+                                                                 self.config.debug_video_action_prediction_circle_color_g,
+                                                                 self.config.debug_video_action_prediction_circle_color_b]
 
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = presentRewardPredictions[0][actionIndex][presentRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
@@ -2166,44 +2170,46 @@ class DeepLearningAgent:
             extraWidth = leftSize + rightSize
             extraHeight = topSize + bottomSize
 
-            newImage = numpy.ones([imageHeight + extraHeight, imageWidth + extraWidth, debugVideoImageChannels]) * 255
+            firstImage = numpy.ones([imageHeight + extraHeight, imageWidth + extraWidth, debugVideoImageChannels]) * 255
             if hilight > 0:
                 hilightColor = numpy.array([self.config.debug_video_hilight_background_color_r, self.config.debug_video_hilight_background_color_g, self.config.debug_video_hilight_background_color_b])
-                newImage[:] *= (1.0 - hilight)
-                newImage[:, :] += hilightColor * hilight
+                firstImage[:] *= (1.0 - hilight)
+                firstImage[:, :] += hilightColor * hilight
 
-            newImage[topSize:-bottomSize, leftSize:-rightSize] = lastRawImage
-            addDebugTextToImage(newImage, trace)
-            addDebugActionCursorToImage(newImage, [topSize + trace.actionPerformed.y, leftSize + trace.actionPerformed.x], trace.actionPerformed.type)
-            addCropViewToImage(newImage, trace)
+            addDebugTextToImage(firstImage, trace)
+            firstImage[topSize:-bottomSize, leftSize:-rightSize] = lastRawImage
+
             if includeNetPresentRewardChart:
-                addBottomRewardChartToImage(newImage, trace)
+                addBottomRewardChartToImage(firstImage, trace)
             if includeNeuralNetworkCharts:
-                addRightSideDebugCharts(newImage, lastRawImage, trace)
+                addRightSideDebugCharts(firstImage, lastRawImage, trace)
 
+            secondImage = numpy.copy(firstImage)
+
+            addDebugActionCursorToImage(firstImage, [topSize + trace.actionPerformed.y, leftSize + trace.actionPerformed.x], trace.actionPerformed.type)
+            addCropViewToImage(firstImage, trace)
+
+            secondImage[topSize:-bottomSize, leftSize:-rightSize] = rawImage
+
+            firstImagePath = None
             for outputFrame in range(outputIdenticalFramesPerTrace):
                 fileName = f"kwola-screenshot-{traceIndex*2*outputIdenticalFramesPerTrace + outputFrame:05d}.png"
                 filePath = os.path.join(tempScreenshotDirectory, fileName)
-                skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
+                if firstImagePath is None:
+                    firstImagePath = filePath
+                    skimage.io.imsave(filePath, numpy.array(firstImage, dtype=numpy.uint8))
+                else:
+                    shutil.copy(firstImagePath, filePath)
 
-            newImage = numpy.ones([imageHeight + extraHeight, imageWidth + extraWidth, debugVideoImageChannels]) * 255
-            if hilight > 0:
-                hilightColor = numpy.array([self.config.debug_video_hilight_background_color_r, self.config.debug_video_hilight_background_color_g, self.config.debug_video_hilight_background_color_b])
-                newImage[:] *= (1.0 - hilight)
-                newImage[:, :] += hilightColor * hilight
-
-            addDebugTextToImage(newImage, trace)
-
-            newImage[topSize:-bottomSize, leftSize:-rightSize] = rawImage
-            if includeNetPresentRewardChart:
-                addBottomRewardChartToImage(newImage, trace)
-            if includeNeuralNetworkCharts:
-                addRightSideDebugCharts(newImage, lastRawImage, trace)
-            
+            firstImagePath = None
             for outputFrame in range(outputIdenticalFramesPerTrace):
                 fileName = f"kwola-screenshot-{traceIndex*2*outputIdenticalFramesPerTrace + outputFrame + outputIdenticalFramesPerTrace:05d}.png"
                 filePath = os.path.join(tempScreenshotDirectory, fileName)
-                skimage.io.imsave(filePath, numpy.array(newImage, dtype=numpy.uint8))
+                if firstImagePath is None:
+                    firstImagePath = filePath
+                    skimage.io.imsave(filePath, numpy.array(secondImage, dtype=numpy.uint8))
+                else:
+                    shutil.copy(firstImagePath, filePath)
             
             if includeNeuralNetworkCharts:
                 getLogger().info(f"Completed debug image for trace {traceIndex}")
