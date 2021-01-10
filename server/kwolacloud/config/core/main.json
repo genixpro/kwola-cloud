@@ -88,6 +88,8 @@
   "enable_google_cloud_logging": true,
   "enable_slack_logging": true,
   "enable_execution_feature_prediction_loss": false,
+  "enable_javascript_console_error": true,
+  "enable_record_page_html": true,
   "enable_trace_prediction_loss": false,
   "iterations_between_db_saves": 25,
   "iterations_per_sample": 16,

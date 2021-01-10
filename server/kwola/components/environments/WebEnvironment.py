@@ -68,9 +68,11 @@ class WebEnvironment:
             RecordDotNetRPCErrors(),
             RecordAllPaths(),
             RecordBranchTrace(),
-            RecordScreenshots(config),
-            RecordPageHTML(config)
+            RecordScreenshots(config)
         ]
+
+        if config['enable_record_page_html']:
+            defaultPlugins.append(RecordPageHTML(config))
 
         if plugins is None:
             # Put in the default set up plugins
