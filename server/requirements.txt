@@ -1,7 +1,7 @@
 auth0-python
 billiard
 bs4
-cryptography==2.9
+cryptography==3.2
 filetype
 Flask-Caching
 flask-cors
@@ -9,9 +9,9 @@ flask>=1.1.0
 flask_httpauth
 flask_jwt_extended
 flask_restful
-google-api-core==1.20.1
-google-cloud-logging==1.15.0
-google-cloud-storage==1.29.0
+google-api-core
+google-cloud-logging
+google-cloud-storage
 gunicorn
 jwcrypto
 kombu
@@ -21,7 +21,7 @@ pymongo[srv]
 numpy
 opencv-python
 pandas
-protobuf
+protobuf==3.13
 psutil
 pyyaml
 python-dateutil
@@ -43,3 +43,4 @@ edlib
 oauth2client
 google-auth-httplib2
 google-auth-oauthlib
+google-api-python-client
