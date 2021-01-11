@@ -29,10 +29,10 @@ spec:
             memory: 250Mi
         livenessProbe:
           failureThreshold: 3
-          httpGet:
-            path: /
-            port: 80
-            scheme: HTTP
+          exec:
+            command:
+              - curl
+              - http://localhost:80/api/home
           initialDelaySeconds: 5
           periodSeconds: 3
           successThreshold: 1
