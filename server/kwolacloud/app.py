@@ -56,6 +56,7 @@ from .resources.RecurringTestingTriggerResource import RecurringTestingTriggerGr
 from .resources.InternalSlackNotification import InternalSlackNotification
 from .resources.SelfTest import AutologinForSelfTest
 from .resources.BehaviouralDifferencesResource import BehaviouralDifferencesGroup
+from .resources.GmailMarketingAuth import GmailMarketingAuthStart, GmailMarketingAuthCallback, GmailMarketingTestEmail
 
 api.add_resource(ApplicationGroup, '/api/application')
 api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
@@ -124,6 +125,10 @@ api.add_resource(RecurringTestingTriggerGroup, '/api/recurring_testing_trigger')
 api.add_resource(RecurringTestingTriggerSingle, '/api/recurring_testing_trigger/<string:recurring_testing_trigger_id>')
 api.add_resource(InternalSlackNotification, '/api/internal_slack_notification')
 api.add_resource(BehaviouralDifferencesGroup, '/api/behavioural_differences')
+
+api.add_resource(GmailMarketingAuthStart, '/api/marketing_auth_start')
+api.add_resource(GmailMarketingAuthCallback, '/api/marketing_auth')
+api.add_resource(GmailMarketingTestEmail, '/api/marketing_test_email')
 
 if cloudConfig['features']['enableSelfTestLoginEndpoint']:
     api.add_resource(AutologinForSelfTest, '/api/self_test_login')

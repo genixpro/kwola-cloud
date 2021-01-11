@@ -40,3 +40,4 @@ wheel
 giturlparse
 Faker
 edlib
+oauth2client

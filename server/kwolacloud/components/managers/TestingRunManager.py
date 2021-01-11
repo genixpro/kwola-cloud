@@ -61,7 +61,6 @@ class TestingRunManager:
     def updateApplicationObjectForStart(self):
         # Make sure that this application has recorded that at least one testing run has launched
         self.application = ApplicationModel.objects(id=self.run.applicationId).limit(1).first()
-        self.application.hasFirstTestingRunLaunched = True
         self.application.lastTestingDate = datetime.datetime.now()
         self.application.save()
 
