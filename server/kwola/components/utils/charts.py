@@ -92,6 +92,8 @@ def generateCoverageChart(config, applicationId):
     totalLinesValues = [future.get()[2] for future in coverageValueFutures]
 
     coverageValues = scipy.signal.medfilt(coverageValues, kernel_size=9)
+    executedLinesValues = scipy.signal.medfilt(executedLinesValues, kernel_size=9)
+    totalLinesValues = scipy.signal.medfilt(totalLinesValues, kernel_size=9)
 
     fig, ax = plt.subplots()
     ax.plot(range(len(coverageValues)), coverageValues, color='green')
