@@ -2611,6 +2611,10 @@ class DeepLearningAgent:
             else:
                 cursorsTensor = None
 
+            self.model.train()
+            self.modelParallel.train()
+            self.targetNetwork.eval()
+
             # Run the current images & states through the neural network and get
             # all of the various predictions
             currentStateOutputs = self.modelParallel({
