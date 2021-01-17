@@ -280,6 +280,8 @@ class CreateCloudBugObjects(TestingStepPluginBase):
             errorFrame = None
 
             for imageIndex, image, action in zip(range(len(rawImages)), rawImages, bug.actionsPerformed):
+                image *= 255
+
                 if imageIndex < (bug.stepNumber + 3):
                     cropped = self.cropImageAroundAction(image, action, cropWidth, cropHeight)
 
