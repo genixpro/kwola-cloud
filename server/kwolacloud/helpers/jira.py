@@ -47,23 +47,21 @@ def postBugToCustomerJIRA(bug, application):
     else:
         issueId = jiraAPIResponse.json()['id']
 
-        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, None)
+        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, bug.testingRunId)
 
-        videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"),
-                                     f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
+        videoData = config.loadKwolaFileData("bugs", f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
 
-        if os.path.exists(videoFilePath):
-            files = {'file': open(videoFilePath, 'rb')}
+        files = {'file': videoData}
 
-            uploadMovieHeaders = {
-                "Authorization": f"Bearer {application.jiraAccessToken}",
-                "X-Atlassian-Token": "no-check"
-            }
+        uploadMovieHeaders = {
+            "Authorization": f"Bearer {application.jiraAccessToken}",
+            "X-Atlassian-Token": "no-check"
+        }
 
-            jiraAPIResponse = requests.post(
-                f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/2/issue/{issueId}/attachments",
-                files=files,
-                headers=uploadMovieHeaders)
-            if jiraAPIResponse.status_code != 200:
-                logging.error(f"Error uploading attachment to issue in JIRA. Status code: {jiraAPIResponse.status_code}. Text: {jiraAPIResponse.text}")
-                return
+        jiraAPIResponse = requests.post(
+            f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/2/issue/{issueId}/attachments",
+            files=files,
+            headers=uploadMovieHeaders)
+        if jiraAPIResponse.status_code != 200:
+            logging.error(f"Error uploading attachment to issue in JIRA. Status code: {jiraAPIResponse.status_code}. Text: {jiraAPIResponse.text}")
+            return
