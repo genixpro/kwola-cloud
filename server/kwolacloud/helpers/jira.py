@@ -45,7 +45,7 @@ def postBugToCustomerJIRA(bug, application):
     if isinstance(bug.error, HttpError):
         jiraBugSummary = f"HTTP {bug.error.statusCode} at {bug.error.url}"
     else:
-        jiraBugSummary = jiraBugDescription[:150]
+        jiraBugSummary = bug.error.message[:150].replace("\n", "")
 
     issueData = {
         "fields": {
