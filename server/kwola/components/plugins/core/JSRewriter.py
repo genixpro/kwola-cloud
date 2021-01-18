@@ -211,7 +211,7 @@ class JSRewriter(ProxyPluginBase):
             if strictMode:
                 transformed = b'"use strict";\n' + transformed
 
-            if priorResourceVersion is not None:
+            if priorResourceVersion is not None and noLineCountingKeyword is None:
                 remappedFileData, message = self.remapTransformedJavascriptFile(resource, result.stdout, priorResourceVersion)
 
                 if remappedFileData is not None:
