@@ -17,7 +17,7 @@ import 'plyr/dist/plyr.css'
 import FeedbackWidget from "../FeedbackWidget";
 import FastForwardIcon from '@material-ui/icons/FastForward';
 import BugActionList from "./BugActionList";
-import {Check} from "@material-ui/icons";
+import {Check, Forward} from "@material-ui/icons";
 import edgeBlackSquare from "../../images/edge-black-square.png";
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import ArrowForward from '@material-ui/icons/ArrowForward';
@@ -25,7 +25,9 @@ import "./index.scss";
 import LoaderButton from "../../components/LoaderButton";
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import CancelIcon from '@material-ui/icons/Cancel';
+import PublishIcon from '@material-ui/icons/Publish';
 import {detect} from "detect-browser";
+import ExportBugToJIRAButton from './ExportBugToJIRAButton';
 
 
 class ViewBug extends Component {
@@ -344,6 +346,13 @@ class ViewBug extends Component {
                                             this.state.bug.error.stacktrace ?
                                                 <span className={"bug-message-value"}>{this.state.bug.error.stacktrace}</span> : null
                                         }
+                                        <span className={"bug-message-label export-bug-label"}>Export:</span>
+                                        <div className={"bug-message-label"}>
+                                            <ExportBugToJIRAButton bug={this.state.bug}>
+                                                Export to JIRA
+                                                <PublishIcon />
+                                            </ExportBugToJIRAButton>
+                                        </div>
                                     </div>
                                     {/*<div className={"bug-message-area"}>*/}
                                     {/*</div>*/}

@@ -45,7 +45,7 @@ from .resources.ExecutionSessionResource import ExecutionSessionGroup, Execution
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
 from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSingle
 from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle, TestingRunsRestart, TestingRunsRestartTraining, TestingRunsDownloadZip, PauseTestingRun, ResumeTestingRun
-from .resources.BugsResource import BugsGroup, BugsSingle, BugVideo, BugFrameSpriteSheet, BugErrorFrame, BugsAdminTriggerReproduction
+from .resources.BugsResource import BugsGroup, BugsSingle, BugVideo, BugFrameSpriteSheet, BugErrorFrame, BugsAdminTriggerReproduction, ExportBugToJIRA
 from .resources.Webhooks import StripeWebhook
 from .resources.Billing import BillingURLResource
 from .resources.PromoCodes import PromoCodes
@@ -109,6 +109,7 @@ api.add_resource(BugVideo, '/api/bugs/<string:bug_id>/video')
 api.add_resource(BugFrameSpriteSheet, '/api/bugs/<string:bug_id>/frame_sprite_sheet')
 api.add_resource(BugErrorFrame, '/api/bugs/<string:bug_id>/error_frame')
 api.add_resource(BugsAdminTriggerReproduction, '/api/bugs/<string:bug_id>/start_reproduction_job')
+api.add_resource(ExportBugToJIRA, '/api/bugs/<string:bug_id>/export_to_jira')
 
 api.add_resource(BillingURLResource, '/api/billing')
 api.add_resource(PromoCodes, '/api/promocodes')

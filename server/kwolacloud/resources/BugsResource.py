@@ -15,6 +15,8 @@ from google.cloud import storage
 from kwola.config.config import getSharedGCSStorageClient
 from kwola.config.config import KwolaCoreConfiguration
 from kwola.datamodels.BugModel import BugModel
+from kwolacloud.datamodels.ApplicationModel import ApplicationModel
+from ..helpers.jira import postBugToCustomerJIRA
 from kwola.datamodels.CustomIDField import CustomIDField
 import bson
 import flask
@@ -50,7 +52,7 @@ class BugsGroup(Resource):
 
         queryParams["isMuted"] = False
 
-        fields = ["id", "error", "isMuted", "importanceLevel", "status", "isBugNew", "canonicalPageUrl", "browser", "windowSize"]
+        fields = ["id", "error", "isMuted", "importanceLevel", "status", "isBugNew", "canonicalPageUrl", "browser", "windowSize", "applicationId"]
         bugs = BugModel.objects(**queryParams).no_dereference().order_by("importanceLevel", "-codePrevalenceScore").only(*fields)
 
         return {"bugs": json.loads(bugs.to_json())}
@@ -261,5 +263,30 @@ class BugsAdminTriggerReproduction(Resource):
             return abort(404)
 
         runBugReproductionJob(bug)
+
+        return {}
+
+
+class ExportBugToJIRA(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+
+    def post(self, bug_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": bug_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        bug = BugModel.objects(**queryParams).first()
+
+        if bug is None:
+            return abort(404)
+
+        application = ApplicationModel.objects(id=bug.applicationId).first()
+
+        postBugToCustomerJIRA(bug, application)
 
         return {}

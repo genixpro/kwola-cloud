@@ -38,6 +38,11 @@
     font-weight: 500;
     margin-bottom: 10px;
 
+    &.export-bug-label
+    {
+      position: relative;
+      top: 22px;
+    }
   }
 
   .bug-message-value
@@ -86,3 +91,14 @@
   }
 }
 
+.no-jira-modal
+{
+  position: absolute;
+  width: 400px;
+  top: calc(50% - 200px);
+  left: calc(50% - 200px);
+  border: 1px solid #e5e5e5;
+  background-color: #fff;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, .5);
+  padding: 32px;
+}
