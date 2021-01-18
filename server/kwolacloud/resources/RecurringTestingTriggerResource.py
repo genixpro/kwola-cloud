@@ -113,9 +113,6 @@ class RecurringTestingTriggerGroup(Resource):
         newTrigger = RecurringTestingTrigger(**data)
         newTrigger.save()
 
-        application.defaultRunConfiguration = newTrigger.configuration
-        application.save()
-
         postToKwolaSlack(
             f"A new recurring testing trigger was created with id {data['id']} for application {data['applicationId']} and user {claims['name']} [{claims['email']}]", error=False)
 
