@@ -28,9 +28,9 @@ class JSRewriter(ProxyPluginBase):
     def __init__(self, config):
         self.config = config
 
-        self.multipleBranchesCheckingRegex = re.compile(b"globalKwolaCounter_\\w{10}\\[1\\] ?\\+= ?1;")
-        self.branchCounterArraySizeRegex = re.compile(b"globalKwolaCounter_\\w{10} ?= ?new Uint32Array\\((\\d+)\\)")
-        self.branchIndexExtractorRegex = re.compile(b"globalKwolaCounter_\\w{10}\\[(\\d+)\\] ?\\+= ?1;")
+        self.multipleBranchesCheckingRegex = re.compile(b"globalKwolaCounter_\\w{8,10}\\[1\\] ?\\+= ?1;")
+        self.branchCounterArraySizeRegex = re.compile(b"globalKwolaCounter_\\w{8,10} ?= ?new Uint32Array\\((\\d+)\\)")
+        self.branchIndexExtractorRegex = re.compile(b"globalKwolaCounter_\\w{8,10}\\[(\\d+)\\] ?\\+= ?1;")
 
 
     def shouldHandleFile(self, resource, fileData):
@@ -358,7 +358,14 @@ class JSRewriter(ProxyPluginBase):
         remappedIndexes = {}
 
         lines = compareResult.stdout.splitlines()
+        skipLine = False
         for line, nextLine in zip(lines, lines[1:]):
+            if skipLine:
+                skipLine = False
+                continue
+            if b"window.globalKwolaCounter" in line or b"window.globalKwolaCounter" in nextLine:
+                continue
+
             lineBranchIndexes = self.getBranchIndexesForLine(line)
             nextLineBranchIndexes = self.getBranchIndexesForLine(nextLine)
 
@@ -375,11 +382,14 @@ class JSRewriter(ProxyPluginBase):
             if lineBranchIndex is not None and nextLineBranchIndex is not None:
                 if line.startswith(b"-") and nextLine.startswith(b"+"):
                     remappedIndexes[nextLineBranchIndex] = lineBranchIndex
+                    skipLine = True
             elif lineBranchIndex is not None and nextLineBranchIndex is None:
                 if line.startswith(b"-") and nextLine.startswith(b"-"):
                     deletedCodeIndexes.add(lineBranchIndex)
+                    skipLine = True
                 elif line.startswith(b"+") and nextLine.startswith(b"+"):
                     newCodeIndexes.add(lineBranchIndex)
+                    skipLine = True
 
 
         # Perform a couple of validations here to ensure the algorithm is working.
