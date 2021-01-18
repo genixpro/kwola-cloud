@@ -2335,13 +2335,10 @@ class DeepLearningAgent:
             :return: A new numpy array, with the same shape as the input processedImage, but now with data augmentations
                      applied.
         """
-        # Add random noise
-        augmentedImage = processedImage + numpy.random.normal(loc=0, scale=self.config['training_image_gaussian_noise_scale'], size=processedImage.shape)
+        # Currently no augmentations are applied, as all of the augmentations we have tested so far turn out to make
+        # the results worse.
 
-        # Clip the bounds to between 0 and 1
-        augmentedImage = numpy.maximum(numpy.zeros_like(augmentedImage), numpy.minimum(numpy.ones_like(augmentedImage), augmentedImage))
-
-        return augmentedImage
+        return processedImage
 
 
     def prepareBatchesForExecutionSession(self, executionSession):
