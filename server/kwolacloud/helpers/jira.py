@@ -39,7 +39,7 @@ def postBugToCustomerJIRA(bug, application):
     jiraBugDescription += f"Window Size: {bug.windowSize}\n"
     jiraBugDescription += f"User Agent: {bug.userAgent}\n"
     jiraBugDescription += f"Importance: {bug.importanceLevel}\n"
-    jiraBugDescription += f"Message: {bug.message}\n"
+    jiraBugDescription += f"Message: {bug.error.message}\n"
 
     jiraBugSummary = ""
     if isinstance(bug.error, HttpError):

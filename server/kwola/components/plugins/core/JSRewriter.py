@@ -385,13 +385,13 @@ class JSRewriter(ProxyPluginBase):
         # Perform a couple of validations here to ensure the algorithm is working.
         remappedDeleted = deletedCodeIndexes.intersection(remappedIndexes.values())
         if len(remappedDeleted) > 0:
-            message = f"Error in remapping the branch indexes for {resource.id}. Some branch indexes were both remapped and deleted. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedDeleted))}"
+            message = f"Error in remapping the branch indexes for {resource.id}. Some branch indexes were both remapped and deleted. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedDeleted))}. Prior version: {priorResourceVersion.id}"
             getLogger().error(message)
             return None, message
 
         remappedAdded = newCodeIndexes.intersection(remappedIndexes.keys())
         if len(remappedAdded) > 0:
-            message = f"Error in remapping the branch indexes for {resource.id}. Some branch indexes were both remapped and added as fresh new indexes. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedAdded))}"
+            message = f"Error in remapping the branch indexes for {resource.id}. Some branch indexes were both remapped and added as fresh new indexes. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedAdded))}. Prior version: {priorResourceVersion.id}"
             getLogger().error(message)
             return None, message
 
