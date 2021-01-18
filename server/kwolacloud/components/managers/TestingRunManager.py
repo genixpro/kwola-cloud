@@ -75,7 +75,13 @@ class TestingRunManager:
         # Load and save the agent to make sure all training subprocesses are synced
         agent = DeepLearningAgent(config=self.config, whichGpu=None)
         agent.initialize(enableTraining=False)
-        agent.load()
+
+        try:
+            agent.load()
+        except RuntimeError as e:
+            logging.error(
+                f"Warning! DeepLearningAgent was unable to load the model file from disk, and so is instead using a freshly random initialized neural network. The original error is: {traceback.format_exc()}")
+
         agent.save()
         del agent
 

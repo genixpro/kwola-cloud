@@ -171,7 +171,12 @@ class TrainingManager:
 
             self.agent = DeepLearningAgent(config=self.config, whichGpu=self.gpu)
             self.agent.initialize()
-            self.agent.load()
+            try:
+                self.agent.load()
+            except RuntimeError as e:
+                getLogger().error(
+                    f"Warning! DeepLearningAgent was unable to load the model file from disk, and so is instead using a freshly random initialized neural network. The original error is: {traceback.format_exc()}")
+                self.agent.save()
 
             self.createSubproccesses()
 
