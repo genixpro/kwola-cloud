@@ -21,7 +21,7 @@ class ExportBugToJIRAButton extends Component {
 
             if (application.jiraAccessToken)
             {
-                return axios.post(`/bugs/${this.state.bug._id}/export_to_jira`, {}).then((response) =>
+                return axios.post(`/bugs/${this.props.bug._id}/export_to_jira`, {}).then((response) =>
                 {
 
                 }, (error) =>
