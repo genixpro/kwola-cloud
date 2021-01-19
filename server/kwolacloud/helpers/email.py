@@ -25,6 +25,8 @@ def sendStartTestingRunEmail(application):
     logging.info(f"Sending the 'testing run started' email to {email} for application {application.id}")
 
     configData = loadCloudConfiguration()
+    if not configData['features']['enableOutboundEmails']:
+        return
 
     message = Mail(
         from_email=From('admin@kwola.io', 'Kwola'),
@@ -55,6 +57,8 @@ def sendBugFoundNotification(application, bug):
     logging.info(f"Sending the 'new bug found' email to {email} for application {application.id} and bug {bug.id}")
 
     configData = loadCloudConfiguration()
+    if not configData['features']['enableOutboundEmails']:
+        return
 
     message = Mail(
         from_email=From('admin@kwola.io', 'Kwola'),
@@ -95,6 +99,8 @@ def sendFinishTestingRunEmail(application, testingRun, bugCount):
     logging.info(f"Sending the 'testing run finished' email to {email} for testing run {testingRun.id}")
 
     configData = loadCloudConfiguration()
+    if not configData['features']['enableOutboundEmails']:
+        return
 
     message = Mail(
         from_email=From('admin@kwola.io', 'Kwola'),
@@ -134,6 +140,10 @@ def getGmailCredentials():
 
 
 def sendGmailDirectEmail(to, subject, message_text):
+    configData = loadCloudConfiguration()
+    if not configData['features']['enableOutboundEmails']:
+        return
+
     credentials = getGmailCredentials()
 
     message = MIMEText(message_text)
