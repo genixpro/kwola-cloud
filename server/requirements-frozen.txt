@@ -101,7 +101,7 @@ ruamel.yaml.clib==0.2.2
 scikit-image==0.17.2
 scikit-learn==0.24.0
 scipy==1.5.4
-selenium==3.141.0
+selenium==4.0.0a6.post2
 sendgrid==6.4.8
 six==1.15.0
 slack-webhook==1.0.4
