@@ -258,7 +258,11 @@ class WebEnvironmentSession:
 
 
     def getHostRoot(self, url):
-        host = str(urllib.parse.urlparse(url).hostname)
+        try:
+            host = str(urllib.parse.urlparse(url).hostname)
+        except ValueError:
+            getLogger().warning(f"Error parsing url {url} to obtain the host domain. Received exception: {traceback.format_exc()}. Return no host domain.")
+            return ""
 
         hostParts = host.split(".")
 
@@ -1002,7 +1006,7 @@ class WebEnvironmentSession:
 
             return url
         except ValueError as e:
-            getLogger().error(f"Error normalizing link url {url}. Received exception: {traceback.format_exc()}. Returning link unnormalized.")
+            getLogger().warning(f"Error normalizing link url {url}. Received exception: {traceback.format_exc()}. Returning link unnormalized.")
             return url
 
     def isURLOffsite(self, url, currentPageURL=None):
