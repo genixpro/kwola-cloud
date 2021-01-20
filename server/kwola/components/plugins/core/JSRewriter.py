@@ -19,6 +19,7 @@ class JSRewriter(ProxyPluginBase):
     """
 
     rewritePluginName = "javascript"
+    rewritePluginShouldCheckForSimilarOriginals = True
 
     knownResponseWrappers = [
         (b"""<!--/*--><html><body><script type="text/javascript"><!--//*/""",

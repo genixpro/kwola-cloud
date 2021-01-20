@@ -291,8 +291,8 @@
   "web_session_page_load_timeout": 60,
   "web_session_script_execution_timeout": 30,
   "web_session_perform_action_wait_time": 0.5,
-  "web_session_print_every_action": true,
-  "web_session_print_every_action_failure": false,
+  "web_session_print_every_action": false,
+  "web_session_print_every_action_failure": true,
   "web_session_print_javascript_translation_info": true,
   "web_session_width": {
     "desktop": 1024,

@@ -268,6 +268,9 @@ class PauseTestingRun(Resource):
         if testingRun is None:
             return abort(404)
 
+        if testingRun.status == "paused":
+            return {}
+
         if testingRun.status != "running":
             return abort(400)
 
@@ -329,6 +332,9 @@ class ResumeTestingRun(Resource):
 
         if testingRun is None:
             return abort(404)
+
+        if testingRun.status == "running":
+            return {}
 
         if testingRun.status != "paused":
             return abort(400)
