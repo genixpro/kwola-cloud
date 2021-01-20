@@ -6,8 +6,10 @@
 
 from mongoengine import *
 from kwola.datamodels.CustomIDField import CustomIDField
+from kwola.datamodels.TypingActionConfiguration import TypingActionConfiguration
 from ..config.config import getKwolaConfigurationData, loadCloudConfiguration
 from kwola.config.config import KwolaCoreConfiguration
+import json
 import os
 
 
@@ -22,43 +24,61 @@ class RunConfiguration(EmbeddedDocument):
 
     paragraph = StringField()
 
-    enableRandomNumberCommand = BooleanField(default=True)
+    # Deprecated
+    enableRandomNumberCommand = BooleanField(default=False)
 
+    # Deprecated
     enableRandomBracketCommand = BooleanField(default=False)
 
+    # Deprecated
     enableRandomMathCommand = BooleanField(default=False)
 
+    # Deprecated
     enableRandomOtherSymbolCommand = BooleanField(default=False)
 
     enableDoubleClickCommand = BooleanField(default=False)
 
     enableRightClickCommand = BooleanField(default=False)
 
+    # Deprecated
     enableTypeEmail = BooleanField(default=False)
 
+    # Deprecated
     enableTypePassword = BooleanField(default=False)
 
-    enableRandomLettersCommand = BooleanField(default=True)
+    # Deprecated
+    enableRandomLettersCommand = BooleanField(default=False)
 
-    enableRandomAddressCommand = BooleanField(default=True)
+    # Deprecated
+    enableRandomAddressCommand = BooleanField(default=False)
 
-    enableRandomEmailCommand = BooleanField(default=True)
+    # Deprecated
+    enableRandomEmailCommand = BooleanField(default=False)
 
-    enableRandomPhoneNumberCommand = BooleanField(default=True)
+    # Deprecated
+    enableRandomPhoneNumberCommand = BooleanField(default=False)
 
-    enableRandomParagraphCommand = BooleanField(default=True)
+    # Deprecated
+    enableRandomParagraphCommand = BooleanField(default=False)
 
-    enableRandomDateTimeCommand = BooleanField(default=True)
+    # Deprecated
+    enableRandomDateTimeCommand = BooleanField(default=False)
 
-    enableRandomCreditCardCommand = BooleanField(default=True)
+    # Deprecated
+    enableRandomCreditCardCommand = BooleanField(default=False)
 
+    # Deprecated
     enableRandomURLCommand = BooleanField(default=False)
 
     enableScrolling = BooleanField(default=True)
 
+    # Unused
     enableDragging = BooleanField()
 
+    # Deprecated
     customTypingActionStrings = ListField(StringField())
+
+    typingActions = ListField(EmbeddedDocumentField(TypingActionConfiguration))
 
     autologin = BooleanField()
 
@@ -151,6 +171,9 @@ class RunConfiguration(EmbeddedDocument):
         kwolaConfigData['web_session_enable_window_size_desktop'] = self.enableWindowSizeDesktop
         kwolaConfigData['web_session_enable_window_size_tablet'] = self.enableWindowSizeTablet
         kwolaConfigData['web_session_enable_window_size_mobile'] = self.enableWindowSizeMobile
+        kwolaConfigData['typing_actions'] = [
+            json.loads(action.to_json()) for action in self.typingActions
+        ]
 
         cloudConfig = loadCloudConfiguration()
         if cloudConfig['features']['localRuns']:

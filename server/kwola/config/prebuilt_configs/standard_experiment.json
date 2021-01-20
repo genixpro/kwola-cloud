@@ -267,6 +267,7 @@
     "prepared_samples",
     "videos"
   ],
+  "typing_actions": [],
   "web_session_action_map_max_keyword_size": 1024,
   "web_session_autologin_sleep_times": 2,
   "web_session_enable_chrome": true,

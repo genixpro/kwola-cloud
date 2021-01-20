@@ -1,0 +1,68 @@
+
+
+.typing-action-input
+{
+  margin-top:0;
+}
+
+.typing-action-bias-keywords-input
+{
+  position: relative;
+  top: 8px;
+}
+
+.typing-action-row
+{
+  display: grid;
+  grid-template-rows: auto auto auto;
+  grid-template-columns: 1fr 2fr 75px;
+  border: 1px solid lightgray;
+  border-radius: 5px;
+  padding: 10px;
+  justify-items: stretch;
+  align-items: end;
+  grid-gap: 20px 10px;
+  margin-bottom: 10px;
+  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+}
+
+.delete-typing-action-button
+{
+  grid-column: 3;
+  grid-row: 1 / 4;
+  justify-self: end;
+  align-self: center;
+}
+
+.random-generated-text-examples
+{
+  display: grid;
+  grid-template-rows: auto auto auto;
+  grid-template-columns: auto auto;
+}
+
+.random-generated-text-options
+{
+  display: flex;
+  flex-direction: row;
+}
+
+.random-generated-text-options-column
+{
+  display: flex;
+  flex-direction: column;
+}
+
+.type-action-generated-text-option-input
+{
+  &:not(:last-child)
+  {
+    margin-right: 10px;
+  }
+}
+
+.type-action-generated-text-option-checkbox
+{
+  position: relative;
+  top: 10px;
+}

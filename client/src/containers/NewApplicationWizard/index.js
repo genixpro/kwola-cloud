@@ -14,12 +14,14 @@ import NewApplicationWizardStep3 from "./NewApplicationWizardStep3";
 import NewApplicationWizardStep4 from "./NewApplicationWizardStep4";
 import NewApplicationWizardStep5 from "./NewApplicationWizardStep5";
 import NewApplicationWizardStep6 from "./NewApplicationWizardStep6";
+import {TypingActionEditor} from "../NewTestingRun/ActionsConfiguration";
 import "./main.scss";
 import stripePromise from "../../stripe";
 import {CardElement, ElementsConsumer} from "@stripe/react-stripe-js";
 import Promise from "bluebird";
 import Snackbar from "../../components/uielements/snackbar";
 import SnackAlert from "@material-ui/lab/Alert";
+import _ from "underscore";
 
 class NewApplicationWizard extends Component {
     state = {
@@ -38,9 +40,14 @@ class NewApplicationWizard extends Component {
             const application = JSON.parse(savedApplicationState);
             const runConfiguration = JSON.parse(savedRunConfigurationState);
 
-            // This is just to handle cases where the user visited the new-app page, but didn't type anything in
-            // and later we change the code, say, adding in new variables in the run configuration.
-            if (!application.url)
+            const defaultConfiguration = NewApplicationWizard.getDefaultWizardState();
+
+            const unionApplicationKeys = _.union(Object.keys(application), Object.keys(defaultConfiguration.application));
+            const unionRunConfigKeys = _.union(Object.keys(runConfiguration), Object.keys(defaultConfiguration.runConfiguration));
+
+            if (!application.url ||
+                unionApplicationKeys.length !== Object.keys(defaultConfiguration.application).length ||
+                unionRunConfigKeys.length !== Object.keys(defaultConfiguration.runConfiguration).length)
             {
                 this.resetWizardState();
             }
@@ -63,32 +70,28 @@ class NewApplicationWizard extends Component {
         }
     }
 
-    resetWizardState()
+    static getDefaultWizardState()
     {
-        this.setState({
+        return {
             runConfiguration: {
                 email: "",
                 password: "",
+                url: "",
                 maxParallelSessions: 250,
                 enableDoubleClickCommand: false,
                 enableRightClickCommand: false,
-                enableRandomBracketCommand: false,
-                enableRandomMathCommand: false,
-                enableRandomOtherSymbolCommand: false,
-                enableRandomNumberCommand: true,
                 enableScrolling: true,
                 enableDragging: false,
-                enableTypeEmail: true,
-                enableTypePassword: true,
-                enableRandomLettersCommand: true,
-                enableRandomAddressCommand: true,
-                enableRandomEmailCommand: true,
-                enableRandomPhoneNumberCommand: true,
-                enableRandomParagraphCommand: true,
-                enableRandomDateTimeCommand: true,
-                enableRandomCreditCardCommand: true,
-                enableRandomURLCommand: false,
-                customTypingActionStrings: [],
+                typingActions: [
+                    TypingActionEditor.createDefaultTypingActionForType("letters"),
+                    TypingActionEditor.createDefaultTypingActionForType("number"),
+                    TypingActionEditor.createDefaultTypingActionForType("email"),
+                    TypingActionEditor.createDefaultTypingActionForType("address"),
+                    TypingActionEditor.createDefaultTypingActionForType("phonenumber"),
+                    TypingActionEditor.createDefaultTypingActionForType("date"),
+                    TypingActionEditor.createDefaultTypingActionForType("creditcard"),
+                    TypingActionEditor.createDefaultTypingActionForType("creditcardcvc")
+                ],
                 enableChrome: true,
                 enableFirefox: false,
                 enableEdge: false,
@@ -105,7 +108,12 @@ class NewApplicationWizard extends Component {
                 dayOfWeek: 4,
                 hourOfDay: 3
             }
-        }, () => this.saveWizardState())
+        };
+    }
+
+    resetWizardState()
+    {
+        this.setState(NewApplicationWizard.getDefaultWizardState(), () => this.saveWizardState())
     }
 
     saveWizardState()

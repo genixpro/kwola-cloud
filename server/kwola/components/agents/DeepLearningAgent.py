@@ -28,6 +28,7 @@ from ...datamodels.actions.TypeAction import TypeAction
 from ...datamodels.actions.ScrollingAction import ScrollingAction
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
+from ...datamodels.TypingActionConfiguration import TypingActionConfiguration
 from .TraceNet import TraceNet
 from ..utils.video import chooseBestFfmpegVideoCodec
 from pprint import pprint
@@ -199,11 +200,34 @@ class DeepLearningAgent:
             self.actionProbabilityBoostKeywords.append(["pass"])
             hasTypingAction = True
 
+        # We use this function because it is required to correctly bind the action name and action config to the lambda.
+        # If we just embed the lambda code in the loop below, then all the typing actions will take on the values of the
+        # of the final loop.
+        def generateOldCustomTypingActionLambda(actionName, text):
+            return lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=text)
+
+        # Old style custom typing actions, now deprecated
         for customTypingActionIndex, customTypingActionString in enumerate(config['custom_typing_action_strings']):
             actionName = f'typeCustom{customTypingActionIndex}'
-            self.actions[actionName] = lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=customTypingActionString)
+            self.actions[actionName] = generateOldCustomTypingActionLambda(actionName, customTypingActionString)
             self.actionBaseWeights.append(config['random_weight_custom_type_action'])
             self.actionProbabilityBoostKeywords.append([])
+            hasTypingAction = True
+
+        # We use this function because it is required to correctly bind the action name and action config to the lambda.
+        # If we just embed the lambda code in the loop below, then all the typing actions will take on the values of the
+        # of the final loop.
+        def generateTypingActionLambda(actionName, actionConfig):
+            return lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=actionConfig.generateText())
+
+        # New style custom typing actions
+        for typingActionIndex, typingActionData in enumerate(config['typing_actions']):
+            actionName = f'typeAction{typingActionIndex}'
+            actionConfig = TypingActionConfiguration(**typingActionData)
+
+            self.actions[actionName] = generateTypingActionLambda(actionName, actionConfig)
+            self.actionBaseWeights.append(config['random_weight_custom_type_action'])
+            self.actionProbabilityBoostKeywords.append(actionConfig.biasKeywords.split())
             hasTypingAction = True
 
         # Only add in the random number action if the user configured it
