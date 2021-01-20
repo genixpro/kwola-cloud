@@ -12,5 +12,5 @@ from .migrate_bug_object_canonical_url import main as migrate_bug_canonical_url
 def main():
     # migrate_bug_severity_score()
     # migrate_bug_objects_main()
-    migrate_bug_canonical_url()
+    # migrate_bug_canonical_url()
     pass
