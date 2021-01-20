@@ -9,6 +9,7 @@ class HTMLRewriter(ProxyPluginBase):
     """
 
     rewritePluginName = "html"
+    rewritePluginShouldCheckForSimilarOriginals = False
 
     def __init__(self, config):
         self.config = config

@@ -1062,7 +1062,7 @@ class WebEnvironmentSession:
                 loadFailure = True
 
             if loadFailure:
-                getLogger().warning(f"The browser session needed to be reset back to the origin url {self.targetURL} from the current url {self.driver.current_url}")
+                getLogger().warning(f"The browser session needed to be reset back to the prior url {priorURL} from the current url {self.driver.current_url}")
                 self.driver.get(priorURL)
                 self.waitUntilNoNetworkActivity()
         except selenium.common.exceptions.TimeoutException:
