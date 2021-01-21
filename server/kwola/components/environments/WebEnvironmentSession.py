@@ -173,8 +173,8 @@ class WebEnvironmentSession:
                 chrome_options.add_argument(f"--disk-cache-dir={self.config.getKwolaUserDataDirectory('chrome_cache')}")
                 chrome_options.add_argument(f"--disk-cache-size={1024*1024*1024}")
 
-            chrome_options.add_argument(f"--disable-gpu")
-            chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
+            # chrome_options.add_argument(f"--disable-gpu")
+            # chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
             chrome_options.add_argument(f"--no-sandbox")
             chrome_options.add_argument(f"--temp-profile")
             chrome_options.add_argument(f"--proxy-server=localhost:{self.proxy.port}")
