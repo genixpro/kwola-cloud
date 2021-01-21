@@ -173,8 +173,8 @@ class WebEnvironmentSession:
                 chrome_options.add_argument(f"--disk-cache-dir={self.config.getKwolaUserDataDirectory('chrome_cache')}")
                 chrome_options.add_argument(f"--disk-cache-size={1024*1024*1024}")
 
-            chrome_options.add_argument(f"--disable-gpu")
-            chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
+            # chrome_options.add_argument(f"--disable-gpu")
+            # chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
             chrome_options.add_argument(f"--no-sandbox")
             chrome_options.add_argument(f"--temp-profile")
             chrome_options.add_argument(f"--proxy-server=localhost:{self.proxy.port}")
@@ -581,7 +581,7 @@ class WebEnvironmentSession:
             if self.hasBrowserDied:
                 return []
 
-            elementActionMaps, error = self.driver.execute_script("""
+            result = self.driver.execute_script("""
                 function isFunction(functionToCheck) {
                  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
                 }
@@ -819,6 +819,13 @@ class WebEnvironmentSession:
                     return [actionMaps, err.toString()];
                 }
             """)
+
+            if result is None:
+                self.hasBrowserDied = True
+                self.browserDeathReason = f"Got no result when trying to fetch the action maps from the web browser."
+                return []
+
+            elementActionMaps, error = result
 
             if error:
                 raise RuntimeError(f"Error in the javascript within WebEnvironmentSession.getActionMaps: {error}")

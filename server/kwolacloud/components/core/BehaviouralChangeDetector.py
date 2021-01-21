@@ -342,7 +342,7 @@ class BehaviourChangeDetector:
                 continue
 
             if 'data-kwola-left' not in tag.parent.attrs:
-                getLogger().warning(f"Warning! Found an HTML element that didn't have the kwola positioning variables saved as attributes. Skipping this HTML element in the HTML comparison. Tag name: {tag.name}. Attributes: {pformat(dict(tag.attrs))}")
+                getLogger().warning(f"Warning! Found an HTML element that didn't have the kwola positioning variables saved as attributes. Skipping this HTML element in the HTML comparison. Tag name: {tag.parent.name}. Attributes: {pformat(dict(tag.parent.attrs))}")
                 continue
 
             matchKeywords = {text.lower()}
