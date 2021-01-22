@@ -43,11 +43,11 @@ class HTMLRewriter(ProxyPluginBase):
             return False
 
 
-    def getRewriteMode(self, resource, fileData, priorResourceVersion):
+    def getRewriteMode(self, resource, fileData, resourceVersion, priorResourceVersion):
         return "integrity_attribute_replacement", None
 
 
-    def rewriteFile(self, resource, fileData, priorResourceVersion):
+    def rewriteFile(self, resource, fileData, resourceVersion, priorResourceVersion):
         stringData = str(fileData, 'utf8')
 
         stringData = re.sub(self.integrityRegex, "", stringData)

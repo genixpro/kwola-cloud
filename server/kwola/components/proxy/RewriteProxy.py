@@ -367,7 +367,7 @@ class RewriteProxy:
                     resourceVersion.didRewriteResource = True
 
                 else:
-                    rewriteMode, rewriteMessage = chosenPlugin.getRewriteMode(resource, unzippedFileContents, priorVersion)
+                    rewriteMode, rewriteMessage = chosenPlugin.getRewriteMode(resource, unzippedFileContents, resourceVersion, priorVersion)
                     resource.rewriteMode = rewriteMode
                     resource.rewriteMessage = rewriteMessage
                     resourceVersion.rewriteMode = rewriteMode
@@ -380,7 +380,7 @@ class RewriteProxy:
                 if self.config['web_session_print_javascript_translation_info'] and resourceVersion.rewriteMessage:
                     getLogger().info(resourceVersion.rewriteMessage)
 
-                transformedContents = chosenPlugin.rewriteFile(resource, unzippedFileContents, priorVersion)
+                transformedContents = chosenPlugin.rewriteFile(resource, unzippedFileContents, resourceVersion, priorVersion)
 
                 if gzipped:
                     transformedContents = gzip.compress(transformedContents, compresslevel=9)

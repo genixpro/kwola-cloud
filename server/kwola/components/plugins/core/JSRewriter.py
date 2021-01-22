@@ -76,7 +76,7 @@ class JSRewriter(ProxyPluginBase):
         else:
             return False
 
-    def getRewriteMode(self, resource, fileData, priorResourceVersion):
+    def getRewriteMode(self, resource, fileData, resourceVersion, priorResourceVersion):
         cleanedFileName = self.getCleanedURL(resource.url)
 
         parsedURL = urllib.parse.urlparse(resource.url)
@@ -102,7 +102,7 @@ class JSRewriter(ProxyPluginBase):
 
             return None, message
 
-        translated, translationMessage = self.getRewrittenJavascript(resource, fileData, priorResourceVersion)
+        translated, translationMessage = self.getRewrittenJavascript(resource, fileData, resourceVersion, priorResourceVersion)
         if translated is None:
             return None, translationMessage
         else:
@@ -132,7 +132,7 @@ class JSRewriter(ProxyPluginBase):
             return True
 
     @functools.lru_cache(maxsize=1024)
-    def getRewrittenJavascript(self, resource, fileData, priorResourceVersion):
+    def getRewrittenJavascript(self, resource, fileData, resourceVersion, priorResourceVersion):
         jsFileContents = fileData.strip()
 
         strictMode = False
@@ -213,7 +213,7 @@ class JSRewriter(ProxyPluginBase):
                 transformed = b'"use strict";\n' + transformed
 
             if priorResourceVersion is not None and noLineCountingKeyword is None:
-                remappedFileData, message = self.remapTransformedJavascriptFile(resource, result.stdout, priorResourceVersion)
+                remappedFileData, message = self.remapTransformedJavascriptFile(resource, result.stdout, resourceVersion, priorResourceVersion)
 
                 if remappedFileData is not None:
                     transformed = remappedFileData
@@ -240,11 +240,11 @@ class JSRewriter(ProxyPluginBase):
 
         return None
 
-    def rewriteFile(self, resource, fileData, priorResourceVersion):
-        rewriteMode, message = self.getRewriteMode(resource, fileData, priorResourceVersion)
+    def rewriteFile(self, resource, fileData, resourceVersion, priorResourceVersion):
+        rewriteMode, message = self.getRewriteMode(resource, fileData, resourceVersion, priorResourceVersion)
 
         if rewriteMode is not None:
-            return self.getRewrittenJavascript(resource, fileData, priorResourceVersion)[0]
+            return self.getRewrittenJavascript(resource, fileData, resourceVersion, priorResourceVersion)[0]
         else:
             return fileData
 
@@ -322,7 +322,7 @@ class JSRewriter(ProxyPluginBase):
         return line
 
 
-    def remapTransformedJavascriptFile(self, resource, transformedFileData, priorResourceVersion):
+    def remapTransformedJavascriptFile(self, resource, transformedFileData, resourceVersion, priorResourceVersion):
         priorResourceVersionData = priorResourceVersion.loadTranslatedResourceContents(self.config)
 
         if priorResourceVersionData is None:
@@ -396,18 +396,23 @@ class JSRewriter(ProxyPluginBase):
         # Perform a couple of validations here to ensure the algorithm is working.
         remappedDeleted = deletedCodeIndexes.intersection(remappedIndexes.values())
         if len(remappedDeleted) > 0:
-            message = f"Error in remapping the branch indexes for {resource.id}. Some branch indexes were both remapped and deleted. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedDeleted))}. Prior version: {priorResourceVersion.id}"
+            message = f"Error in remapping the branch indexes for {resourceVersion.id}. Some branch indexes were both remapped and deleted. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedDeleted))}. Prior version: {priorResourceVersion.id}"
             getLogger().error(message)
             return None, message
 
         remappedAdded = newCodeIndexes.intersection(remappedIndexes.keys())
         if len(remappedAdded) > 0:
-            message = f"Error in remapping the branch indexes for {resource.id}. Some branch indexes were both remapped and added as fresh new indexes. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedAdded))}. Prior version: {priorResourceVersion.id}"
+            message = f"Error in remapping the branch indexes for {resourceVersion.id}. Some branch indexes were both remapped and added as fresh new indexes. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedAdded))}. Prior version: {priorResourceVersion.id}"
             getLogger().error(message)
             return None, message
 
         # Now create a new version of the remapped javascript file.
         currentNewBranchIndex = currentJSCounterSize
+        newBranchIndexesMap = {}
+        for branchIndex in newCodeIndexes:
+            newBranchIndexesMap[branchIndex] = currentNewBranchIndex
+            currentNewBranchIndex += 1
+
         updatedLines = []
         for line in transformedFileData.splitlines():
             newLine = line
@@ -421,8 +426,7 @@ class JSRewriter(ProxyPluginBase):
                 # First handle any remaps for new code indexes
                 for branchIndex in lineBranchIndexes:
                     if branchIndex in newCodeIndexes:
-                        newLine = self.replaceBranchIndexInLine(newLine, branchIndex, currentNewBranchIndex)
-                        currentNewBranchIndex += 1
+                        newLine = self.replaceBranchIndexInLine(newLine, branchIndex, newBranchIndexesMap[branchIndex])
                 # Then handle remaps for existing code indexes
                 for branchIndex in lineBranchIndexes:
                     if branchIndex in remappedIndexes:
