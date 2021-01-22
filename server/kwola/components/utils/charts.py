@@ -280,13 +280,13 @@ def generateCumulativeCoverageChart(config, applicationId=None, numberOfTestingS
 
 
     fig, ax = plt.subplots()
-    ax.plot(numpy.array(range(len(cumulativeLinesExecutedValues))) * numberOfTestingStepsPerValue, cumulativeLinesExecutedValues, color='green')
+    ax.plot(numpy.array(range(len(cumulativeLinesExecutedValues))) * numberOfTestingStepsPerValue, cumulativeLinesExecutedValues, color='green', vmin=0, vmax=600)
     ax.set(xlabel='Testing Steps Completed', ylabel='Cumulative Total Lines Triggered (green)', title=f"Cumulative Lines Triggered Chart, Group Size: {numberOfTestingStepsPerValue}")
-    ax2 = ax.twinx()
-    ax2.plot(numpy.array(range(len(cumulativeTotalLinesValues))) * numberOfTestingStepsPerValue, cumulativeTotalLinesValues, color='red')
-    ax2.set(ylabel="Cumulative Lines Available (red)")
+    # ax2 = ax.twinx()
+    # ax2.plot(numpy.array(range(len(cumulativeTotalLinesValues))) * numberOfTestingStepsPerValue, cumulativeTotalLinesValues, color='red')
+    # ax2.set(ylabel="Cumulative Lines Available (red)")
     ax.grid()
-    ax2.grid()
+    # ax2.grid()
 
     _, localFilePath = tempfile.mkstemp(suffix=".png")
     fig.savefig(localFilePath)
