@@ -1395,7 +1395,11 @@ class DeepLearningAgent:
         :return: A list containing numpy arrays, a single numpy array for each frame in the video.
         """
 
-        data = config.loadKwolaFileData("videos", videoFileName)
+        data = config.loadKwolaFileData("videos_lossless", videoFileName)
+        if data is None:
+            # This is just here for backwards compatibility for when we didn't have a separate videos_lossless folder
+            data = config.loadKwolaFileData("videos", videoFileName)
+
         localTempDescriptor, localTemp = tempfile.mkstemp()
         with open(localTempDescriptor, 'wb') as f:
             f.write(data)

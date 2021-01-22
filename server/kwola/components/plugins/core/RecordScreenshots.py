@@ -54,9 +54,17 @@ class RecordScreenshots(WebEnvironmentPluginBase):
     @autoretry()
     def browserSessionFinished(self, webDriver, proxy, executionSession):
         getLogger().info(f"Creating movie file for the execution session {executionSession.id}")
+        self.encodeAndSaveVideo(executionSession, "videos", False)
+        self.encodeAndSaveVideo(executionSession, "videos_lossless", True)
 
-        result = subprocess.run(['ffmpeg', '-f', 'image2', "-r", "3", '-i', 'kwola-screenshot-%05d.png', '-vcodec',
-                                 chooseBestFfmpegVideoCodec(losslessPreferred=True), '-crf', '0', '-preset',
+
+    def encodeAndSaveVideo(self, executionSession, folder, lossless):
+        codec = chooseBestFfmpegVideoCodec(losslessPreferred=lossless)
+        crfRating = 25
+        if lossless:
+            crfRating = 0
+        result = subprocess.run(['ffmpeg', '-f', 'image2', "-r", "1", '-i', 'kwola-screenshot-%05d.png', '-vcodec',
+                                 codec, '-crf', str(crfRating), '-preset',
                                  'veryslow', self.movieFileName(executionSession)],
                                 cwd=self.screenshotDirectory[executionSession.id], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -73,7 +81,9 @@ class RecordScreenshots(WebEnvironmentPluginBase):
                 videoData = f.read()
 
             fileName = f'{str(executionSession.id)}.mp4'
-            self.config.saveKwolaFileData("videos", fileName, videoData)
+            self.config.saveKwolaFileData(folder, fileName, videoData)
+
+            os.unlink(localVideoPath)
 
     @autoretry()
     def addScreenshot(self, webDriver, executionSession):
