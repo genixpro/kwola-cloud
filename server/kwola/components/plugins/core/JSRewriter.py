@@ -392,26 +392,15 @@ class JSRewriter(ProxyPluginBase):
                     newCodeIndexes.add(lineBranchIndex)
                     skipLine = True
 
-
-        # Perform a couple of validations here to ensure the algorithm is working.
-        remappedDeleted = deletedCodeIndexes.intersection(remappedIndexes.values())
-        if len(remappedDeleted) > 0:
-            message = f"Error in remapping the branch indexes for {resourceVersion.id}. Some branch indexes were both remapped and deleted. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedDeleted))}. Prior version: {priorResourceVersion.id}"
-            getLogger().error(message)
-            return None, message
-
-        remappedAdded = newCodeIndexes.intersection(remappedIndexes.keys())
-        if len(remappedAdded) > 0:
-            message = f"Error in remapping the branch indexes for {resourceVersion.id}. Some branch indexes were both remapped and added as fresh new indexes. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedAdded))}. Prior version: {priorResourceVersion.id}"
-            getLogger().error(message)
-            return None, message
-
         # Now create a new version of the remapped javascript file.
         currentNewBranchIndex = currentJSCounterSize
         newBranchIndexesMap = {}
         for branchIndex in newCodeIndexes:
-            newBranchIndexesMap[branchIndex] = currentNewBranchIndex
-            currentNewBranchIndex += 1
+            # In certain really weird situations (when there is an event handler that was altered in the code, along with weird whitespace issues),
+            # a branch index can end up marked as both new and remapped.
+            if branchIndex not in remappedIndexes:
+                newBranchIndexesMap[branchIndex] = currentNewBranchIndex
+                currentNewBranchIndex += 1
 
         updatedLines = []
         for line in transformedFileData.splitlines():
@@ -425,7 +414,7 @@ class JSRewriter(ProxyPluginBase):
             if lineBranchIndexes is not None:
                 # First handle any remaps for new code indexes
                 for branchIndex in lineBranchIndexes:
-                    if branchIndex in newCodeIndexes:
+                    if branchIndex in newBranchIndexesMap:
                         newLine = self.replaceBranchIndexInLine(newLine, branchIndex, newBranchIndexesMap[branchIndex])
                 # Then handle remaps for existing code indexes
                 for branchIndex in lineBranchIndexes:

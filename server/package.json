@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "babel-plugin-kwola": "0.0.18",
+    "babel-plugin-kwola": "0.0.19",
     "prettier": "^2.2.1"
   },
   "scripts": {
