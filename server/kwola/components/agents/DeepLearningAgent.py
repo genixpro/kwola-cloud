@@ -1171,11 +1171,14 @@ class DeepLearningAgent:
         width = pixelActionMap.shape[2]
         height = pixelActionMap.shape[1]
 
+        nonShrunkWidth = int(width / self.config['model_image_downscale_ratio'])
+        nonShrunkHeight = int(height / self.config['model_image_downscale_ratio'])
+
         # Here we have an extra check just in case there were no action maps to choose our random action from.
         if len(sampleActionMaps) == 0:
             # We just choose x,y coordinates and the action from anywhere on the screen.
-            actionX = random.randint(0, int(width / self.config['model_image_downscale_ratio']))
-            actionY = random.randint(0, int(height / self.config['model_image_downscale_ratio']))
+            actionX = random.randint(0, nonShrunkWidth - 1)
+            actionY = random.randint(0, nonShrunkHeight - 1)
             actionType = random.choice(range(len(self.actionsSorted)))
 
             # We give the user a warning since this situation should be pretty rare. If its coming up a lot,
@@ -1204,22 +1207,20 @@ class DeepLearningAgent:
         # Here we choose a random x,y coordinate from within the bounds of the action map.
         # We also have to compensate for the image downscaling here, since we need to lookup
         # the possible actions on the downscaled pixel action map
-        actionLeftLimit = max(0, int(min(width - 1, chosenActionMap.left * self.config['model_image_downscale_ratio'])))
-        actionRightLimit = max(0, int(min(width - 1, chosenActionMap.right * self.config['model_image_downscale_ratio'] - 1)))
+        actionLeftLimit = max(0, int(min(nonShrunkWidth - 1, chosenActionMap.left)))
+        actionRightLimit = max(0, int(min(nonShrunkWidth - 1, chosenActionMap.right - 1)))
         if actionRightLimit < actionLeftLimit:
             actionRightLimit = actionLeftLimit
 
-        actionTopLimit = max(0, int(min(height - 1, chosenActionMap.top * self.config['model_image_downscale_ratio'])))
-        actionBottomLimit = max(0, int(min(height - 1, chosenActionMap.bottom * self.config['model_image_downscale_ratio'] - 1)))
+        actionTopLimit = max(0, int(min(nonShrunkHeight - 1, chosenActionMap.top)))
+        actionBottomLimit = max(0, int(min(nonShrunkHeight - 1, chosenActionMap.bottom - 1)))
         if actionBottomLimit < actionTopLimit:
             actionBottomLimit = actionTopLimit
 
         actionX = random.randint(actionLeftLimit, actionRightLimit)
         actionY = random.randint(actionTopLimit, actionBottomLimit)
 
-        # Get the list of actions that are allowed at the chosen coordinates
-        # possibleActionsAtPixel = pixelActionMap[:, actionY, actionX]
-        # possibleActionIndexes = [actionIndex for actionIndex in range(len(self.actionsSorted)) if possibleActionsAtPixel[actionIndex]]
+        # Get the list of actions that are allowed for this action map
         possibleActionIndexes = self.allowedActionsForActionMap(chosenActionMap)
         # Create a list containing a weight for each of the possible actions.
         # The base weights are set in the configuration file and help bias the algorithm towards clicking and away
