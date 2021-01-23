@@ -726,7 +726,11 @@ class ActionsConfiguration extends Component {
                 enableRightClickCommand: config.enableRightClickCommand,
                 enableScrolling: config.enableScrolling,
                 enableDragging: config.enableDragging,
-                typingActions: config.typingActions
+                typingActions: config.typingActions.map((actionData, actionDataIndex) =>
+                {
+                    actionData.index = actionDataIndex;
+                    return actionData;
+                })
             });
         }
 
@@ -744,7 +748,10 @@ class ActionsConfiguration extends Component {
             enableRightClickCommand: this.state.enableRightClickCommand,
             enableScrolling: this.state.enableScrolling,
             enableDragging: this.state.enableDragging,
-            typingActions: this.state.typingActions
+            typingActions: this.state.typingActions.map((actionData) =>
+            {
+                return _.omit(actionData, "index");
+            })
         })
     }
 

@@ -129,17 +129,17 @@ class TypingActionConfiguration(EmbeddedDocument):
 
                 format = random.choice([1,2,3,4,5])
                 if format == 1:
-                    return letter1 + letter2 + digit1 + letter3 + " " + + digit2 + letter4 + letter5
+                    return letter1 + letter2 + digit1 + letter3 + " " + digit2 + letter4 + letter5
                 elif format == 2:
-                    return letter1 + digit1 + letter2 + " " + + digit2 + letter3 + letter4
+                    return letter1 + digit1 + letter2 + " " + digit2 + letter3 + letter4
                 if format == 3:
-                    return letter1 + digit1 + " " + + digit2 + letter2 + letter3
+                    return letter1 + digit1 + " " + digit2 + letter2 + letter3
                 if format == 4:
-                    return letter1 + digit1 + digit2 + " " + + digit3 + letter2 + letter3
+                    return letter1 + digit1 + digit2 + " " + digit3 + letter2 + letter3
                 if format == 5:
-                    return letter1 + letter2 + digit1 + " " + + digit2 + letter3 + letter4
+                    return letter1 + letter2 + digit1 + " " + digit2 + letter3 + letter4
                 if format == 6:
-                    return letter1 + letter2 + digit1 + digit2 + " " + + digit3 + letter3 + letter4
+                    return letter1 + letter2 + digit1 + digit2 + " " + digit3 + letter3 + letter4
 
             if chosen == "sixDigitZipCode":
                 return self.randomString('0123456789', 6)
