@@ -721,6 +721,7 @@ class ActionsConfiguration extends Component {
         if (this.props.defaultRunConfiguration)
         {
             const config = this.props.defaultRunConfiguration;
+            this.typingActionCounter = config.typingActions.length;
             this.setState({
                 enableDoubleClickCommand: config.enableDoubleClickCommand,
                 enableRightClickCommand: config.enableRightClickCommand,
