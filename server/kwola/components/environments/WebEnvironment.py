@@ -80,6 +80,8 @@ class WebEnvironment:
         else:
             self.plugins = defaultPlugins + plugins
 
+        self.windowSize = windowSize
+
         @autoretry()
         def createSession(sessionNumber):
             session = WebEnvironmentSession(config, sessionNumber, self.plugins, self.executionSessions[sessionNumber], browser=browser, windowSize=windowSize)
@@ -141,7 +143,7 @@ class WebEnvironment:
                 result = future.result()
             except TimeoutError:
                 getLogger().warning("Warning: timeout exceeded in WebEnvironment.getImages")
-                result = numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+                result = numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
                 session.hasBrowserDied = True
                 session.browserDeathReason = f"The browser timed out while inside WebEnvironment.getImages"
             results.append(result)
