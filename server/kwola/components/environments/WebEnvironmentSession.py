@@ -621,12 +621,12 @@ class WebEnvironmentSession:
                             canScroll: false,
                             canScrollUp: false,
                             canScrollDown: false,
-                            left: bounds.left + paddingLeft + 3,
-                            right: bounds.right - paddingRight - 3,
-                            top: bounds.top + paddingTop + 3,
-                            bottom: bounds.bottom - paddingBottom - 3,
-                            width: bounds.width - paddingLeft - paddingRight - 6,
-                            height: bounds.height - paddingTop - paddingBottom - 6,
+                            left: bounds.left + paddingLeft + 1,
+                            right: bounds.right - paddingRight - 1,
+                            top: bounds.top + paddingTop + 1,
+                            bottom: bounds.bottom - paddingBottom - 1,
+                            width: bounds.width - paddingLeft - paddingRight - 2,
+                            height: bounds.height - paddingTop - paddingBottom - 2,
                             elementType: element.tagName.toLowerCase(),
                             keywords: ( element.innerText + " " + element.getAttribute("class") + " " +
                                         element.getAttribute("name") + " " + element.getAttribute("id") + " " + 

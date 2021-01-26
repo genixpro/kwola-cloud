@@ -594,11 +594,14 @@ class DeepLearningAgent:
             # containing within an action map, we set those actions to 1. This allows the model to
             # know on a pixel by pixel basis what actions are possible to be executed on that pixel.
             for actionTypeIndex in actionTypes:
-                top = max(0, int(element['top'] * self.config['model_image_downscale_ratio']))
-                bottom = min(height, int(element['bottom'] * self.config['model_image_downscale_ratio']))
+                # We subtract / add 2 here just to compensate for the rounding error that is introduced
+                # from the image downscaling, which can sometimes cause pixels to be selected which are
+                # outside the bounds of the respective action map
+                top = max(0, int((element['top'] + 2) * self.config['model_image_downscale_ratio']))
+                bottom = min(height, int((element['bottom'] - 2) * self.config['model_image_downscale_ratio']))
 
-                left = max(0, int(element['left'] * self.config['model_image_downscale_ratio']))
-                right = min(width, int(element['right'] * self.config['model_image_downscale_ratio']))
+                left = max(0, int((element['left'] + 2) * self.config['model_image_downscale_ratio']))
+                right = min(width, int((element['right'] - 2) * self.config['model_image_downscale_ratio']))
 
                 pixelActionMap[actionTypeIndex, top:bottom, left:right] = 1
 
