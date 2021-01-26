@@ -40,6 +40,7 @@ import io
 import random
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import math
 import numpy
 import os
 import os.path
@@ -594,14 +595,14 @@ class DeepLearningAgent:
             # containing within an action map, we set those actions to 1. This allows the model to
             # know on a pixel by pixel basis what actions are possible to be executed on that pixel.
             for actionTypeIndex in actionTypes:
-                # We subtract / add 2 here just to compensate for the rounding error that is introduced
+                # We subtract / add 1 here just to compensate for the rounding error that is introduced
                 # from the image downscaling, which can sometimes cause pixels to be selected which are
                 # outside the bounds of the respective action map
-                top = max(0, int((element['top'] + 2) * self.config['model_image_downscale_ratio']))
-                bottom = min(height, int((element['bottom'] - 2) * self.config['model_image_downscale_ratio']))
+                top = max(0, int(math.ceil((element['top'] + 1) * self.config['model_image_downscale_ratio'])))
+                bottom = min(height, int(math.floor((element['bottom'] - 1) * self.config['model_image_downscale_ratio'])))
 
-                left = max(0, int((element['left'] + 2) * self.config['model_image_downscale_ratio']))
-                right = min(width, int((element['right'] - 2) * self.config['model_image_downscale_ratio']))
+                left = max(0, int(math.ceil((element['left'] + 1) * self.config['model_image_downscale_ratio'])))
+                right = min(width, int(math.floor((element['right'] - 1) * self.config['model_image_downscale_ratio'])))
 
                 pixelActionMap[actionTypeIndex, top:bottom, left:right] = 1
 
@@ -965,8 +966,8 @@ class DeepLearningAgent:
 
                     # Adjust the x, y coordinates by the downscale ration so that we get x,y coordinates
                     # on the original, unscaled image
-                    actionX = int(actionX / modelDownscale)
-                    actionY = int(actionY / modelDownscale)
+                    actionX = int(round(actionX / modelDownscale))
+                    actionY = int(round(actionY / modelDownscale))
 
                     dedupingStart = datetime.now()
 
@@ -1062,8 +1063,8 @@ class DeepLearningAgent:
 
                         # Adjust the x, y coordinates by the downscale ration so that we get x,y coordinates
                         # on the original, unscaled image
-                        actionX = int(actionX / modelDownscale)
-                        actionY = int(actionY / modelDownscale)
+                        actionX = int(round(actionX / modelDownscale))
+                        actionY = int(round(actionY / modelDownscale))
 
                     else:
                         # This usually occurs when all the probabilities do not add up to 1, generally this only happens when the neural network
