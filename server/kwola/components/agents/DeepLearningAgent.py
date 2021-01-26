@@ -1259,7 +1259,7 @@ class DeepLearningAgent:
             # If something went wrong, well this is very unusual. So we choose a totally random action at large.
             actionType = random.choice(range(len(self.actionsSorted)))
 
-        return int(actionX / self.config['model_image_downscale_ratio']), int(actionY / self.config['model_image_downscale_ratio']), actionType
+        return int(actionX), int(actionY), actionType
 
     def boundingBoxForActionMaps(self, actionMaps):
         left = numpy.min([actionMap.left for actionMap in actionMaps])
