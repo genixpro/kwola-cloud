@@ -1826,9 +1826,27 @@ class DeepLearningAgent:
                 cropTop = int(cropTop / self.config['model_image_downscale_ratio'])
                 cropRight = int(cropRight / self.config['model_image_downscale_ratio'])
                 cropBottom = int(cropBottom / self.config['model_image_downscale_ratio'])
-
                 cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)))
                 image[cropRectangle] = [self.config.debug_video_crop_box_color_r, self.config.debug_video_crop_box_color_g, self.config.debug_video_crop_box_color_b]
+
+                cropLeft -= int(self.config['training_crop_center_random_x_displacement'] / self.config['model_image_downscale_ratio'])
+                cropLeft = max(0, cropLeft)
+                cropRight += int(self.config['training_crop_center_random_x_displacement'] / self.config['model_image_downscale_ratio'])
+                cropRight = min(imageWidth, cropRight)
+                cropTop -= int(self.config['training_crop_center_random_y_displacement'] / self.config['model_image_downscale_ratio'])
+                cropTop = max(0, cropTop)
+                cropBottom += int(self.config['training_crop_center_random_y_displacement'] / self.config['model_image_downscale_ratio'])
+                cropBottom = min(imageHeight, cropBottom)
+                cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)), shape=[topSize + imageHeight, leftSize+imageWidth], clip=True)
+                image[cropRectangle] = [self.config.debug_video_crop_box_color_r, self.config.debug_video_crop_box_color_g, self.config.debug_video_crop_box_color_b]
+
+                cropLeft, cropTop, cropRight, cropBottom = self.calculateTrainingCropPosition(actionCropX, actionCropY, imageCropWidth, imageCropHeight, nextStepCrop=True)
+                cropLeft = int(cropLeft / self.config['model_image_downscale_ratio'])
+                cropTop = int(cropTop / self.config['model_image_downscale_ratio'])
+                cropRight = int(cropRight / self.config['model_image_downscale_ratio'])
+                cropBottom = int(cropBottom / self.config['model_image_downscale_ratio'])
+                cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)))
+                image[cropRectangle] = [self.config.debug_video_next_step_crop_box_color_r, self.config.debug_video_next_step_crop_box_color_g, self.config.debug_video_next_step_crop_box_color_b]
 
             def addDebugTextToImage(image, trace):
                 fontSize = self.config.debug_video_text_font_size
@@ -2221,7 +2239,8 @@ class DeepLearningAgent:
             secondImage = numpy.copy(firstImage)
 
             addDebugActionCursorToImage(firstImage, [topSize + trace.actionPerformed.y, leftSize + trace.actionPerformed.x], trace.actionPerformed.type)
-            addCropViewToImage(firstImage, trace)
+            if includeNeuralNetworkCharts:
+                addCropViewToImage(firstImage, trace)
 
             secondImage[topSize:-bottomSize, leftSize:-rightSize] = rawImage * 255
 
