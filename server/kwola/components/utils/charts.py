@@ -12,7 +12,7 @@ import matplotlib
 import numpy
 import os
 import scipy.signal
-import tempfile`
+import tempfile
 matplotlib.use("Agg")
 
 def averageRewardForTestingStep(config, testingStepId):
