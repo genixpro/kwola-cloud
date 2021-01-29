@@ -1,10 +1,12 @@
+import os
+import base64
+from ...config.logger import getLogger
+
 def sendExperimentResults(config):
-    import os
     from sendgrid import SendGridAPIClient
     from sendgrid.helpers.mail import (
         Mail, Attachment, FileContent, FileName,
         FileType, Disposition, ContentId)
-    import base64
 
     message = Mail(
         from_email='brad@kwola.io',
@@ -28,7 +30,8 @@ def sendExperimentResults(config):
     elif 'SENDGRID_API_KEY' in os.environ:
         apiKey = os.environ.get('SENDGRID_API_KEY')
     else:
-        raise RuntimeError("There was no API key provided for Sendgrid. Please set sendgrid_api_key within your config.json file.")
+        getLogger().error("There was no API key provided for Sendgrid. Please set sendgrid_api_key within your config.json file.")
+        return
 
     sg = SendGridAPIClient(apiKey)
     response = sg.send(message)
