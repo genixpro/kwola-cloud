@@ -111,7 +111,7 @@ def generateFitnessChart(config, applicationId):
 
     ax.plot(range(len(fitnessValues)), fitnessValues, color='green')
 
-    ax.set_ylim(25, 100)
+    ax.set_ylim(0, 100)
 
     ax.set(xlabel='Testing Step #', ylabel='Fitness',
            title='Fitness per session')
