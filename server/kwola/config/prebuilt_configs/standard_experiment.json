@@ -266,7 +266,6 @@
   "training_update_target_network_every": 250,
   "training_write_prepared_sample_timeout": 60,
   "train_agent_loop_delete_folders_on_finish": [
-    "execution_traces",
     "prepared_samples",
     "videos"
   ],
