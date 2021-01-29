@@ -157,6 +157,17 @@ class ExecutionTrace(Document):
 
     actionExecutionTimes = DictField(FloatField())
 
+    # This records the application provided cumulative fitness value, indicating how well the model is doing on
+    # on this particular execution trace. This is often used in Kwola's internal experiments, which have their own
+    # internal measurements of the how good kwola's result was. This value is recorded prior to the action for this
+    # executions trace
+    startApplicationProvidedCumulativeFitness = FloatField()
+
+    # This records the application provided cumulative fitness value, indicating how well the model is doing on
+    # on this particular execution trace. This is often used in Kwola's internal experiments, which have their own
+    # internal measurements of the how good kwola's result was. This value is recorded after this execution trace.
+    endApplicationProvidedCumulativeFitness = FloatField()
+
     # We use Python getter / setter methods to transparently compress and decompress
     # these fields as they go into and out of the database model.
     @property
