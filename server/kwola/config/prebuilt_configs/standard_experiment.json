@@ -79,6 +79,7 @@
   "discounted_future_reward_convolution_kernel_size": 3,
   "discounted_future_reward_convolution_padding": 1,
   "discounted_future_reward_convolution_stride": 1,
+  "email_results": true,
   "enable_400_error": true,
   "enable_401_error": false,
   "enable_403_error": false,

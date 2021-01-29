@@ -320,6 +320,8 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
     chartGenerationFuture = None
 
+    loopsCompleted = 0
+
     while trainingSequence.trainingLoopsCompleted < config['training_loops_needed']:
         getLogger().info(f"Starting a single training loop. Loops completed: {trainingSequence.trainingLoopsCompleted}")
 
@@ -406,12 +408,13 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
         if (trainingSequence.trainingLoopsCompleted % config['chart_generation_frequency']) == 0:
             enableCumulativeCoverage = bool(trainingSequence.trainingLoopsCompleted % config['chart_generate_cumulative_coverage_frequency'] == 0)
             chartGenerationFuture = AsyncThreadFuture(generateAllCharts, args=[config, None, enableCumulativeCoverage])
+        loopsCompleted += 1
         getLogger().info(f"Completed one parallel training & testing step! Hooray!")
 
     if chartGenerationFuture is not None:
         chartGenerationFuture.wait()
 
-    generateAllCharts(config, applicationId=None, enableCumulativeCoverage=True)
+    return loopsCompleted
 
 def trainAgent(config, exitOnFail=False):
     try:
@@ -469,13 +472,17 @@ def trainAgent(config, exitOnFail=False):
         runRandomInitialization(config, trainingSequence, exitOnFail=exitOnFail)
         trainingSequence.saveToDisk(config)
 
-    runMainTrainingLoop(config, trainingSequence, exitOnFail=exitOnFail)
+    loopsCompleted = runMainTrainingLoop(config, trainingSequence, exitOnFail=exitOnFail)
 
-    generateAllCharts(config, enableCumulativeCoverage=True)
+    generateAllCharts(config, applicationId=None, enableCumulativeCoverage=True)
 
     trainingSequence.status = "completed"
     trainingSequence.endTime = datetime.now()
     trainingSequence.saveToDisk(config)
+
+    if config['email_results'] and loopsCompleted > 0:
+        from ..components.utils.email import sendExperimentResults
+        sendExperimentResults(config)
 
     for folder in config['train_agent_loop_delete_folders_on_finish']:
         fullPath = config.getKwolaUserDataDirectory(folder)

@@ -12,7 +12,7 @@ import matplotlib
 import numpy
 import os
 import scipy.signal
-import tempfile
+import tempfile`
 matplotlib.use("Agg")
 
 def averageRewardForTestingStep(config, testingStepId):
@@ -124,7 +124,7 @@ def generateFitnessChart(config, applicationId):
             config.saveKwolaFileData("charts", "fitness_chart.png", f.read())
         os.unlink(localFilePath)
 
-        print(f"Best Fitness Value: {bestFitness}", flush=True)
+        getLogger().info(f"Best Fitness Value: {bestFitness}", flush=True)
 
         pool.close()
         pool.join()
