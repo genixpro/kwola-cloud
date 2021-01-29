@@ -103,30 +103,31 @@ def generateFitnessChart(config, applicationId):
 
     fitnessValues = [future.get() for future in fitnessValueFutures if future.get() is not None]
 
-    bestFitness = numpy.max(fitnessValues)
+    if len(fitnessValues) > 0:
+        bestFitness = numpy.max(fitnessValues)
 
-    fig, ax = plt.subplots()
+        fig, ax = plt.subplots()
 
-    fitnessValues = scipy.signal.medfilt(fitnessValues, kernel_size=9)
+        fitnessValues = scipy.signal.medfilt(fitnessValues, kernel_size=9)
 
-    ax.plot(range(len(fitnessValues)), fitnessValues, color='green')
+        ax.plot(range(len(fitnessValues)), fitnessValues, color='green')
 
-    ax.set_ylim(0, 100)
+        ax.set_ylim(0, 100)
 
-    ax.set(xlabel='Testing Step #', ylabel='Fitness',
-           title='Fitness per session')
-    ax.grid()
+        ax.set(xlabel='Testing Step #', ylabel='Fitness',
+               title='Fitness per session')
+        ax.grid()
 
-    _, localFilePath = tempfile.mkstemp(suffix=".png")
-    fig.savefig(localFilePath)
-    with open(localFilePath, 'rb') as f:
-        config.saveKwolaFileData("charts", "fitness_chart.png", f.read())
-    os.unlink(localFilePath)
+        _, localFilePath = tempfile.mkstemp(suffix=".png")
+        fig.savefig(localFilePath)
+        with open(localFilePath, 'rb') as f:
+            config.saveKwolaFileData("charts", "fitness_chart.png", f.read())
+        os.unlink(localFilePath)
 
-    print(f"Best Fitness Value: {bestFitness}", flush=True)
+        print(f"Best Fitness Value: {bestFitness}", flush=True)
 
-    pool.close()
-    pool.join()
+        pool.close()
+        pool.join()
 
 def generateCoverageChart(config, applicationId):
     getLogger().info(f"Generating the coverage chart")
