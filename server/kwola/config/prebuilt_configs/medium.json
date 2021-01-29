@@ -267,6 +267,7 @@
   "training_write_prepared_sample_timeout": 60,
   "train_agent_loop_delete_folders_on_finish": [],
   "typing_actions": [],
+  "wait_for_other_kwola_processes_to_exit": true,
   "web_session_action_map_max_keyword_size": 1024,
   "web_session_autologin_sleep_times": 2,
   "web_session_enable_chrome": true,

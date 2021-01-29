@@ -48,6 +48,22 @@ import random
 import subprocess
 import sys
 import tempfile
+import psutil
+
+def checkIfProcessRunning(processName):
+    """
+    Check if there is any running process that contains the given name processName.
+    """
+    #Iterate over the all the running process
+    for proc in psutil.process_iter():
+        try:
+            # Check if process name contains the given name string.
+            if processName.lower() in proc.name().lower() and proc.pid != os.getpid():
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return False
+
 
 def getAvailableBrowsers(config):
     browsers = []
@@ -404,6 +420,12 @@ def trainAgent(config, exitOnFail=False):
         pass
 
     config = KwolaCoreConfiguration(config)
+
+    if config['wait_for_other_kwola_processes_to_exit']:
+        if checkIfProcessRunning("kwola"):
+            getLogger().info("Waiting for the other Kwola process to finish running. If you want to run multiple Kwola processes at once, please change the wait_for_other_kwola_processes_to_exit configuration variable.")
+            while checkIfProcessRunning("kwola"):
+                time.sleep(1)
 
     # Load and save the agent to make sure all training subprocesses are synced
     agent = DeepLearningAgent(config=config, whichGpu=None)
