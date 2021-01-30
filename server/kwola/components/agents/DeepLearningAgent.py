@@ -782,7 +782,7 @@ class DeepLearningAgent:
         # and which ones can just have a random action generated for them. These lists
         # hold all the data required for the sub-environments we are going to process through
         # the neural network
-        batchSampleIndexes = []
+        batchSessionIndexes = []
         imageBatch = []
         symbolListOffsets = []
         symbolListBatch = []
@@ -797,7 +797,7 @@ class DeepLearningAgent:
         modelDownscale = self.config['model_image_downscale_ratio']
 
         zippedValues = zip(range(len(processedImages)), processedImages, symbolLists, symbolWeights, envActionMaps, recentActions)
-        for sampleIndex, image, sampleSymbolList, sampleSymbolWeights, sampleActionMaps, sampleRecentActions in zippedValues:
+        for sessionIndex, image, sampleSymbolList, sampleSymbolWeights, sampleActionMaps, sampleRecentActions in zippedValues:
             # Ok here is a very important mechanism. Technically what is being calculated below is the "epsilon" value from classical
             # Q-learning. I'm just giving it a different name which suits my style. The "epsilon" is just the probability that the
             # algorithm will choose a random action instead of the prediction. In our situation, we have two values, because we have
@@ -814,8 +814,27 @@ class DeepLearningAgent:
             # code.
             # Therefore we make the following two equations which basically combine these two mechanisms to compute the epsilon values for the
             # algorithm.
-            randomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.25 * (1 + (stepNumber / self.config['testing_sequence_length']))
-            weightedRandomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.25 * (1 + (stepNumber / self.config['testing_sequence_length']))
+            if len(processedImages) > 1:
+                sessionIndexPortion = (float(sessionIndex) / float(len(processedImages) - 1))
+            else:
+                sessionIndexPortion = 0.5
+
+            stepNumberPortion = (stepNumber / (self.config['testing_sequence_length'] - 1))
+
+            randomActionActionIndexRateRange = self.config['random_action_action_index_end_random_rate'] - self.config['random_action_action_index_start_random_rate']
+            weightedRandomActionActionIndexRateRange = self.config['random_action_action_index_end_weighted_random_rate'] - self.config['random_action_action_index_start_weighted_random_rate']
+
+            randomActionActionIndexRandomRate = (self.config['random_action_action_index_start_random_rate'] + randomActionActionIndexRateRange * stepNumberPortion)
+            weightedRandomActionActionIndexRandomRate = (self.config['random_action_action_index_start_weighted_random_rate'] + weightedRandomActionActionIndexRateRange * stepNumberPortion)
+
+            randomActionSessionIndexRateRange = self.config['random_action_session_index_end_random_rate'] - self.config['random_action_session_index_start_random_rate']
+            weightedRandomActionSessionIndexRateRange = self.config['random_action_session_index_end_weighted_random_rate'] - self.config['random_action_session_index_start_weighted_random_rate']
+
+            randomActionSessionIndexRandomRate = (self.config['random_action_session_index_start_random_rate'] + randomActionSessionIndexRateRange * sessionIndexPortion)
+            weightedRandomActionSessionIndexRandomRate = (self.config['random_action_session_index_start_weighted_random_rate'] + weightedRandomActionSessionIndexRateRange * sessionIndexPortion)
+
+            randomActionProbability = math.sqrt(randomActionActionIndexRandomRate) * math.sqrt(randomActionSessionIndexRandomRate)
+            weightedRandomActionProbability = math.sqrt(weightedRandomActionActionIndexRandomRate) * math.sqrt(weightedRandomActionSessionIndexRandomRate)
 
             # Filter the action maps to reduce instances where the algorithm is repeating itself over and over again.
             filteredSampleActionMaps, sampleActionRecentActionCounts = self.filterActionMapsToPreventRepeatActions(sampleActionMaps, sampleRecentActions, width, height)
@@ -828,7 +847,7 @@ class DeepLearningAgent:
             if random.random() > randomActionProbability and not shouldBeRandom:
                 # We will make use of the predictions of the neural network.
                 # Add this sample to all of the lists that will be processed later
-                batchSampleIndexes.append(sampleIndex)
+                batchSessionIndexes.append(sessionIndex)
                 imageBatch.append(image)
                 symbolListOffsets.append(len(symbolListBatch))
                 symbolListBatch.extend(sampleSymbolList)
@@ -856,7 +875,7 @@ class DeepLearningAgent:
                 # back into a list in the same order as the original list. Therefore, when we add an action to this actions list,
                 # we add it along with the index of the sample, so that we can later sort the actions list by that sample index and restore
                 # the original ordering.
-                actions.append((sampleIndex, action))
+                actions.append((sessionIndex, action))
 
         randomActionsTime = (datetime.now() - startTime).total_seconds()
         startTime = datetime.now()
@@ -936,9 +955,9 @@ class DeepLearningAgent:
             predictionActionProcessingStartTime = datetime.now()
 
             # Now we iterate over all of the data and results for each of the sub environments
-            for sampleIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues,\
+            for sessionIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues,\
                 sampleRecentActions, filteredSampleActionMaps, originalSampleActionMaps, sampleActionRecentActionCounts,\
-                samplePixelActionMap in zip(batchSampleIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
+                samplePixelActionMap in zip(batchSessionIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
                                                                   recentActionsBatch, filteredActionMapsBatch, originalActionMapsBatch,
                                                                   recentActionsCountsBatch, pixelActionMapsBatch):
                 startTime = datetime.now()
@@ -1086,12 +1105,12 @@ class DeepLearningAgent:
                 action.wasRepeatOverride = override
                 # Here we append both the action and the original sample index. The original sample index
                 # is later used to recover the original ordering of the actions list
-                actions.append((sampleIndex, action))
+                actions.append((sessionIndex, action))
 
             predictionActionProcessingTime = (datetime.now() - predictionActionProcessingStartTime).total_seconds()
 
-        # The actions list now contained tuples of (sampleIndex, action). Now we just need to use
-        # the sampleIndex to sort this list back into the original ordering of the samples.
+        # The actions list now contained tuples of (sessionIndex, action). Now we just need to use
+        # the sessionIndex to sort this list back into the original ordering of the samples.
         # This ensures that the actions we return as a result are in the exact same order as the
         # sub environments we received as input.
         sortedActions = sorted(actions, key=lambda row: row[0])
