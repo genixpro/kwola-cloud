@@ -163,7 +163,7 @@ def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
         chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
         chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
 
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize, testStepIndexWithinRun=testStepIndex)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
@@ -254,7 +254,7 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
         chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
 
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize, testStepIndex=testStepIndex)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {

@@ -696,7 +696,7 @@ class DeepLearningAgent:
 
 
 
-    def nextBestActions(self, stepNumber, rawImages, envActionMaps, pastExecutionTraces, shouldBeRandom=False):
+    def nextBestActions(self, stepNumber, rawImages, envActionMaps, pastExecutionTraces, testStepIndexWithinRun, shouldBeRandom=False):
         """
             This is the main prediction / inference function for the agent. This function will decide what is the next
             best action to take, given a particular state.
@@ -711,6 +711,7 @@ class DeepLearningAgent:
             :param pastExecutionTraces:  This should be a list of lists. The outer list should contain a list for each sub
                                          environment. The inner list should be a list of kwola.datamodels.ExecutionTrace
                                          instances, providing all of the execution traces leading up to the current state
+            :param testStepIndexWithinRun This is the index of this testing step within the overall testing run.
             :param shouldBeRandom: Whether or not the actions should be selected entirely randomly, or should use them
                                    predictions of the machine learning algorithm.
             :return:
@@ -820,21 +821,30 @@ class DeepLearningAgent:
                 sessionIndexPortion = 0.5
 
             stepNumberPortion = (stepNumber / (self.config['testing_sequence_length'] - 1))
+            testStepIndexPortion = ((min(self.config['random_action_test_step_index_max'], testStepIndexWithinRun)) / (self.config['random_action_test_step_index_max'] - 1))
 
             randomActionActionIndexRateRange = self.config['random_action_action_index_end_random_rate'] - self.config['random_action_action_index_start_random_rate']
             weightedRandomActionActionIndexRateRange = self.config['random_action_action_index_end_weighted_random_rate'] - self.config['random_action_action_index_start_weighted_random_rate']
-
             randomActionActionIndexRandomRate = (self.config['random_action_action_index_start_random_rate'] + randomActionActionIndexRateRange * stepNumberPortion)
             weightedRandomActionActionIndexRandomRate = (self.config['random_action_action_index_start_weighted_random_rate'] + weightedRandomActionActionIndexRateRange * stepNumberPortion)
 
             randomActionSessionIndexRateRange = self.config['random_action_session_index_end_random_rate'] - self.config['random_action_session_index_start_random_rate']
             weightedRandomActionSessionIndexRateRange = self.config['random_action_session_index_end_weighted_random_rate'] - self.config['random_action_session_index_start_weighted_random_rate']
-
             randomActionSessionIndexRandomRate = (self.config['random_action_session_index_start_random_rate'] + randomActionSessionIndexRateRange * sessionIndexPortion)
             weightedRandomActionSessionIndexRandomRate = (self.config['random_action_session_index_start_weighted_random_rate'] + weightedRandomActionSessionIndexRateRange * sessionIndexPortion)
 
-            randomActionProbability = math.sqrt(randomActionActionIndexRandomRate) * math.sqrt(randomActionSessionIndexRandomRate)
-            weightedRandomActionProbability = math.sqrt(weightedRandomActionActionIndexRandomRate) * math.sqrt(weightedRandomActionSessionIndexRandomRate)
+            randomActionTestStepIndexRateRange = self.config['random_action_test_step_index_end_random_rate'] - self.config['random_action_test_step_index_start_random_rate']
+            weightedRandomActionTestStepIndexRateRange = self.config['random_action_test_step_index_end_weighted_random_rate'] - self.config['random_action_test_step_index_start_weighted_random_rate']
+            randomActionTestStepIndexRandomRate = (self.config['random_action_test_step_index_start_random_rate'] + randomActionTestStepIndexRateRange * testStepIndexPortion)
+            weightedRandomActionTestStepIndexRandomRate = (self.config['random_action_test_step_index_start_weighted_random_rate'] + weightedRandomActionTestStepIndexRateRange * testStepIndexPortion)
+
+            randomActionProbability = math.sqrt(randomActionActionIndexRandomRate) * \
+                                      math.sqrt(randomActionSessionIndexRandomRate) * \
+                                      (1.0 - math.sqrt(randomActionTestStepIndexRandomRate))
+
+            weightedRandomActionProbability = math.sqrt(weightedRandomActionActionIndexRandomRate) * \
+                                              math.sqrt(weightedRandomActionSessionIndexRandomRate) * \
+                                              (1.0 - math.sqrt(weightedRandomActionTestStepIndexRandomRate))
 
             # Filter the action maps to reduce instances where the algorithm is repeating itself over and over again.
             filteredSampleActionMaps, sampleActionRecentActionCounts = self.filterActionMapsToPreventRepeatActions(sampleActionMaps, sampleRecentActions, width, height)

@@ -41,7 +41,7 @@ def main():
     configDir = getConfigurationDirFromCommandLineArgs()
     config = KwolaCoreConfiguration.loadConfigurationFromDirectory(configDir)
 
-    testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config))
+    testingStep = TestingStep(id=CustomIDField.generateNewUUID(TestingStep, config), testStepIndexWithinRun=0)
     testingStep.saveToDisk(config)
 
     RunTestingStep.runTestingStep(configDir, str(testingStep.id))
