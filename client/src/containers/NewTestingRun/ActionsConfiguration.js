@@ -282,7 +282,7 @@ export class TypingActionEditor extends Component
     {
         if (this.state.action.generateRandom)
         {
-            axios.post(`/typing_action_configuration_examples`, this.state.action).then((response) => {
+            axios.post(`/typing_action_configuration_examples`, _.omit(this.state.action, "index")).then((response) => {
                 const examples = response.data.examples;
                 this.setState({examples});
             });
