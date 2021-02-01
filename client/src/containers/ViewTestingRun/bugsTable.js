@@ -24,6 +24,8 @@ import Typography from '../../components/uielements/typography';
 
 import {FullColumn, HalfColumn, OneThirdColumn, Column, Row, TwoThirdColumn} from "../../components/utility/rowColumn";
 import Papersheet from "../../components/utility/papersheet/papersheet.style";
+import ExportBugToJIRAButton from "../ViewBug/ExportBugToJIRAButton";
+import PublishIcon from '@material-ui/icons/Publish';
 
 
 class BugsTable extends Component
@@ -465,6 +467,16 @@ class BugsTable extends Component
                                                                         onClick={(evt) => this.toggleMuteError(evt, bug)}>
                                                                     <VolumeOffIcon />
                                                                 </Button>
+                                                                <ExportBugToJIRAButton
+                                                                    bug={bug}
+                                                                    size="small"
+                                                                    variant="contained"
+                                                                    color="default"
+                                                                    buttonType={"regular"}
+                                                                    className={"bugs-table-export-button"}
+                                                                >
+                                                                    <PublishIcon />
+                                                                </ExportBugToJIRAButton>
                                                             </div>
                                                          </div>;
                                             })

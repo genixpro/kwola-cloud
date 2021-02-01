@@ -15,11 +15,11 @@ class ProxyPluginBase:
         pass
 
 
-    def getRewriteMode(self, resource, fileData, priorResourceVersion):
+    def getRewriteMode(self, resource, fileData, resourceVersion, priorResourceVersion):
         pass
 
 
-    def rewriteFile(self, resource, fileData, priorResourceVersion):
+    def rewriteFile(self, resource, fileData, resourceVersion, priorResourceVersion):
         pass
 
 

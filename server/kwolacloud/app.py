@@ -1,19 +1,11 @@
 from .config.config import loadCloudConfiguration
 from flask import Flask
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
 from flask_restful import Api
-from kombu import Queue
-from mongoengine import connect
-import stripe
-import time
-from .db import connectToMongoWithRetries
-from .datamodels.ApplicationModel import ApplicationModel
 from .auth import authenticate
 from flask_caching import Cache
 import google.cloud.logging
 from .helpers.slack import SlackLogHandler
-from kwola.config.logger import getLogger, setupLocalLogging
 from kwolacloud.helpers.initialize import initializeKwolaCloudProcess
 
 initializeKwolaCloudProcess()
@@ -45,7 +37,7 @@ from .resources.ExecutionSessionResource import ExecutionSessionGroup, Execution
 from .resources.TrainingSequenceResource import TrainingSequencesGroup, TrainingSequencesSingle
 from .resources.TrainingStepResources import TrainingStepGroup, TrainingStepSingle
 from .resources.TestingRunResource import TestingRunsGroup, TestingRunsSingle, TestingRunsRestart, TestingRunsRestartTraining, TestingRunsDownloadZip, PauseTestingRun, ResumeTestingRun
-from .resources.BugsResource import BugsGroup, BugsSingle, BugVideo, BugFrameSpriteSheet, BugErrorFrame, BugsAdminTriggerReproduction
+from .resources.BugsResource import BugsGroup, BugsSingle, BugVideo, BugFrameSpriteSheet, BugErrorFrame, BugsAdminTriggerReproduction, ExportBugToJIRA
 from .resources.Webhooks import StripeWebhook
 from .resources.Billing import BillingURLResource
 from .resources.PromoCodes import PromoCodes
@@ -56,6 +48,8 @@ from .resources.RecurringTestingTriggerResource import RecurringTestingTriggerGr
 from .resources.InternalSlackNotification import InternalSlackNotification
 from .resources.SelfTest import AutologinForSelfTest
 from .resources.BehaviouralDifferencesResource import BehaviouralDifferencesGroup
+from .resources.GmailMarketingAuth import GmailMarketingAuthStart, GmailMarketingAuthCallback, GmailMarketingTestEmail
+from .resources.TypingActionConfigurationResource import TypingActionConfigurationExamples
 
 api.add_resource(ApplicationGroup, '/api/application')
 api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
@@ -108,6 +102,7 @@ api.add_resource(BugVideo, '/api/bugs/<string:bug_id>/video')
 api.add_resource(BugFrameSpriteSheet, '/api/bugs/<string:bug_id>/frame_sprite_sheet')
 api.add_resource(BugErrorFrame, '/api/bugs/<string:bug_id>/error_frame')
 api.add_resource(BugsAdminTriggerReproduction, '/api/bugs/<string:bug_id>/start_reproduction_job')
+api.add_resource(ExportBugToJIRA, '/api/bugs/<string:bug_id>/export_to_jira')
 
 api.add_resource(BillingURLResource, '/api/billing')
 api.add_resource(PromoCodes, '/api/promocodes')
@@ -124,6 +119,12 @@ api.add_resource(RecurringTestingTriggerGroup, '/api/recurring_testing_trigger')
 api.add_resource(RecurringTestingTriggerSingle, '/api/recurring_testing_trigger/<string:recurring_testing_trigger_id>')
 api.add_resource(InternalSlackNotification, '/api/internal_slack_notification')
 api.add_resource(BehaviouralDifferencesGroup, '/api/behavioural_differences')
+
+api.add_resource(GmailMarketingAuthStart, '/api/marketing_auth_start')
+api.add_resource(GmailMarketingAuthCallback, '/api/marketing_auth')
+api.add_resource(GmailMarketingTestEmail, '/api/marketing_test_email')
+
+api.add_resource(TypingActionConfigurationExamples, '/api/typing_action_configuration_examples')
 
 if cloudConfig['features']['enableSelfTestLoginEndpoint']:
     api.add_resource(AutologinForSelfTest, '/api/self_test_login')

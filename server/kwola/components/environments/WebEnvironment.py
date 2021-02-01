@@ -48,6 +48,7 @@ from ..plugins.core.RecordDotNetRPCErrors import RecordDotNetRPCErrors
 from ..plugins.core.RecordPageURLs import RecordPageURLs
 from ..plugins.core.RecordScreenshots import RecordScreenshots
 from ..plugins.core.RecordPageHTML import RecordPageHTML
+from ..plugins.core.RecordFitness import RecordFitness
 
 
 class WebEnvironment:
@@ -68,7 +69,8 @@ class WebEnvironment:
             RecordDotNetRPCErrors(),
             RecordAllPaths(),
             RecordBranchTrace(),
-            RecordScreenshots(config)
+            RecordScreenshots(config),
+            RecordFitness()
         ]
 
         if config['enable_record_page_html']:
@@ -79,6 +81,8 @@ class WebEnvironment:
             self.plugins = defaultPlugins
         else:
             self.plugins = defaultPlugins + plugins
+
+        self.windowSize = windowSize
 
         @autoretry()
         def createSession(sessionNumber):
@@ -141,7 +145,7 @@ class WebEnvironment:
                 result = future.result()
             except TimeoutError:
                 getLogger().warning("Warning: timeout exceeded in WebEnvironment.getImages")
-                result = numpy.zeros(shape=[self.config['web_session_height'], self.config['web_session_width'], 3])
+                result = numpy.zeros(shape=[self.config['web_session_height'][self.windowSize], self.config['web_session_width'][self.windowSize], 3])
                 session.hasBrowserDied = True
                 session.browserDeathReason = f"The browser timed out while inside WebEnvironment.getImages"
             results.append(result)

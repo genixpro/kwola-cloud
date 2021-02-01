@@ -73,10 +73,12 @@ class ApplicationModel(Document):
 
     enablePushBugsToJIRA = BooleanField(default=True)
 
+    # Deprecated
     hasFirstTestingRunLaunched = BooleanField(default=False)
 
     hasFirstTestingRunCompleted = BooleanField(default=False)
 
+    # Deprecated
     hasSentSupportOfferEmail = BooleanField(default=False)
 
     hasSentFeedbackRequestEmail = BooleanField(default=False)

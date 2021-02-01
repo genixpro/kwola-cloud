@@ -14,7 +14,7 @@ import dateutil
 import tempfile
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from ..helpers.email import sendOfferSupportEmail, sendRequestFeedbackEmail
+from ..helpers.email import sendFirstOfferSupportEmail, sendRequestFeedbackEmail, countEmailsReceivedFromAddressOnGmail, sendSecondSupportOfferEmail, sendThirdSupportOfferEmail
 from ..helpers.auth0 import loadAuth0Service, updateUserProfileMetadataValue
 from ..config.config import loadCloudConfiguration
 import subprocess
@@ -30,9 +30,10 @@ def runHourlyTasks():
 
         # Try to send these in the day time.
         if now.hour >= 11 and now.hour <= 16:
-            sendSupportOfferEmailsOnApplications()
             if config['features']['enableSupportOfferEmailsOnUsers']:
-                sendSupportOfferEmailsOnUsers()
+                sendFirstSupportOfferEmailsOnUsers()
+                sendSecondSupportOfferEmailsOnUsers()
+                sendThirdSupportOfferEmailsOnUsers()
             sendFeedbackRequestEmails()
 
         evaluateRecurringTestingTriggers()
@@ -48,34 +49,72 @@ def runHourlyTasks():
         pass
 
 
-def sendSupportOfferEmailsOnApplications():
-    applications = ApplicationModel.objects(
-        Q(status__exists=False) | Q(status="active"),
-        hasFirstTestingRunLaunched=False,
-        creationDate__lt=(datetime.now() - relativedelta(hours=24)),
-        hasSentSupportOfferEmail=False
-    )
 
-    logging.info(f"Found {len(applications)} application objects that need a support offer sent to them.")
-
-    for app in applications:
-        sendOfferSupportEmail(application=app)
-        app.hasSentSupportOfferEmail = True
-        app.save()
-
-
-
-
-def sendSupportOfferEmailsOnUsers():
+def sendFirstSupportOfferEmailsOnUsers():
     authService = loadAuth0Service()
 
-    users = authService.users.list(q=f"user_metadata.hasCreatedFirstApplication:false AND user_metadata.hasSentInitialSupportEmail:false AND created_at:[* TO {(datetime.now() - relativedelta(hours=24)).isoformat()}]")['users']
+    query = f"user_metadata.hasCreatedFirstApplication:false"
+    query += f" AND user_metadata.hasSentInitialSupportEmail:false"
+    query += f" AND user_metadata.hasReceivedEmailFromUser:false"
+    query += f" AND created_at:[* TO {(datetime.now() - relativedelta(hours=24)).isoformat()}]"
 
-    logging.info(f"Found {len(users)} users that need a support offer sent to them.")
+    users = authService.users.list(q=query)['users']
+
+    logging.info(f"Found {len(users)} users that need the first support offer email sent to them.")
 
     for user in users:
-        sendOfferSupportEmail(email=user['email'])
-        updateUserProfileMetadataValue(user['user_id'], "hasSentInitialSupportEmail", True)
+        email = user['email']
+        if countEmailsReceivedFromAddressOnGmail(email) > 0:
+            updateUserProfileMetadataValue(user['user_id'], "hasReceivedEmailFromUser", True)
+        else:
+            sendFirstOfferSupportEmail(email=user['email'])
+            updateUserProfileMetadataValue(user['user_id'], "hasSentInitialSupportEmail", True)
+
+
+def sendSecondSupportOfferEmailsOnUsers():
+    authService = loadAuth0Service()
+
+    query = f"user_metadata.hasCreatedFirstApplication:false"
+    query += f" AND user_metadata.hasSentInitialSupportEmail:true"
+    query += f" AND user_metadata.hasSentSecondSupportEmail:false"
+    query += f" AND user_metadata.hasReceivedEmailFromUser:false"
+    query += f" AND created_at:[* TO {(datetime.now() - relativedelta(days=4)).isoformat()}]"
+
+    users = authService.users.list(q=query)['users']
+
+    logging.info(f"Found {len(users)} users that need the second support offer email sent to them.")
+
+    for user in users:
+        email = user['email']
+        if countEmailsReceivedFromAddressOnGmail(email) > 0:
+            updateUserProfileMetadataValue(user['user_id'], "hasReceivedEmailFromUser", True)
+        else:
+            sendSecondSupportOfferEmail(email=user['email'])
+            updateUserProfileMetadataValue(user['user_id'], "hasSentSecondSupportEmail", True)
+
+
+
+def sendThirdSupportOfferEmailsOnUsers():
+    authService = loadAuth0Service()
+
+    query = f"user_metadata.hasCreatedFirstApplication:false"
+    query += f" AND user_metadata.hasSentInitialSupportEmail:true"
+    query += f" AND user_metadata.hasSentSecondSupportEmail:true"
+    query += f" AND user_metadata.hasSentThirdSupportEmail:false"
+    query += f" AND user_metadata.hasReceivedEmailFromUser:false"
+    query += f" AND created_at:[* TO {(datetime.now() - relativedelta(days=9)).isoformat()}]"
+
+    users = authService.users.list(q=query)['users']
+
+    logging.info(f"Found {len(users)} users that need the third support offer email sent to them.")
+
+    for user in users:
+        email = user['email']
+        if countEmailsReceivedFromAddressOnGmail(email) > 0:
+            updateUserProfileMetadataValue(user['user_id'], "hasReceivedEmailFromUser", True)
+        else:
+            sendThirdSupportOfferEmail(email=user['email'])
+            updateUserProfileMetadataValue(user['user_id'], "hasSentThirdSupportEmail", True)
 
 
 

@@ -167,10 +167,10 @@ COPY server/requirements-frozen.txt .
 
 # Install some dependencies which can take a long time to install. We do this ahead of running "ADD . /kwola" so the builds run faster when your
 # making code changes regularly
-RUN pip3 install --upgrade pip && \
+RUN pip3 install --upgrade pip==20.2.4 && \
     pip3 install --upgrade setuptools && \
     pip3 install --upgrade cryptography && \
-    pip3 install torch==1.5.0+cu101 torchvision==0.6.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html && \
+    pip3 install torch==1.7.1+cu101 torchvision==0.8.2+cu101 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html && \
     pip3 install -r requirements-frozen.txt && \
     chmod +r+r+r -R /usr/lib/python3/ && \
     rm -rf /root/.cache

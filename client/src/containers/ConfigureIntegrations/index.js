@@ -156,46 +156,29 @@ class ConfigureIntegrations extends Component {
                                     this.state.application.jiraAccessToken ?
                                         <div>
                                             <FormGroup>
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={this.state.application.enablePushBugsToJIRA}
-                                                            onChange={() => this.togglePushBugsToJiraEnabled()}
-                                                            value="enablePushBugsToJIRA"
-                                                        />
-                                                    }
-                                                    label="Post bugs found to JIRA?"
-                                                />
-                                                <br/>
+                                                <FormControl>
+                                                    <InputLabel id="jira-project-label">JIRA Project</InputLabel>
+                                                    <Select
+                                                        value={this.state.application.jiraProject}
+                                                        onChange={(evt) => this.changeJIRAProject(evt.target.value)}
+                                                        labelId={"jira-project-label"}
+                                                        input={<Input id="jira-project" />}
+                                                        placeholder={"Select a project..."}
+                                                    >
+                                                        {
+                                                            this.state.availableJIRAProjects.map((project) =>
+                                                            {
+                                                                return <MenuItem value={project.id} key={project.id}>
+                                                                    <span>{project.name}</span>
+                                                                </MenuItem>
+                                                            })
+                                                        }
+                                                    </Select>
+                                                </FormControl>
                                             </FormGroup>
                                             <br/>
                                             {
-                                                this.state.application.enablePushBugsToJIRA ?
-                                                    <FormGroup>
-                                                        <FormControl>
-                                                            <InputLabel id="jira-project-label">JIRA Project</InputLabel>
-                                                            <Select
-                                                                value={this.state.application.jiraProject}
-                                                                onChange={(evt) => this.changeJIRAProject(evt.target.value)}
-                                                                labelId={"jira-project-label"}
-                                                                input={<Input id="jira-project" />}
-                                                                placeholder={"Select a project..."}
-                                                            >
-                                                                {
-                                                                    this.state.availableJIRAProjects.map((project) =>
-                                                                    {
-                                                                        return <MenuItem value={project.id} key={project.id}>
-                                                                            <span>{project.name}</span>
-                                                                        </MenuItem>
-                                                                    })
-                                                                }
-                                                            </Select>
-                                                        </FormControl>
-                                                    </FormGroup> : null
-                                            }
-                                            <br/>
-                                            {
-                                                (this.state.application.enablePushBugsToJIRA && this.state.application.jiraProject) ? <FormGroup>
+                                                (this.state.application.jiraProject) ? <FormGroup>
                                                     <FormControl>
                                                         <InputLabel id="jira-issue-type-label">JIRA Issue Type</InputLabel>
                                                         <Select
@@ -217,6 +200,20 @@ class ConfigureIntegrations extends Component {
                                                     </FormControl>
                                                 </FormGroup> : null
                                             }
+                                            <br/>
+                                            <FormGroup>
+                                                <FormControlLabel
+                                                    control={
+                                                        <Checkbox
+                                                            checked={this.state.application.enablePushBugsToJIRA}
+                                                            onChange={() => this.togglePushBugsToJiraEnabled()}
+                                                            value="enablePushBugsToJIRA"
+                                                        />
+                                                    }
+                                                    label="Push all bugs found to JIRA?"
+                                                />
+                                                <br/>
+                                            </FormGroup>
                                             <br/>
                                             <div style={{"display": "flex", "flexDirection": "row"}}>
                                                 <LoaderButton onClick={() => this.disconnectJIRA()}>

@@ -28,20 +28,20 @@ spec:
         name: kwola-cloud-sha256
         readinessProbe:
           failureThreshold: 1
-          httpGet:
-            path: /api/home
-            port: 3000
-            scheme: HTTP
+          exec:
+            command:
+              - curl
+              - http://localhost:3000/api/home
           initialDelaySeconds: 5
           periodSeconds: 3
           successThreshold: 1
           timeoutSeconds: 5
         livenessProbe:
           failureThreshold: 5
-          httpGet:
-            path: /api/home
-            port: 3000
-            scheme: HTTP
+          exec:
+            command:
+              - curl
+              - http://localhost:3000/api/home
           initialDelaySeconds: 30
           periodSeconds: 5
           successThreshold: 1

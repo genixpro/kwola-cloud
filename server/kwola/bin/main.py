@@ -75,6 +75,7 @@ def getConfigurationDirFromCommandLineArgs(askTuneQuestion=True):
                 configName = questionary.select(
                     "Which configuration do you want to load for your model?",
                     choices=[
+                        'extra_small',
                         'small',
                         'medium',
                         'large',

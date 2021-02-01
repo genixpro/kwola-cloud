@@ -79,7 +79,7 @@ def runOneTestingStepForRun(testingRunId, testingStepIndex):
         chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
 
         newID = generateKwolaId(modelClass=TestingStep, kwolaConfig=config, owner=run.owner)
-        testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId, browser=chosenBrowser, windowSize=chosenWindowSize)
+        testingStep = TestingStep(id=newID, testingRunId=testingRunId, owner=run.owner, applicationId=run.applicationId, browser=chosenBrowser, windowSize=chosenWindowSize, testStepIndexWithinRun=testingStepIndex)
         testingStep.saveToDisk(config)
 
         logging.info(f"This testing step was given the id: {newID}")

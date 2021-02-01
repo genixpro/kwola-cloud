@@ -102,6 +102,7 @@ class ConfigureTestingRunOptions extends Component {
                                 <br/>
                                 <br/>
                                 <PathWhitelistConfiguration
+                                    application={this.state.application}
                                     defaultRunConfiguration={this.state.application.defaultRunConfiguration}
                                     onChange={(data) => this.changeRunConfiguration(data)}
                                     disabled={false}

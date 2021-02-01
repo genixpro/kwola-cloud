@@ -257,8 +257,7 @@ class RewriteProxy:
                         transformedContents = self.memoryCache[versionId]
                     else:
                         resourceVersion = ResourceVersion.loadFromDisk(versionId, self.config, printErrorOnFailure=False)
-                        if resourceVersion is not None:
-                            # print(resourceVersion.to_json())
+                        if resourceVersion is not None and resourceVersion.didRewriteResource:
                             transformedContents = resourceVersion.loadTranslatedResourceContents(self.config)
 
                     if transformedContents is not None:
@@ -325,6 +324,10 @@ class RewriteProxy:
             if len(unzippedFileContents) == 0:
                 self.memoryCache[versionId] = unzippedFileContents
 
+                resourceVersion.rewriteMode = None
+                resourceVersion.rewriteMessage = "The file had no contents that could be rewritten."
+                resourceVersion.didRewriteResource = False
+
                 if resource.versionSaveMode != "never":
                     resource.latestVersionId = resourceVersion.id
                     self.backgroundSaveExecutor.submit(resourceVersion.saveToDisk, self.config)
@@ -347,7 +350,10 @@ class RewriteProxy:
                 resource.rewritePluginName = chosenPlugin.rewritePluginName
                 resourceVersion.rewritePluginName = chosenPlugin.rewritePluginName
 
-                foundSimilarOriginal, foundOriginalFileURL = self.findSimilarOriginal(fileURL, unzippedFileContents)
+                if chosenPlugin.rewritePluginShouldCheckForSimilarOriginals:
+                    foundSimilarOriginal, foundOriginalFileURL = self.findSimilarOriginal(fileURL, unzippedFileContents)
+                else:
+                    foundSimilarOriginal, foundOriginalFileURL = None, None
 
                 if foundSimilarOriginal:
                     rewriteMessage = f"Decided not to translate file {fileURL} because it looks extremely similar to a request we have already seen at this url: {foundOriginalFileURL}. This is probably a JSONP style response, and we don't translate these since they are only ever called once, but can clog up the system."
@@ -361,7 +367,7 @@ class RewriteProxy:
                     resourceVersion.didRewriteResource = True
 
                 else:
-                    rewriteMode, rewriteMessage = chosenPlugin.getRewriteMode(resource, unzippedFileContents, priorVersion)
+                    rewriteMode, rewriteMessage = chosenPlugin.getRewriteMode(resource, unzippedFileContents, resourceVersion, priorVersion)
                     resource.rewriteMode = rewriteMode
                     resource.rewriteMessage = rewriteMessage
                     resourceVersion.rewriteMode = rewriteMode
@@ -374,7 +380,7 @@ class RewriteProxy:
                 if self.config['web_session_print_javascript_translation_info'] and resourceVersion.rewriteMessage:
                     getLogger().info(resourceVersion.rewriteMessage)
 
-                transformedContents = chosenPlugin.rewriteFile(resource, unzippedFileContents, priorVersion)
+                transformedContents = chosenPlugin.rewriteFile(resource, unzippedFileContents, resourceVersion, priorVersion)
 
                 if gzipped:
                     transformedContents = gzip.compress(transformedContents, compresslevel=9)

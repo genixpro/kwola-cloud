@@ -28,6 +28,7 @@ from ...datamodels.actions.TypeAction import TypeAction
 from ...datamodels.actions.ScrollingAction import ScrollingAction
 from ...datamodels.ExecutionSessionModel import ExecutionSession
 from ...datamodels.ExecutionTraceModel import ExecutionTrace
+from ...datamodels.TypingActionConfiguration import TypingActionConfiguration
 from .TraceNet import TraceNet
 from ..utils.video import chooseBestFfmpegVideoCodec
 from pprint import pprint
@@ -39,6 +40,7 @@ import io
 import random
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import math
 import numpy
 import os
 import os.path
@@ -199,11 +201,34 @@ class DeepLearningAgent:
             self.actionProbabilityBoostKeywords.append(["pass"])
             hasTypingAction = True
 
+        # We use this function because it is required to correctly bind the action name and action config to the lambda.
+        # If we just embed the lambda code in the loop below, then all the typing actions will take on the values of the
+        # of the final loop.
+        def generateOldCustomTypingActionLambda(actionName, text):
+            return lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=text)
+
+        # Old style custom typing actions, now deprecated
         for customTypingActionIndex, customTypingActionString in enumerate(config['custom_typing_action_strings']):
             actionName = f'typeCustom{customTypingActionIndex}'
-            self.actions[actionName] = lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=customTypingActionString)
+            self.actions[actionName] = generateOldCustomTypingActionLambda(actionName, customTypingActionString)
             self.actionBaseWeights.append(config['random_weight_custom_type_action'])
             self.actionProbabilityBoostKeywords.append([])
+            hasTypingAction = True
+
+        # We use this function because it is required to correctly bind the action name and action config to the lambda.
+        # If we just embed the lambda code in the loop below, then all the typing actions will take on the values of the
+        # of the final loop.
+        def generateTypingActionLambda(actionName, actionConfig):
+            return lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=actionConfig.generateText())
+
+        # New style custom typing actions
+        for typingActionIndex, typingActionData in enumerate(config['typing_actions']):
+            actionName = f'typeAction{typingActionIndex}'
+            actionConfig = TypingActionConfiguration(**typingActionData)
+
+            self.actions[actionName] = generateTypingActionLambda(actionName, actionConfig)
+            self.actionBaseWeights.append(config['random_weight_custom_type_action'])
+            self.actionProbabilityBoostKeywords.append(actionConfig.biasKeywords.split())
             hasTypingAction = True
 
         # Only add in the random number action if the user configured it
@@ -570,11 +595,14 @@ class DeepLearningAgent:
             # containing within an action map, we set those actions to 1. This allows the model to
             # know on a pixel by pixel basis what actions are possible to be executed on that pixel.
             for actionTypeIndex in actionTypes:
-                top = max(0, int(element['top'] * self.config['model_image_downscale_ratio']))
-                bottom = min(height, int(element['bottom'] * self.config['model_image_downscale_ratio']))
+                # We subtract / add 1 here just to compensate for the rounding error that is introduced
+                # from the image downscaling, which can sometimes cause pixels to be selected which are
+                # outside the bounds of the respective action map
+                top = max(0, int(math.ceil((element['top'] + 1) * self.config['model_image_downscale_ratio'])))
+                bottom = min(height, int(math.floor((element['bottom'] - 1) * self.config['model_image_downscale_ratio'])))
 
-                left = max(0, int(element['left'] * self.config['model_image_downscale_ratio']))
-                right = min(width, int(element['right'] * self.config['model_image_downscale_ratio']))
+                left = max(0, int(math.ceil((element['left'] + 1) * self.config['model_image_downscale_ratio'])))
+                right = min(width, int(math.floor((element['right'] - 1) * self.config['model_image_downscale_ratio'])))
 
                 pixelActionMap[actionTypeIndex, top:bottom, left:right] = 1
 
@@ -668,7 +696,7 @@ class DeepLearningAgent:
 
 
 
-    def nextBestActions(self, stepNumber, rawImages, envActionMaps, pastExecutionTraces, shouldBeRandom=False):
+    def nextBestActions(self, stepNumber, rawImages, envActionMaps, pastExecutionTraces, testStepIndexWithinRun, shouldBeRandom=False):
         """
             This is the main prediction / inference function for the agent. This function will decide what is the next
             best action to take, given a particular state.
@@ -683,6 +711,7 @@ class DeepLearningAgent:
             :param pastExecutionTraces:  This should be a list of lists. The outer list should contain a list for each sub
                                          environment. The inner list should be a list of kwola.datamodels.ExecutionTrace
                                          instances, providing all of the execution traces leading up to the current state
+            :param testStepIndexWithinRun This is the index of this testing step within the overall testing run.
             :param shouldBeRandom: Whether or not the actions should be selected entirely randomly, or should use them
                                    predictions of the machine learning algorithm.
             :return:
@@ -754,7 +783,7 @@ class DeepLearningAgent:
         # and which ones can just have a random action generated for them. These lists
         # hold all the data required for the sub-environments we are going to process through
         # the neural network
-        batchSampleIndexes = []
+        batchSessionIndexes = []
         imageBatch = []
         symbolListOffsets = []
         symbolListBatch = []
@@ -769,7 +798,7 @@ class DeepLearningAgent:
         modelDownscale = self.config['model_image_downscale_ratio']
 
         zippedValues = zip(range(len(processedImages)), processedImages, symbolLists, symbolWeights, envActionMaps, recentActions)
-        for sampleIndex, image, sampleSymbolList, sampleSymbolWeights, sampleActionMaps, sampleRecentActions in zippedValues:
+        for sessionIndex, image, sampleSymbolList, sampleSymbolWeights, sampleActionMaps, sampleRecentActions in zippedValues:
             # Ok here is a very important mechanism. Technically what is being calculated below is the "epsilon" value from classical
             # Q-learning. I'm just giving it a different name which suits my style. The "epsilon" is just the probability that the
             # algorithm will choose a random action instead of the prediction. In our situation, we have two values, because we have
@@ -786,8 +815,36 @@ class DeepLearningAgent:
             # code.
             # Therefore we make the following two equations which basically combine these two mechanisms to compute the epsilon values for the
             # algorithm.
-            randomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.25 * (1 + (stepNumber / self.config['testing_sequence_length']))
-            weightedRandomActionProbability = (float(sampleIndex + 1) / float(len(processedImages))) * 0.25 * (1 + (stepNumber / self.config['testing_sequence_length']))
+            if len(processedImages) > 1:
+                sessionIndexPortion = (float(sessionIndex) / float(len(processedImages) - 1))
+            else:
+                sessionIndexPortion = 0.5
+
+            stepNumberPortion = (stepNumber / (self.config['testing_sequence_length'] - 1))
+            testStepIndexPortion = ((min(self.config['random_action_test_step_index_max'], testStepIndexWithinRun)) / (self.config['random_action_test_step_index_max'] - 1))
+
+            randomActionActionIndexRateRange = self.config['random_action_action_index_end_random_rate'] - self.config['random_action_action_index_start_random_rate']
+            weightedRandomActionActionIndexRateRange = self.config['random_action_action_index_end_weighted_random_rate'] - self.config['random_action_action_index_start_weighted_random_rate']
+            randomActionActionIndexRandomRate = (self.config['random_action_action_index_start_random_rate'] + randomActionActionIndexRateRange * stepNumberPortion)
+            weightedRandomActionActionIndexRandomRate = (self.config['random_action_action_index_start_weighted_random_rate'] + weightedRandomActionActionIndexRateRange * stepNumberPortion)
+
+            randomActionSessionIndexRateRange = self.config['random_action_session_index_end_random_rate'] - self.config['random_action_session_index_start_random_rate']
+            weightedRandomActionSessionIndexRateRange = self.config['random_action_session_index_end_weighted_random_rate'] - self.config['random_action_session_index_start_weighted_random_rate']
+            randomActionSessionIndexRandomRate = (self.config['random_action_session_index_start_random_rate'] + randomActionSessionIndexRateRange * sessionIndexPortion)
+            weightedRandomActionSessionIndexRandomRate = (self.config['random_action_session_index_start_weighted_random_rate'] + weightedRandomActionSessionIndexRateRange * sessionIndexPortion)
+
+            randomActionTestStepIndexRateRange = self.config['random_action_test_step_index_end_random_rate'] - self.config['random_action_test_step_index_start_random_rate']
+            weightedRandomActionTestStepIndexRateRange = self.config['random_action_test_step_index_end_weighted_random_rate'] - self.config['random_action_test_step_index_start_weighted_random_rate']
+            randomActionTestStepIndexRandomRate = (self.config['random_action_test_step_index_start_random_rate'] + randomActionTestStepIndexRateRange * testStepIndexPortion)
+            weightedRandomActionTestStepIndexRandomRate = (self.config['random_action_test_step_index_start_weighted_random_rate'] + weightedRandomActionTestStepIndexRateRange * testStepIndexPortion)
+
+            randomActionProbability = math.sqrt(randomActionActionIndexRandomRate) * \
+                                      math.sqrt(randomActionSessionIndexRandomRate) * \
+                                      (1.0 - math.sqrt(randomActionTestStepIndexRandomRate))
+
+            weightedRandomActionProbability = math.sqrt(weightedRandomActionActionIndexRandomRate) * \
+                                              math.sqrt(weightedRandomActionSessionIndexRandomRate) * \
+                                              (1.0 - math.sqrt(weightedRandomActionTestStepIndexRandomRate))
 
             # Filter the action maps to reduce instances where the algorithm is repeating itself over and over again.
             filteredSampleActionMaps, sampleActionRecentActionCounts = self.filterActionMapsToPreventRepeatActions(sampleActionMaps, sampleRecentActions, width, height)
@@ -800,7 +857,7 @@ class DeepLearningAgent:
             if random.random() > randomActionProbability and not shouldBeRandom:
                 # We will make use of the predictions of the neural network.
                 # Add this sample to all of the lists that will be processed later
-                batchSampleIndexes.append(sampleIndex)
+                batchSessionIndexes.append(sessionIndex)
                 imageBatch.append(image)
                 symbolListOffsets.append(len(symbolListBatch))
                 symbolListBatch.extend(sampleSymbolList)
@@ -828,7 +885,7 @@ class DeepLearningAgent:
                 # back into a list in the same order as the original list. Therefore, when we add an action to this actions list,
                 # we add it along with the index of the sample, so that we can later sort the actions list by that sample index and restore
                 # the original ordering.
-                actions.append((sampleIndex, action))
+                actions.append((sessionIndex, action))
 
         randomActionsTime = (datetime.now() - startTime).total_seconds()
         startTime = datetime.now()
@@ -908,9 +965,9 @@ class DeepLearningAgent:
             predictionActionProcessingStartTime = datetime.now()
 
             # Now we iterate over all of the data and results for each of the sub environments
-            for sampleIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues,\
+            for sessionIndex, sampleEpsilon, sampleActionProbs, sampleAdvantageValues,\
                 sampleRecentActions, filteredSampleActionMaps, originalSampleActionMaps, sampleActionRecentActionCounts,\
-                samplePixelActionMap in zip(batchSampleIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
+                samplePixelActionMap in zip(batchSessionIndexes, epsilonsPerSample, actionProbabilities, advantageValues,
                                                                   recentActionsBatch, filteredActionMapsBatch, originalActionMapsBatch,
                                                                   recentActionsCountsBatch, pixelActionMapsBatch):
                 startTime = datetime.now()
@@ -938,8 +995,8 @@ class DeepLearningAgent:
 
                     # Adjust the x, y coordinates by the downscale ration so that we get x,y coordinates
                     # on the original, unscaled image
-                    actionX = int(actionX / modelDownscale)
-                    actionY = int(actionY / modelDownscale)
+                    actionX = int(round(actionX / modelDownscale))
+                    actionY = int(round(actionY / modelDownscale))
 
                     dedupingStart = datetime.now()
 
@@ -1035,8 +1092,8 @@ class DeepLearningAgent:
 
                         # Adjust the x, y coordinates by the downscale ration so that we get x,y coordinates
                         # on the original, unscaled image
-                        actionX = int(actionX / modelDownscale)
-                        actionY = int(actionY / modelDownscale)
+                        actionX = int(round(actionX / modelDownscale))
+                        actionY = int(round(actionY / modelDownscale))
 
                     else:
                         # This usually occurs when all the probabilities do not add up to 1, generally this only happens when the neural network
@@ -1058,12 +1115,12 @@ class DeepLearningAgent:
                 action.wasRepeatOverride = override
                 # Here we append both the action and the original sample index. The original sample index
                 # is later used to recover the original ordering of the actions list
-                actions.append((sampleIndex, action))
+                actions.append((sessionIndex, action))
 
             predictionActionProcessingTime = (datetime.now() - predictionActionProcessingStartTime).total_seconds()
 
-        # The actions list now contained tuples of (sampleIndex, action). Now we just need to use
-        # the sampleIndex to sort this list back into the original ordering of the samples.
+        # The actions list now contained tuples of (sessionIndex, action). Now we just need to use
+        # the sessionIndex to sort this list back into the original ordering of the samples.
         # This ensures that the actions we return as a result are in the exact same order as the
         # sub environments we received as input.
         sortedActions = sorted(actions, key=lambda row: row[0])
@@ -1147,11 +1204,14 @@ class DeepLearningAgent:
         width = pixelActionMap.shape[2]
         height = pixelActionMap.shape[1]
 
+        nonShrunkWidth = int(width / self.config['model_image_downscale_ratio'])
+        nonShrunkHeight = int(height / self.config['model_image_downscale_ratio'])
+
         # Here we have an extra check just in case there were no action maps to choose our random action from.
         if len(sampleActionMaps) == 0:
             # We just choose x,y coordinates and the action from anywhere on the screen.
-            actionX = random.randint(0, int(width / self.config['model_image_downscale_ratio']))
-            actionY = random.randint(0, int(height / self.config['model_image_downscale_ratio']))
+            actionX = random.randint(0, nonShrunkWidth - 1)
+            actionY = random.randint(0, nonShrunkHeight - 1)
             actionType = random.choice(range(len(self.actionsSorted)))
 
             # We give the user a warning since this situation should be pretty rare. If its coming up a lot,
@@ -1180,22 +1240,20 @@ class DeepLearningAgent:
         # Here we choose a random x,y coordinate from within the bounds of the action map.
         # We also have to compensate for the image downscaling here, since we need to lookup
         # the possible actions on the downscaled pixel action map
-        actionLeftLimit = max(0, int(min(width - 1, chosenActionMap.left * self.config['model_image_downscale_ratio'])))
-        actionRightLimit = max(0, int(min(width - 1, chosenActionMap.right * self.config['model_image_downscale_ratio'] - 1)))
+        actionLeftLimit = max(0, int(min(nonShrunkWidth - 1, chosenActionMap.left)))
+        actionRightLimit = max(0, int(min(nonShrunkWidth - 1, chosenActionMap.right - 1)))
         if actionRightLimit < actionLeftLimit:
             actionRightLimit = actionLeftLimit
 
-        actionTopLimit = max(0, int(min(height - 1, chosenActionMap.top * self.config['model_image_downscale_ratio'])))
-        actionBottomLimit = max(0, int(min(height - 1, chosenActionMap.bottom * self.config['model_image_downscale_ratio'] - 1)))
+        actionTopLimit = max(0, int(min(nonShrunkHeight - 1, chosenActionMap.top)))
+        actionBottomLimit = max(0, int(min(nonShrunkHeight - 1, chosenActionMap.bottom - 1)))
         if actionBottomLimit < actionTopLimit:
             actionBottomLimit = actionTopLimit
 
         actionX = random.randint(actionLeftLimit, actionRightLimit)
         actionY = random.randint(actionTopLimit, actionBottomLimit)
 
-        # Get the list of actions that are allowed at the chosen coordinates
-        # possibleActionsAtPixel = pixelActionMap[:, actionY, actionX]
-        # possibleActionIndexes = [actionIndex for actionIndex in range(len(self.actionsSorted)) if possibleActionsAtPixel[actionIndex]]
+        # Get the list of actions that are allowed for this action map
         possibleActionIndexes = self.allowedActionsForActionMap(chosenActionMap)
         # Create a list containing a weight for each of the possible actions.
         # The base weights are set in the configuration file and help bias the algorithm towards clicking and away
@@ -1234,7 +1292,7 @@ class DeepLearningAgent:
             # If something went wrong, well this is very unusual. So we choose a totally random action at large.
             actionType = random.choice(range(len(self.actionsSorted)))
 
-        return int(actionX / self.config['model_image_downscale_ratio']), int(actionY / self.config['model_image_downscale_ratio']), actionType
+        return int(actionX), int(actionY), actionType
 
     def boundingBoxForActionMaps(self, actionMaps):
         left = numpy.min([actionMap.left for actionMap in actionMaps])
@@ -1371,7 +1429,11 @@ class DeepLearningAgent:
         :return: A list containing numpy arrays, a single numpy array for each frame in the video.
         """
 
-        data = config.loadKwolaFileData("videos", videoFileName)
+        data = config.loadKwolaFileData("videos_lossless", videoFileName)
+        if data is None:
+            # This is just here for backwards compatibility for when we didn't have a separate videos_lossless folder
+            data = config.loadKwolaFileData("videos", videoFileName)
+
         localTempDescriptor, localTemp = tempfile.mkstemp()
         with open(localTempDescriptor, 'wb') as f:
             f.write(data)
@@ -1793,9 +1855,27 @@ class DeepLearningAgent:
                 cropTop = int(cropTop / self.config['model_image_downscale_ratio'])
                 cropRight = int(cropRight / self.config['model_image_downscale_ratio'])
                 cropBottom = int(cropBottom / self.config['model_image_downscale_ratio'])
-
                 cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)))
                 image[cropRectangle] = [self.config.debug_video_crop_box_color_r, self.config.debug_video_crop_box_color_g, self.config.debug_video_crop_box_color_b]
+
+                cropLeft -= int(self.config['training_crop_center_random_x_displacement'] / self.config['model_image_downscale_ratio'])
+                cropLeft = max(0, cropLeft)
+                cropRight += int(self.config['training_crop_center_random_x_displacement'] / self.config['model_image_downscale_ratio'])
+                cropRight = min(imageWidth, cropRight)
+                cropTop -= int(self.config['training_crop_center_random_y_displacement'] / self.config['model_image_downscale_ratio'])
+                cropTop = max(0, cropTop)
+                cropBottom += int(self.config['training_crop_center_random_y_displacement'] / self.config['model_image_downscale_ratio'])
+                cropBottom = min(imageHeight, cropBottom)
+                cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)), shape=[topSize + imageHeight, leftSize+imageWidth], clip=True)
+                image[cropRectangle] = [self.config.debug_video_crop_box_color_r, self.config.debug_video_crop_box_color_g, self.config.debug_video_crop_box_color_b]
+
+                cropLeft, cropTop, cropRight, cropBottom = self.calculateTrainingCropPosition(actionCropX, actionCropY, imageCropWidth, imageCropHeight, nextStepCrop=True)
+                cropLeft = int(cropLeft / self.config['model_image_downscale_ratio'])
+                cropTop = int(cropTop / self.config['model_image_downscale_ratio'])
+                cropRight = int(cropRight / self.config['model_image_downscale_ratio'])
+                cropBottom = int(cropBottom / self.config['model_image_downscale_ratio'])
+                cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)))
+                image[cropRectangle] = [self.config.debug_video_next_step_crop_box_color_r, self.config.debug_video_next_step_crop_box_color_g, self.config.debug_video_next_step_crop_box_color_b]
 
             def addDebugTextToImage(image, trace):
                 fontSize = self.config.debug_video_text_font_size
@@ -2336,13 +2416,10 @@ class DeepLearningAgent:
             :return: A new numpy array, with the same shape as the input processedImage, but now with data augmentations
                      applied.
         """
-        # Add random noise
-        augmentedImage = processedImage + numpy.random.normal(loc=0, scale=self.config['training_image_gaussian_noise_scale'], size=processedImage.shape)
+        # Currently no augmentations are applied, as all of the augmentations we have tested so far turn out to make
+        # the results worse.
 
-        # Clip the bounds to between 0 and 1
-        augmentedImage = numpy.maximum(numpy.zeros_like(augmentedImage), numpy.minimum(numpy.ones_like(augmentedImage), augmentedImage))
-
-        return augmentedImage
+        return processedImage
 
 
     def prepareBatchesForExecutionSession(self, executionSession):
@@ -2611,6 +2688,10 @@ class DeepLearningAgent:
                 cursorsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['cursors']))
             else:
                 cursorsTensor = None
+
+            self.model.train()
+            self.modelParallel.train()
+            self.targetNetwork.eval()
 
             # Run the current images & states through the neural network and get
             # all of the various predictions

@@ -56,7 +56,10 @@ class ExecutionSessionGroup(Resource):
 
         isChangeDetectionSession = flask.request.args.get('isChangeDetectionSession')
         if isChangeDetectionSession is not None:
-            queryParams["isChangeDetectionSession"] = bool(isChangeDetectionSession)
+            if isChangeDetectionSession == "false":
+                queryParams["isChangeDetectionSession"] = False
+            else:
+                queryParams["isChangeDetectionSession"] = True
 
         executionSessions = ExecutionSession.objects(Q(totalReward__exists=True, status__exists=False) | Q(status="completed"), **queryParams).no_dereference().order_by("-startTime").to_json()
 

@@ -19,6 +19,7 @@ class JSRewriter(ProxyPluginBase):
     """
 
     rewritePluginName = "javascript"
+    rewritePluginShouldCheckForSimilarOriginals = True
 
     knownResponseWrappers = [
         (b"""<!--/*--><html><body><script type="text/javascript"><!--//*/""",
@@ -28,9 +29,9 @@ class JSRewriter(ProxyPluginBase):
     def __init__(self, config):
         self.config = config
 
-        self.multipleBranchesCheckingRegex = re.compile(b"globalKwolaCounter_\\w{10}\\[1\\] ?\\+= ?1;")
-        self.branchCounterArraySizeRegex = re.compile(b"globalKwolaCounter_\\w{10} ?= ?new Uint32Array\\((\\d+)\\)")
-        self.branchIndexExtractorRegex = re.compile(b"globalKwolaCounter_\\w{10}\\[(\\d+)\\] ?\\+= ?1;")
+        self.multipleBranchesCheckingRegex = re.compile(b"globalKwolaCounter_\\w{8,10}\\[1\\] ?\\+= ?1;")
+        self.branchCounterArraySizeRegex = re.compile(b"globalKwolaCounter_\\w{8,10} ?= ?new Uint32Array\\((\\d+)\\)")
+        self.branchIndexExtractorRegex = re.compile(b"globalKwolaCounter_\\w{8,10}\\[(\\d+)\\] ?\\+= ?1;")
 
 
     def shouldHandleFile(self, resource, fileData):
@@ -75,7 +76,7 @@ class JSRewriter(ProxyPluginBase):
         else:
             return False
 
-    def getRewriteMode(self, resource, fileData, priorResourceVersion):
+    def getRewriteMode(self, resource, fileData, resourceVersion, priorResourceVersion):
         cleanedFileName = self.getCleanedURL(resource.url)
 
         parsedURL = urllib.parse.urlparse(resource.url)
@@ -101,7 +102,7 @@ class JSRewriter(ProxyPluginBase):
 
             return None, message
 
-        translated, translationMessage = self.getRewrittenJavascript(resource, fileData, priorResourceVersion)
+        translated, translationMessage = self.getRewrittenJavascript(resource, fileData, resourceVersion, priorResourceVersion)
         if translated is None:
             return None, translationMessage
         else:
@@ -131,7 +132,7 @@ class JSRewriter(ProxyPluginBase):
             return True
 
     @functools.lru_cache(maxsize=1024)
-    def getRewrittenJavascript(self, resource, fileData, priorResourceVersion):
+    def getRewrittenJavascript(self, resource, fileData, resourceVersion, priorResourceVersion):
         jsFileContents = fileData.strip()
 
         strictMode = False
@@ -211,8 +212,8 @@ class JSRewriter(ProxyPluginBase):
             if strictMode:
                 transformed = b'"use strict";\n' + transformed
 
-            if priorResourceVersion is not None:
-                remappedFileData, message = self.remapTransformedJavascriptFile(resource, result.stdout, priorResourceVersion)
+            if priorResourceVersion is not None and noLineCountingKeyword is None:
+                remappedFileData, message = self.remapTransformedJavascriptFile(resource, result.stdout, resourceVersion, priorResourceVersion)
 
                 if remappedFileData is not None:
                     transformed = remappedFileData
@@ -239,11 +240,11 @@ class JSRewriter(ProxyPluginBase):
 
         return None
 
-    def rewriteFile(self, resource, fileData, priorResourceVersion):
-        rewriteMode, message = self.getRewriteMode(resource, fileData, priorResourceVersion)
+    def rewriteFile(self, resource, fileData, resourceVersion, priorResourceVersion):
+        rewriteMode, message = self.getRewriteMode(resource, fileData, resourceVersion, priorResourceVersion)
 
         if rewriteMode is not None:
-            return self.getRewrittenJavascript(resource, fileData, priorResourceVersion)[0]
+            return self.getRewrittenJavascript(resource, fileData, resourceVersion, priorResourceVersion)[0]
         else:
             return fileData
 
@@ -321,7 +322,7 @@ class JSRewriter(ProxyPluginBase):
         return line
 
 
-    def remapTransformedJavascriptFile(self, resource, transformedFileData, priorResourceVersion):
+    def remapTransformedJavascriptFile(self, resource, transformedFileData, resourceVersion, priorResourceVersion):
         priorResourceVersionData = priorResourceVersion.loadTranslatedResourceContents(self.config)
 
         if priorResourceVersionData is None:
@@ -358,7 +359,14 @@ class JSRewriter(ProxyPluginBase):
         remappedIndexes = {}
 
         lines = compareResult.stdout.splitlines()
+        skipLine = False
         for line, nextLine in zip(lines, lines[1:]):
+            if skipLine:
+                skipLine = False
+                continue
+            if b"window.globalKwolaCounter" in line or b"window.globalKwolaCounter" in nextLine:
+                continue
+
             lineBranchIndexes = self.getBranchIndexesForLine(line)
             nextLineBranchIndexes = self.getBranchIndexesForLine(nextLine)
 
@@ -375,28 +383,25 @@ class JSRewriter(ProxyPluginBase):
             if lineBranchIndex is not None and nextLineBranchIndex is not None:
                 if line.startswith(b"-") and nextLine.startswith(b"+"):
                     remappedIndexes[nextLineBranchIndex] = lineBranchIndex
+                    skipLine = True
             elif lineBranchIndex is not None and nextLineBranchIndex is None:
                 if line.startswith(b"-") and nextLine.startswith(b"-"):
                     deletedCodeIndexes.add(lineBranchIndex)
+                    skipLine = True
                 elif line.startswith(b"+") and nextLine.startswith(b"+"):
                     newCodeIndexes.add(lineBranchIndex)
-
-
-        # Perform a couple of validations here to ensure the algorithm is working.
-        remappedDeleted = deletedCodeIndexes.intersection(remappedIndexes.values())
-        if len(remappedDeleted) > 0:
-            message = f"Error in remapping the branch indexes for {resource.id}. Some branch indexes were both remapped and deleted. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedDeleted))}"
-            getLogger().error(message)
-            return None, message
-
-        remappedAdded = newCodeIndexes.intersection(remappedIndexes.keys())
-        if len(remappedAdded) > 0:
-            message = f"Error in remapping the branch indexes for {resource.id}. Some branch indexes were both remapped and added as fresh new indexes. This means there is a flaw in the realignment algorithm itself that it didn't work on this specific diff situation. Indexes in question: {sorted(list(remappedAdded))}"
-            getLogger().error(message)
-            return None, message
+                    skipLine = True
 
         # Now create a new version of the remapped javascript file.
         currentNewBranchIndex = currentJSCounterSize
+        newBranchIndexesMap = {}
+        for branchIndex in newCodeIndexes:
+            # In certain really weird situations (when there is an event handler that was altered in the code, along with weird whitespace issues),
+            # a branch index can end up marked as both new and remapped.
+            if branchIndex not in remappedIndexes:
+                newBranchIndexesMap[branchIndex] = currentNewBranchIndex
+                currentNewBranchIndex += 1
+
         updatedLines = []
         for line in transformedFileData.splitlines():
             newLine = line
@@ -409,9 +414,8 @@ class JSRewriter(ProxyPluginBase):
             if lineBranchIndexes is not None:
                 # First handle any remaps for new code indexes
                 for branchIndex in lineBranchIndexes:
-                    if branchIndex in newCodeIndexes:
-                        newLine = self.replaceBranchIndexInLine(newLine, branchIndex, currentNewBranchIndex)
-                        currentNewBranchIndex += 1
+                    if branchIndex in newBranchIndexesMap:
+                        newLine = self.replaceBranchIndexInLine(newLine, branchIndex, newBranchIndexesMap[branchIndex])
                 # Then handle remaps for existing code indexes
                 for branchIndex in lineBranchIndexes:
                     if branchIndex in remappedIndexes:

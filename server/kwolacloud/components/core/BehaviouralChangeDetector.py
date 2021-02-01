@@ -229,7 +229,11 @@ class BehaviourChangeDetector:
 
                 distValues.append(distScore)
 
-        oldIndexes, newIndexes = scipy.optimize.linear_sum_assignment(numpy.array(distScoreMatrix))
+        if len(oldStringDatas) == 0 or len(newStringDatas) == 0:
+            oldIndexes = []
+            newIndexes = []
+        else:
+            oldIndexes, newIndexes = scipy.optimize.linear_sum_assignment(numpy.array(distScoreMatrix))
 
         differences = []
 
@@ -342,7 +346,7 @@ class BehaviourChangeDetector:
                 continue
 
             if 'data-kwola-left' not in tag.parent.attrs:
-                getLogger().warning(f"Warning! Found an HTML element that didn't have the kwola positioning variables saved as attributes. Skipping this HTML element in the HTML comparison. Tag name: {tag.name}. Attributes: {pformat(dict(tag.attrs))}")
+                getLogger().warning(f"Warning! Found an HTML element that didn't have the kwola positioning variables saved as attributes. Skipping this HTML element in the HTML comparison. Tag name: {tag.parent.name}. Attributes: {pformat(dict(tag.parent.attrs))}")
                 continue
 
             matchKeywords = {text.lower()}

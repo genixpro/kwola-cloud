@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Button} from "../../containers/UiElements/Button/button.style";
+import Button, {Fab} from "../../components/uielements/button";
 import CircularProgress from "../uielements/circularProgress";
 import Icon from "../uielements/icon";
 
@@ -47,11 +47,11 @@ class LoaderButton extends Component {
         }, this.showFailureIconTime)
     };
 
-    onClick()
+    onClick(evt)
     {
         if (this.props.onClick && !this.state.isPerformingAction && !this.state.isShowingSuccessIcon && !this.state.isShowingFailureIcon)
         {
-            const promise = this.props.onClick();
+            const promise = this.props.onClick(evt);
             if (promise)
             {
                 this.setState({isPerformingAction: true});
@@ -92,31 +92,61 @@ class LoaderButton extends Component {
     }
 
 
-    render() {
-        return (
-            <Button id={this.props.id}
-                    variant="extended"
-                    color={this.props.color || "primary"}
-                    disabled={this.props.disabled}
-                    className={`orderBtn ${this.props.className}`}
-                    title={this.props.title}
-                    onClick={() => this.onClick()}>
-                {this.props.children}
-                {
-                    this.state.isPerformingAction ?
-                        <span style={{"paddingLeft": "20px"}}><CircularProgress size={14} style={{"color": "white"}}/></span> : null
-                }
-                {
-                    this.state.isShowingSuccessIcon ?
-                        <Icon className="fontSizeSmall">check</Icon> : null
-                }
-                {
-                    this.state.isShowingFailureIcon ?
-                        <Icon className="fontSizeSmall">close</Icon> : null
-                }
-            </Button>
+    render()
+    {
+        if (this.props.buttonType === "regular")
+        {
+            return (
+                <Button id={this.props.id}
+                     variant={this.props.variant || "extended"}
+                     color={this.props.color || "primary"}
+                     disabled={this.props.disabled}
+                     className={`${this.props.className}`}
+                     title={this.props.title}
+                     onClick={(evt) => this.onClick(evt)}>
+                    {this.props.children}
+                    {
+                        this.state.isPerformingAction ?
+                            <span style={{"paddingLeft": "20px"}}><CircularProgress size={14} style={{"color": "white"}}/></span> : null
+                    }
+                    {
+                        this.state.isShowingSuccessIcon ?
+                            <Icon className="fontSizeSmall">check</Icon> : null
+                    }
+                    {
+                        this.state.isShowingFailureIcon ?
+                            <Icon className="fontSizeSmall">close</Icon> : null
+                    }
+                </Button>
+            );
+        }
+        else
+        {
 
-        );
+            return (
+                <Fab id={this.props.id}
+                     variant={this.props.variant || "extended"}
+                     color={this.props.color || "primary"}
+                     disabled={this.props.disabled}
+                     className={`orderBtn ${this.props.className}`}
+                     title={this.props.title}
+                     onClick={(evt) => this.onClick(evt)}>
+                    {this.props.children}
+                    {
+                        this.state.isPerformingAction ?
+                            <span style={{"paddingLeft": "20px"}}><CircularProgress size={14} style={{"color": "white"}}/></span> : null
+                    }
+                    {
+                        this.state.isShowingSuccessIcon ?
+                            <Icon className="fontSizeSmall">check</Icon> : null
+                    }
+                    {
+                        this.state.isShowingFailureIcon ?
+                            <Icon className="fontSizeSmall">close</Icon> : null
+                    }
+                </Fab>
+            );
+        }
     }
 }
 

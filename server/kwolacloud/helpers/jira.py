@@ -3,6 +3,9 @@ import requests
 from ..config.config import loadCloudConfiguration, getKwolaConfiguration
 from kwola.config.config import KwolaCoreConfiguration
 import os.path
+from kwola.datamodels.errors.HttpError import HttpError
+from kwola.datamodels.errors.LogError import LogError
+from kwola.datamodels.errors.ExceptionError import ExceptionError
 
 
 def postBugToCustomerJIRA(bug, application):
@@ -24,6 +27,26 @@ def postBugToCustomerJIRA(bug, application):
         "Content-Type": "application/json"
     }
 
+
+    jiraBugDescription = f"Bug Type: {str(type(bug.error))}\n"
+    jiraBugDescription += f"Page: {bug.error.page}\n"
+
+    if isinstance(bug.error, HttpError):
+        jiraBugDescription += f"""HTTP Status Code: {bug.error.statusCode}\n"""
+        jiraBugDescription += f"""HTTP Request URL: {bug.error.url}\n"""
+
+    jiraBugDescription += f"Browser: {bug.browser}\n"
+    jiraBugDescription += f"Window Size: {bug.windowSize}\n"
+    jiraBugDescription += f"User Agent: {bug.userAgent}\n"
+    jiraBugDescription += f"Importance: {bug.importanceLevel}\n"
+    jiraBugDescription += f"Message: {bug.error.message}\n"
+
+    jiraBugSummary = ""
+    if isinstance(bug.error, HttpError):
+        jiraBugSummary = f"HTTP {bug.error.statusCode} at {bug.error.url}"
+    else:
+        jiraBugSummary = bug.error.message[:150].replace("\n", "")
+
     issueData = {
         "fields": {
             "project": {
@@ -32,14 +55,16 @@ def postBugToCustomerJIRA(bug, application):
             "issuetype": {
                 "id": application.jiraIssueType
             },
-            "description": bug.error.message,
-            "summary": bug.error.message[:150]
+            "description": jiraBugDescription,
+            "summary": jiraBugSummary
         }
     }
-
     jiraAPIResponse = requests.post(f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/2/issue",
                                     json=issueData,
                                     headers=headers)
+
+    if isinstance(bug.error, ExceptionError):
+        jiraBugDescription += f"Stacktrace: {bug.error.stacktrace}\n"
 
     if jiraAPIResponse.status_code > 299:
         logging.error(f"Error creating issue in JIRA. Status code: {jiraAPIResponse.status_code}. Text: {jiraAPIResponse.text}")
@@ -47,23 +72,21 @@ def postBugToCustomerJIRA(bug, application):
     else:
         issueId = jiraAPIResponse.json()['id']
 
-        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, None)
+        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, bug.testingRunId)
 
-        videoFilePath = os.path.join(config.getKwolaUserDataDirectory("bugs"),
-                                     f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
+        videoData = config.loadKwolaFileData("bugs", f'{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4')
 
-        if os.path.exists(videoFilePath):
-            files = {'file': open(videoFilePath, 'rb')}
+        files = {'file': videoData}
 
-            uploadMovieHeaders = {
-                "Authorization": f"Bearer {application.jiraAccessToken}",
-                "X-Atlassian-Token": "no-check"
-            }
+        uploadMovieHeaders = {
+            "Authorization": f"Bearer {application.jiraAccessToken}",
+            "X-Atlassian-Token": "no-check"
+        }
 
-            jiraAPIResponse = requests.post(
-                f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/2/issue/{issueId}/attachments",
-                files=files,
-                headers=uploadMovieHeaders)
-            if jiraAPIResponse.status_code != 200:
-                logging.error(f"Error uploading attachment to issue in JIRA. Status code: {jiraAPIResponse.status_code}. Text: {jiraAPIResponse.text}")
-                return
+        jiraAPIResponse = requests.post(
+            f"https://api.atlassian.com/ex/jira/{application.jiraCloudId}/rest/api/2/issue/{issueId}/attachments",
+            files=files,
+            headers=uploadMovieHeaders)
+        if jiraAPIResponse.status_code != 200:
+            logging.error(f"Error uploading attachment to issue in JIRA. Status code: {jiraAPIResponse.status_code}. Text: {jiraAPIResponse.text}")
+            return

@@ -173,8 +173,8 @@ class WebEnvironmentSession:
                 chrome_options.add_argument(f"--disk-cache-dir={self.config.getKwolaUserDataDirectory('chrome_cache')}")
                 chrome_options.add_argument(f"--disk-cache-size={1024*1024*1024}")
 
-            chrome_options.add_argument(f"--disable-gpu")
-            chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
+            # chrome_options.add_argument(f"--disable-gpu")
+            # chrome_options.add_argument(f"--disable-features=VizDisplayCompositor")
             chrome_options.add_argument(f"--no-sandbox")
             chrome_options.add_argument(f"--temp-profile")
             chrome_options.add_argument(f"--proxy-server=localhost:{self.proxy.port}")
@@ -258,7 +258,11 @@ class WebEnvironmentSession:
 
 
     def getHostRoot(self, url):
-        host = str(urllib.parse.urlparse(url).hostname)
+        try:
+            host = str(urllib.parse.urlparse(url).hostname)
+        except ValueError:
+            getLogger().warning(f"Error parsing url {url} to obtain the host domain. Received exception: {traceback.format_exc()}. Return no host domain.")
+            return ""
 
         hostParts = host.split(".")
 
@@ -577,7 +581,7 @@ class WebEnvironmentSession:
             if self.hasBrowserDied:
                 return []
 
-            elementActionMaps, error = self.driver.execute_script("""
+            result = self.driver.execute_script("""
                 function isFunction(functionToCheck) {
                  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
                 }
@@ -617,12 +621,12 @@ class WebEnvironmentSession:
                             canScroll: false,
                             canScrollUp: false,
                             canScrollDown: false,
-                            left: bounds.left + paddingLeft + 3,
-                            right: bounds.right - paddingRight - 3,
-                            top: bounds.top + paddingTop + 3,
-                            bottom: bounds.bottom - paddingBottom - 3,
-                            width: bounds.width - paddingLeft - paddingRight - 6,
-                            height: bounds.height - paddingTop - paddingBottom - 6,
+                            left: bounds.left + paddingLeft + 2,
+                            right: bounds.right - paddingRight - 2,
+                            top: bounds.top + paddingTop + 2,
+                            bottom: bounds.bottom - paddingBottom - 2,
+                            width: bounds.width - paddingLeft - paddingRight - 4,
+                            height: bounds.height - paddingTop - paddingBottom - 4,
                             elementType: element.tagName.toLowerCase(),
                             keywords: ( element.innerText + " " + element.getAttribute("class") + " " +
                                         element.getAttribute("name") + " " + element.getAttribute("id") + " " + 
@@ -816,6 +820,13 @@ class WebEnvironmentSession:
                 }
             """)
 
+            if result is None:
+                self.hasBrowserDied = True
+                self.browserDeathReason = f"Got no result when trying to fetch the action maps from the web browser."
+                return []
+
+            elementActionMaps, error = result
+
             if error:
                 raise RuntimeError(f"Error in the javascript within WebEnvironmentSession.getActionMaps: {error}")
 
@@ -898,12 +909,12 @@ class WebEnvironmentSession:
                 actionChain.move_to_element_with_offset(element, 0, 0)
                 if action.times == 1:
                     if self.config['web_session_print_every_action']:
-                        getLogger().info(f"Clicking {action.x} {action.y} from {action.source}")
+                        getLogger().info(f"Clicking {action.x} {action.y} from {action.source} as {action.type}")
                     actionChain.click(on_element=element)
                     actionChain.pause(self.config.web_session_perform_action_wait_time)
                 elif action.times == 2:
                     if self.config['web_session_print_every_action']:
-                        getLogger().info(f"Double Clicking {action.x} {action.y} from {action.source}")
+                        getLogger().info(f"Double Clicking {action.x} {action.y} from {action.source} as {action.type}")
                     actionChain.double_click(on_element=element)
                     actionChain.pause(self.config.web_session_perform_action_wait_time)
 
@@ -911,7 +922,7 @@ class WebEnvironmentSession:
 
             if isinstance(action, RightClickAction):
                 if self.config['web_session_print_every_action']:
-                    getLogger().info(f"Right Clicking {action.x} {action.y} from {action.source}")
+                    getLogger().info(f"Right Clicking {action.x} {action.y} from {action.source} as {action.type}")
                 actionChain = webdriver.common.action_chains.ActionChains(self.driver)
                 actionChain.move_to_element_with_offset(element, 0, 0)
                 actionChain.context_click(on_element=element)
@@ -920,7 +931,7 @@ class WebEnvironmentSession:
 
             if isinstance(action, TypeAction):
                 if self.config['web_session_print_every_action']:
-                    getLogger().info(f"Typing {action.text} at {action.x} {action.y} from {action.source}")
+                    getLogger().info(f"Typing {action.text} at {action.x} {action.y} from {action.source} as {action.type}")
                 actionChain = webdriver.common.action_chains.ActionChains(self.driver)
                 actionChain.move_to_element_with_offset(element, 0, 0)
                 actionChain.click(on_element=element)
@@ -931,7 +942,7 @@ class WebEnvironmentSession:
 
             if isinstance(action, ScrollingAction):
                 if self.config['web_session_print_every_action']:
-                    getLogger().info(f"Scrolling {action.direction} at {action.x} {action.y} from {action.source}")
+                    getLogger().info(f"Scrolling {action.direction} at {action.x} {action.y} from {action.source} as {action.type}")
 
                 if action.direction == "down":
                     self.driver.execute_script("window.scrollTo(0, window.scrollY + 400)")
@@ -941,11 +952,11 @@ class WebEnvironmentSession:
 
             if isinstance(action, ClearFieldAction):
                 if self.config['web_session_print_every_action']:
-                    getLogger().info(f"Clearing field at {action.x} {action.y} from {action.source}")
+                    getLogger().info(f"Clearing field at {action.x} {action.y} from {action.source} as {action.type}")
                 element.clear()
 
             if isinstance(action, WaitAction):
-                getLogger().info(f"Waiting for {action.time} at {action.x} {action.y} from {action.source}")
+                getLogger().info(f"Waiting for {action.time} at {action.x} {action.y} from {action.source} as {action.type}")
                 time.sleep(action.time)
 
         except selenium.common.exceptions.MoveTargetOutOfBoundsException as e:
@@ -1002,7 +1013,7 @@ class WebEnvironmentSession:
 
             return url
         except ValueError as e:
-            getLogger().error(f"Error normalizing link url {url}. Received exception: {traceback.format_exc()}. Returning link unnormalized.")
+            getLogger().warning(f"Error normalizing link url {url}. Received exception: {traceback.format_exc()}. Returning link unnormalized.")
             return url
 
     def isURLOffsite(self, url, currentPageURL=None):
@@ -1058,7 +1069,7 @@ class WebEnvironmentSession:
                 loadFailure = True
 
             if loadFailure:
-                getLogger().warning(f"The browser session needed to be reset back to the origin url {self.targetURL} from the current url {self.driver.current_url}")
+                getLogger().warning(f"The browser session needed to be reset back to the prior url {priorURL} from the current url {self.driver.current_url}")
                 self.driver.get(priorURL)
                 self.waitUntilNoNetworkActivity()
         except selenium.common.exceptions.TimeoutException:

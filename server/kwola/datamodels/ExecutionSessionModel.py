@@ -69,6 +69,8 @@ class ExecutionSession(Document):
 
     executionTracesWithChanges = ListField(StringField())
 
+    bestApplicationProvidedCumulativeFitness = FloatField()
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "execution_sessions", config)
 
