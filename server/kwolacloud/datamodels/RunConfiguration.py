@@ -13,7 +13,7 @@ import json
 import os
 
 
-class RunConfiguration(EmbeddedDocument):
+class RunConfiguration(DynamicEmbeddedDocument):
     url = StringField()
 
     email = StringField()
