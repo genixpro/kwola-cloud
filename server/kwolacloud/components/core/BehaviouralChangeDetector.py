@@ -229,7 +229,11 @@ class BehaviourChangeDetector:
 
                 distValues.append(distScore)
 
-        oldIndexes, newIndexes = scipy.optimize.linear_sum_assignment(numpy.array(distScoreMatrix))
+        if len(oldStringDatas) == 0 or len(newStringDatas) == 0:
+            oldIndexes = []
+            newIndexes = []
+        else:
+            oldIndexes, newIndexes = scipy.optimize.linear_sum_assignment(numpy.array(distScoreMatrix))
 
         differences = []
 

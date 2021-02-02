@@ -48,6 +48,7 @@ from ..plugins.core.RecordDotNetRPCErrors import RecordDotNetRPCErrors
 from ..plugins.core.RecordPageURLs import RecordPageURLs
 from ..plugins.core.RecordScreenshots import RecordScreenshots
 from ..plugins.core.RecordPageHTML import RecordPageHTML
+from ..plugins.core.RecordFitness import RecordFitness
 
 
 class WebEnvironment:
@@ -68,7 +69,8 @@ class WebEnvironment:
             RecordDotNetRPCErrors(),
             RecordAllPaths(),
             RecordBranchTrace(),
-            RecordScreenshots(config)
+            RecordScreenshots(config),
+            RecordFitness()
         ]
 
         if config['enable_record_page_html']:

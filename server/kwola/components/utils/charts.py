@@ -70,6 +70,64 @@ def generateRewardChart(config, applicationId):
     pool.close()
     pool.join()
 
+def averageFitnessForTestingStep(config, testingStepId):
+    testingStep = TestingStep.loadFromDisk(testingStepId, config)
+
+    stepFitnessValues = []
+    for sessionId in testingStep.executionSessions:
+        session = ExecutionSession.loadFromDisk(sessionId, config)
+        if session.status == "completed" and session.bestApplicationProvidedCumulativeFitness is not None:
+            stepFitnessValues.append(session.bestApplicationProvidedCumulativeFitness)
+
+    if len(stepFitnessValues) > 0:
+        return numpy.mean(stepFitnessValues)
+    else:
+        return None
+
+
+def generateFitnessChart(config, applicationId):
+    getLogger().info(f"Generating the fitness chart")
+
+    config = KwolaCoreConfiguration(config)
+
+    testingSteps = sorted(
+        [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
+        key=lambda step: step.startTime, reverse=False)
+
+    fitnessValueFutures = []
+
+    pool = multiprocessing.Pool(config['chart_generation_dataload_workers'])
+
+    for step in testingSteps:
+        fitnessValueFutures.append(pool.apply_async(averageFitnessForTestingStep, [config, step.id]))
+
+    fitnessValues = [future.get() for future in fitnessValueFutures if future.get() is not None]
+
+    if len(fitnessValues) > 0:
+        bestFitness = numpy.max(fitnessValues)
+
+        fig, ax = plt.subplots()
+
+        fitnessValues = scipy.signal.medfilt(fitnessValues, kernel_size=9)
+
+        ax.plot(range(len(fitnessValues)), fitnessValues, color='green')
+
+        ax.set_ylim(0, 100)
+
+        ax.set(xlabel='Testing Step #', ylabel='Fitness',
+               title='Fitness per session')
+        ax.grid()
+
+        _, localFilePath = tempfile.mkstemp(suffix=".png")
+        fig.savefig(localFilePath)
+        with open(localFilePath, 'rb') as f:
+            config.saveKwolaFileData("charts", "fitness_chart.png", f.read())
+        os.unlink(localFilePath)
+
+        getLogger().info(f"Best Fitness Value: {bestFitness}", flush=True)
+
+        pool.close()
+        pool.join()
 
 def generateCoverageChart(config, applicationId):
     getLogger().info(f"Generating the coverage chart")
@@ -383,6 +441,7 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
         futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 5]))
 
     futures.append(pool.apply_async(generateRewardChart, [config.serialize(), applicationId]))
+    futures.append(pool.apply_async(generateFitnessChart, [config.serialize(), applicationId]))
     futures.append(pool.apply_async(generateCoverageChart, [config.serialize(), applicationId]))
 
     if config['chart_enable_cumulative_errors_chart']:

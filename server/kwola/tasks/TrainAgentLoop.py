@@ -38,7 +38,6 @@ from concurrent.futures import as_completed, wait
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import billiard as multiprocessing
-from kwolacloud.components.core.BehaviouralChangeDetector import BehaviourChangeDetector
 import os
 import os.path
 import time
@@ -49,6 +48,22 @@ import random
 import subprocess
 import sys
 import tempfile
+import psutil
+
+def checkIfProcessRunning(processName):
+    """
+    Check if there is any running process that contains the given name processName.
+    """
+    #Iterate over the all the running process
+    for proc in psutil.process_iter():
+        try:
+            # Check if process name contains the given name string.
+            if processName.lower() in proc.name().lower() and proc.pid != os.getpid():
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return False
+
 
 def getAvailableBrowsers(config):
     browsers = []
@@ -70,6 +85,9 @@ def getAvailableBrowsers(config):
 
                 if not os.path.exists(chromeCmd):
                     chromeCmd = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+            if sys.platform == "darwin":
+                chromeCmd = "open /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome -F -n -g --args"
+
             result3 = subprocess.run([chromeCmd, '--headless', '--version'], stdout=subprocess.PIPE)
         except FileNotFoundError:
             result3 = None
@@ -145,7 +163,7 @@ def runRandomInitializationSubprocess(config, trainingSequence, testStepIndex):
         chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
         chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
 
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize, testStepIndexWithinRun=testStepIndex)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
@@ -236,7 +254,7 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         chosenBrowser = browsers[int(choiceIndex / len(windowSizes))]
         chosenWindowSize = windowSizes[choiceIndex % len(windowSizes)]
 
-        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize)
+        testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize, testStepIndexWithinRun=testStepIndex)
         testingStep.saveToDisk(config)
 
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
@@ -301,6 +319,8 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
     numberOfTrainingStepsInParallel = max(1, torch.cuda.device_count())
 
     chartGenerationFuture = None
+
+    loopsCompleted = 0
 
     while trainingSequence.trainingLoopsCompleted < config['training_loops_needed']:
         getLogger().info(f"Starting a single training loop. Loops completed: {trainingSequence.trainingLoopsCompleted}")
@@ -388,12 +408,13 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
         if (trainingSequence.trainingLoopsCompleted % config['chart_generation_frequency']) == 0:
             enableCumulativeCoverage = bool(trainingSequence.trainingLoopsCompleted % config['chart_generate_cumulative_coverage_frequency'] == 0)
             chartGenerationFuture = AsyncThreadFuture(generateAllCharts, args=[config, None, enableCumulativeCoverage])
+        loopsCompleted += 1
         getLogger().info(f"Completed one parallel training & testing step! Hooray!")
 
     if chartGenerationFuture is not None:
         chartGenerationFuture.wait()
 
-    generateAllCharts(config, applicationId=None, enableCumulativeCoverage=True)
+    return loopsCompleted
 
 def trainAgent(config, exitOnFail=False):
     try:
@@ -402,6 +423,12 @@ def trainAgent(config, exitOnFail=False):
         pass
 
     config = KwolaCoreConfiguration(config)
+
+    if config['wait_for_other_kwola_processes_to_exit']:
+        if checkIfProcessRunning("kwola"):
+            getLogger().info("Waiting for the other Kwola process to finish running. If you want to run multiple Kwola processes at once, please change the wait_for_other_kwola_processes_to_exit configuration variable.")
+            while checkIfProcessRunning("kwola"):
+                time.sleep(1)
 
     # Load and save the agent to make sure all training subprocesses are synced
     agent = DeepLearningAgent(config=config, whichGpu=None)
@@ -445,13 +472,17 @@ def trainAgent(config, exitOnFail=False):
         runRandomInitialization(config, trainingSequence, exitOnFail=exitOnFail)
         trainingSequence.saveToDisk(config)
 
-    runMainTrainingLoop(config, trainingSequence, exitOnFail=exitOnFail)
+    loopsCompleted = runMainTrainingLoop(config, trainingSequence, exitOnFail=exitOnFail)
 
-    generateAllCharts(config, enableCumulativeCoverage=True)
+    generateAllCharts(config, applicationId=None, enableCumulativeCoverage=True)
 
     trainingSequence.status = "completed"
     trainingSequence.endTime = datetime.now()
     trainingSequence.saveToDisk(config)
+
+    if config['email_results'] and loopsCompleted > 0:
+        from ..components.utils.email import sendExperimentResults
+        sendExperimentResults(config)
 
     for folder in config['train_agent_loop_delete_folders_on_finish']:
         fullPath = config.getKwolaUserDataDirectory(folder)
