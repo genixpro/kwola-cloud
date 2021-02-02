@@ -10,6 +10,7 @@
   "autologin": false,
   "batch_size": 64,
   "batches_per_iteration": 2,
+  "block_private_networks": false,
   "chart_enable_cumulative_coverage_chart": true,
   "chart_enable_cumulative_errors_chart": true,
   "chart_generate_cumulative_coverage_frequency": 25,

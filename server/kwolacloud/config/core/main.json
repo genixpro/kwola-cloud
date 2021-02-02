@@ -10,6 +10,7 @@
   "autologin": false,
   "batch_size": 16,
   "batches_per_iteration": 8,
+  "block_private_networks": true,
   "bug_reproduction_maximum_failures": 3,
   "bug_reproduction_timeout": 5400,
   "chart_enable_cumulative_coverage_chart": false,
