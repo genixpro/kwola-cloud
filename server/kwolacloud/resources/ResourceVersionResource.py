@@ -50,7 +50,6 @@ class ResourceVersionsGroup(Resource):
             queryParams["applicationId"] = applicationId
 
         resourceId = flask.request.args.get('resourceId')
-        print(resourceId)
         if resourceId is not None:
             queryParams["resourceId"] = resourceId
 
