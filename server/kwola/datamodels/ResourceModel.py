@@ -90,6 +90,7 @@ class Resource(Document):
                     resourceID = resourceID.replace(".json", "")
                     resourceID = resourceID.replace(".gz", "")
                     resourceID = resourceID.replace(".pickle", "")
+                    resourceID = resourceID.replace(".enc", "")
 
                     resourceIds.add(resourceID)
 

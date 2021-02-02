@@ -182,6 +182,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
                 bugId = bugId.replace(".json", "")
                 bugId = bugId.replace(".gz", "")
                 bugId = bugId.replace(".pickle", "")
+                bugId = bugId.replace(".enc", "")
 
                 if bugId not in bugIds:
                     bugIds.add(bugId)

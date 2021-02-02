@@ -15,6 +15,7 @@ from google.cloud import storage
 from kwola.config.config import getSharedGCSStorageClient
 from kwola.config.config import KwolaCoreConfiguration
 from kwola.datamodels.BugModel import BugModel
+from kwolacloud.datamodels.TestingRun import TestingRun
 from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 from ..helpers.jira import postBugToCustomerJIRA
 from kwola.datamodels.CustomIDField import CustomIDField
@@ -134,24 +135,24 @@ class BugVideo(Resource):
         if bug is None:
             return abort(404)
 
-        videoFilePath = os.path.join("bugs", f'{str(bug_id)}_bug_{str(bug.executionSessionId)}.mp4')
+        testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + bug.applicationId)
-        objectBlob = storage.Blob(videoFilePath, applicationStorageBucket)
+        if testingRun is None:
+            return abort(404)
 
-        try:
-            videoData = objectBlob.download_as_string()
+        videoFileName = f'{str(bug_id)}_bug_{str(bug.executionSessionId)}.mp4'
 
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        videoData = config.loadKwolaFileData("bugs", videoFileName)
+
+        if videoData is not None:
             response = flask.make_response(videoData)
             response.headers['content-type'] = 'video/mp4'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing bug video file: {videoFilePath}")
+        else:
+            logging.error(f"Error! Missing bug video file: {videoFileName}")
             return abort(404)
-        finally:
-            pass
 
 
 
@@ -179,24 +180,24 @@ class BugFrameSpriteSheet(Resource):
         if bug is None:
             return abort(404)
 
-        spriteFilePath = os.path.join("bug_frame_sprite_sheets", f'{str(bug_id)}.jpg')
+        testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + bug.applicationId)
-        objectBlob = storage.Blob(spriteFilePath, applicationStorageBucket)
+        if testingRun is None:
+            return abort(404)
 
-        try:
-            imageData = objectBlob.download_as_string()
+        spriteFilePath = f'{str(bug_id)}.jpg'
 
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        imageData = config.loadKwolaFileData("bug_frame_sprite_sheets", spriteFilePath)
+
+        if imageData is not None:
             response = flask.make_response(imageData)
             response.headers['content-type'] = 'image/jpeg'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing bug stripe sheet file: {spriteFilePath}")
+        else:
+            logging.error(f"Error! Missing bug sprite sheet file: {spriteFilePath}")
             return abort(404)
-        finally:
-            pass
 
 
 
@@ -224,24 +225,24 @@ class BugErrorFrame(Resource):
         if bug is None:
             return abort(404)
 
-        errorFrameFilePath = os.path.join("bug_error_frames", f'{str(bug_id)}.jpg')
+        testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + bug.applicationId)
-        objectBlob = storage.Blob(errorFrameFilePath, applicationStorageBucket)
+        if testingRun is None:
+            return abort(404)
 
-        try:
-            imageData = objectBlob.download_as_string()
+        errorFrameFileName = f'{str(bug_id)}.jpg'
 
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        imageData = config.loadKwolaFileData("bug_error_frames", errorFrameFileName)
+
+        if imageData is not None:
             response = flask.make_response(imageData)
             response.headers['content-type'] = 'image/jpeg'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing bug error frame file: {errorFrameFilePath}")
+        else:
+            logging.error(f"Error! Missing bug error frame file: {errorFrameFileName}")
             return abort(404)
-        finally:
-            pass
 
 
 class BugsAdminTriggerReproduction(Resource):

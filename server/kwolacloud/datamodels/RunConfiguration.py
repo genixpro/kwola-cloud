@@ -124,7 +124,9 @@ class RunConfiguration(EmbeddedDocument):
 
     def createKwolaCoreConfiguration(self, owner, applicationId, testingRunId):
         kwolaConfigData = getKwolaConfigurationData()
+        cloudConfig = loadCloudConfiguration()
 
+        kwolaConfigData['data_serialization_encryption_key'] = cloudConfig['storage']['encryption_key'] + applicationId
         kwolaConfigData['owner'] = owner
         kwolaConfigData['applicationId'] = applicationId
         kwolaConfigData['testingRunId'] = testingRunId
@@ -175,7 +177,6 @@ class RunConfiguration(EmbeddedDocument):
             json.loads(action.to_json()) for action in self.typingActions
         ]
 
-        cloudConfig = loadCloudConfiguration()
         if cloudConfig['features']['localRuns']:
             kwolaConfigData['configurationDirectory'] = os.path.join("data", applicationId)
 

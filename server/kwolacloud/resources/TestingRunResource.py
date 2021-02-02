@@ -234,12 +234,8 @@ class TestingRunsDownloadZip(Resource):
             return abort(404)
 
         try:
-            storageClient = getSharedGCSStorageClient()
-            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + testingRun.applicationId)
-            objectPath = f"bug_zip_files/{testingRun.id}.zip"
-            objectBlob = storage.Blob(objectPath, applicationStorageBucket)
-
-            zipData = objectBlob.download_as_string()
+            config = testingRun.configuration.createKwolaCoreConfiguration(userId, testingRun.applicationId, testingRun.id)
+            zipData = config.loadKwolaFileData("bug_zip_files", f"{testingRun.id}.zip")
 
             response = flask.make_response(zipData)
             response.headers['content-type'] = 'application/zip'

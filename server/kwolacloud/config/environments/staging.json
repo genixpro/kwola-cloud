@@ -49,5 +49,8 @@
   "jira": {
     "clientId": "mtH8HhB3Le0CQU0ArORjlPPT8u0Xqk2m",
     "clientSecret": "rsv5QCKClTM31pvmggA8s9fQ02iTCt3N43ticJe3q38FRz9ObD5ew5wgls2eew2_"
+  },
+  "storage": {
+    "encryption_key": "BoircuvNokConnUvwojnajushBulokDuHyunalzeHodEzUtsyicDonMenByavdanwyngyacDaysShyditBewabrefBaccutAdek"
   }
 }

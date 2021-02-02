@@ -33,6 +33,7 @@ from pprint import pformat
 import datetime
 import google
 import google.cloud
+import google.cloud.exceptions
 import json
 import logging
 import os.path
@@ -585,19 +586,17 @@ class TestingRunManager:
             bugsZip.writestr(f"bug_{bugIndex+1}.json", bytes(bug.to_json(), 'utf8'))
             bugsZip.writestr(f"bug_{bugIndex+1}.txt", bytes(bug.error.message, 'utf8'))
 
-            try:
-                bugRawVideoFile = storage.Blob(bugRawVideoFilePath, self.applicationStorageBucket)
-                data = bugRawVideoFile.download_as_string()
-                bugsZip.writestr(f"bug_{bugIndex+1}_raw.mp4", data)
-            except google.cloud.exceptions.NotFound:
+            data = self.config.loadKwolaFileData("bugs", f"{str(bug.id)}.mp4")
+            if data is None:
                 logging.warning(f"Warning! Unable to find the bug video file {bugRawVideoFilePath} while attempting to assemble the final bug zip file.")
+            else:
+                bugsZip.writestr(f"bug_{bugIndex+1}_raw.mp4", data)
 
-            try:
-                bugAnnotatedVideoFile = storage.Blob(bugAnnotatedVideoFilePath, self.applicationStorageBucket)
-                data = bugAnnotatedVideoFile.download_as_string()
-                bugsZip.writestr(f"bug_{bugIndex+1}_annotated.mp4", data)
-            except google.cloud.exceptions.NotFound:
+            data = self.config.loadKwolaFileData("bugs", f"{str(bug.id)}_bug_{str(bug.executionSessionId)}.mp4")
+            if data is None:
                 logging.warning(f"Warning! Unable to find the bug video file {bugAnnotatedVideoFilePath} while attempting to assemble the final bug zip file.")
+            else:
+                bugsZip.writestr(f"bug_{bugIndex+1}_annotated.mp4", data)
 
         bugsZip.close()
 

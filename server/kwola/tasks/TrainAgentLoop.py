@@ -453,6 +453,7 @@ def trainAgent(config, exitOnFail=False):
         sequenceId = sequenceId.replace(".pickle", "")
         sequenceId = sequenceId.replace(".json", "")
         sequenceId = sequenceId.replace(".gz", "")
+        sequenceId = sequenceId.replace(".enc", "")
 
         trainingSequence = TrainingSequence.loadFromDisk(sequenceId, config)
 

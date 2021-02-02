@@ -111,20 +111,23 @@ class ExecutionSessionAnnotatedVideo(Resource):
         if executionSession is None:
             return abort(404)
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + executionSession.applicationId)
-        objectPath = f"annotated_videos/{str(execution_session_id)}.mp4"
-        objectBlob = storage.Blob(objectPath, applicationStorageBucket)
+        testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
 
-        try:
-            videoData = objectBlob.download_as_string()
+        if testingRun is None:
+            return abort(404)
 
+        videoFileName = f'{str(execution_session_id)}.mp4'
+
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        videoData = config.loadKwolaFileData("annotated_videos", videoFileName)
+
+        if videoData is not None:
             response = flask.make_response(videoData)
             response.headers['content-type'] = 'video/mp4'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing execution session annotated video: {objectPath}")
+        else:
+            logging.error(f"Error! Missing execution session annotated video: {videoFileName}")
             return abort(404)
 
 
@@ -144,20 +147,23 @@ class ExecutionSessionRawVideo(Resource):
         if executionSession is None:
             return abort(404)
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + executionSession.applicationId)
-        objectPath = f"videos/{str(execution_session_id)}.mp4"
-        objectBlob = storage.Blob(objectPath, applicationStorageBucket)
+        testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
 
-        try:
-            videoData = objectBlob.download_as_string()
+        if testingRun is None:
+            return abort(404)
 
+        videoFileName = f'{str(execution_session_id)}.mp4'
+
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        videoData = config.loadKwolaFileData("videos", videoFileName)
+
+        if videoData is not None:
             response = flask.make_response(videoData)
             response.headers['content-type'] = 'video/mp4'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing execution session raw video: {objectPath}")
+        else:
+            logging.error(f"Error! Missing execution session raw video: {videoFileName}")
             return abort(404)
 
 
