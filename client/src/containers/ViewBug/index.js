@@ -28,7 +28,16 @@ import CancelIcon from '@material-ui/icons/Cancel';
 import PublishIcon from '@material-ui/icons/Publish';
 import {detect} from "detect-browser";
 import ExportBugToJIRAButton from './ExportBugToJIRAButton';
-
+import AppBar from "../../components/uielements/appbar";
+import Tabs, {Tab} from "../../components/uielements/tabs";
+import BugReportIcon from "@material-ui/icons/BugReport";
+import LinearScaleIcon from "@material-ui/icons/LinearScale";
+import WebIcon from "@material-ui/icons/Web";
+import SystemUpdateAltIcon from "@material-ui/icons/SystemUpdateAlt";
+import MessageIcon from '@material-ui/icons/Message';
+import ListAltIcon from '@material-ui/icons/ListAlt';
+import DnsIcon from '@material-ui/icons/Dns';
+import GetAppIcon from "@material-ui/icons/GetApp";
 
 class ViewBug extends Component {
     state = {
@@ -37,7 +46,8 @@ class ViewBug extends Component {
         loader:false,
         executionSession: null,
         spriteSheetImageURL: null,
-        isAdmin: Auth.isAdmin()
+        isAdmin: Auth.isAdmin(),
+        bugInfoTab: "message"
     };
 
     componentDidMount()
@@ -175,6 +185,11 @@ class ViewBug extends Component {
         {
             console.error("Error occurred while triggering the bug reproduction job.");
         });
+    }
+
+    changeBugInfoTab(evt, newTab)
+    {
+        this.setState({bugInfoTab: newTab});
     }
 
     render() {
@@ -334,18 +349,6 @@ class ViewBug extends Component {
                                               <option value={'closed'}>Closed</option>
                                             </select>
                                         </span>
-
-                                        <span className={"bug-message-label"}>Message:</span>
-                                        <span className={"bug-message-value"}>{this.state.bug.error.message || "N/A"}</span>
-
-                                        {
-                                            this.state.bug.error.stacktrace ?
-                                                <span className={"bug-message-label"}>Stacktrace:</span> : null
-                                        }
-                                        {
-                                            this.state.bug.error.stacktrace ?
-                                                <span className={"bug-message-value"}>{this.state.bug.error.stacktrace}</span> : null
-                                        }
                                         <span className={"bug-message-label export-bug-label"}>Export:</span>
                                         <div className={"bug-message-label"}>
                                             <ExportBugToJIRAButton bug={this.state.bug}>
@@ -354,10 +357,89 @@ class ViewBug extends Component {
                                             </ExportBugToJIRAButton>
                                         </div>
                                     </div>
-                                    {/*<div className={"bug-message-area"}>*/}
-                                    {/*</div>*/}
                                 </Papersheet>
-                                <br/>
+                                <div className={"bug-info-tabs-area"}>
+                                <AppBar position="static" color="default">
+                                    <Tabs
+                                        value={this.state.bugInfoTab}
+                                        onChange={this.changeBugInfoTab.bind(this)}
+                                        variant="scrollable"
+                                        scrollButtons="on"
+                                        indicatorColor="primary"
+                                        textColor="primary"
+                                    >
+                                        <Tab label="Message" icon={<MessageIcon />} value={"message"} />
+                                        {
+                                            this.state.bug.error.stacktrace ?
+                                                <Tab label="Stacktrace" icon={<ListAltIcon />} value={"stacktrace"} /> : null
+                                        }
+                                        {
+                                            this.state.bug.error.requestData ?
+                                                <Tab label="Request Data" icon={<PublishIcon />} value={"requestData"} /> : null
+                                        }
+                                        {
+                                            this.state.bug.error.requestHeaders && this.state.bug.error.requestHeaders.length ?
+                                                <Tab label="Request Headers" icon={<DnsIcon />} value={"requestHeaders"} /> : null
+                                        }
+                                        {
+                                            this.state.bug.error.responseData ?
+                                                <Tab label="Response Data" icon={<GetAppIcon />} value={"responseData"} /> : null
+                                        }
+                                        {
+                                            this.state.bug.error.responseHeaders && this.state.bug.error.responseHeaders.length ?
+                                                <Tab label="Response Headers" icon={<DnsIcon />} value={"responseHeaders"} /> : null
+                                        }
+                                    </Tabs>
+                                    </AppBar>
+                                    <Papersheet>
+                                            {
+                                                this.state.bugInfoTab === "message" ?
+                                                    <div className={"bug-message-area"}>
+                                                        {this.state.bug.error.message || "N/A"}
+                                                    </div> : null
+                                            }
+                                        {
+                                            this.state.bugInfoTab === "stacktrace" ?
+                                                <span className={"bug-message-value"}>
+                                                        {this.state.bug.error.stacktrace}
+                                                    </span> : null
+                                        }
+                                        {
+                                            this.state.bugInfoTab === "requestData" ?
+                                                <span className={"bug-message-value"}>
+                                                        {this.state.bug.error.requestData}
+                                                    </span> : null
+                                        }
+                                        {
+                                            this.state.bugInfoTab === "requestHeaders" ?
+                                                <span className={"bug-message-value"}>
+                                                    {
+                                                        Object.keys(this.state.bug.error.requestHeaders).map((key) =>
+                                                        {
+                                                            return <span>{key}: {this.state.bug.error.requestHeaders[key]}<br/></span>;
+                                                        })
+                                                    }
+                                                </span> : null
+                                        }
+                                        {
+                                            this.state.bugInfoTab === "responseData" ?
+                                                <span className={"bug-message-value"}>
+                                                        {this.state.bug.error.responseData}
+                                                    </span> : null
+                                        }
+                                        {
+                                            this.state.bugInfoTab === "responseHeaders" ?
+                                                <span className={"bug-message-value"}>
+                                                    {
+                                                        Object.keys(this.state.bug.error.responseHeaders).map((key) =>
+                                                        {
+                                                            return <span>{key}: {this.state.bug.error.responseHeaders[key]}</span>;
+                                                        })
+                                                    }
+                                                </span> : null
+                                        }
+                                    </Papersheet>
+                                </div>
 
                                 {
                                     this.state.isAdmin && process.env.REACT_APP_DISABLE_ADMIN_VIEW !== "true" ?
