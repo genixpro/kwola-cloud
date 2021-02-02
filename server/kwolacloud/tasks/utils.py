@@ -53,7 +53,7 @@ def createCacheBucketIfNeeded(applicationId):
         try:
             cacheBucket = storage_client.create_bucket(cacheBucketName)
             cacheBucket.clear_lifecyle_rules()
-            cacheBucket.add_lifecycle_delete_rule(age=30)
+            cacheBucket.add_lifecycle_delete_rule(age=60)
             cacheBucket.patch()
 
         except google.api_core.exceptions.Conflict:
