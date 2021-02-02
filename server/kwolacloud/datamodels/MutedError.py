@@ -10,7 +10,7 @@ from kwola.datamodels.errors.BaseError import BaseError
 
 
 
-class MutedError(Document):
+class MutedError(DynamicDocument):
     id = CustomIDField()
 
     owner = StringField()
