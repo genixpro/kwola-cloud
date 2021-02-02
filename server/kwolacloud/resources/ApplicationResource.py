@@ -154,7 +154,7 @@ class ApplicationGroup(Resource):
 
             newApplication.stripeSubscriptionId = None
 
-        newApplication.save()
+        newApplication.save(validate=False)
 
         createMainStorageBucketIfNeeded(newApplication.id)
         createCacheBucketIfNeeded(newApplication.id)
@@ -189,7 +189,7 @@ class ApplicationGroup(Resource):
 
         newTestingRun.updatePredictedEndTime()
 
-        newTestingRun.save()
+        newTestingRun.save(validate=False)
 
         newTestingRun.runJob()
 

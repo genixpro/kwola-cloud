@@ -83,7 +83,7 @@ def saveObjectToDisk(targetObject, folder, config, overrideSaveFormat=None, over
             config.saveKwolaFileData(folder, fileName, gzip.compress(bytes(targetObject.to_json(indent=4), "utf8"), compresslevel=compression))
 
     elif dataFormat == "mongo":
-        targetObject.save()
+        targetObject.save(validate=False)
 
     elif dataFormat == "gcs":
         fileName = f"{targetObject.id}.json.gz"
