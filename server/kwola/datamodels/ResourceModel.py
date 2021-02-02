@@ -24,6 +24,8 @@ from .actions.BaseAction import BaseAction
 from .CustomIDField import CustomIDField
 from .DiskUtilities import saveObjectToDisk, loadObjectFromDisk, getDataFormatAndCompressionForClass
 from mongoengine import *
+from .EncryptedStringField import EncryptedStringField
+import json
 import os
 
 class Resource(Document):
@@ -40,9 +42,9 @@ class Resource(Document):
 
     applicationId = StringField()
 
-    url = StringField()
+    url = EncryptedStringField()
 
-    canonicalUrl = StringField()
+    canonicalUrl = EncryptedStringField()
 
     creationDate = DateTimeField()
 
@@ -103,3 +105,11 @@ class Resource(Document):
 
     def getVersionId(self, fileHash):
         return self.id + "-" + fileHash
+
+
+    def unencryptedJSON(self):
+        data = json.loads(self.to_json())
+        for key, fieldType in Resource.__dict__.items():
+            if isinstance(fieldType, EncryptedStringField) and key in data:
+                data[key] = EncryptedStringField.decrypt(data[key])
+        return data

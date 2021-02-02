@@ -53,7 +53,7 @@ class ResourcesGroup(Resource):
 
         resources = ResourceModel.objects(**queryParams).no_dereference()
 
-        return {"resources": json.loads(resources.to_json())}
+        return {"resources": [resource.unencryptedJSON() for resource in resources]}
 
 
 
@@ -75,4 +75,4 @@ class ResourcesSingle(Resource):
         if resource is None:
             return abort(404)
 
-        return {"resource": json.loads(resource.to_json())}
+        return {"resource": resource.unencryptedJSON()}

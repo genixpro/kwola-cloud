@@ -53,9 +53,9 @@ class ResourceVersionsGroup(Resource):
         if resourceId is not None:
             queryParams["resourceId"] = resourceId
 
-        resourceVersion = ResourceVersionModel.objects(**queryParams).order_by("-creationDate").limit(5).no_dereference()
+        resourceVersions = ResourceVersionModel.objects(**queryParams).order_by("-creationDate").limit(5).no_dereference()
 
-        return {"resourceVersions": json.loads(resourceVersion.to_json())}
+        return {"resourceVersions": [version.unencryptedJSON() for version in resourceVersions]}
 
 
 
@@ -77,7 +77,7 @@ class ResourceVersionsSingle(Resource):
         if resourceVersion is None:
             return abort(404)
 
-        return {"resourceVersion": json.loads(resourceVersion.to_json())}
+        return {"resourceVersion": resourceVersion.unencryptedJSON()}
 
 
 class ResourceVersionsDownloadOriginalData(Resource):
