@@ -22,6 +22,7 @@ import numpy
 import secrets
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from kwola.datamodels.EncryptedStringField import EncryptedStringField
 
 
 class ApplicationModel(Document):
@@ -37,7 +38,7 @@ class ApplicationModel(Document):
 
     name = StringField(required=True)
 
-    url = StringField(required=True)
+    url = EncryptedStringField(required=True)
 
     status = StringField(default="active", enumerate=['active', 'deleted'])
 
