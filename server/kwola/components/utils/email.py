@@ -2,6 +2,7 @@ import os
 import base64
 import traceback
 from ...config.logger import getLogger
+import pathlib
 
 def sendExperimentResults(config):
     try:
@@ -22,6 +23,19 @@ def sendExperimentResults(config):
             attachment = Attachment()
             attachment.file_content = FileContent(encoded)
             attachment.file_type = FileType('image/png')
+            attachment.file_name = FileName(file)
+            attachment.disposition = Disposition('attachment')
+            attachment.content_id = ContentId(file)
+            message.add_attachment(attachment)
+
+        videoFiles = config.listAllFilesInFolder("debug_videos")
+        videoFiles = sorted(videoFiles, key=lambda fileName: pathlib.Path(os.path.join(config.configurationDirectory, "debug_videos", fileName)).stat().st_mtime, reverse=True)
+        for file in videoFiles[:2]:
+            data = config.loadKwolaFileData("debug_videos", file)
+            encoded = base64.b64encode(data).decode()
+            attachment = Attachment()
+            attachment.file_content = FileContent(encoded)
+            attachment.file_type = FileType('video/mpeg')
             attachment.file_name = FileName(file)
             attachment.disposition = Disposition('attachment')
             attachment.content_id = ContentId(file)

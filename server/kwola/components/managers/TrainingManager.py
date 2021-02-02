@@ -906,35 +906,46 @@ class TrainingManager:
         averageStart = max(0, min(len(self.trainingStep.totalRewardLosses) - 1, movingAverageLength))
 
         averageTotalRewardLoss = numpy.mean(self.trainingStep.totalRewardLosses[-averageStart:])
+        stdTotalRewardLoss = numpy.std(self.trainingStep.totalRewardLosses[-averageStart:])
         averagePresentRewardLoss = numpy.mean(self.trainingStep.presentRewardLosses[-averageStart:])
+        stdPresentRewardLoss = numpy.std(self.trainingStep.presentRewardLosses[-averageStart:])
         averageDiscountedFutureRewardLoss = numpy.mean(self.trainingStep.discountedFutureRewardLosses[-averageStart:])
+        stdDiscountedFutureRewardLoss = numpy.std(self.trainingStep.discountedFutureRewardLosses[-averageStart:])
 
         averageStateValueLoss = numpy.mean(self.trainingStep.stateValueLosses[-averageStart:])
+        stdStateValueLoss = numpy.std(self.trainingStep.stateValueLosses[-averageStart:])
         averageAdvantageLoss = numpy.mean(self.trainingStep.advantageLosses[-averageStart:])
+        stdAdvantageLoss = numpy.std(self.trainingStep.advantageLosses[-averageStart:])
         averageActionProbabilityLoss = numpy.mean(self.trainingStep.actionProbabilityLosses[-averageStart:])
+        stdActionProbabilityLoss = numpy.std(self.trainingStep.actionProbabilityLosses[-averageStart:])
 
         averageTracePredictionLoss = numpy.mean(self.trainingStep.tracePredictionLosses[-averageStart:])
+        stdTracePredictionLoss = numpy.std(self.trainingStep.tracePredictionLosses[-averageStart:])
         averageExecutionFeatureLoss = numpy.mean(self.trainingStep.executionFeaturesLosses[-averageStart:])
+        stdExecutionFeatureLoss = numpy.std(self.trainingStep.executionFeaturesLosses[-averageStart:])
         averagePredictedCursorLoss = numpy.mean(self.trainingStep.predictedCursorLosses[-averageStart:])
+        stdPredictedCursorLoss = numpy.std(self.trainingStep.predictedCursorLosses[-averageStart:])
         averageTotalLoss = numpy.mean(self.trainingStep.totalLosses[-averageStart:])
+        stdTotalLoss = numpy.std(self.trainingStep.totalLosses[-averageStart:])
+
         averageTotalRebalancedLoss = numpy.mean(self.trainingStep.totalRebalancedLosses[-averageStart:])
 
         message = f"Losses:\n"
 
-        message += f"    Moving Average Total Reward Loss: {averageTotalRewardLoss:.6f}\n"
-        message += f"    Moving Average Present Reward Loss: {averagePresentRewardLoss:.6f}\n"
-        message += f"    Moving Average Discounted Future Reward Loss: {averageDiscountedFutureRewardLoss:.6f}\n"
-        message += f"    Moving Average State Value Loss: {averageStateValueLoss:.6f}\n"
-        message += f"    Moving Average Advantage Loss: {averageAdvantageLoss:.6f}\n"
-        message += f"    Moving Average Action Probability Loss: {averageActionProbabilityLoss:.6f}\n"
+        message += f"    Moving Average Total Reward Loss:              {averageTotalRewardLoss:.6f} +- std {stdTotalRewardLoss:.4f}\n"
+        message += f"    Moving Average Present Reward Loss:            {averagePresentRewardLoss:.6f} +- std {stdPresentRewardLoss:.4f}\n"
+        message += f"    Moving Average Discounted Future Reward Loss:  {averageDiscountedFutureRewardLoss:.6f} +- std {stdDiscountedFutureRewardLoss:.4f}\n"
+        message += f"    Moving Average State Value Loss:               {averageStateValueLoss:.6f} +- std {stdStateValueLoss:.4f}\n"
+        message += f"    Moving Average Advantage Loss:                 {averageAdvantageLoss:.6f} +- std {stdAdvantageLoss:.4f}\n"
+        message += f"    Moving Average Action Probability Loss:        {averageActionProbabilityLoss:.6f} +- std {stdActionProbabilityLoss:.4f}\n"
         if self.config['enable_trace_prediction_loss']:
-            message += f"    Moving Average Trace Prediction Loss: {averageTracePredictionLoss:.6f}\n"
+            message += f"    Moving Average Trace Prediction Loss:          {averageTracePredictionLoss:.6f} +- std {stdTracePredictionLoss:.4f}\n"
         if self.config['enable_execution_feature_prediction_loss']:
-            message += f"    Moving Average Execution Feature Loss: {averageExecutionFeatureLoss:.6f}\n"
+            message += f"    Moving Average Execution Feature Loss:         {averageExecutionFeatureLoss:.6f} +- std {stdExecutionFeatureLoss:.4f}\n"
         if self.config['enable_cursor_prediction_loss']:
-            message += f"    Moving Average Predicted Cursor Loss: {averagePredictedCursorLoss:.6f}\n"
+            message += f"    Moving Average Predicted Cursor Loss:          {averagePredictedCursorLoss:.6f} +- std {stdPredictedCursorLoss:.4f}\n"
 
-        message += f"    Moving Average Total Loss: {averageTotalLoss:.6f}"
+        message += f"    Moving Average Total Loss:                     {averageTotalLoss:.6f} +- std {stdTotalLoss:.4f}"
         getLogger().info(message)
 
     @staticmethod
