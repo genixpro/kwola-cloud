@@ -51,7 +51,7 @@ from .resources.BehaviouralDifferencesResource import BehaviouralDifferencesGrou
 from .resources.GmailMarketingAuth import GmailMarketingAuthStart, GmailMarketingAuthCallback, GmailMarketingTestEmail
 from .resources.TypingActionConfigurationResource import TypingActionConfigurationExamples
 from .resources.ResourceResource import ResourcesGroup, ResourcesSingle
-from .resources.ResourceVersionResource import ResourceVersionsGroup, ResourceVersionsSingle, ResourceVersionsDownloadOriginalData
+from .resources.ResourceVersionResource import ResourceVersionsGroup, ResourceVersionsSingle, ResourceVersionsDownloadOriginalData, ResourceVersionsDownloadTranslatedData
 
 api.add_resource(ApplicationGroup, '/api/application')
 api.add_resource(ApplicationSingle, '/api/application/<string:application_id>')
@@ -132,6 +132,7 @@ api.add_resource(ResourcesSingle, '/api/resources/<string:resource_id>')
 api.add_resource(ResourceVersionsGroup, '/api/resource_versions')
 api.add_resource(ResourceVersionsSingle, '/api/resource_versions/<string:resource_id>')
 api.add_resource(ResourceVersionsDownloadOriginalData, '/api/resource_versions/<string:resource_id>/download_original')
+api.add_resource(ResourceVersionsDownloadTranslatedData, '/api/resource_versions/<string:resource_id>/download_translated')
 
 if cloudConfig['features']['enableSelfTestLoginEndpoint']:
     api.add_resource(AutologinForSelfTest, '/api/self_test_login')

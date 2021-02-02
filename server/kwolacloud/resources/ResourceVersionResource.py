@@ -15,6 +15,7 @@ from kwola.config.config import getSharedGCSStorageClient
 from kwola.config.config import KwolaCoreConfiguration
 from kwola.datamodels.ResourceModel import Resource as ResourceModel
 from kwolacloud.datamodels.TestingRun import TestingRun
+from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 from kwola.datamodels.ResourceVersionModel import ResourceVersion as ResourceVersionModel
 from kwola.datamodels.CustomIDField import CustomIDField
 import bson
@@ -98,10 +99,42 @@ class ResourceVersionsDownloadOriginalData(Resource):
         if resourceVersion is None:
             return abort(404)
 
-        testingRun = TestingRun.objects(id=resourceVersion.testingRunId).first()
-        config = testingRun.configuration.createKwolaCoreConfiguration(testingRun.owner, testingRun.applicationId, testingRun.id)
+        application = ApplicationModel.objects(id=resourceVersion.applicationId).first()
+        config = ApplicationModel.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.applicationId, None)
 
         data = resourceVersion.loadOriginalResourceContents(config)
+
+        if data is not None:
+            response = flask.make_response(data)
+            response.headers['content-type'] = resourceVersion.contentType
+
+            return response
+        else:
+            return abort(404)
+
+
+class ResourceVersionsDownloadTranslatedData(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+
+    def get(self, resource_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": resource_id}
+        if not isAdmin():
+            queryParams['owner'] = user
+
+        resourceVersion = ResourceVersionModel.objects(**queryParams).first()
+
+        if resourceVersion is None:
+            return abort(404)
+
+        application = ApplicationModel.objects(id=resourceVersion.applicationId).first()
+        config = ApplicationModel.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.applicationId, None)
+
+        data = resourceVersion.loadTranslatedResourceContents(config)
 
         if data is not None:
             response = flask.make_response(data)

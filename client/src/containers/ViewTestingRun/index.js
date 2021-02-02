@@ -626,7 +626,7 @@ class ViewTestingRun extends Component {
                                                                                                 version.didRewriteResource ?
                                                                                                     <a
                                                                                                         className={"resource-version-download-icon"}
-                                                                                                        href={`${process.env.REACT_APP_BACKEND_API_URL}resource_versions/${version._id}/download_original?token=${Auth.getQueryParameterToken()}`}
+                                                                                                        href={`${process.env.REACT_APP_BACKEND_API_URL}resource_versions/${version._id}/download_translated?token=${Auth.getQueryParameterToken()}`}
                                                                                                         target="_blank"
                                                                                                         title={"Download Translated"}>
                                                                                                         <TransformIcon/>
