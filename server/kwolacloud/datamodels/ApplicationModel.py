@@ -25,7 +25,7 @@ from dateutil.relativedelta import relativedelta
 from kwola.datamodels.EncryptedStringField import EncryptedStringField
 
 
-class ApplicationModel(Document):
+class ApplicationModel(DynamicDocument):
     meta = {
         'indexes': [
             ('owner',),

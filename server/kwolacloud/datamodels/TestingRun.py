@@ -15,7 +15,7 @@ from dateutil.relativedelta import relativedelta
 import math
 
 
-class TestingRun(Document):
+class TestingRun(DynamicDocument):
     meta = {
         'indexes': [
             ('owner',),

@@ -28,7 +28,7 @@ import stat
 import giturlparse
 
 
-class RecurringTestingTrigger(Document):
+class RecurringTestingTrigger(DynamicDocument):
     meta = {
         'indexes': [
             ('owner',),
