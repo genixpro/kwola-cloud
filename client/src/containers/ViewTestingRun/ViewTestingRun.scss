@@ -1,0 +1,79 @@
+
+
+
+.resource-info-panel
+{
+  display: flex;
+  flex-direction: column;
+
+  .resource-file-type-icon
+  {
+    width: 100px;
+  }
+
+  .resource-info-panel-header
+  {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: left;
+    word-break: break-all;
+    margin-bottom: 30px;
+  }
+
+  .resource-details-grid
+  {
+    display: grid;
+    grid-template-columns: auto auto;
+
+    .resource-detail-label
+    {
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      min-width: 150px;
+    }
+
+    .resource-detail-value
+    {
+      margin-left: 15px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      word-break: break-word;
+    }
+
+  }
+
+  .resource-versions-list
+  {
+    display: flex;
+    flex-direction: column;
+    word-break: break-all;
+
+    .resource-version-header
+    {
+      text-align: center;
+    }
+
+    .resource-version-row
+    {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+
+    .resource-version-download-icon
+    {
+      color: black;
+      cursor: pointer;
+    }
+  }
+
+}
+
+.resource-filtering-buttons
+{
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 25px;
+}

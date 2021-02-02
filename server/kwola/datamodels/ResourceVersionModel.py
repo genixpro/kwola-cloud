@@ -46,7 +46,7 @@ class ResourceVersion(Document):
 
     canonicalFileHash = StringField()
 
-    creationDate = DateField()
+    creationDate = DateTimeField()
 
     url = StringField()
 
@@ -65,6 +65,8 @@ class ResourceVersion(Document):
     originalLength = IntField()
 
     rewrittenLength = IntField()
+
+    methods = ListField(StringField())
 
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
         saveObjectToDisk(self, "resource_versions", config, overrideSaveFormat=overrideSaveFormat, overrideCompression=overrideCompression)

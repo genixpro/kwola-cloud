@@ -30,7 +30,7 @@ class Resource(Document):
     meta = {
         'indexes': [
             ('owner', 'applicationId',),
-            ('applicationId',),
+            ('applicationId', "canonicalUrl"),
         ]
     }
 
@@ -44,7 +44,7 @@ class Resource(Document):
 
     canonicalUrl = StringField()
 
-    creationDate = DateField()
+    creationDate = DateTimeField()
 
     didRewriteResource = BooleanField()
 
@@ -59,6 +59,8 @@ class Resource(Document):
     versionSaveMode = StringField()
 
     latestVersionId = StringField()
+
+    methods = ListField(StringField())
 
 
     def saveToDisk(self, config, overrideSaveFormat=None, overrideCompression=None):
