@@ -932,20 +932,20 @@ class TrainingManager:
 
         message = f"Losses:\n"
 
-        message += f"    Moving Average Total Reward Loss: {averageTotalRewardLoss:.6f} +- std {stdTotalRewardLoss:.4f}\n"
-        message += f"    Moving Average Present Reward Loss: {averagePresentRewardLoss:.6f} +- std {stdPresentRewardLoss:.4f}\n"
-        message += f"    Moving Average Discounted Future Reward Loss: {averageDiscountedFutureRewardLoss:.6f} +- std {stdDiscountedFutureRewardLoss:.4f}\n"
-        message += f"    Moving Average State Value Loss: {averageStateValueLoss:.6f} +- std {stdStateValueLoss:.4f}\n"
-        message += f"    Moving Average Advantage Loss: {averageAdvantageLoss:.6f} +- std {stdAdvantageLoss:.4f}\n"
-        message += f"    Moving Average Action Probability Loss: {averageActionProbabilityLoss:.6f} +- std {stdActionProbabilityLoss:.4f}\n"
+        message += f"    Moving Average Total Reward Loss:              {averageTotalRewardLoss:.6f} +- std {stdTotalRewardLoss:.4f}\n"
+        message += f"    Moving Average Present Reward Loss:            {averagePresentRewardLoss:.6f} +- std {stdPresentRewardLoss:.4f}\n"
+        message += f"    Moving Average Discounted Future Reward Loss:  {averageDiscountedFutureRewardLoss:.6f} +- std {stdDiscountedFutureRewardLoss:.4f}\n"
+        message += f"    Moving Average State Value Loss:               {averageStateValueLoss:.6f} +- std {stdStateValueLoss:.4f}\n"
+        message += f"    Moving Average Advantage Loss:                 {averageAdvantageLoss:.6f} +- std {stdAdvantageLoss:.4f}\n"
+        message += f"    Moving Average Action Probability Loss:        {averageActionProbabilityLoss:.6f} +- std {stdActionProbabilityLoss:.4f}\n"
         if self.config['enable_trace_prediction_loss']:
-            message += f"    Moving Average Trace Prediction Loss: {averageTracePredictionLoss:.6f} +- std {stdTracePredictionLoss:.4f}\n"
+            message += f"    Moving Average Trace Prediction Loss:          {averageTracePredictionLoss:.6f} +- std {stdTracePredictionLoss:.4f}\n"
         if self.config['enable_execution_feature_prediction_loss']:
-            message += f"    Moving Average Execution Feature Loss: {averageExecutionFeatureLoss:.6f} +- std {stdExecutionFeatureLoss:.4f}\n"
+            message += f"    Moving Average Execution Feature Loss:         {averageExecutionFeatureLoss:.6f} +- std {stdExecutionFeatureLoss:.4f}\n"
         if self.config['enable_cursor_prediction_loss']:
-            message += f"    Moving Average Predicted Cursor Loss: {averagePredictedCursorLoss:.6f} +- std {stdPredictedCursorLoss:.4f}\n"
+            message += f"    Moving Average Predicted Cursor Loss:          {averagePredictedCursorLoss:.6f} +- std {stdPredictedCursorLoss:.4f}\n"
 
-        message += f"    Moving Average Total Loss: {averageTotalLoss:.6f} +- std {stdTotalLoss:.4f}"
+        message += f"    Moving Average Total Loss:                     {averageTotalLoss:.6f} +- std {stdTotalLoss:.4f}"
         getLogger().info(message)
 
     @staticmethod
