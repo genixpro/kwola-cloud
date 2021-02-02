@@ -100,7 +100,7 @@ class ResourceVersionsDownloadOriginalData(Resource):
             return abort(404)
 
         application = ApplicationModel.objects(id=resourceVersion.applicationId).first()
-        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.applicationId, None)
+        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, None)
 
         data = resourceVersion.loadOriginalResourceContents(config)
 
@@ -132,7 +132,7 @@ class ResourceVersionsDownloadTranslatedData(Resource):
             return abort(404)
 
         application = ApplicationModel.objects(id=resourceVersion.applicationId).first()
-        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.applicationId, None)
+        config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, None)
 
         data = resourceVersion.loadTranslatedResourceContents(config)
 
