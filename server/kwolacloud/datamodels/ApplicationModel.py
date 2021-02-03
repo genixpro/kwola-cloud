@@ -19,6 +19,7 @@ import requests
 import logging
 from google.cloud import storage
 import numpy
+import json
 import secrets
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -185,3 +186,10 @@ class ApplicationModel(DynamicDocument):
             return True
 
         return True
+
+    def unencryptedJSON(self):
+        data = json.loads(self.to_json())
+        for key, fieldType in ApplicationModel.__dict__.items():
+            if isinstance(fieldType, EncryptedStringField) and key in data:
+                data[key] = EncryptedStringField.decrypt(data[key])
+        return data

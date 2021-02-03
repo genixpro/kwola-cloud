@@ -65,9 +65,9 @@ class ApplicationGroup(Resource):
         if not isAdmin():
             query['owner'] = user
 
-        applications = ApplicationModel.objects(Q(status__exists=False) | Q(status="active"), **query).no_dereference().to_json()
+        applications = ApplicationModel.objects(Q(status__exists=False) | Q(status="active"), **query).no_dereference()
 
-        return {"applications": json.loads(applications)}
+        return {"applications": [application.unencryptedJSON() for application in applications]}
 
     def post(self):
         userId, claims = authenticate(returnAllClaims=True)
@@ -249,7 +249,7 @@ class ApplicationSingle(Resource):
         application = ApplicationModel.objects(**query).limit(1).first()
 
         if application is not None:
-            return json.loads(application.to_json())
+            return application.unencryptedJSON()
         else:
             abort(404)
 
