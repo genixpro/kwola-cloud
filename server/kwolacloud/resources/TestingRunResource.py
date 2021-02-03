@@ -48,14 +48,15 @@ class TestingRunsGroup(Resource):
             return abort(401)
 
         queryParams = {}
+        applicationId = flask.request.args.get('applicationId')
+        if applicationId is None:
+            return abort(400)
 
         if not isAdmin():
-            queryParams['owner'] = userId
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, applicationId):
+                return abort(403)
 
-
-        applicationId = flask.request.args.get('applicationId')
-        if applicationId is not None:
-            queryParams["applicationId"] = applicationId
+        queryParams["applicationId"] = applicationId
 
         recurringTestingTriggerId = flask.request.args.get('recurringTestingTriggerId')
         if recurringTestingTriggerId is not None:
@@ -74,7 +75,8 @@ class TestingRunsGroup(Resource):
 
         query = {"id": data['applicationId']}
         if not isAdmin():
-            query['owner'] = userId
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, data['applicationId']):
+                return abort(403)
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -134,13 +136,14 @@ class TestingRunsSingle(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
-
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         return {"testingRun": testingRun.unencryptedJSON()}
 
@@ -152,13 +155,15 @@ class TestingRunsRestart(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         testingRun.runJob()
 
@@ -182,13 +187,15 @@ class TestingRunsRestartTraining(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         if self.configData['features']['localRuns']:
             currentTrainingStepJob = ManagedTaskSubprocess(
@@ -225,10 +232,12 @@ class TestingRunsDownloadZip(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         if testingRun is None:
             return abort(404)
@@ -256,13 +265,15 @@ class PauseTestingRun(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         if testingRun.status == "paused":
             return {}
@@ -321,13 +332,15 @@ class ResumeTestingRun(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         if testingRun.status == "running":
             return {}

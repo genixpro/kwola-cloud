@@ -30,6 +30,7 @@ class ApplicationModel(DynamicDocument):
     meta = {
         'indexes': [
             ('owner',),
+            ('teamMembers',),
         ]
     }
 
@@ -108,6 +109,8 @@ class ApplicationModel(DynamicDocument):
     promoCode = StringField(default=None)
 
     lastTestingDate = DateTimeField(default=None)
+
+    teamMembers = StringField(default=None)
 
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
@@ -197,3 +200,9 @@ class ApplicationModel(DynamicDocument):
             data['defaultRunConfiguration'] = self.defaultRunConfiguration.unencryptedJSON()
 
         return data
+
+    @staticmethod
+    def checkIfUserCanAccessApplication(user, applicationId):
+        count = ApplicationModel.objects(Q(teamMembers__in=user) | Q(owner=user), id=applicationId).count()
+        return count > 0
+

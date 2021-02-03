@@ -43,12 +43,14 @@ class ResourceVersionsGroup(Resource):
 
         queryParams = {}
 
-        if not isAdmin():
-            queryParams['owner'] = user
-
         applicationId = flask.request.args.get('applicationId')
-        if applicationId is not None:
-            queryParams["applicationId"] = applicationId
+        if applicationId is None:
+            return abort(400)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, applicationId):
+            return abort(403)
+
+        queryParams['applicationId'] = applicationId
 
         resourceId = flask.request.args.get('resourceId')
         if resourceId is not None:
@@ -70,13 +72,14 @@ class ResourceVersionsSingle(Resource):
             return abort(401)
 
         queryParams = {"id": resource_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         resourceVersion = ResourceVersionModel.objects(**queryParams).first()
 
         if resourceVersion is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, resourceVersion.applicationId):
+            return abort(403)
 
         return {"resourceVersion": resourceVersion.unencryptedJSON()}
 
@@ -91,13 +94,14 @@ class ResourceVersionsDownloadOriginalData(Resource):
             return abort(401)
 
         queryParams = {"id": resource_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         resourceVersion = ResourceVersionModel.objects(**queryParams).first()
 
         if resourceVersion is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, resourceVersion.applicationId):
+            return abort(403)
 
         application = ApplicationModel.objects(id=resourceVersion.applicationId).first()
         config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, None)
@@ -123,13 +127,14 @@ class ResourceVersionsDownloadTranslatedData(Resource):
             return abort(401)
 
         queryParams = {"id": resource_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         resourceVersion = ResourceVersionModel.objects(**queryParams).first()
 
         if resourceVersion is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, resourceVersion.applicationId):
+            return abort(403)
 
         application = ApplicationModel.objects(id=resourceVersion.applicationId).first()
         config = application.defaultRunConfiguration.createKwolaCoreConfiguration(application.owner, application.id, None)
@@ -143,3 +148,4 @@ class ResourceVersionsDownloadTranslatedData(Resource):
             return response
         else:
             return abort(404)
+

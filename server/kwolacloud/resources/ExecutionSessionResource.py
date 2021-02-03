@@ -11,6 +11,7 @@ from ..app import cache
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwolacloud.datamodels.TestingRun import TestingRun
+from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 from kwola.tasks.RunTestingStep import runTestingStep
 import json
 import os
@@ -51,8 +52,17 @@ class ExecutionSessionGroup(Resource):
             queryParams['owner'] = user
 
         testingRunId = flask.request.args.get('testingRunId')
-        if testingRunId is not None:
-            queryParams["testingRunId"] = testingRunId
+        if testingRunId is None:
+            return abort(400)
+
+        testingRun = TestingRun.objects(id=testingRunId).first()
+        if testingRun is None:
+            return abort(400)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, testingRun.applicationId):
+            return abort(403)
+
+        queryParams["testingRunId"] = testingRunId
 
         isChangeDetectionSession = flask.request.args.get('isChangeDetectionSession')
         if isChangeDetectionSession is not None:
@@ -83,15 +93,16 @@ class ExecutionSessionSingle(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
-        executionSession = ExecutionSession.objects(**queryParams).limit(1)[0].to_json()
+        executionSession = ExecutionSession.objects(**queryParams).limit(1)[0]
 
         if executionSession is None:
             return abort(404)
 
-        return {"executionSession": json.loads(executionSession)}
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
+
+        return {"executionSession": json.loads(executionSession.to_json())}
 
 
 
@@ -103,13 +114,14 @@ class ExecutionSessionAnnotatedVideo(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         executionSession = ExecutionSession.objects(**queryParams).first()
 
         if executionSession is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
 
         testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
 
@@ -139,13 +151,14 @@ class ExecutionSessionRawVideo(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         executionSession = ExecutionSession.objects(**queryParams).first()
 
         if executionSession is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
 
         testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
 
@@ -178,13 +191,14 @@ class ExecutionSessionTraces(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         executionSession = ExecutionSession.objects(**queryParams).first()
 
         if executionSession is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
 
         testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
         config = testingRun.configuration.createKwolaCoreConfiguration(testingRun.owner, testingRun.applicationId, testingRun.id)
@@ -207,13 +221,14 @@ class ExecutionSessionSingleTrace(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         executionSession = ExecutionSession.objects(**queryParams).first()
 
         if executionSession is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
 
         testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
         config = testingRun.configuration.createKwolaCoreConfiguration(testingRun.owner, testingRun.applicationId, testingRun.id)
@@ -234,13 +249,14 @@ class ExecutionSessionTriggerChangeDetection(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         session = ExecutionSession.objects(**queryParams).first()
 
         if session is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, session.applicationId):
+            return abort(403)
 
         runBehaviourChangeDetectionJob(session.testingRunId, session.id)
 

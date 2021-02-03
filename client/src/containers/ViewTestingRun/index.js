@@ -243,6 +243,7 @@ class ViewTestingRun extends Component {
 
         axios.get(`/resource_versions`, {
             params: {
+                "applicationId": this.state.testingRun.applicationId,
                 "resourceId": resource._id
             }
         }).then((response) => {

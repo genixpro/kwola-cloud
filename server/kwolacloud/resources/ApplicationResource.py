@@ -61,11 +61,12 @@ class ApplicationGroup(Resource):
         if user is None:
             abort(401)
 
-        query = {}
+        queryKV = {}
+        queries = []
         if not isAdmin():
-            query['owner'] = user
+            queries.append(Q(owner=user) | Q(teamMembers__in=user))
 
-        applications = ApplicationModel.objects(Q(status__exists=False) | Q(status="active"), **query).no_dereference()
+        applications = ApplicationModel.objects(Q(status__exists=False) | Q(status="active"), *queries, **queryKV).no_dereference()
 
         return {"applications": [application.unencryptedJSON() for application in applications]}
 
@@ -242,11 +243,12 @@ class ApplicationSingle(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(*queries, **queryKV).limit(1).first()
 
         if application is not None:
             return application.unencryptedJSON()
@@ -258,11 +260,12 @@ class ApplicationSingle(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(*queries, **queryKV).limit(1).first()
 
         data = flask.request.get_json()
 
@@ -354,15 +357,16 @@ class ApplicationSingle(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
         configData = loadCloudConfiguration()
         if not configData['features']['enableDataDeletion']:
             return
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(*queries, **queryKV).limit(1).first()
 
         if application is not None:
             application.status = "deleted"
@@ -383,11 +387,12 @@ class ApplicationImage(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(*queries, **queryKV).limit(1).first()
 
         screenshotData = application.fetchScreenshot()
 
@@ -402,11 +407,12 @@ class ApplicationSubscribeToSlack(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(*queries, **queryKV).limit(1).first()
 
         if application is not None:
             if application.slackAccessToken is None:
@@ -435,11 +441,12 @@ class ApplicationSubscribeToSlack(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(*queries, **queryKV).limit(1).first()
 
         if application is not None:
             data = flask.request.get_json()
@@ -469,11 +476,12 @@ class ApplicationTestSlack(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(*queries, **queryKV).limit(1).first()
 
         if application is not None:
             postToCustomerSlack("Hooray! Kwola has been successfully connected to your Slack workspace.", application)
@@ -490,11 +498,12 @@ class ApplicationIntegrateWithJIRA(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(**queryKV).limit(1).first()
 
         if application is not None:
             responseData = {
@@ -554,11 +563,12 @@ class ApplicationIntegrateWithJIRA(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(*queries, **queryKV).limit(1).first()
 
         if application is not None:
             data = flask.request.get_json()
@@ -606,11 +616,12 @@ class ApplicationTestWebhook(Resource):
         if userId is None:
             abort(401)
 
-        query = {"id": application_id}
+        queryKV = {"id": application_id}
+        queries = []
         if not isAdmin():
-            query['owner'] = userId
+            queries.append(Q(owner=userId) | Q(teamMembers__in=userId))
 
-        application = ApplicationModel.objects(**query).limit(1).first()
+        application = ApplicationModel.objects(*queries, **queryKV).limit(1).first()
 
         validWebhooksFields = [
             'testingRunStartedWebhookURL',

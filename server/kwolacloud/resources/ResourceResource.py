@@ -15,6 +15,7 @@ from kwola.config.config import getSharedGCSStorageClient
 from kwola.config.config import KwolaCoreConfiguration
 from kwola.datamodels.ResourceModel import Resource as ResourceModel
 from kwola.datamodels.CustomIDField import CustomIDField
+from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 import bson
 import flask
 import flask
@@ -40,12 +41,14 @@ class ResourcesGroup(Resource):
 
         queryParams = {}
 
-        if not isAdmin():
-            queryParams['owner'] = user
-
         applicationId = flask.request.args.get('applicationId')
-        if applicationId is not None:
-            queryParams["applicationId"] = applicationId
+        if applicationId is None:
+            return abort(400)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, applicationId):
+            return abort(403)
+
+        queryParams["applicationId"] = applicationId
 
         # testingRunId = flask.request.args.get('testingRunId')
         # if testingRunId is not None:
@@ -67,12 +70,13 @@ class ResourcesSingle(Resource):
             return abort(401)
 
         queryParams = {"id": resource_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         resource = ResourceModel.objects(**queryParams).first()
 
         if resource is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, resource.applicationId):
+            return abort(403)
 
         return {"resource": resource.unencryptedJSON()}

@@ -48,9 +48,17 @@ class BugsGroup(Resource):
             queryParams['owner'] = user
 
         testingRunId = flask.request.args.get('testingRunId')
-        if testingRunId is not None:
-            queryParams["testingRunId"] = testingRunId
+        if testingRunId is None:
+            return abort(400)
 
+        testingRun = TestingRun.objects(id=testingRunId).first()
+        if testingRun is None:
+            return abort(400)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, testingRun.applicationId):
+            return abort(403)
+
+        queryParams["testingRunId"] = testingRunId
         queryParams["isMuted"] = False
 
         fields = ["id", "error", "isMuted", "importanceLevel", "status", "isBugNew", "canonicalPageUrl", "browser", "windowSize", "applicationId"]
@@ -70,13 +78,14 @@ class BugsSingle(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         return {"bug": json.loads(bug.to_json())}
 
@@ -86,13 +95,14 @@ class BugsSingle(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         data = flask.request.get_json()
         # Only allow updating a few fields
@@ -127,13 +137,14 @@ class BugVideo(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
@@ -172,13 +183,14 @@ class BugFrameSpriteSheet(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
@@ -217,13 +229,14 @@ class BugErrorFrame(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
@@ -255,13 +268,14 @@ class BugsAdminTriggerReproduction(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         runBugReproductionJob(bug)
 
@@ -278,13 +292,14 @@ class ExportBugToJIRA(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         application = ApplicationModel.objects(id=bug.applicationId).first()
 

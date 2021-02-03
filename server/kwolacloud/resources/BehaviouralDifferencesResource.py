@@ -15,6 +15,8 @@ from google.cloud import storage
 from kwola.config.config import getSharedGCSStorageClient
 from kwola.config.config import KwolaCoreConfiguration
 from kwolacloud.datamodels.BehaviouralDifference import BehaviouralDifference
+from kwolacloud.datamodels.TestingRun import TestingRun
+from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 from kwola.datamodels.CustomIDField import CustomIDField
 import bson
 import flask
@@ -40,11 +42,17 @@ class BehaviouralDifferencesGroup(Resource):
             return abort(401)
 
         queryParams = {}
-
-        if not isAdmin():
-            queryParams['owner'] = user
-
         testingRunId = flask.request.args.get('newTestingRunId')
+        if testingRunId is None:
+            return abort(400)
+
+        testingRun = TestingRun.objects(id=testingRunId).first()
+        if testingRun is None:
+            return abort(400)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, testingRun.applicationId):
+            return abort(403)
+
         if testingRunId is not None:
             queryParams["newTestingRunId"] = testingRunId
 
@@ -58,6 +66,7 @@ class BehaviouralDifferencesGroup(Resource):
 
         # fields = ["id", "error", "isMuted", "importanceLevel", "status", "isBugNew"]
         differences = BehaviouralDifference.objects(**queryParams).no_dereference()
+
 
         return {"behaviouralDifferences": json.loads(differences.to_json())}
 
