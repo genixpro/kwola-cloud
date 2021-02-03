@@ -44,7 +44,7 @@ class RecurringTestingTriggerGroup(Resource):
         if applicationId is not None:
             queryParams["applicationId"] = applicationId
 
-        recurringTestingTriggers = RecurringTestingTrigger.objects(**queryParams).no_dereference().order_by("-creationTime").limit(10).to_json()
+        recurringTestingTriggers = RecurringTestingTrigger.objects(**queryParams).no_dereference().order_by("-creationTime").limit(10)
 
         return {"recurringTestingTriggers": [trigger.unencryptedJSON() for trigger in recurringTestingTriggers]}
 

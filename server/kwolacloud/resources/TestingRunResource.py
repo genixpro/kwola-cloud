@@ -61,7 +61,7 @@ class TestingRunsGroup(Resource):
         if recurringTestingTriggerId is not None:
             queryParams["recurringTestingTriggerId"] = recurringTestingTriggerId
 
-        testingRuns = TestingRun.objects(**queryParams).no_dereference().order_by("-startTime").limit(100).to_json()
+        testingRuns = TestingRun.objects(**queryParams).no_dereference().order_by("-startTime").limit(100)
 
         return {"testingRuns": [run.unencryptedJSON() for run in testingRuns]}
 
