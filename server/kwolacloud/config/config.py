@@ -7,6 +7,8 @@ import pkg_resources
 import os
 import json
 from kwola.config.config import KwolaCoreConfiguration
+from google.cloud import secretmanager
+
 
 def determineEnvironment():
     environment = os.getenv("KWOLA_ENV")
@@ -25,9 +27,14 @@ def loadCloudConfiguration():
 
     environment = determineEnvironment()
 
-    configFilePath = f"config/environments/{environment}.json"
+    client = secretmanager.SecretManagerServiceClient()
 
-    data = json.loads(pkg_resources.resource_string("kwolacloud", configFilePath))
+    # Build the resource name of the secret.
+    name = client.secret_version_path("kwola-cloud", f"{environment}_environment_config", "latest")
+
+    response = client.access_secret_version(request={"name": name})
+
+    data = json.loads(response.payload.data.decode("UTF-8"))
 
     cachedConfig = data
 
