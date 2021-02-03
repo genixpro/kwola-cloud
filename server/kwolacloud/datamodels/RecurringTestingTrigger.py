@@ -8,6 +8,7 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from .RunConfiguration import RunConfiguration
 from .TestingRun import TestingRun
 from .ApplicationModel import ApplicationModel
+from kwola.datamodels.EncryptedStringField import EncryptedStringField
 from mongoengine import *
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
 from ..config.config import getKwolaConfiguration
@@ -26,6 +27,7 @@ import logging
 import stripe
 import stat
 import giturlparse
+import json
 
 
 class RecurringTestingTrigger(DynamicDocument):
@@ -76,15 +78,15 @@ class RecurringTestingTrigger(DynamicDocument):
 
     lastTriggerTimesByDateOfMonth = DictField(field=DateTimeField(), default=dict())
 
-    repositoryURL = StringField(default=None)
+    repositoryURL = EncryptedStringField(default=None)
 
-    repositoryUsername = StringField(default=None)
+    repositoryUsername = EncryptedStringField(default=None)
 
-    repositoryPassword = StringField(default=None)
+    repositoryPassword = EncryptedStringField(default=None)
 
-    repositorySSHPrivateKey = StringField(default=None)
+    repositorySSHPrivateKey = EncryptedStringField(default=None)
 
-    lastRepositoryCommitHash = StringField(default=None)
+    lastRepositoryCommitHash = EncryptedStringField(default=None)
 
     webhookIdentifier = StringField(default=None)
 
@@ -201,5 +203,9 @@ class RecurringTestingTrigger(DynamicDocument):
                 shutil.rmtree(tempCloneDir)
                 return str(result.stdout, 'utf8')
 
-
-
+    def unencryptedJSON(self):
+        data = json.loads(self.to_json())
+        for key, fieldType in RecurringTestingTrigger.__dict__.items():
+            if isinstance(fieldType, EncryptedStringField) and key in data:
+                data[key] = EncryptedStringField.decrypt(data[key])
+        return data

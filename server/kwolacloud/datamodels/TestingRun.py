@@ -9,10 +9,12 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from .RunConfiguration import RunConfiguration
 from mongoengine import *
 from kwola.tasks.ManagedTaskSubprocess import ManagedTaskSubprocess
+from kwola.datamodels.EncryptedStringField import EncryptedStringField
 from ..config.config import getKwolaConfiguration
 from ..config.config import loadCloudConfiguration
 from dateutil.relativedelta import relativedelta
 import math
+import json
 
 
 class TestingRun(DynamicDocument):
@@ -160,3 +162,15 @@ class TestingRun(DynamicDocument):
         portionComplete = self.testingSessionsCompleted / self.configuration.totalTestingSessions
 
         self.predictedEndTime = self.startTime + relativedelta(hours=int(math.ceil(self.configuration.hours * (1.0 - portionComplete)) * ratio) + 1, minute=30, second=0, microsecond=0)
+
+
+    def unencryptedJSON(self):
+        data = json.loads(self.to_json())
+        for key, fieldType in TestingRun.__dict__.items():
+            if isinstance(fieldType, EncryptedStringField) and key in data:
+                data[key] = EncryptedStringField.decrypt(data[key])
+
+        if 'configuration' in data and self.configuration is not None:
+            data['configuration'] = self.configuration.unencryptedJSON()
+
+        return data

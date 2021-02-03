@@ -192,4 +192,8 @@ class ApplicationModel(DynamicDocument):
         for key, fieldType in ApplicationModel.__dict__.items():
             if isinstance(fieldType, EncryptedStringField) and key in data:
                 data[key] = EncryptedStringField.decrypt(data[key])
+
+        if 'defaultRunConfiguration' in data and self.defaultRunConfiguration is not None:
+            data['defaultRunConfiguration'] = self.defaultRunConfiguration.unencryptedJSON()
+
         return data

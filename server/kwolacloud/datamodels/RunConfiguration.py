@@ -9,16 +9,17 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.datamodels.TypingActionConfiguration import TypingActionConfiguration
 from ..config.config import getKwolaConfigurationData, loadCloudConfiguration
 from kwola.config.config import KwolaCoreConfiguration
+from kwola.datamodels.EncryptedStringField import EncryptedStringField
 import json
 import os
 
 
 class RunConfiguration(DynamicEmbeddedDocument):
-    url = StringField()
+    url = EncryptedStringField()
 
-    email = StringField()
+    email = EncryptedStringField()
 
-    password = StringField()
+    password = EncryptedStringField()
 
     name = StringField()
 
@@ -181,3 +182,11 @@ class RunConfiguration(DynamicEmbeddedDocument):
             kwolaConfigData['configurationDirectory'] = os.path.join("data", applicationId)
 
         return KwolaCoreConfiguration(kwolaConfigData)
+
+    def unencryptedJSON(self):
+        data = json.loads(self.to_json())
+        for key, fieldType in RunConfiguration.__dict__.items():
+            if isinstance(fieldType, EncryptedStringField) and key in data:
+                data[key] = EncryptedStringField.decrypt(data[key])
+        return data
+

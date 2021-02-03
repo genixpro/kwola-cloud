@@ -63,7 +63,7 @@ class TestingRunsGroup(Resource):
 
         testingRuns = TestingRun.objects(**queryParams).no_dereference().order_by("-startTime").limit(100).to_json()
 
-        return {"testingRuns": json.loads(testingRuns)}
+        return {"testingRuns": [run.unencryptedJSON() for run in testingRuns]}
 
     def post(self):
         userId, claims = authenticate(returnAllClaims=True)
@@ -142,7 +142,7 @@ class TestingRunsSingle(Resource):
         if testingRun is None:
             return abort(404)
 
-        return {"testingRun": json.loads(testingRun.to_json())}
+        return {"testingRun": testingRun.unencryptedJSON()}
 
 
 class TestingRunsRestart(Resource):

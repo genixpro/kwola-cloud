@@ -46,7 +46,7 @@ class RecurringTestingTriggerGroup(Resource):
 
         recurringTestingTriggers = RecurringTestingTrigger.objects(**queryParams).no_dereference().order_by("-creationTime").limit(10).to_json()
 
-        return {"recurringTestingTriggers": json.loads(recurringTestingTriggers)}
+        return {"recurringTestingTriggers": [trigger.unencryptedJSON() for trigger in recurringTestingTriggers]}
 
     def post(self):
         logging.info(f"Attempt Stripe verification")
@@ -134,7 +134,7 @@ class RecurringTestingTriggerSingle(Resource):
         if recurringTestingTrigger is None:
             return abort(404)
 
-        return {"recurringTestingTrigger": json.loads(recurringTestingTrigger.to_json())}
+        return {"recurringTestingTrigger": recurringTestingTrigger.unencryptedJSON()}
 
 
     def delete(self, recurring_testing_trigger_id):
