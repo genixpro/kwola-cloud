@@ -198,6 +198,7 @@ def findAllTrainingStepIds(config, applicationId=None):
                 stepId = stepId.replace(".json", "")
                 stepId = stepId.replace(".gz", "")
                 stepId = stepId.replace(".pickle", "")
+                stepId = stepId.replace(".enc", "")
 
                 trainingStepIds.append(stepId)
 
@@ -370,6 +371,7 @@ def loadAllBugs(config, applicationId=None):
                 bugId = bugId.replace(".json", "")
                 bugId = bugId.replace(".gz", "")
                 bugId = bugId.replace(".pickle", "")
+                bugId = bugId.replace(".enc", "")
 
                 if bugId not in bugIds:
                     bugIds.add(bugId)

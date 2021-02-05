@@ -6,7 +6,6 @@
 from ..app import cache
 from ..auth import authenticate, isAdmin
 from ..config.config import getKwolaConfiguration, loadCloudConfiguration
-from ..tasks.BugReproductionTask import runBugReproductionJob
 from ..tasks.RunTesting import runTesting
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required,
                                 jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
@@ -14,10 +13,9 @@ from flask_restful import Resource, reqparse, abort
 from google.cloud import storage
 from kwola.config.config import getSharedGCSStorageClient
 from kwola.config.config import KwolaCoreConfiguration
-from kwolacloud.datamodels.BehaviouralDifference import BehaviouralDifference
-from kwolacloud.datamodels.TestingRun import TestingRun
-from kwolacloud.datamodels.ApplicationModel import ApplicationModel
+from kwola.datamodels.ResourceModel import Resource as ResourceModel
 from kwola.datamodels.CustomIDField import CustomIDField
+from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 import bson
 import flask
 import flask
@@ -26,13 +24,13 @@ import json
 import logging
 import os.path
 
-class BehaviouralDifferencesGroup(Resource):
+class ResourcesGroup(Resource):
     def __init__(self):
         self.postParser = reqparse.RequestParser()
         # self.postParser.add_argument('version', help='This field cannot be blank', required=False)
         # self.postParser.add_argument('startTime', help='This field cannot be blank', required=False)
         # self.postParser.add_argument('endTime', help='This field cannot be blank', required=False)
-        # self.postParser.add_argument('bugsFound', help='This field cannot be blank', required=False)
+        # self.postParser.add_argument('resourcesFound', help='This field cannot be blank', required=False)
         # self.postParser.add_argument('status', help='This field cannot be blank', required=False)
         pass
 
@@ -42,31 +40,43 @@ class BehaviouralDifferencesGroup(Resource):
             return abort(401)
 
         queryParams = {}
-        testingRunId = flask.request.args.get('newTestingRunId')
-        if testingRunId is None:
+
+        applicationId = flask.request.args.get('applicationId')
+        if applicationId is None:
             return abort(400)
 
-        testingRun = TestingRun.objects(id=testingRunId).first()
-        if testingRun is None:
-            return abort(400)
-
-        if not ApplicationModel.checkIfUserCanAccessApplication(user, testingRun.applicationId):
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, applicationId):
             return abort(403)
 
-        if testingRunId is not None:
-            queryParams["newTestingRunId"] = testingRunId
+        queryParams["applicationId"] = applicationId
 
-        executionSessionId = flask.request.args.get('newExecutionSessionId')
-        if executionSessionId is not None:
-            queryParams["newExecutionSessionId"] = testingRunId
+        # testingRunId = flask.request.args.get('testingRunId')
+        # if testingRunId is not None:
+        #     queryParams["testingRunId"] = testingRunId
 
-        executionTraceId = flask.request.args.get('newExecutionTraceId')
-        if executionTraceId is not None:
-            queryParams["newExecutionTraceId"] = executionTraceId
+        resources = ResourceModel.objects(**queryParams).no_dereference()
 
-        # fields = ["id", "error", "isMuted", "importanceLevel", "status", "isBugNew"]
-        differences = BehaviouralDifference.objects(**queryParams).no_dereference()
+        return {"resources": [resource.unencryptedJSON() for resource in resources]}
 
 
-        return {"behaviouralDifferences": json.loads(differences.to_json())}
 
+class ResourcesSingle(Resource):
+    def __init__(self):
+        self.postParser = reqparse.RequestParser()
+
+    def get(self, resource_id):
+        user = authenticate()
+        if user is None:
+            return abort(401)
+
+        queryParams = {"id": resource_id}
+
+        resource = ResourceModel.objects(**queryParams).first()
+
+        if resource is None:
+            return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, resource.applicationId):
+            return abort(403)
+
+        return {"resource": resource.unencryptedJSON()}

@@ -8,6 +8,7 @@ from ..config.config import getKwolaConfiguration
 from ..config.config import loadCloudConfiguration
 from ..datamodels.id_utility import generateKwolaId
 from ..datamodels.MutedError import MutedError
+from ..datamodels.ApplicationModel import ApplicationModel
 from flask_restful import Resource, reqparse, abort
 import flask
 import json
@@ -26,12 +27,14 @@ class MutedErrorsGroup(Resource):
 
         queryParams = {}
 
-        if not isAdmin():
-            queryParams['owner'] = user
-
         applicationId = flask.request.args.get('applicationId')
         if applicationId is None:
             return abort(400)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, applicationId):
+            return abort(403)
+
+        queryParams['applicationId'] = applicationId
 
         mutedErrors = MutedError.objects(**queryParams).no_dereference().order_by("-creationDate").to_json()
 
@@ -60,13 +63,14 @@ class MutedErrorsSingle(Resource):
             return abort(401)
 
         queryParams = {"id": muted_error_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         mutedError = MutedError.objects(**queryParams).first()
 
         if mutedError is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, mutedError.applicationId):
+            return abort(403)
 
         return {"mutedError": json.loads(mutedError.to_json())}
 
@@ -76,8 +80,6 @@ class MutedErrorsSingle(Resource):
             return abort(401)
 
         queryParams = {"id": muted_error_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         configData = loadCloudConfiguration()
         if not configData['features']['enableDataDeletion']:
@@ -87,6 +89,9 @@ class MutedErrorsSingle(Resource):
 
         if mutedError is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, mutedError.applicationId):
+            return abort(403)
 
         mutedError.delete()
 

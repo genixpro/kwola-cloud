@@ -11,6 +11,8 @@ steps:
     - "KWOLA_ENV=$_KWOLA_ENV"
     - "--build-arg"
     - "REVISION_ID=$REVISION_ID"
+    - "--build-arg"
+    - "KWOLA_FIELD_ENCRYPTION_KEY=$_KWOLA_FIELD_ENCRYPTION_KEY"
     - "-f"
     - "deployment/api/Dockerfile"
   timeout: 1200s

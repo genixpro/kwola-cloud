@@ -9,16 +9,17 @@ from kwola.datamodels.CustomIDField import CustomIDField
 from kwola.datamodels.TypingActionConfiguration import TypingActionConfiguration
 from ..config.config import getKwolaConfigurationData, loadCloudConfiguration
 from kwola.config.config import KwolaCoreConfiguration
+from kwola.datamodels.EncryptedStringField import EncryptedStringField
 import json
 import os
 
 
-class RunConfiguration(EmbeddedDocument):
-    url = StringField()
+class RunConfiguration(DynamicEmbeddedDocument):
+    url = EncryptedStringField()
 
-    email = StringField()
+    email = EncryptedStringField()
 
-    password = StringField()
+    password = EncryptedStringField()
 
     name = StringField()
 
@@ -124,7 +125,9 @@ class RunConfiguration(EmbeddedDocument):
 
     def createKwolaCoreConfiguration(self, owner, applicationId, testingRunId):
         kwolaConfigData = getKwolaConfigurationData()
+        cloudConfig = loadCloudConfiguration()
 
+        kwolaConfigData['data_serialization_encryption_key'] = cloudConfig['storage']['encryption_key'] + applicationId
         kwolaConfigData['owner'] = owner
         kwolaConfigData['applicationId'] = applicationId
         kwolaConfigData['testingRunId'] = testingRunId
@@ -175,8 +178,15 @@ class RunConfiguration(EmbeddedDocument):
             json.loads(action.to_json()) for action in self.typingActions
         ]
 
-        cloudConfig = loadCloudConfiguration()
         if cloudConfig['features']['localRuns']:
             kwolaConfigData['configurationDirectory'] = os.path.join("data", applicationId)
 
         return KwolaCoreConfiguration(kwolaConfigData)
+
+    def unencryptedJSON(self):
+        data = json.loads(self.to_json())
+        for key, fieldType in RunConfiguration.__dict__.items():
+            if isinstance(fieldType, EncryptedStringField) and key in data:
+                data[key] = EncryptedStringField.decrypt(data[key])
+        return data
+

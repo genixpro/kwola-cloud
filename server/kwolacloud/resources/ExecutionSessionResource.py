@@ -11,6 +11,7 @@ from ..app import cache
 from kwola.datamodels.ExecutionSessionModel import ExecutionSession
 from kwola.datamodels.ExecutionTraceModel import ExecutionTrace
 from kwolacloud.datamodels.TestingRun import TestingRun
+from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 from kwola.tasks.RunTestingStep import runTestingStep
 import json
 import os
@@ -51,8 +52,17 @@ class ExecutionSessionGroup(Resource):
             queryParams['owner'] = user
 
         testingRunId = flask.request.args.get('testingRunId')
-        if testingRunId is not None:
-            queryParams["testingRunId"] = testingRunId
+        if testingRunId is None:
+            return abort(400)
+
+        testingRun = TestingRun.objects(id=testingRunId).first()
+        if testingRun is None:
+            return abort(400)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, testingRun.applicationId):
+            return abort(403)
+
+        queryParams["testingRunId"] = testingRunId
 
         isChangeDetectionSession = flask.request.args.get('isChangeDetectionSession')
         if isChangeDetectionSession is not None:
@@ -83,15 +93,16 @@ class ExecutionSessionSingle(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
-        executionSession = ExecutionSession.objects(**queryParams).limit(1)[0].to_json()
+        executionSession = ExecutionSession.objects(**queryParams).limit(1)[0]
 
         if executionSession is None:
             return abort(404)
 
-        return {"executionSession": json.loads(executionSession)}
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
+
+        return {"executionSession": json.loads(executionSession.to_json())}
 
 
 
@@ -103,28 +114,32 @@ class ExecutionSessionAnnotatedVideo(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         executionSession = ExecutionSession.objects(**queryParams).first()
 
         if executionSession is None:
             return abort(404)
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + executionSession.applicationId)
-        objectPath = f"annotated_videos/{str(execution_session_id)}.mp4"
-        objectBlob = storage.Blob(objectPath, applicationStorageBucket)
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
 
-        try:
-            videoData = objectBlob.download_as_string()
+        testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
 
+        if testingRun is None:
+            return abort(404)
+
+        videoFileName = f'{str(execution_session_id)}.mp4'
+
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        videoData = config.loadKwolaFileData("annotated_videos", videoFileName)
+
+        if videoData is not None:
             response = flask.make_response(videoData)
             response.headers['content-type'] = 'video/mp4'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing execution session annotated video: {objectPath}")
+        else:
+            logging.error(f"Error! Missing execution session annotated video: {videoFileName}")
             return abort(404)
 
 
@@ -136,28 +151,32 @@ class ExecutionSessionRawVideo(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         executionSession = ExecutionSession.objects(**queryParams).first()
 
         if executionSession is None:
             return abort(404)
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + executionSession.applicationId)
-        objectPath = f"videos/{str(execution_session_id)}.mp4"
-        objectBlob = storage.Blob(objectPath, applicationStorageBucket)
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
 
-        try:
-            videoData = objectBlob.download_as_string()
+        testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
 
+        if testingRun is None:
+            return abort(404)
+
+        videoFileName = f'{str(execution_session_id)}.mp4'
+
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        videoData = config.loadKwolaFileData("videos", videoFileName)
+
+        if videoData is not None:
             response = flask.make_response(videoData)
             response.headers['content-type'] = 'video/mp4'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing execution session raw video: {objectPath}")
+        else:
+            logging.error(f"Error! Missing execution session raw video: {videoFileName}")
             return abort(404)
 
 
@@ -172,13 +191,14 @@ class ExecutionSessionTraces(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         executionSession = ExecutionSession.objects(**queryParams).first()
 
         if executionSession is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
 
         testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
         config = testingRun.configuration.createKwolaCoreConfiguration(testingRun.owner, testingRun.applicationId, testingRun.id)
@@ -201,13 +221,14 @@ class ExecutionSessionSingleTrace(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         executionSession = ExecutionSession.objects(**queryParams).first()
 
         if executionSession is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, executionSession.applicationId):
+            return abort(403)
 
         testingRun = TestingRun.objects(id=executionSession.testingRunId).first()
         config = testingRun.configuration.createKwolaCoreConfiguration(testingRun.owner, testingRun.applicationId, testingRun.id)
@@ -228,13 +249,14 @@ class ExecutionSessionTriggerChangeDetection(Resource):
             return abort(401)
 
         queryParams = {"id": execution_session_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         session = ExecutionSession.objects(**queryParams).first()
 
         if session is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, session.applicationId):
+            return abort(403)
 
         runBehaviourChangeDetectionJob(session.testingRunId, session.id)
 

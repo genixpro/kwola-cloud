@@ -41,12 +41,17 @@ class RecurringTestingTriggerGroup(Resource):
             queryParams['owner'] = user
 
         applicationId = flask.request.args.get('applicationId')
-        if applicationId is not None:
-            queryParams["applicationId"] = applicationId
+        if applicationId is None:
+            return abort(400)
 
-        recurringTestingTriggers = RecurringTestingTrigger.objects(**queryParams).no_dereference().order_by("-creationTime").limit(10).to_json()
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, applicationId):
+            return abort(403)
 
-        return {"recurringTestingTriggers": json.loads(recurringTestingTriggers)}
+        queryParams['applicationId'] = applicationId
+
+        recurringTestingTriggers = RecurringTestingTrigger.objects(**queryParams).no_dereference().order_by("-creationTime").limit(10)
+
+        return {"recurringTestingTriggers": [trigger.unencryptedJSON() for trigger in recurringTestingTriggers]}
 
     def post(self):
         logging.info(f"Attempt Stripe verification")
@@ -57,8 +62,9 @@ class RecurringTestingTriggerGroup(Resource):
         data = flask.request.get_json()
 
         query = {"id": data['applicationId']}
-        if not isAdmin():
-            query['owner'] = user
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, data['applicationId']):
+            return abort(403)
 
         promoCode = None
         coupon = None
@@ -126,15 +132,16 @@ class RecurringTestingTriggerSingle(Resource):
             return abort(401)
 
         queryParams = {"id": recurring_testing_trigger_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         recurringTestingTrigger = RecurringTestingTrigger.objects(**queryParams).first()
 
         if recurringTestingTrigger is None:
             return abort(404)
 
-        return {"recurringTestingTrigger": json.loads(recurringTestingTrigger.to_json())}
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, recurringTestingTrigger.applicationId):
+            return abort(403)
+
+        return {"recurringTestingTrigger": recurringTestingTrigger.unencryptedJSON()}
 
 
     def delete(self, recurring_testing_trigger_id):
@@ -143,8 +150,6 @@ class RecurringTestingTriggerSingle(Resource):
             return abort(401)
 
         queryParams = {"id": recurring_testing_trigger_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         configData = loadCloudConfiguration()
         if not configData['features']['enableDataDeletion']:
@@ -154,6 +159,9 @@ class RecurringTestingTriggerSingle(Resource):
 
         if trigger is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, trigger.applicationId):
+            return abort(403)
 
         trigger.delete()
 

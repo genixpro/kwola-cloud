@@ -2,7 +2,7 @@ from mongoengine import *
 from kwola.datamodels.CustomIDField import CustomIDField
 
 
-class FeedbackSubmission(Document):
+class FeedbackSubmission(DynamicDocument):
     meta = {
         'indexes': [
             ('owner',)

@@ -4,46 +4,125 @@ import {Table} from "../ListApplications/materialUiTables.style";
 import {TableBody, TableCell, TableHead, TableRow, TablePagination} from "../../components/uielements/table";
 import moment from 'moment';
 import MaterialTable from 'material-table'
+import "./resourcesTable.scss";
+import Papersheet from "../../components/utility/papersheet/papersheet.style";
+import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos';
+import ArrowForwardIosIcon from '@material-ui/icons/ArrowForwardIos';
+import FastForwardIcon from '@material-ui/icons/FastForward';
+import SkipNextIcon from '@material-ui/icons/SkipNext';
+import SkipPreviousIcon from '@material-ui/icons/SkipPrevious';
 
 class ResourceTable extends Component{
     state = {
-        newPage:0,
-        setPage:0,
-        rowsPerPage:10
+        page:0,
+        rowsPerPage:10,
+
     };
 
-    handleRowClick = (event, rowData)=>
+    firstPage()
     {
-        this.props.history.push(`/app/dashboard/resources/${rowData._id}`)
+        this.setState({page: 0});
+    }
+
+    lastPage()
+    {
+        this.setState({page: Math.floor(this.props.data.length / this.state.rowsPerPage)});
+    }
+
+    nextPage()
+    {
+        if (this.state.page < Math.floor(this.props.data.length / this.state.rowsPerPage))
+        {
+            this.setState({page: this.state.page + 1});
+        }
+    }
+
+    previousPage()
+    {
+        if (this.state.page > 0)
+        {
+            this.setState({page: this.state.page - 1});
+        }
+    }
+
+    onRowClicked(rowData)
+    {
+        this.props.onResourceSelected(rowData);
+    }
+
+    getDomainForURL(data) {
+        var    a      = document.createElement('a');
+        a.href = data;
+        return a.hostname;
+    }
+
+    getPathForURL(data) {
+        var    a      = document.createElement('a');
+        a.href = data;
+        return a.pathname;
     }
 
     render()
     {
         const rowsPerPage = this.state.rowsPerPage;
-        const setRowsPerPage = 10;
-        const page = this.state.newPage
-        let setPage = this.state.setPage
+        const page = this.state.page;
         let tableData = this.props.data;
+        let pageData = tableData.slice(rowsPerPage * page, rowsPerPage * (page + 1));
+
+        if (page * rowsPerPage > tableData.length)
+        {
+            this.lastPage();
+        }
+
         return(
-            <div>
-                <MaterialTable
-                    columns={[
-                        { title: 'Canonical URL', field: 'canonicalUrl' },
-                        { title: 'Content Type', field: 'contentType' },
-                        { title: 'id', field: '_id', hidden:true },
-                    ]}
-                    data={tableData}
-                    title=""
-                    onRowClick={this.handleRowClick}
-                    options={{
-                        pageSize:10,
-                        pageSizeOptions:[10,20,50],
-                        rowStyle: {
-                            fontSize:"14px"
-                        }
-                    }}
-                />
-            </div>
+            <Papersheet className={"resources-table-wrapper"}>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Method</TableCell>
+                            <TableCell>Domain</TableCell>
+                            <TableCell>Canonical Path</TableCell>
+                            <TableCell>Content Type</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {pageData.map(n => {
+                            return (
+                                <TableRow key={n._id} className={`resource-row ${this.props.selectedResource && this.props.selectedResource._id === n._id ? "selected" : ""}`} onClick={() => this.onRowClicked(n)}>
+                                    <TableCell>
+                                        {(n.methods || ["GET"]).map((method) =>
+                                            {
+                                                return <span className={"resource-request-method"}>{method}</span>;
+                                            })
+                                        }
+                                    </TableCell>
+                                    <TableCell>{this.getDomainForURL(n.canonicalUrl)}</TableCell>
+                                    <TableCell>{this.getPathForURL(n.canonicalUrl)}</TableCell>
+                                    <TableCell>{n.contentType}</TableCell>
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+
+                <div className={"resources-table-controls"}>
+                    <div className={"resources-table-paging-widget"}>
+                        <div onClick={() => this.firstPage()} className={"resources-table-icon-wrapper"}>
+                            <SkipPreviousIcon />
+                        </div>
+                        <div onClick={() => this.previousPage()} className={"resources-table-icon-wrapper"}>
+                            <ArrowBackIosIcon />
+                        </div>
+                        <span>{page * rowsPerPage + 1} - {(page + 1) * rowsPerPage} of {tableData.length}</span>
+                        <div onClick={() => this.nextPage()} className={"resources-table-icon-wrapper"}>
+                            <ArrowForwardIosIcon />
+                        </div>
+                        <div onClick={() => this.lastPage()} className={"resources-table-icon-wrapper"}>
+                            <SkipNextIcon />
+                        </div>
+                    </div>
+                </div>
+            </Papersheet>
         )
     }
 }

@@ -12,6 +12,13 @@ import SingleCard from '../Shuffle/singleCard.js';
 import BoxCard from '../../components/boxCard';
 import Img7 from '../../images/7.jpg';
 import user from '../../images/user.jpg';
+import htmlIcon from '../../images/icons/html.png';
+import javascriptIcon from '../../images/icons/javascript.png';
+import pngIcon from '../../images/icons/png.png';
+import jpgIcon from '../../images/icons/jpg.png';
+import jsonIcon from '../../images/icons/json-file.png';
+import fileIcon from '../../images/icons/file.png';
+import cssIcon from '../../images/icons/css.png';
 import ActionButton from "../../components/mail/singleMail/actionButton";
 import {Button} from "../UiElements/Button/button.style";
 import Icon from "../../components/uielements/icon";
@@ -45,6 +52,11 @@ import AppBar from '../../components/uielements/appbar';
 import WebIcon from '@material-ui/icons/Web';
 import ChangesViewer from "./ChangesViewer";
 import { LinearProgress } from '../../components/uielements/progress';
+import ResourceTable from "./resourcesTable";
+import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
+import "./ViewTestingRun.scss";
+import GetAppIcon from '@material-ui/icons/GetApp';
+import TransformIcon from '@material-ui/icons/Transform';
 
 class ViewTestingRun extends Component {
     state = {
@@ -56,13 +68,23 @@ class ViewTestingRun extends Component {
         bugs:[],
         isAdmin: Auth.isAdmin(),
         settingsMenuOpen: false,
-        tab: 0
+        tab: 0,
+        resources: [],
+        resourceFilter: null
     };
 
     loadAllData()
     {
         axios.get(`/testing_runs/${this.props.match.params.id}`).then((response) => {
             this.setState({testingRun: response.data.testingRun});
+
+            axios.get(`/resources`, {
+                params: {
+                    "applicationId": response.data.testingRun.applicationId
+                }
+            }).then((response) => {
+                this.setState({resources: response.data.resources});
+            });
         });
 
         axios.get(`/bugs`, {
@@ -80,6 +102,7 @@ class ViewTestingRun extends Component {
         }).then((response) => {
             this.setState({executionSessions: response.data.executionSessions});
         });
+
     }
 
     componentDidMount()
@@ -171,6 +194,92 @@ class ViewTestingRun extends Component {
         {
             return status;
         }
+    }
+
+    iconForResource(resource)
+    {
+        if (!this.state.selectedResource.contentType)
+        {
+            return fileIcon;
+        }
+        else if (this.state.selectedResource.contentType.indexOf("text/html") !== -1)
+        {
+            return htmlIcon;
+        }
+        else if (this.state.selectedResource.contentType.indexOf("application/javascript") !== -1)
+        {
+            return javascriptIcon;
+        }
+        else if (this.state.selectedResource.contentType.indexOf("image/png") !== -1)
+        {
+            return pngIcon;
+        }
+        else if (this.state.selectedResource.contentType.indexOf("image/jpeg") !== -1)
+        {
+            return jpgIcon;
+        }
+        else if (this.state.selectedResource.contentType.indexOf("json") !== -1)
+        {
+            return jsonIcon;
+        }
+        else if (this.state.selectedResource.contentType.indexOf("text/css") !== -1)
+        {
+            return cssIcon;
+        }
+        else
+        {
+            return fileIcon;
+        }
+    }
+
+
+    setSelectedResource(resource)
+    {
+        this.setState({
+            selectedResource: resource,
+            resourceVersions: [],
+            loadingResourceVersions: true
+        });
+
+        axios.get(`/resource_versions`, {
+            params: {
+                "applicationId": this.state.testingRun.applicationId,
+                "resourceId": resource._id
+            }
+        }).then((response) => {
+            this.setState({
+                resourceVersions: response.data.resourceVersions,
+                loadingResourceVersions: false
+            });
+        });
+    }
+
+    setResourceFilter(filter)
+    {
+        if (this.state.resourceFilter === filter)
+        {
+            this.setState({"resourceFilter": null})
+        }
+        else
+        {
+            this.setState({"resourceFilter": filter})
+        }
+    }
+
+    getFilteredResources()
+    {
+        let filtered = [];
+        this.state.resources.map((resource) =>
+        {
+            if ((resource.contentType && resource.contentType.indexOf(this.state.resourceFilter) !== -1) || !this.state.resourceFilter)
+            {
+                filtered.push(resource);
+            }
+        });
+
+        filtered = _.sortBy(filtered, (row) => row.canonicalUrl)
+
+        return filtered;
     }
 
 
@@ -351,6 +460,7 @@ class ViewTestingRun extends Component {
                                         <Tab label="Bugs" icon={<BugReportIcon />} />
                                         <Tab label="Changes [BETA]" icon={<LinearScaleIcon />} />
                                         <Tab label="Sessions" icon={<WebIcon />} />
+                                        <Tab label="Resources" icon={<SystemUpdateAltIcon />} />
                                     </Tabs>
                                 </AppBar>
 
@@ -377,9 +487,170 @@ class ViewTestingRun extends Component {
                                 }
                                 {
                                     this.state.tab === 2 ?
-                                    <Papersheet style={{"borderRadius": "0"}}>
-                                        <SessionTable {...this.props} data={this.state.executionSessions} />
-                                    </Papersheet> : null
+                                        <Papersheet style={{"borderRadius": "0"}}>
+                                            <SessionTable {...this.props} data={this.state.executionSessions} />
+                                        </Papersheet> : null
+                                }
+                                {
+                                    this.state.tab === 3 ?
+                                        <Papersheet style={{"borderRadius": "0"}}>
+                                            <Row>
+                                                <Column xs={8}>
+                                                    <div className={"resource-filtering-buttons"}>
+                                                        <Button variant="contained"
+                                                                size="small"
+                                                                color={this.state.resourceFilter === "text/html" ? "primary" : "default"}
+                                                                title={"HTML"}
+                                                                onClick={(event) => this.setResourceFilter("text/html")}
+                                                        >
+                                                            HTML
+                                                        </Button>
+                                                        <Button variant="contained"
+                                                                size="small"
+                                                                color={this.state.resourceFilter === "application/javascript" ? "primary" : "default"}
+                                                                title={"Javascript"}
+                                                                onClick={(event) => this.setResourceFilter("application/javascript")}
+                                                        >
+                                                            Javascript
+                                                        </Button>
+                                                        <Button variant="contained"
+                                                                size="small"
+                                                                color={this.state.resourceFilter === "image/" ? "primary" : "default"}
+                                                                title={"Image"}
+                                                                onClick={(event) => this.setResourceFilter("image/")}
+                                                        >
+                                                            Image
+                                                        </Button>
+                                                        <Button variant="contained"
+                                                                size="small"
+                                                                color={this.state.resourceFilter === "application/json" ? "primary" : "default"}
+                                                                title={"JSON"}
+                                                                onClick={(event) => this.setResourceFilter("application/json")}
+                                                        >
+                                                            JSON
+                                                        </Button>
+                                                        <Button variant="contained"
+                                                                size="small"
+                                                                color={this.state.resourceFilter === "text/css" ? "primary" : "default"}
+                                                                title={"CSS"}
+                                                                onClick={(event) => this.setResourceFilter("text/css")}
+                                                        >
+                                                            CSS
+                                                        </Button>
+                                                        <Button variant="contained"
+                                                                size="small"
+                                                                color={this.state.resourceFilter === "video/" ? "primary" : "default"}
+                                                                title={"Video"}
+                                                                onClick={(event) => this.setResourceFilter("video/")}
+                                                        >
+                                                            Video
+                                                        </Button>
+                                                        <Button variant="contained"
+                                                                size="small"
+                                                                color={this.state.resourceFilter === "audio/" ? "primary" : "default"}
+                                                                title={"Audio"}
+                                                                onClick={(event) => this.setResourceFilter("audio/")}
+                                                        >
+                                                            Audio
+                                                        </Button>
+                                                    </div>
+                                                    <ResourceTable {...this.props}
+                                                                   data={this.getFilteredResources()}
+                                                                   selectedResource={this.state.selectedResource}
+                                                                   onResourceSelected={(resource) => this.setSelectedResource(resource)}
+                                                    />
+                                                </Column>
+                                                <Column xs={4}>
+                                                    {
+                                                        this.state.selectedResource ?
+                                                            <Papersheet className={"resource-info-panel"}>
+                                                                <div className={"resource-info-panel-header"}>
+                                                                    <h2>{this.state.selectedResource.canonicalUrl}</h2>
+                                                                    <br/>
+                                                                    <img src={this.iconForResource(this.state.selectedResource)} className={"resource-file-type-icon"} />
+                                                                    <br/>
+                                                                </div>
+
+                                                                <div className={"resource-details-grid"}>
+                                                                    <span className={"resource-detail-label"}>Original URL:</span>
+                                                                    <span className={"resource-detail-value"}>{this.state.selectedResource.url || "Unknown"}</span>
+
+                                                                    {
+                                                                        this.state.selectedResource.canonicalUrl !== this.state.selectedResource.url ?
+                                                                            <span className={"resource-detail-label"}>Canonical URL:</span> : null
+                                                                    }
+                                                                    {
+                                                                        this.state.selectedResource.canonicalUrl !== this.state.selectedResource.url ?
+                                                                            <span className={"resource-detail-value"}>{this.state.selectedResource.canonicalUrl || "Unknown"}</span> : null
+                                                                    }
+
+                                                                    <span className={"resource-detail-label"}>Content Type:</span>
+                                                                    <span className={"resource-detail-value"}>{this.state.selectedResource.contentType || "Unknown"}</span>
+
+                                                                    <span className={"resource-detail-label"}>Creation Date:</span>
+                                                                    <span className={"resource-detail-value"}>{moment(this.state.selectedResource.creationDate.$date).format('h:mm:ss a MMM Do, YYYY')}</span>
+
+                                                                    <span className={"resource-detail-label"}>Did Rewrite Resource:</span>
+                                                                    <span className={"resource-detail-value"}>{this.state.selectedResource.didRewriteResource.toString()}</span>
+
+                                                                    <span className={"resource-detail-label"}>Rewrite Plugin Name:</span>
+                                                                    <span className={"resource-detail-value"}>{this.state.selectedResource.rewritePluginName || "N/A"}</span>
+
+                                                                    <span className={"resource-detail-label"}>Rewrite Mode:</span>
+                                                                    <span className={"resource-detail-value"}>{this.state.selectedResource.rewriteMode || "N/A"}</span>
+
+                                                                    <span className={"resource-detail-label"}>Rewrite Message:</span>
+                                                                    <span className={"resource-detail-value"}>{this.state.selectedResource.rewriteMessage || "N/A"}</span>
+
+                                                                    <span className={"resource-detail-label"}>Version Save Mode:</span>
+                                                                    <span className={"resource-detail-value"}>{this.state.selectedResource.versionSaveMode}</span>
+                                                                </div>
+
+                                                                <div className={"resource-versions-list"}>
+                                                                    <h4 className={"resource-version-header"}>Recent Versions</h4>
+                                                                    {
+                                                                        this.state.resourceVersions.map((version) =>
+                                                                        {
+                                                                            return <div className={"resource-version-row"}>
+                                                                                <span>{moment(version.creationDate.$date).format('h:mm:ss a MMM Do, YYYY')}</span>
+                                                                                {
+                                                                                    (moment(new Date()).diff(moment(version.creationDate.$date)) < (1000 * 60 * 60 * 24 * 45) ) ?
+                                                                                        <div>
+                                                                                            <a
+                                                                                                className={"resource-version-download-icon"}
+                                                                                                href={`${process.env.REACT_APP_BACKEND_API_URL}resource_versions/${version._id}/download_original?token=${Auth.getQueryParameterToken()}`}
+                                                                                                target="_blank"
+                                                                                                title={"Download Original"}>
+                                                                                                <GetAppIcon/>
+                                                                                            </a>
+                                                                                            {
+                                                                                                version.didRewriteResource ?
+                                                                                                    <a
+                                                                                                        className={"resource-version-download-icon"}
+                                                                                                        href={`${process.env.REACT_APP_BACKEND_API_URL}resource_versions/${version._id}/download_translated?token=${Auth.getQueryParameterToken()}`}
+                                                                                                        target="_blank"
+                                                                                                        title={"Download Translated"}>
+                                                                                                        <TransformIcon/>
+                                                                                                    </a> : null
+                                                                                            }
+                                                                                        </div> : null
+                                                                                }
+                                                                            </div>;
+
+                                                                        })
+                                                                    }
+                                                                    {
+                                                                        !this.state.loadingResourceVersions && this.state.resourceVersions.length === 0 ?
+                                                                            <div>
+                                                                                <span>No resource versions were found.</span>
+                                                                            </div> :null
+                                                                    }
+                                                                </div>
+                                                            </Papersheet> : null
+                                                    }
+                                                </Column>
+                                            </Row>
+                                        </Papersheet> : null
                                 }
                             </FullColumn>
                         </Row>

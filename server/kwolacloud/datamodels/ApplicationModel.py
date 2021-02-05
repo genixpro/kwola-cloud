@@ -19,15 +19,18 @@ import requests
 import logging
 from google.cloud import storage
 import numpy
+import json
 import secrets
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from kwola.datamodels.EncryptedStringField import EncryptedStringField
 
 
-class ApplicationModel(Document):
+class ApplicationModel(DynamicDocument):
     meta = {
         'indexes': [
             ('owner',),
+            ('teamMembers',),
         ]
     }
 
@@ -37,7 +40,7 @@ class ApplicationModel(Document):
 
     name = StringField(required=True)
 
-    url = StringField(required=True)
+    url = EncryptedStringField(required=True)
 
     status = StringField(default="active", enumerate=['active', 'deleted'])
 
@@ -106,6 +109,8 @@ class ApplicationModel(Document):
     promoCode = StringField(default=None)
 
     lastTestingDate = DateTimeField(default=None)
+
+    teamMembers = StringField(default=None)
 
     def saveToDisk(self, config):
         saveObjectToDisk(self, "applications", config)
@@ -184,3 +189,20 @@ class ApplicationModel(Document):
             return True
 
         return True
+
+    def unencryptedJSON(self):
+        data = json.loads(self.to_json())
+        for key, fieldType in ApplicationModel.__dict__.items():
+            if isinstance(fieldType, EncryptedStringField) and key in data:
+                data[key] = EncryptedStringField.decrypt(data[key])
+
+        if 'defaultRunConfiguration' in data and self.defaultRunConfiguration is not None:
+            data['defaultRunConfiguration'] = self.defaultRunConfiguration.unencryptedJSON()
+
+        return data
+
+    @staticmethod
+    def checkIfUserCanAccessApplication(user, applicationId):
+        count = ApplicationModel.objects(Q(teamMembers__in=user) | Q(owner=user), id=applicationId).count()
+        return count > 0
+

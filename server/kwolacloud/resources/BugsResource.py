@@ -15,6 +15,7 @@ from google.cloud import storage
 from kwola.config.config import getSharedGCSStorageClient
 from kwola.config.config import KwolaCoreConfiguration
 from kwola.datamodels.BugModel import BugModel
+from kwolacloud.datamodels.TestingRun import TestingRun
 from kwolacloud.datamodels.ApplicationModel import ApplicationModel
 from ..helpers.jira import postBugToCustomerJIRA
 from kwola.datamodels.CustomIDField import CustomIDField
@@ -47,9 +48,17 @@ class BugsGroup(Resource):
             queryParams['owner'] = user
 
         testingRunId = flask.request.args.get('testingRunId')
-        if testingRunId is not None:
-            queryParams["testingRunId"] = testingRunId
+        if testingRunId is None:
+            return abort(400)
 
+        testingRun = TestingRun.objects(id=testingRunId).first()
+        if testingRun is None:
+            return abort(400)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, testingRun.applicationId):
+            return abort(403)
+
+        queryParams["testingRunId"] = testingRunId
         queryParams["isMuted"] = False
 
         fields = ["id", "error", "isMuted", "importanceLevel", "status", "isBugNew", "canonicalPageUrl", "browser", "windowSize", "applicationId"]
@@ -69,13 +78,14 @@ class BugsSingle(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         return {"bug": json.loads(bug.to_json())}
 
@@ -85,13 +95,14 @@ class BugsSingle(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         data = flask.request.get_json()
         # Only allow updating a few fields
@@ -126,32 +137,33 @@ class BugVideo(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
 
-        videoFilePath = os.path.join("bugs", f'{str(bug_id)}_bug_{str(bug.executionSessionId)}.mp4')
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + bug.applicationId)
-        objectBlob = storage.Blob(videoFilePath, applicationStorageBucket)
+        testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
-        try:
-            videoData = objectBlob.download_as_string()
+        if testingRun is None:
+            return abort(404)
 
+        videoFileName = f'{str(bug_id)}_bug_{str(bug.executionSessionId)}.mp4'
+
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        videoData = config.loadKwolaFileData("bugs", videoFileName)
+
+        if videoData is not None:
             response = flask.make_response(videoData)
             response.headers['content-type'] = 'video/mp4'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing bug video file: {videoFilePath}")
+        else:
+            logging.error(f"Error! Missing bug video file: {videoFileName}")
             return abort(404)
-        finally:
-            pass
 
 
 
@@ -171,32 +183,33 @@ class BugFrameSpriteSheet(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
 
-        spriteFilePath = os.path.join("bug_frame_sprite_sheets", f'{str(bug_id)}.jpg')
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + bug.applicationId)
-        objectBlob = storage.Blob(spriteFilePath, applicationStorageBucket)
+        testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
-        try:
-            imageData = objectBlob.download_as_string()
+        if testingRun is None:
+            return abort(404)
 
+        spriteFilePath = f'{str(bug_id)}.jpg'
+
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        imageData = config.loadKwolaFileData("bug_frame_sprite_sheets", spriteFilePath)
+
+        if imageData is not None:
             response = flask.make_response(imageData)
             response.headers['content-type'] = 'image/jpeg'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing bug stripe sheet file: {spriteFilePath}")
+        else:
+            logging.error(f"Error! Missing bug sprite sheet file: {spriteFilePath}")
             return abort(404)
-        finally:
-            pass
 
 
 
@@ -216,32 +229,33 @@ class BugErrorFrame(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
 
-        errorFrameFilePath = os.path.join("bug_error_frames", f'{str(bug_id)}.jpg')
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
-        storageClient = getSharedGCSStorageClient()
-        applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + bug.applicationId)
-        objectBlob = storage.Blob(errorFrameFilePath, applicationStorageBucket)
+        testingRun = TestingRun.objects(id=bug.testingRunId).first()
 
-        try:
-            imageData = objectBlob.download_as_string()
+        if testingRun is None:
+            return abort(404)
 
+        errorFrameFileName = f'{str(bug_id)}.jpg'
+
+        config = testingRun.configuration.createKwolaCoreConfiguration(user, testingRun.applicationId, testingRun.id)
+        imageData = config.loadKwolaFileData("bug_error_frames", errorFrameFileName)
+
+        if imageData is not None:
             response = flask.make_response(imageData)
             response.headers['content-type'] = 'image/jpeg'
 
             return response
-        except google.cloud.exceptions.NotFound:
-            logging.error(f"Error! Missing bug error frame file: {errorFrameFilePath}")
+        else:
+            logging.error(f"Error! Missing bug error frame file: {errorFrameFileName}")
             return abort(404)
-        finally:
-            pass
 
 
 class BugsAdminTriggerReproduction(Resource):
@@ -254,13 +268,14 @@ class BugsAdminTriggerReproduction(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         runBugReproductionJob(bug)
 
@@ -277,13 +292,14 @@ class ExportBugToJIRA(Resource):
             return abort(401)
 
         queryParams = {"id": bug_id}
-        if not isAdmin():
-            queryParams['owner'] = user
 
         bug = BugModel.objects(**queryParams).first()
 
         if bug is None:
             return abort(404)
+
+        if not ApplicationModel.checkIfUserCanAccessApplication(user, bug.applicationId):
+            return abort(403)
 
         application = ApplicationModel.objects(id=bug.applicationId).first()
 

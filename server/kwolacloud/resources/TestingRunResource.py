@@ -48,22 +48,23 @@ class TestingRunsGroup(Resource):
             return abort(401)
 
         queryParams = {}
+        applicationId = flask.request.args.get('applicationId')
+        if applicationId is None:
+            return abort(400)
 
         if not isAdmin():
-            queryParams['owner'] = userId
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, applicationId):
+                return abort(403)
 
-
-        applicationId = flask.request.args.get('applicationId')
-        if applicationId is not None:
-            queryParams["applicationId"] = applicationId
+        queryParams["applicationId"] = applicationId
 
         recurringTestingTriggerId = flask.request.args.get('recurringTestingTriggerId')
         if recurringTestingTriggerId is not None:
             queryParams["recurringTestingTriggerId"] = recurringTestingTriggerId
 
-        testingRuns = TestingRun.objects(**queryParams).no_dereference().order_by("-startTime").limit(100).to_json()
+        testingRuns = TestingRun.objects(**queryParams).no_dereference().order_by("-startTime").limit(100)
 
-        return {"testingRuns": json.loads(testingRuns)}
+        return {"testingRuns": [run.unencryptedJSON() for run in testingRuns]}
 
     def post(self):
         userId, claims = authenticate(returnAllClaims=True)
@@ -74,7 +75,8 @@ class TestingRunsGroup(Resource):
 
         query = {"id": data['applicationId']}
         if not isAdmin():
-            query['owner'] = userId
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, data['applicationId']):
+                return abort(403)
 
         application = ApplicationModel.objects(**query).limit(1).first()
 
@@ -134,15 +136,16 @@ class TestingRunsSingle(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
-
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
 
-        return {"testingRun": json.loads(testingRun.to_json())}
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
+
+        return {"testingRun": testingRun.unencryptedJSON()}
 
 
 class TestingRunsRestart(Resource):
@@ -152,13 +155,15 @@ class TestingRunsRestart(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         testingRun.runJob()
 
@@ -182,13 +187,15 @@ class TestingRunsRestartTraining(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         if self.configData['features']['localRuns']:
             currentTrainingStepJob = ManagedTaskSubprocess(
@@ -225,21 +232,19 @@ class TestingRunsDownloadZip(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         if testingRun is None:
             return abort(404)
 
         try:
-            storageClient = getSharedGCSStorageClient()
-            applicationStorageBucket = storage.Bucket(storageClient, "kwola-testing-run-data-" + testingRun.applicationId)
-            objectPath = f"bug_zip_files/{testingRun.id}.zip"
-            objectBlob = storage.Blob(objectPath, applicationStorageBucket)
-
-            zipData = objectBlob.download_as_string()
+            config = testingRun.configuration.createKwolaCoreConfiguration(userId, testingRun.applicationId, testingRun.id)
+            zipData = config.loadKwolaFileData("bug_zip_files", f"{testingRun.id}.zip")
 
             response = flask.make_response(zipData)
             response.headers['content-type'] = 'application/zip'
@@ -260,13 +265,15 @@ class PauseTestingRun(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         if testingRun.status == "paused":
             return {}
@@ -325,13 +332,15 @@ class ResumeTestingRun(Resource):
             return abort(401)
 
         queryParams = {"id": testing_run_id}
-        if not isAdmin():
-            queryParams['owner'] = userId
 
         testingRun = TestingRun.objects(**queryParams).first()
 
         if testingRun is None:
             return abort(404)
+
+        if not isAdmin():
+            if not ApplicationModel.checkIfUserCanAccessApplication(userId, testingRun.applicationId):
+                return abort(403)
 
         if testingRun.status == "running":
             return {}

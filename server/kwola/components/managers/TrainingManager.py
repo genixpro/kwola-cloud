@@ -684,6 +684,7 @@ class TrainingManager:
                     stepId = stepId.replace(".json", "")
                     stepId = stepId.replace(".gz", "")
                     stepId = stepId.replace(".pickle", "")
+                    stepId = stepId.replace(".enc", "")
 
                     testingSteps.append(TestingStep.loadFromDisk(stepId, config))
 
