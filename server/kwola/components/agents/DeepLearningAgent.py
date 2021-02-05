@@ -1851,10 +1851,10 @@ class DeepLearningAgent:
 
                 cropLeft, cropTop, cropRight, cropBottom = self.calculateTrainingCropPosition(actionCropX, actionCropY, imageCropWidth, imageCropHeight)
 
-                cropLeft = int(cropLeft / self.config['model_image_downscale_ratio'])
-                cropTop = int(cropTop / self.config['model_image_downscale_ratio'])
-                cropRight = int(cropRight / self.config['model_image_downscale_ratio'])
-                cropBottom = int(cropBottom / self.config['model_image_downscale_ratio'])
+                cropLeft = max(0, min(int(cropLeft / self.config['model_image_downscale_ratio']), imageWidth))
+                cropTop = max(0, min(int(cropTop / self.config['model_image_downscale_ratio']), imageHeight))
+                cropRight = max(0, min(int(cropRight / self.config['model_image_downscale_ratio']), imageWidth))
+                cropBottom = max(0, min(int(cropBottom / self.config['model_image_downscale_ratio']), imageHeight))
                 cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)))
                 image[cropRectangle] = [self.config.debug_video_crop_box_color_r, self.config.debug_video_crop_box_color_g, self.config.debug_video_crop_box_color_b]
 
@@ -1870,10 +1870,10 @@ class DeepLearningAgent:
                 image[cropRectangle] = [self.config.debug_video_crop_box_color_r, self.config.debug_video_crop_box_color_g, self.config.debug_video_crop_box_color_b]
 
                 cropLeft, cropTop, cropRight, cropBottom = self.calculateTrainingCropPosition(actionCropX, actionCropY, imageCropWidth, imageCropHeight, nextStepCrop=True)
-                cropLeft = int(cropLeft / self.config['model_image_downscale_ratio'])
-                cropTop = int(cropTop / self.config['model_image_downscale_ratio'])
-                cropRight = int(cropRight / self.config['model_image_downscale_ratio'])
-                cropBottom = int(cropBottom / self.config['model_image_downscale_ratio'])
+                cropLeft = max(0, min(int(cropLeft / self.config['model_image_downscale_ratio']), imageWidth))
+                cropTop = max(0, min(int(cropTop / self.config['model_image_downscale_ratio']), imageHeight))
+                cropRight = max(0, min(int(cropRight / self.config['model_image_downscale_ratio']), imageWidth))
+                cropBottom = max(0, min(int(cropBottom / self.config['model_image_downscale_ratio']), imageHeight))
                 cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)))
                 image[cropRectangle] = [self.config.debug_video_next_step_crop_box_color_r, self.config.debug_video_next_step_crop_box_color_g, self.config.debug_video_next_step_crop_box_color_b]
 
