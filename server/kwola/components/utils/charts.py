@@ -124,7 +124,7 @@ def generateFitnessChart(config, applicationId):
             config.saveKwolaFileData("charts", "fitness_chart.png", f.read())
         os.unlink(localFilePath)
 
-        getLogger().info(f"Best Fitness Value: {bestFitness}", flush=True)
+        getLogger().info(f"Best Fitness Value: {bestFitness}")
 
         pool.close()
         pool.join()
@@ -442,7 +442,8 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
 
     futures.append(pool.apply_async(generateRewardChart, [config.serialize(), applicationId]))
     futures.append(pool.apply_async(generateFitnessChart, [config.serialize(), applicationId]))
-    futures.append(pool.apply_async(generateCoverageChart, [config.serialize(), applicationId]))
+    if enableCumulativeCoverage:
+        futures.append(pool.apply_async(generateCoverageChart, [config.serialize(), applicationId]))
 
     if config['chart_enable_cumulative_errors_chart']:
         futures.append(pool.apply_async(generateCumulativeErrorsFoundChart, [config.serialize(), applicationId]))

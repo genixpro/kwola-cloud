@@ -265,7 +265,7 @@ class TrainingManager:
 
     def learnFromBatches(self, batches):
         learningIterationStartTime = datetime.now()
-        results = self.agent.learnFromBatches(batches)
+        results = self.agent.learnFromBatches(batches, self.trainingStepIndex)
         learningIterationFinishTime = datetime.now()
         self.coreLearningTimes.append((learningIterationFinishTime - learningIterationStartTime).total_seconds())
 

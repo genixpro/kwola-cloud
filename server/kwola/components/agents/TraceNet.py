@@ -123,7 +123,6 @@ class TraceNet(torch.nn.Module):
                 padding=self.config['present_reward_convolution_padding'],
                 bias=False
             ),
-            torch.nn.Sigmoid(),
             torch.nn.Upsample(scale_factor=8, mode="bilinear", align_corners=False)
         )
 
@@ -146,7 +145,6 @@ class TraceNet(torch.nn.Module):
                 padding=self.config['discounted_future_reward_convolution_padding'],
                 bias=False
             ),
-            torch.nn.Sigmoid(),
             torch.nn.Upsample(scale_factor=8, mode="bilinear", align_corners=False)
         )
 
@@ -257,20 +255,8 @@ class TraceNet(torch.nn.Module):
         outputDict = {}
 
         if data['computeRewards']:
-            presentRewardLowBound, presentRewardHighBound = self.computePresentRewardBounds()
-            discountedFutureRewardLowBound, discountedFutureRewardHighBound = self.computeDiscountedFutureRewardBounds()
-
-            presentRewardHighBound += 1e-6
-            presentRewardLowBound -= 1e-6
-
-            discountedFutureRewardHighBound += 1e-6
-            discountedFutureRewardLowBound -= 1e-6
-
             presentRewardPredictions = self.presentRewardConvolution(mergedPixelFeatureMap)
             discountFutureRewardPredictions = self.discountedFutureRewardConvolution(mergedPixelFeatureMap)
-
-            presentRewardPredictions = presentRewardPredictions * (presentRewardHighBound - presentRewardLowBound) + presentRewardLowBound
-            discountFutureRewardPredictions = discountFutureRewardPredictions * (discountedFutureRewardHighBound - discountedFutureRewardLowBound) + discountedFutureRewardLowBound
 
             presentRewards = presentRewardPredictions * data['pixelActionMaps'] + (1.0 - data['pixelActionMaps']) * self.config['reward_impossible_action']
             discountFutureRewards = discountFutureRewardPredictions * data['pixelActionMaps'] + (1.0 - data['pixelActionMaps']) * self.config['reward_impossible_action']

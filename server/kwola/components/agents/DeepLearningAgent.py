@@ -289,7 +289,7 @@ class DeepLearningAgent:
 
         # Only add in the random number action if the user configured it
         if config['enableRandomNumberCommand']:
-            self.actions['typeNumber'] = lambda x, y: TypeAction(type="typeNumber", x=x, y=y, label="number", text=self.randomString('-.0123456789$%', random.randint(1, 5)))
+            self.actions['typeNumber'] = lambda x, y: TypeAction(type="typeNumber", x=x, y=y, label="number", text=self.randomString('0123456789', random.randint(1, 5)))
             self.actionBaseWeights.append(config['random_weight_type_number'])
             self.actionProbabilityBoostKeywords.append(["num", "count", "int", "float", 'amount'])
             hasTypingAction = True
@@ -2587,7 +2587,7 @@ class DeepLearningAgent:
             }
 
 
-    def learnFromBatches(self, batches):
+    def learnFromBatches(self, batches, trainingStepIndex):
         """
             Runs backprop on the neural network with the given set of batches.
             Each of the batches will be processed separately, but only a single
@@ -2597,6 +2597,7 @@ class DeepLearningAgent:
 
             :param batches: A list of batches. Each batch should be in the same
                             structure as the return value of DeepLearningAgent.prepareBatchesForExecutionSession
+            :param trainingStepIndex Specifies which step in training the algorithm is.
 
             :return: A list of tuples, containing a result object for each of the batches.
                      The result tuples will contain all of the loss values in the following order:
@@ -2641,6 +2642,7 @@ class DeepLearningAgent:
         executionTraceLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_execution_trace_weight']]))
         cursorPredictionLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_cursor_prediction_weight']]))
         rewardImpossibleAction = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['reward_impossible_action_threshold']]))
+        maxDiscountedReward = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['reward_max_discounted_reward']]))
 
         for batch in batches:
             # Here we create torch tensors out of literally all possible data we will need to do any calculations.
@@ -2786,9 +2788,14 @@ class DeepLearningAgent:
                 # Here, we compute the best possible action we can take in the subsequent step from this one, and what is
                 # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
                 # the action we took in this sequence, could lead to in the future.
-                nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage + nextStateDiscountedFutureRewardImage)
-                isNextStateValid = torch.ge(nextStateBestPossibleTotalReward, rewardImpossibleAction * 2)
+                if trainingStepIndex < 4:
+                    nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage)
+                else:
+                    nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage + nextStateDiscountedFutureRewardImage)
+
+                isNextStateValid = torch.ge(nextStateBestPossibleTotalReward, rewardImpossibleAction)
                 discountedFutureReward = nextStateBestPossibleTotalReward * discountRate * isNextStateValid
+                discountedFutureReward = torch.min(maxDiscountedReward, discountedFutureReward)
 
                 # Here we are basically calculating the target images. E.g., this is what we want the neural network to be predicting as outputs.
                 # For the present reward, we want the neural network to predict the exact present reward value that we have for this execution trace.
@@ -2895,7 +2902,29 @@ class DeepLearningAgent:
             actionProbabilityLoss = torch.mean(torch.cat(actionProbabilityLosses))
 
             # This is the final, total loss for all different loss functions across all the different samples
-            totalRewardLoss = presentRewardLoss + discountedFutureRewardLoss + stateValueLoss + advantageLoss + actionProbabilityLoss
+
+            totalRewardLoss = presentRewardLoss
+            if trainingStepIndex >= 2:
+                totalRewardLoss = totalRewardLoss + discountedFutureRewardLoss
+            else:
+                totalRewardLoss = totalRewardLoss + discountedFutureRewardLoss * 0
+
+            if trainingStepIndex >= 6:
+                totalRewardLoss = totalRewardLoss + stateValueLoss
+            else:
+                totalRewardLoss = totalRewardLoss + stateValueLoss * 0
+
+            if trainingStepIndex >= 8:
+                totalRewardLoss = totalRewardLoss + advantageLoss
+            else:
+                totalRewardLoss = totalRewardLoss + advantageLoss * 0
+
+            if trainingStepIndex >= 10:
+                totalRewardLoss = totalRewardLoss + actionProbabilityLoss
+            else:
+                totalRewardLoss = totalRewardLoss + actionProbabilityLoss * 0
+
+            # totalRewardLoss = presentRewardLoss + discountedFutureRewardLoss + stateValueLoss + advantageLoss + actionProbabilityLoss
 
             # We do a check here because if there are no extra loss functions, then
             # torch will give us an error saying we are concatenating and summing an
