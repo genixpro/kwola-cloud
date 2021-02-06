@@ -82,10 +82,11 @@ class DeepLearningAgent:
         WebEnvironmentSession classes.
     """
 
-    def __init__(self, config, whichGpu="all"):
+    def __init__(self, config, whichGpu="all", gpuWorldSize=1):
         self.config = config
 
         self.whichGpu = whichGpu
+        self.gpuWorldSize = gpuWorldSize
 
         # We create a method that will convert torch CPU tensors into
         # torch CUDA tensors if this model is set in GPU mode.
@@ -2788,7 +2789,7 @@ class DeepLearningAgent:
                 # Here, we compute the best possible action we can take in the subsequent step from this one, and what is
                 # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
                 # the action we took in this sequence, could lead to in the future.
-                if trainingStepIndex < 4:
+                if trainingStepIndex < 2 * self.gpuWorldSize:
                     nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage)
                 else:
                     nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage + nextStateDiscountedFutureRewardImage)
@@ -2904,22 +2905,22 @@ class DeepLearningAgent:
             # This is the final, total loss for all different loss functions across all the different samples
 
             totalRewardLoss = presentRewardLoss
-            if trainingStepIndex >= 2:
+            if trainingStepIndex >= 1 * self.gpuWorldSize:
                 totalRewardLoss = totalRewardLoss + discountedFutureRewardLoss
             else:
                 totalRewardLoss = totalRewardLoss + discountedFutureRewardLoss * 0
 
-            if trainingStepIndex >= 6:
+            if trainingStepIndex >= 3 * self.gpuWorldSize:
                 totalRewardLoss = totalRewardLoss + stateValueLoss
             else:
                 totalRewardLoss = totalRewardLoss + stateValueLoss * 0
 
-            if trainingStepIndex >= 8:
+            if trainingStepIndex >= 4 * self.gpuWorldSize:
                 totalRewardLoss = totalRewardLoss + advantageLoss
             else:
                 totalRewardLoss = totalRewardLoss + advantageLoss * 0
 
-            if trainingStepIndex >= 10:
+            if trainingStepIndex >= 5 * self.gpuWorldSize:
                 totalRewardLoss = totalRewardLoss + actionProbabilityLoss
             else:
                 totalRewardLoss = totalRewardLoss + actionProbabilityLoss * 0

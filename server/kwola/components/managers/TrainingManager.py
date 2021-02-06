@@ -169,7 +169,7 @@ class TrainingManager:
                 getLogger().info(f"==== Training Step Completed ====")
                 return {"success": False, "exception": errorMessage}
 
-            self.agent = DeepLearningAgent(config=self.config, whichGpu=self.gpu)
+            self.agent = DeepLearningAgent(config=self.config, whichGpu=self.gpu, gpuWorldSize=self.gpuWorldSize)
             self.agent.initialize()
             try:
                 self.agent.load()
