@@ -436,19 +436,10 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
 
     futures = []
 
-    if config['chart_enable_cumulative_coverage_chart'] and enableCumulativeCoverage:
-        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 100]))
-        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 25]))
-        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 10]))
-        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 5]))
-
     futures.append(pool.apply_async(generateRewardChart, [config.serialize(), applicationId]))
     futures.append(pool.apply_async(generateFitnessChart, [config.serialize(), applicationId]))
     if enableCumulativeCoverage:
         futures.append(pool.apply_async(generateCoverageChart, [config.serialize(), applicationId]))
-
-    if config['chart_enable_cumulative_errors_chart']:
-        futures.append(pool.apply_async(generateCumulativeErrorsFoundChart, [config.serialize(), applicationId]))
 
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'totalLosses', "Total Loss", 'total_loss_chart.png']))
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'presentRewardLosses', "Present Reward Loss", 'present_reward_loss_chart.png']))
@@ -456,6 +447,15 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'stateValueLosses', "State Value Loss", 'state_value_loss_chart.png']))
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'advantageLosses', "Advantage Loss", 'advantage_loss_chart.png']))
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'actionProbabilityLosses', "Action Probability Loss", 'action_probability_loss_chart.png']))
+
+    if config['chart_enable_cumulative_coverage_chart'] and enableCumulativeCoverage:
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 100]))
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 25]))
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 10]))
+        futures.append(pool.apply_async(generateCumulativeCoverageChart, [config.serialize(), applicationId, 5]))
+
+    if config['chart_enable_cumulative_errors_chart']:
+        futures.append(pool.apply_async(generateCumulativeErrorsFoundChart, [config.serialize(), applicationId]))
 
     for future in futures:
         future.get()
