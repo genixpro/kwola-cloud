@@ -1970,14 +1970,17 @@ class DeepLearningAgent:
 
                 xCoords = numpy.array(range(len(presentRewards)))
 
-                rewardChartAxes.set_ylim(ymin=self.config.debug_video_reward_min_value, ymax=self.config.debug_video_reward_max_value)
+                minVal = min(minTotalReward, self.config.debug_video_reward_min_value)
+                maxVal = max(maxTotalReward, self.config.debug_video_reward_max_value)
+
+                rewardChartAxes.set_ylim(ymin=minVal, ymax=maxVal)
 
                 rewardChartAxes.plot(xCoords, numpy.array(presentRewards) + numpy.array(discountedFutureRewards))
 
                 rewardChartAxes.set_xticks(range(0, len(presentRewards), self.config.debug_video_bottom_reward_chart_x_tick_spacing))
                 rewardChartAxes.set_xticklabels([str(n) for n in range(0, len(presentRewards), self.config.debug_video_bottom_reward_chart_x_tick_spacing)])
-                rewardChartAxes.set_yticks([self.config.debug_video_reward_min_value, self.config.debug_video_reward_max_value])
-                rewardChartAxes.set_yticklabels([f"{self.config.debug_video_reward_min_value:.2f}", f"{self.config.debug_video_reward_max_value:.2f}"])
+                rewardChartAxes.set_yticks([minVal, maxVal])
+                rewardChartAxes.set_yticklabels([f"{minVal:.2f}", f"{maxVal:.2f}"])
                 rewardChartAxes.set_title("Net Present Reward")
                 rewardChartFigure.tight_layout()
 
