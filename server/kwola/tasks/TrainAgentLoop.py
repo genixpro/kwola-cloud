@@ -336,6 +336,9 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
             trainStepFutures = []
 
             enableDebugVideosThisLoop = bool(trainingSequence.trainingLoopsCompleted % config['debug_video_generation_frequency'] == 0)
+            # Also generate a debug video on the very last iteration of the sequence.
+            if trainingSequence.trainingLoopsCompleted == (config['training_loops_needed'] - 1):
+                enableDebugVideosThisLoop = True
 
             if torch.cuda.device_count() > 0:
                 for gpu in range(numberOfTrainingStepsInParallel):
