@@ -79,7 +79,10 @@ class TestTrainingLoop(unittest.TestCase):
                                                                         enableRandomOtherSymbolCommand=False,
                                                                         enableDoubleClickCommand=False,
                                                                         enableRightClickCommand=False,
-                                                                        custom_typing_action_strings=["test1", "test2", "test3", "test4"]
+                                                                        custom_typing_action_strings=["test1", "test2", "test3", "test4"],
+                                                                        web_session_no_network_activity_wait_time=0.0,
+                                                                        web_session_perform_action_wait_time=0.1,
+                                                                        web_session_initial_fetch_sleep_time=1
                                                                         )
 
         config = KwolaCoreConfiguration.loadConfigurationFromDirectory(configDir)

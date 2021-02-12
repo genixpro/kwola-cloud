@@ -44,8 +44,8 @@ def main():
 
     configDir = KwolaCoreConfiguration.createNewLocalKwolaConfigDir("standard_experiment",
                                                                     url="http://kros3.kwola.io/",
-                                                                    batch_size=64,
-                                                                    batches_per_iteration=1,
+                                                                    batch_size=32,
+                                                                    batches_per_iteration=2,
                                                                     testing_sequence_length=100,
                                                                     iterations_per_training_step=250,
                                                                     testing_sequences_in_parallel_per_training_loop=5,
@@ -53,6 +53,7 @@ def main():
                                                                     web_session_parallel_execution_sessions=12,
                                                                     web_session_no_network_activity_wait_time=0.0,
                                                                     web_session_perform_action_wait_time=0.1,
+                                                                    web_session_initial_fetch_sleep_time=1,
                                                                     web_session_enable_offsite_check=False,
                                                                     web_session_enable_load_failure_check=False,
                                                                     email=None,
