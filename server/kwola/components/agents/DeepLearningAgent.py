@@ -747,10 +747,16 @@ class DeepLearningAgent:
                 recentActionImage = numpy.zeros([len(self.actionsSorted), processedImageHeight, processedImageWidth], dtype=numpy.float32)
                 recentActionImages.append(recentActionImage)
 
+        recentActionsImageTime = (datetime.now() - startTime).total_seconds()
+        startTime = datetime.now()
+
         recentActionVectors = []
         for traceList in pastExecutionTraces:
             vector = self.computeRecentActionsVector(traceList)
             recentActionVectors.append(vector)
+
+        recentActionsVectorTime = (datetime.now() - startTime).total_seconds()
+        startTime = datetime.now()
 
         # Here we have a pretty important mechanism. The name "recentActions" is a bit of a misnomer,
         # and we should probably come up with a new variable name. Basically, what we are doing here
@@ -1188,6 +1194,8 @@ class DeepLearningAgent:
             "processImagesTime": processImagesTime,
             "symbolComputationTime": symbolComputationTime,
             "randomActionsTime": randomActionsTime,
+            "recentActionsImageTime": recentActionsImageTime,
+            "recentActionsVectorTime": recentActionsVectorTime,
             "neuralNetworkPredictionsTensorSetupTime": neuralNetworkPredictionsTensorSetupTime,
             "neuralNetworkPredictionsModelSetupTime": neuralNetworkPredictionsModelSetupTime,
             "neuralNetworkPredictionsCoreTime": neuralNetworkPredictionsCoreTime,
