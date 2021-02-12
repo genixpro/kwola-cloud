@@ -45,7 +45,7 @@ def main():
     configDir = KwolaCoreConfiguration.createNewLocalKwolaConfigDir("standard_experiment",
                                                                     url="http://kros3.kwola.io/",
                                                                     batch_size=64,
-                                                                    batches_per_iteration=2,
+                                                                    batches_per_iteration=1,
                                                                     testing_sequence_length=100,
                                                                     iterations_per_training_step=250,
                                                                     testing_sequences_in_parallel_per_training_loop=5,
