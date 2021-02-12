@@ -54,7 +54,7 @@ def generateRewardChart(config, applicationId):
 
     ax.plot(range(len(rewardValues)), rewardValues, color='green')
 
-    ax.set_ylim(0, 15)
+    ax.set_ylim(0, 25)
 
     ax.set(xlabel='Testing Step #', ylabel='Reward',
            title='Reward per session')
@@ -342,6 +342,7 @@ def generateCumulativeCoverageChart(config, applicationId=None, numberOfTestingS
     ax.plot(numpy.array(range(len(cumulativeLinesExecutedValues))) * numberOfTestingStepsPerValue, cumulativeLinesExecutedValues, color='green')
     ax.set_ylim(0, 600)
     ax.set(xlabel='Testing Steps Completed', ylabel='Cumulative Total Lines Triggered (green)', title=f"Cumulative Lines Triggered Chart, Group Size: {numberOfTestingStepsPerValue}")
+    ax.set_ylim(650, 750)
     # ax2 = ax.twinx()
     # ax2.plot(numpy.array(range(len(cumulativeTotalLinesValues))) * numberOfTestingStepsPerValue, cumulativeTotalLinesValues, color='red')
     # ax2.set(ylabel="Cumulative Lines Available (red)")

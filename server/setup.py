@@ -66,6 +66,7 @@ setup(
             'kwola_website_check = kwola.bin.website_check:main',
             'kwola_regenerate_charts = kwola.bin.regenerate_charts:main',
             'kwola_run_multiple = kwola.bin.run_multiple:main',
+            'kwola_create_kros3_experiment = kwola.bin.create_kros3_experiment:main',
             'kwolacloud_run_hourly_tasks = kwolacloud.bin.run_hourly_tasks:main',
             'kwolacloud_migrate_trace_data = kwolacloud.bin.migrate_trace_data:main',
             'kwolacloud_migrate_bug_objects = kwolacloud.bin.migrate_bug_objects:main',

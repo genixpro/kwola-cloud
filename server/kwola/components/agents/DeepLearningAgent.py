@@ -502,7 +502,7 @@ class DeepLearningAgent:
         # training across multiple separate GPU processes.
         if self.whichGpu == "all":
             self.model = self.model.cuda()
-            self.modelParallel = nn.parallel.DistributedDataParallel(module=self.model, device_ids=devices, output_device=outputDevice)
+            self.modelParallel = nn.parallel.DistributedDataParallel(module=self.model, device_ids=devices, output_device=outputDevice, find_unused_parameters=True)
             if enableTraining:
                 self.targetNetwork = self.targetNetwork.cuda()
         elif self.whichGpu is None:
@@ -512,7 +512,7 @@ class DeepLearningAgent:
                 self.targetNetwork = self.targetNetwork.cpu()
         else:
             self.model = self.model.cuda(device=devices[0])
-            self.modelParallel = nn.parallel.DistributedDataParallel(module=self.model, device_ids=devices, output_device=outputDevice)
+            self.modelParallel = nn.parallel.DistributedDataParallel(module=self.model, device_ids=devices, output_device=outputDevice, find_unused_parameters=True)
             if enableTraining:
                 self.targetNetwork = self.targetNetwork.cuda(device=devices[0])
 
@@ -759,17 +759,24 @@ class DeepLearningAgent:
         # Now we compute the symbol lists for each sub environment. The symbol list gives the model an indication
         # of which lines of code it has triggered already in the run, as well as which lines of code it has
         # executed recently.
-        symbolLists = []
-        symbolWeights = []
+        coverageSymbolLists = []
+        coverageSymbolWeights = []
+        recentSymbolLists = []
+        recentSymbolWeights = []
         for pastExecutionTraceList in pastExecutionTraces:
             if len(pastExecutionTraceList) > 0:
-                symbols, weights = self.symbolMapper.computeAllSymbolsForTrace(pastExecutionTraceList[-1], "after")
+                coverageSymbols, coverageWeights = self.symbolMapper.computeCoverageSymbolsList(pastExecutionTraceList[-1], "after")
+                recentSymbols, recentWeights = self.symbolMapper.computeDecayingBranchTraceSymbolsList(pastExecutionTraceList[-1], "after")
             else:
-                symbols = [0]
-                weights = [1]
+                coverageSymbols = [0]
+                coverageWeights = [1]
+                recentSymbols = [0]
+                recentWeights = [1]
 
-            symbolLists.append(symbols)
-            symbolWeights.append(weights)
+            coverageSymbolLists.append(coverageSymbols)
+            coverageSymbolWeights.append(coverageWeights)
+            recentSymbolLists.append(recentSymbols)
+            recentSymbolWeights.append(recentWeights)
 
         symbolComputationTime = (datetime.now() - startTime).total_seconds()
         startTime = datetime.now()
@@ -786,9 +793,12 @@ class DeepLearningAgent:
         # the neural network
         batchSessionIndexes = []
         imageBatch = []
-        symbolListOffsets = []
-        symbolListBatch = []
-        symbolWeightBatch = []
+        coverageSymbolListOffsets = []
+        coverageSymbolListBatch = []
+        coverageSymbolWeightBatch = []
+        recentSymbolListOffsets = []
+        recentSymbolListBatch = []
+        recentSymbolWeightBatch = []
         pixelActionMapsBatch = []
         epsilonsPerSample = []
         recentActionsBatch = []
@@ -798,8 +808,8 @@ class DeepLearningAgent:
 
         modelDownscale = self.config['model_image_downscale_ratio']
 
-        zippedValues = zip(range(len(processedImages)), processedImages, symbolLists, symbolWeights, envActionMaps, recentActions)
-        for sessionIndex, image, sampleSymbolList, sampleSymbolWeights, sampleActionMaps, sampleRecentActions in zippedValues:
+        zippedValues = zip(range(len(processedImages)), processedImages, coverageSymbolLists, recentSymbolLists, coverageSymbolWeights, recentSymbolWeights, envActionMaps, recentActions)
+        for sessionIndex, image, sampleCoverageSymbolList, sampleRecentSymbolList, sampleCoverageSymbolWeights, sampleRecentSymbolWeights, sampleActionMaps, sampleRecentActions in zippedValues:
             # Ok here is a very important mechanism. Technically what is being calculated below is the "epsilon" value from classical
             # Q-learning. I'm just giving it a different name which suits my style. The "epsilon" is just the probability that the
             # algorithm will choose a random action instead of the prediction. In our situation, we have two values, because we have
@@ -860,9 +870,12 @@ class DeepLearningAgent:
                 # Add this sample to all of the lists that will be processed later
                 batchSessionIndexes.append(sessionIndex)
                 imageBatch.append(image)
-                symbolListOffsets.append(len(symbolListBatch))
-                symbolListBatch.extend(sampleSymbolList)
-                symbolWeightBatch.extend(sampleSymbolWeights)
+                coverageSymbolListOffsets.append(len(coverageSymbolListBatch))
+                coverageSymbolListBatch.extend(sampleCoverageSymbolList)
+                coverageSymbolWeightBatch.extend(sampleCoverageSymbolWeights)
+                recentSymbolListOffsets.append(len(recentSymbolListBatch))
+                recentSymbolListBatch.extend(sampleRecentSymbolList)
+                recentSymbolWeightBatch.extend(sampleRecentSymbolWeights)
                 originalActionMapsBatch.append(sampleActionMaps)
                 filteredActionMapsBatch.append(filteredSampleActionMaps)
                 pixelActionMapsBatch.append(pixelActionMap)
@@ -907,17 +920,24 @@ class DeepLearningAgent:
         if len(imageBatch) > 0:
             # Create numpy arrays for each of the
             imageBatchArray = numpy.array(imageBatch)
-            symbolListBatchArray = numpy.array(symbolListBatch)
-            symbolListOffsetsArray = numpy.array(symbolListOffsets)
-            symbolWeightBatchArray = numpy.array(symbolWeightBatch)
+            coverageSymbolListBatchArray = numpy.array(coverageSymbolListBatch)
+            coverageSymbolListOffsetsArray = numpy.array(coverageSymbolListOffsets)
+            coverageSymbolWeightBatchArray = numpy.array(coverageSymbolWeightBatch)
+            recentSymbolListBatchArray = numpy.array(recentSymbolListBatch)
+            recentSymbolListOffsetsArray = numpy.array(recentSymbolListOffsets)
+            recentSymbolWeightBatchArray = numpy.array(recentSymbolWeightBatch)
             pixelActionMapsBatchArray = numpy.array(pixelActionMapsBatch)
             stepNumberArray = numpy.array([stepNumber] * len(imageBatch))
 
             # Create torch tensors out of the numpy arrays, effectively preparing the data for input into the neural network.
             imageTensor = self.variableWrapperFunc(torch.FloatTensor, imageBatchArray)
-            symbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, symbolListBatchArray)
-            symbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, symbolListOffsetsArray)
-            symbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, symbolWeightBatchArray)
+            coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, coverageSymbolListBatchArray)
+            coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, coverageSymbolListOffsetsArray)
+            coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, coverageSymbolWeightBatchArray)
+
+            recentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, recentSymbolListBatchArray)
+            recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, recentSymbolListOffsetsArray)
+            recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, recentSymbolWeightBatchArray)
             pixelActionMapTensor = self.variableWrapperFunc(torch.FloatTensor, pixelActionMapsBatchArray)
             stepNumberTensor = self.variableWrapperFunc(torch.FloatTensor, stepNumberArray)
 
@@ -938,9 +958,12 @@ class DeepLearningAgent:
                 # Here we go! Here we are now finally putting data into the neural network and processing it.
                 outputs = self.modelParallel({
                     "image": imageTensor,
-                    "symbolIndexes": symbolIndexesTensor,
-                    "symbolOffsets": symbolListOffsetsTensor,
-                    "symbolWeights": symbolWeightsTensor,
+                    "coverageSymbolIndexes": coverageSymbolIndexesTensor,
+                    "coverageSymbolOffsets": coverageSymbolListOffsetsTensor,
+                    "coverageSymbolWeights": coverageSymbolWeightsTensor,
+                    "recentSymbolIndexes": recentSymbolIndexesTensor,
+                    "recentSymbolOffsets": recentSymbolListOffsetsTensor,
+                    "recentSymbolWeights": recentSymbolWeightsTensor,
                     "pixelActionMaps": pixelActionMapTensor,
                     "stepNumber": stepNumberTensor,
                     "outputStamp": False,
@@ -960,6 +983,9 @@ class DeepLearningAgent:
                 actionProbabilities = outputs['actionProbabilities'].cpu()
                 advantageValues = outputs['advantage'].cpu()
 
+                if self.config['testing_use_advantage_values_for_predictions']:
+                    actionProbabilities = advantageValues
+
                 neuralNetworkPredictionsFetchTime = (datetime.now() - startTime).total_seconds()
                 startTime = datetime.now()
 
@@ -975,7 +1001,11 @@ class DeepLearningAgent:
 
                 # Here is where we determine whether the algorithm will use the predicted best action from the neural network,
                 # or do a weighted random selection using the outputs
-                weighted = bool(random.random() < sampleEpsilon)
+                if self.config['testing_enable_weighted_random_actions']:
+                    weighted = bool(random.random() < sampleEpsilon)
+                else:
+                    weighted = False
+
                 override = False
                 source = None
                 actionType = None
@@ -1001,35 +1031,36 @@ class DeepLearningAgent:
 
                     dedupingStart = datetime.now()
 
-                    # Here we create an action object using the lambdas. We aren't creating the final action object,
-                    # since we do one last check below to ensure this isn't an exact repeat action.
-                    potentialAction = self.actions[self.actionsSorted[actionType]](actionX, actionY)
-                    potentialActionMaps = self.getActionMapsIntersectingWithAction(potentialAction, filteredSampleActionMaps)
+                    if self.config['testing_enable_repeat_action_override']:
+                        # Here we create an action object using the lambdas. We aren't creating the final action object,
+                        # since we do one last check below to ensure this isn't an exact repeat action.
+                        potentialAction = self.actions[self.actionsSorted[actionType]](actionX, actionY)
+                        potentialActionMaps = self.getActionMapsIntersectingWithAction(potentialAction, filteredSampleActionMaps)
 
-                    # If the network is predicting the same action as it did within the recent turns list, down to the exact pixels
-                    # of the action maps, that usually implies its stuck and its action had no effect on the environment. Switch
-                    # to random weighted to try and break out of this stuck condition. The recent action list is reset every
-                    # time the algorithm discovers new code branches, e.g. new functionality so this helps ensure the algorithm
-                    # stays exploring instead of getting stuck but can learn different behaviours with the same elements
-                    for recentAction in sampleRecentActions:
-                        if recentAction.type != potentialAction.type:
-                            continue
+                        # If the network is predicting the same action as it did within the recent turns list, down to the exact pixels
+                        # of the action maps, that usually implies its stuck and its action had no effect on the environment. Switch
+                        # to random weighted to try and break out of this stuck condition. The recent action list is reset every
+                        # time the algorithm discovers new code branches, e.g. new functionality so this helps ensure the algorithm
+                        # stays exploring instead of getting stuck but can learn different behaviours with the same elements
+                        for recentAction in sampleRecentActions:
+                            if recentAction.type != potentialAction.type:
+                                continue
 
-                        allEqual = True
-                        for recentMap in recentAction.intersectingActionMaps:
-                            found = False
-                            for potentialMap in potentialActionMaps:
-                                if recentMap.isSameAs(potentialMap, tolerancePixels=self.config['testing_repeat_action_pixel_overlap_tolerance']):
-                                    found = True
+                            allEqual = True
+                            for recentMap in recentAction.intersectingActionMaps:
+                                found = False
+                                for potentialMap in potentialActionMaps:
+                                    if recentMap.isSameAs(potentialMap, tolerancePixels=self.config['testing_repeat_action_pixel_overlap_tolerance']):
+                                        found = True
+                                        break
+                                if not found:
+                                    allEqual = False
                                     break
-                            if not found:
-                                allEqual = False
-                                break
 
-                        if allEqual:
-                            weighted = True
-                            override = True
-                            break
+                            if allEqual:
+                                weighted = True
+                                override = True
+                                break
 
                     actionDedupingTime += (datetime.now() - dedupingStart).total_seconds()
 
@@ -1339,7 +1370,11 @@ class DeepLearningAgent:
                 tracePresentReward += config['reward_no_code_executed']
 
             if trace.didNewBranchesExecute:
-                tracePresentReward += config['reward_new_code_executed']
+                if trace.codePrevalenceLogNormalizedZScore is None:
+                    tracePresentReward += config['reward_new_code_executed']
+                else:
+                    exponent = config['reward_new_code_executed_code_prevalence_adjustment_exponential_base']
+                    tracePresentReward += ((exponent ** -trace.codePrevalenceLogNormalizedZScore) + 1) * config['reward_new_code_executed'] * 0.5
             else:
                 tracePresentReward += config['reward_no_new_code_executed']
 
@@ -1728,27 +1763,40 @@ class DeepLearningAgent:
         uniqueActions = set([tuple(data) for data in numpy.reshape(numpy.transpose(pixelActionMap), newshape=[-1, len(self.actionsSorted)])])
 
         if trace.traceNumber > 0:
-            symbols, weights = self.symbolMapper.computeAllSymbolsForTrace(trace, "before")
+            coverageSymbols, coverageWeights = self.symbolMapper.computeCoverageSymbolsList(trace, "before")
+            recentSymbols, recentWeights = self.symbolMapper.computeDecayingBranchTraceSymbolsList(trace, "before")
         else:
-            symbols = [0]
-            weights = [1]
+            coverageSymbols = [0]
+            coverageWeights = [1]
+            recentSymbols = [0]
+            recentWeights = [1]
 
-        symbolListBatch = symbols
-        symbolWeightBatch = weights
-        symbolListOffsets = [0]
+        coverageSymbolListBatch = coverageSymbols
+        coverageSymbolWeightBatch = coverageWeights
+        coverageSymbolListOffsets = [0]
+
+        recentSymbolListBatch = recentSymbols
+        recentSymbolWeightBatch = recentWeights
+        recentSymbolListOffsets = [0]
 
         with torch.no_grad():
             self.model.eval()
 
-            symbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(symbolListBatch))
-            symbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(symbolListOffsets))
-            symbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(symbolWeightBatch))
+            coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(coverageSymbolListBatch))
+            coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(coverageSymbolListOffsets))
+            coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(coverageSymbolWeightBatch))
+            recentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(recentSymbolListBatch))
+            recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(recentSymbolListOffsets))
+            recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(recentSymbolWeightBatch))
 
             outputs = \
                 self.modelParallel({"image": self.variableWrapperFunc(torch.FloatTensor, numpy.array([processedImage])),
-                                    "symbolIndexes": symbolIndexesTensor,
-                                    "symbolOffsets": symbolListOffsetsTensor,
-                                    "symbolWeights": symbolWeightsTensor,
+                                    "coverageSymbolIndexes": coverageSymbolIndexesTensor,
+                                    "coverageSymbolOffsets": coverageSymbolListOffsetsTensor,
+                                    "coverageSymbolWeights": coverageSymbolWeightsTensor,
+                                    "recentSymbolIndexes": recentSymbolIndexesTensor,
+                                    "recentSymbolOffsets": recentSymbolListOffsetsTensor,
+                                    "recentSymbolWeights": recentSymbolWeightsTensor,
                                     "pixelActionMaps": self.variableWrapperFunc(torch.FloatTensor,
                                                                                 numpy.array([pixelActionMap])),
                                     "stepNumber": self.variableWrapperFunc(torch.FloatTensor,
@@ -1970,17 +2018,21 @@ class DeepLearningAgent:
 
                 xCoords = numpy.array(range(len(presentRewards)))
 
-                minVal = min(minTotalReward, self.config.debug_video_reward_min_value)
-                maxVal = max(maxTotalReward, self.config.debug_video_reward_max_value)
+                localTotalRewards = numpy.array(presentRewards) + numpy.array(discountedFutureRewards)
 
-                rewardChartAxes.set_ylim(ymin=minVal, ymax=maxVal)
+                ymin = min(self.config.debug_video_reward_min_value, numpy.min(localTotalRewards))
+                ymax = max(self.config.debug_video_reward_max_value, numpy.max(localTotalRewards))
 
-                rewardChartAxes.plot(xCoords, numpy.array(presentRewards) + numpy.array(discountedFutureRewards))
+                rewardChartAxes.set_ylim(ymin=ymin, ymax=ymax)
+
+                rewardChartAxes.plot(xCoords, localTotalRewards)
 
                 rewardChartAxes.set_xticks(range(0, len(presentRewards), self.config.debug_video_bottom_reward_chart_x_tick_spacing))
                 rewardChartAxes.set_xticklabels([str(n) for n in range(0, len(presentRewards), self.config.debug_video_bottom_reward_chart_x_tick_spacing)])
-                rewardChartAxes.set_yticks([minVal, maxVal])
-                rewardChartAxes.set_yticklabels([f"{minVal:.2f}", f"{maxVal:.2f}"])
+
+                rewardChartAxes.set_yticks([ymin, ymax])
+                rewardChartAxes.set_yticklabels([f"{ymin:.2f}", f"{ymax:.2f}"])
+
                 rewardChartAxes.set_title("Net Present Reward")
                 rewardChartFigure.tight_layout()
 
@@ -2013,6 +2065,8 @@ class DeepLearningAgent:
 
                 if (squareSize * squareSize) < neededFigures:
                     squareSize += 1
+
+                blockReductionSize = int(squareSize / 2)
 
                 numColumns = squareSize
                 numRows = squareSize
@@ -2134,98 +2188,172 @@ class DeepLearningAgent:
                                                                  self.config.debug_video_action_prediction_circle_color_g,
                                                                  self.config.debug_video_action_prediction_circle_color_b]
 
+
+                presentRewardAllPredictionsNoImpossible = presentRewardPredictions[0][:][presentRewardPredictions[0][:] > self.config['reward_impossible_action_threshold']]
+                if len(presentRewardAllPredictionsNoImpossible) == 0:
+                    presentRewardMaxValue = 0.0
+                    presentRewardMinValue = 0.0
+                    presentRewardRange = 0
+                else:
+                    presentRewardMaxValue = numpy.max(numpy.array(presentRewardAllPredictionsNoImpossible))
+                    presentRewardMinValue = numpy.min(numpy.array(presentRewardAllPredictionsNoImpossible))
+                    presentRewardRange = presentRewardMaxValue - presentRewardMinValue
+
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = presentRewardPredictions[0][actionIndex][presentRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
                     if len(predictionsNoImpossible) == 0:
-                        maxValue = 0.0
-                        minValue = 0.0
+                        maxValueForAction = 0.0
+                        minValueForAction = 0.0
                     else:
-                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                        maxValueForAction = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValueForAction = numpy.min(numpy.array(predictionsNoImpossible))
 
                     presentRewardPredictionAxes[actionIndex].set_xticks([])
                     presentRewardPredictionAxes[actionIndex].set_yticks([])
 
-                    rewardPredictionsShrunk = skimage.measure.block_reduce(presentRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
+                    rewardPredictionsShrunk = skimage.measure.block_reduce(presentRewardPredictions[0][actionIndex], (blockReductionSize, blockReductionSize), numpy.max)
 
-                    im = presentRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minPresentReward, vmax=maxPresentReward)
-                    presentRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} present reward", fontsize=8)
+                    im = presentRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk,
+                                                                         cmap=mainColorMap,
+                                                                         interpolation="nearest",
+                                                                         vmin=presentRewardMinValue - presentRewardRange * 0.1,
+                                                                         vmax=presentRewardMaxValue)
+                    presentRewardPredictionAxes[actionIndex].set_title(f"{action} {minValueForAction:.2f} - {maxValueForAction:.2f} present reward", fontsize=8)
                     mainFigure.colorbar(im, ax=presentRewardPredictionAxes[actionIndex], orientation='vertical')
+
+
+                discountedFutureRewardAllPredictionsNoImpossible = discountedRewardPredictions[0][:][discountedRewardPredictions[0][:] > self.config['reward_impossible_action_threshold']]
+                if len(presentRewardAllPredictionsNoImpossible) == 0:
+                    discountedFutureRewardMaxValue = 0.0
+                    discountedFutureRewardMinValue = 0.0
+                    discountedFutureRewardRange = 0
+                else:
+                    discountedFutureRewardMaxValue = numpy.max(numpy.array(discountedFutureRewardAllPredictionsNoImpossible))
+                    discountedFutureRewardMinValue = numpy.min(numpy.array(discountedFutureRewardAllPredictionsNoImpossible))
+                    discountedFutureRewardRange = discountedFutureRewardMaxValue - discountedFutureRewardMinValue
 
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = discountedRewardPredictions[0][actionIndex][discountedRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
                     if len(predictionsNoImpossible) == 0:
-                        maxValue = 0.0
-                        minValue = 0.0
+                        maxValueForAction = 0.0
+                        minValueForAction = 0.0
                     else:
-                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                        maxValueForAction = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValueForAction = numpy.min(numpy.array(predictionsNoImpossible))
 
-                    rewardPredictionsShrunk = skimage.measure.block_reduce(discountedRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
+                    rewardPredictionsShrunk = skimage.measure.block_reduce(discountedRewardPredictions[0][actionIndex], (blockReductionSize, blockReductionSize), numpy.max)
 
-                    im = discountedRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minDiscountedReward, vmax=maxDiscountedReward)
-                    discountedRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} discounted reward", fontsize=8)
+                    im = discountedRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk,
+                                                                            cmap=mainColorMap,
+                                                                            interpolation="nearest",
+                                                                            vmin=discountedFutureRewardMinValue - discountedFutureRewardRange * 0.1,
+                                                                            vmax=discountedFutureRewardMaxValue)
+                    discountedRewardPredictionAxes[actionIndex].set_title(f"{action} {minValueForAction:.2f} - {maxValueForAction:.2f} discounted reward", fontsize=8)
                     mainFigure.colorbar(im, ax=discountedRewardPredictionAxes[actionIndex], orientation='vertical')
+
+
+                totalRewardAllPredictionsNoImpossible = totalRewardPredictions[0][:][totalRewardPredictions[0][:] > self.config['reward_impossible_action_threshold']]
+                if len(presentRewardAllPredictionsNoImpossible) == 0:
+                    totalRewardMaxValue = 0.0
+                    totalRewardMinValue = 0.0
+                    totalRewardRange = 0
+                else:
+                    totalRewardMaxValue = numpy.max(numpy.array(totalRewardAllPredictionsNoImpossible))
+                    totalRewardMinValue = numpy.min(numpy.array(totalRewardAllPredictionsNoImpossible))
+                    totalRewardRange = totalRewardMaxValue - totalRewardMinValue
 
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = totalRewardPredictions[0][actionIndex][totalRewardPredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
                     if len(predictionsNoImpossible) == 0:
-                        maxValue = 0.0
-                        minValue = 0.0
+                        maxValueForAction = 0.0
+                        minValueForAction = 0.0
                     else:
-                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                        maxValueForAction = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValueForAction = numpy.min(numpy.array(predictionsNoImpossible))
 
                     totalRewardPredictionAxes[actionIndex].set_xticks([])
                     totalRewardPredictionAxes[actionIndex].set_yticks([])
 
-                    rewardPredictionsShrunk = skimage.measure.block_reduce(totalRewardPredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
+                    rewardPredictionsShrunk = skimage.measure.block_reduce(totalRewardPredictions[0][actionIndex], (blockReductionSize, blockReductionSize), numpy.max)
 
-                    im = totalRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minTotalReward, vmax=maxTotalReward)
-                    totalRewardPredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} total reward", fontsize=8)
+                    im = totalRewardPredictionAxes[actionIndex].imshow(rewardPredictionsShrunk,
+                                                                       cmap=mainColorMap,
+                                                                       interpolation="nearest",
+                                                                       vmin=totalRewardMinValue - totalRewardRange * 0.1,
+                                                                       vmax=totalRewardMaxValue)
+                    totalRewardPredictionAxes[actionIndex].set_title(f"{action} {minValueForAction:.2f} - {maxValueForAction:.2f} total reward", fontsize=8)
                     mainFigure.colorbar(im, ax=totalRewardPredictionAxes[actionIndex], orientation='vertical')
+
+
+                advantageAllPredictionsNoImpossible = advantagePredictions[0][:][advantagePredictions[0][:] > self.config['reward_impossible_action_threshold']]
+                if len(presentRewardAllPredictionsNoImpossible) == 0:
+                    advantageMaxValue = 0.0
+                    advantageMinValue = 0.0
+                    advantageRange = 0
+                else:
+                    advantageMaxValue = numpy.max(numpy.array(advantageAllPredictionsNoImpossible))
+                    advantageMinValue = numpy.min(numpy.array(advantageAllPredictionsNoImpossible))
+                    advantageRange = advantageMaxValue - advantageMinValue
 
                 for actionIndex, action in enumerate(self.actionsSorted):
                     predictionsNoImpossible = advantagePredictions[0][actionIndex][advantagePredictions[0][actionIndex] > self.config['reward_impossible_action_threshold']]
 
                     if len(predictionsNoImpossible) == 0:
-                        maxValue = 1.0
-                        minValue = 0.0
+                        maxValueForAction = 1.0
+                        minValueForAction = 0.0
                     else:
-                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
-                    advantageRange = maxValue - minValue
+                        maxValueForAction = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValueForAction = numpy.min(numpy.array(predictionsNoImpossible))
 
                     advantagePredictionAxes[actionIndex].set_xticks([])
                     advantagePredictionAxes[actionIndex].set_yticks([])
 
-                    advanagePredictionsShrunk = skimage.measure.block_reduce(advantagePredictions[0][actionIndex], (squareSize, squareSize), numpy.max)
+                    advanagePredictionsShrunk = skimage.measure.block_reduce(advantagePredictions[0][actionIndex], (blockReductionSize, blockReductionSize), numpy.max)
 
-                    im = advantagePredictionAxes[actionIndex].imshow(advanagePredictionsShrunk, cmap=mainColorMap, interpolation="nearest", vmin=minValue - advantageRange*0.1, vmax=maxValue)
-                    advantagePredictionAxes[actionIndex].set_title(f"{action} {minValue:.2f} - {maxValue:.2f} advantage", fontsize=8)
+                    im = advantagePredictionAxes[actionIndex].imshow(advanagePredictionsShrunk,
+                                                                     cmap=mainColorMap,
+                                                                     interpolation="nearest",
+                                                                     vmin=advantageMinValue - advantageRange * 0.1,
+                                                                     vmax=advantageMaxValue)
+                    advantagePredictionAxes[actionIndex].set_title(f"{action} {minValueForAction:.2f} - {maxValueForAction:.2f} advantage", fontsize=8)
                     mainFigure.colorbar(im, ax=advantagePredictionAxes[actionIndex], orientation='vertical')
 
+
+                actionProbabilitiesAllPredictionsNoImpossible = actionProbabilities[0][:][actionProbabilities[0][:] > 0]
+                if len(presentRewardAllPredictionsNoImpossible) == 0:
+                    actionProbabilityMaxValue = 0.0
+                    actionProbabilityMinValue = 0.0
+                else:
+                    actionProbabilityMaxValue = numpy.max(numpy.array(actionProbabilitiesAllPredictionsNoImpossible))
+                    actionProbabilityMinValue = numpy.min(numpy.array(actionProbabilitiesAllPredictionsNoImpossible))
+
                 for actionIndex, action in enumerate(self.actionsSorted):
-                    predictionsNoImpossible = actionProbabilities[0][actionIndex][actionProbabilities[0][actionIndex] > self.config['reward_impossible_action_threshold']]
+                    predictionsNoImpossible = actionProbabilities[0][actionIndex][actionProbabilities[0][actionIndex] > 0]
 
                     if len(predictionsNoImpossible) == 0:
-                        maxValue = 0.0
-                        minValue = 0.0
+                        maxValueForAction = 0.0
+                        minValueForAction = 0.0
                     else:
-                        maxValue = numpy.max(numpy.array(predictionsNoImpossible))
-                        minValue = numpy.min(numpy.array(predictionsNoImpossible))
+                        maxValueForAction = numpy.max(numpy.array(predictionsNoImpossible))
+                        minValueForAction = numpy.min(numpy.array(predictionsNoImpossible))
 
                     actionProbabilityPredictionAxes[actionIndex].set_xticks([])
                     actionProbabilityPredictionAxes[actionIndex].set_yticks([])
 
-                    actionProbabilityPredictionsShrunk = skimage.measure.block_reduce(actionProbabilities[0][actionIndex], (squareSize, squareSize), numpy.max)
+                    actionProbabilityPredictionsShrunk = skimage.measure.block_reduce(actionProbabilities[0][actionIndex], (blockReductionSize, blockReductionSize), numpy.max)
 
-                    im = actionProbabilityPredictionAxes[actionIndex].imshow(actionProbabilityPredictionsShrunk, cmap=mainColorMap, interpolation="nearest")
-                    actionProbabilityPredictionAxes[actionIndex].set_title(f"{action} {minValue:.1e} - {maxValue:.1e} prob", fontsize=8)
+                    im = actionProbabilityPredictionAxes[actionIndex].imshow(actionProbabilityPredictionsShrunk,
+                                                                             cmap=mainColorMap,
+                                                                             interpolation="nearest",
+                                                                             vmin=actionProbabilityMinValue,
+                                                                             vmax=actionProbabilityMaxValue)
+
+                    actionProbabilityPredictionAxes[actionIndex].set_title(f"{action} {minValueForAction:.1e} - {maxValueForAction:.1e} prob", fontsize=8)
                     mainFigure.colorbar(im, ax=actionProbabilityPredictionAxes[actionIndex], orientation='vertical')
+
 
                 stampAxes.set_xticks([])
                 stampAxes.set_yticks([])
@@ -2474,16 +2602,20 @@ class DeepLearningAgent:
 
             # Compute the symbols and weights based on the prior trace.
             if trace.traceNumber > 0:
-                symbols, weights = self.symbolMapper.computeAllSymbolsForTrace(trace, "before")
+                coverageSymbols, coverageWeights = self.symbolMapper.computeCoverageSymbolsList(trace, "before")
+                recentSymbols, recentWeights = self.symbolMapper.computeDecayingBranchTraceSymbolsList(trace, "before")
             else:
-                symbols = [0]
-                weights = [1]
+                coverageSymbols = [0]
+                coverageWeights = [1]
+                recentSymbols = [0]
+                recentWeights = [1]
 
             # Compute the decaying future symbols and decaying future weights for the current trace
             decayingFutureSymbolIndexes, decayingFutureSymbolWeights = self.symbolMapper.computeDecayingFutureBranchTraceSymbolsList(trace, "before")
 
             # We do the same for the next trace.
-            nextSymbols, nextWeights = self.symbolMapper.computeAllSymbolsForTrace(nextTrace, "before")
+            nextCoverageSymbols, nextCoverageWeights = self.symbolMapper.computeCoverageSymbolsList(nextTrace, "before")
+            nextRecentSymbols, nextRecentWeights = self.symbolMapper.computeDecayingBranchTraceSymbolsList(nextTrace, "before")
 
             # Create the pixel action maps for both of the traces
             pixelActionMap = self.createPixelActionMap(trace.actionMaps, height, width)
@@ -2528,14 +2660,18 @@ class DeepLearningAgent:
             yield {
                 "traceIds": [str(trace.id)],
                 "processedImages": numpy.array([processedImage], dtype=numpy.float16),
-                "symbolIndexes": numpy.array([symbols], dtype=numpy.int32),
-                "symbolWeights": numpy.array([weights], dtype=numpy.float16),
+                "coverageSymbolIndexes": numpy.array([coverageSymbols], dtype=numpy.int32),
+                "coverageSymbolWeights": numpy.array([coverageWeights], dtype=numpy.float16),
+                "recentSymbolIndexes": numpy.array([recentSymbols], dtype=numpy.int32),
+                "recentSymbolWeights": numpy.array([recentWeights], dtype=numpy.float16),
                 "pixelActionMaps": numpy.array([pixelActionMap], dtype=numpy.uint8),
                 "stepNumbers": numpy.array([trace.frameNumber - 1], dtype=numpy.int32),
 
                 "nextProcessedImages": numpy.array([nextProcessedImage], dtype=numpy.float16),
-                "nextSymbolIndexes": numpy.array([nextSymbols], dtype=numpy.int32),
-                "nextSymbolWeights": numpy.array([nextWeights], dtype=numpy.float16),
+                "nextCoverageSymbolIndexes": numpy.array([nextCoverageSymbols], dtype=numpy.int32),
+                "nextCoverageSymbolWeights": numpy.array([nextCoverageWeights], dtype=numpy.float16),
+                "nextRecentSymbolIndexes": numpy.array([nextRecentSymbols], dtype=numpy.int32),
+                "nextRecentSymbolWeights": numpy.array([nextRecentWeights], dtype=numpy.float16),
                 "nextPixelActionMaps": numpy.array([nextPixelActionMap], dtype=numpy.uint8),
                 "nextStepNumbers": numpy.array([nextTrace.frameNumber], dtype=numpy.uint8),
 
@@ -2563,16 +2699,22 @@ class DeepLearningAgent:
         return {
                 "traceIds": ["test"] * self.config['batch_size'],
                 "processedImages": numpy.zeros([self.config['batch_size'], 1,  height, width], dtype=numpy.float16),
-                "symbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
-                "symbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
-                "symbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
+                "coverageSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
+                "coverageSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
+                "coverageSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
+                "recentSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
+                "recentSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
+                "recentSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
                 "pixelActionMaps": numpy.ones([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
                 "stepNumbers": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
 
                 "nextProcessedImages": numpy.zeros([self.config['batch_size'], 1,  height, width], dtype=numpy.float16),
-                "nextSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
-                "nextSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
-                "nextSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
+                "nextCoverageSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
+                "nextCoverageSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
+                "nextCoverageSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
+                "nextRecentSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
+                "nextRecentSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
+                "nextRecentSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
                 "nextPixelActionMaps": numpy.ones([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
                 "nextStepNumbers": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
 
@@ -2661,14 +2803,21 @@ class DeepLearningAgent:
             heightTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([batch["processedImages"].shape[2]]))
             presentRewardsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch["presentRewards"]))
             processedImagesTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['processedImages']))
-            symbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['symbolIndexes']))
-            symbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['symbolOffsets']))
-            symbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['symbolWeights']))
+            coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolIndexes']))
+            coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolOffsets']))
+            coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['coverageSymbolWeights']))
+            recentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['recentSymbolIndexes']))
+            recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['recentSymbolOffsets']))
+            recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentSymbolWeights']))
             stepNumberTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['stepNumbers']))
             nextProcessedImagesTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextProcessedImages']))
-            nextSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextSymbolIndexes']))
-            nextSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextSymbolOffsets']))
-            nextSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextSymbolWeights']))
+
+            nextCoverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextCoverageSymbolIndexes']))
+            nextCoverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextCoverageSymbolOffsets']))
+            nextCoverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextCoverageSymbolWeights']))
+            nextRecentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextRecentSymbolIndexes']))
+            nextRecentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextRecentSymbolOffsets']))
+            nextRecentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentSymbolWeights']))
 
             nextStepNumbers = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextStepNumbers']))
 
@@ -2703,9 +2852,12 @@ class DeepLearningAgent:
             # all of the various predictions
             currentStateOutputs = self.modelParallel({
                 "image": processedImagesTensor,
-                "symbolIndexes": symbolIndexesTensor,
-                "symbolOffsets": symbolListOffsetsTensor,
-                "symbolWeights": symbolWeightsTensor,
+                "coverageSymbolIndexes": coverageSymbolIndexesTensor,
+                "coverageSymbolOffsets": coverageSymbolListOffsetsTensor,
+                "coverageSymbolWeights": coverageSymbolWeightsTensor,
+                "recentSymbolIndexes": recentSymbolIndexesTensor,
+                "recentSymbolOffsets": recentSymbolListOffsetsTensor,
+                "recentSymbolWeights": recentSymbolWeightsTensor,
                 "pixelActionMaps": pixelActionMaps,
                 "stepNumber": stepNumberTensor,
                 "action_type": batch['actionTypes'],
@@ -2738,9 +2890,12 @@ class DeepLearningAgent:
                 # on the next step.
                 nextStateOutputs = self.targetNetwork({
                     "image": nextProcessedImagesTensor,
-                    "symbolIndexes": nextSymbolIndexesTensor,
-                    "symbolOffsets": nextSymbolListOffsetsTensor,
-                    "symbolWeights": nextSymbolWeightsTensor,
+                    "coverageSymbolIndexes": nextCoverageSymbolIndexesTensor,
+                    "coverageSymbolOffsets": nextCoverageSymbolListOffsetsTensor,
+                    "coverageSymbolWeights": nextCoverageSymbolWeightsTensor,
+                    "recentSymbolIndexes": nextRecentSymbolIndexesTensor,
+                    "recentSymbolOffsets": nextRecentSymbolListOffsetsTensor,
+                    "recentSymbolWeights": nextRecentSymbolWeightsTensor,
                     "pixelActionMaps": nextStatePixelActionMaps,
                     "stepNumber": nextStepNumbers,
                     "outputStamp": False,

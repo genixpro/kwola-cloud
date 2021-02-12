@@ -34,10 +34,23 @@ class TraceNet(torch.nn.Module):
                          self.config['additional_features_stamp_depth_size']
 
         self.timeEncodingSize = 1
+        self.symbolEmbeddingPixelFeaturesSize = self.config['symbol_embedding_size'] + self.config['additional_features_stamp_depth_size']
 
-        self.symbolEmbedding = torch.nn.EmbeddingBag(self.config['symbol_dictionary_size'], self.config['symbol_embedding_size'], mode="sum")
+        self.recentSymbolEmbedding = torch.nn.EmbeddingBag(self.config['symbol_dictionary_size'], self.config['symbol_embedding_size'], mode="sum")
+        self.coverageSymbolEmbedding = torch.nn.EmbeddingBag(self.config['symbol_dictionary_size'], self.config['symbol_embedding_size'], mode="sum")
 
-        self.stampProjection = torch.nn.Sequential(
+        self.coverageAttentionKeyEmbedding = torch.nn.Embedding(self.config['symbol_dictionary_size'], self.config['symbol_embedding_size'])
+        self.coverageAttentionValueEmbedding = torch.nn.Embedding(self.config['symbol_dictionary_size'], self.config['symbol_embedding_size'])
+        self.coverageSymbolAttentionLayer = torch.nn.MultiheadAttention(self.config['symbol_embedding_size'], 2)
+
+        self.queryProjection = torch.nn.Sequential(
+            torch.nn.Linear(
+                in_features=self.config['pixel_features'],
+                out_features=self.config['symbol_embedding_size']
+            )
+        )
+
+        self.recentSymbolStampProjection = torch.nn.Sequential(
             torch.nn.Linear(
                 in_features=self.config['symbol_embedding_size'],
                 out_features=self.stampSize - self.timeEncodingSize
@@ -93,7 +106,7 @@ class TraceNet(torch.nn.Module):
 
         self.stateValueLinear = torch.nn.Sequential(
             torch.nn.Linear(
-                in_features=int(self.config['additional_features_stamp_depth_size'] * self.config['additional_features_stamp_edge_size'] * self.config['additional_features_stamp_edge_size']),
+                in_features=int(self.stampSize + self.config['symbol_embedding_size']),
                 out_features=self.config['layer_5_num_kernels']
             ),
             torch.nn.ELU(),
@@ -106,7 +119,7 @@ class TraceNet(torch.nn.Module):
 
         self.presentRewardConvolution = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=self.config['pixel_features'] + self.config['additional_features_stamp_depth_size'],
+                in_channels=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                 out_channels=self.config['layer_5_num_kernels'],
                 kernel_size=self.config['layer_5_kernel_size'],
                 stride=self.config['layer_5_stride'],
@@ -128,7 +141,7 @@ class TraceNet(torch.nn.Module):
 
         self.discountedFutureRewardConvolution = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=self.config['pixel_features'] + self.config['additional_features_stamp_depth_size'],
+                in_channels=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                 out_channels=self.config['layer_5_num_kernels'],
                 kernel_size=self.config['layer_5_kernel_size'],
                 stride=self.config['layer_5_stride'],
@@ -150,7 +163,7 @@ class TraceNet(torch.nn.Module):
 
         self.actorConvolution = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=self.config['pixel_features'] + self.config['additional_features_stamp_depth_size'],
+                in_channels=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                 out_channels=self.config['layer_5_num_kernels'],
                 kernel_size=self.config['layer_5_kernel_size'],
                 stride=self.config['layer_5_stride'],
@@ -172,7 +185,7 @@ class TraceNet(torch.nn.Module):
 
         self.advantageConvolution = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=self.config['pixel_features'] + self.config['additional_features_stamp_depth_size'],
+                in_channels=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                 out_channels=self.config['layer_5_num_kernels'],
                 kernel_size=self.config['layer_5_kernel_size'],
                 stride=self.config['layer_5_stride'],
@@ -199,7 +212,7 @@ class TraceNet(torch.nn.Module):
         if self.config['enable_trace_prediction_loss']:
             self.predictedExecutionTraceLinear = torch.nn.Sequential(
                 torch.nn.Linear(
-                    in_features=self.config['pixel_features'] + self.config['additional_features_stamp_depth_size'],
+                    in_features=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                     out_features=self.config['symbol_embedding_size']
                 ),
                 torch.nn.ELU()
@@ -208,7 +221,7 @@ class TraceNet(torch.nn.Module):
         if self.config['enable_execution_feature_prediction_loss']:
             self.predictedExecutionFeaturesLinear = torch.nn.Sequential(
                 torch.nn.Linear(
-                    in_features=self.config['pixel_features'] + self.config['additional_features_stamp_depth_size'],
+                    in_features=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                     out_features=executionFeaturePredictorSize
                 ),
                 torch.nn.Sigmoid()
@@ -217,7 +230,7 @@ class TraceNet(torch.nn.Module):
         if self.config['enable_cursor_prediction_loss']:
             self.predictedCursorLinear = torch.nn.Sequential(
                 torch.nn.Linear(
-                    in_features=self.config['pixel_features'] + self.config['additional_features_stamp_depth_size'],
+                    in_features=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                     out_features=cursorCount
                 ),
                 torch.nn.Sigmoid()
@@ -234,11 +247,47 @@ class TraceNet(torch.nn.Module):
 
         pixelFeatureMap = self.mainModel(data['image'])
 
+        featureMapHeight = pixelFeatureMap.shape[2]
+        featureMapWidth = pixelFeatureMap.shape[3]
+
         # Compute the embedding based on the symbols provided. symbols are usually traces of which lines of code got executed.
-        symbolEmbeddings = self.symbolEmbedding(data['symbolIndexes'], data['symbolOffsets'], per_sample_weights=data['symbolWeights'])
+        recentSymbolEmbeddings = self.recentSymbolEmbedding(data['recentSymbolIndexes'], data['recentSymbolOffsets'], per_sample_weights=data['recentSymbolWeights'])
+        recentSymbolEmbeddings = torch.nn.functional.normalize(recentSymbolEmbeddings, dim=1)
+
+        coverageSymbolEmbeddings = self.coverageSymbolEmbedding(data['coverageSymbolIndexes'], data['coverageSymbolOffsets'], per_sample_weights=data['coverageSymbolWeights'])
+        coverageSymbolEmbeddings = torch.nn.functional.normalize(coverageSymbolEmbeddings, dim=1)
+
+        coverageAttentionKeys = self.coverageAttentionKeyEmbedding(data['coverageSymbolIndexes'])
+        coverageAttentionValues = self.coverageAttentionValueEmbedding(data['coverageSymbolIndexes'])
+
+        symbolEmbeddingFeaturesBySample = []
+        for sampleIndex, sampleSymbolOffset, in zip(range(batchSize), data['coverageSymbolOffsets']):
+            if sampleIndex == (batchSize - 1):
+                coverageAttentionKeyEmbeddings = coverageAttentionKeys[sampleSymbolOffset:].reshape([-1, 1, self.config['symbol_embedding_size']])
+                coverageAttentionValueEmbeddings = coverageAttentionValues[sampleSymbolOffset:].reshape([-1, 1, self.config['symbol_embedding_size']])
+            else:
+                nextOffset = data['coverageSymbolOffsets'][sampleIndex + 1]
+                coverageAttentionKeyEmbeddings = coverageAttentionKeys[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
+                coverageAttentionValueEmbeddings = coverageAttentionValues[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
+
+            samplePixelFeatures = pixelFeatureMap[sampleIndex, :, :, :].transpose(0, 2).reshape([featureMapHeight * featureMapWidth, self.config['pixel_features']])
+            queries = self.queryProjection(samplePixelFeatures)
+            queries = queries.reshape([-1, 1, self.config['symbol_embedding_size']])
+
+            attentionResults, attentionResultWeights = self.coverageSymbolAttentionLayer(queries, coverageAttentionKeyEmbeddings, coverageAttentionValueEmbeddings)
+
+            symbolEmbeddingFeatures = attentionResults.reshape([1, featureMapWidth, featureMapHeight, self.config['symbol_embedding_size']])
+            symbolEmbeddingFeatures = symbolEmbeddingFeatures.transpose(1, 3)
+
+            symbolEmbeddingFeaturesBySample.append(symbolEmbeddingFeatures)
+
+        symbolEmbeddingFeatures = torch.cat(symbolEmbeddingFeaturesBySample, dim=0)
 
         # Concatenate the step number with the rest of the additional features
-        additionalFeaturesWithStep = torch.cat([torch.log10(data['stepNumber'] + torch.ones_like(data['stepNumber'])).reshape([-1, 1]), self.stampProjection(symbolEmbeddings)], dim=1)
+        additionalFeaturesWithStep = torch.cat([
+            torch.log10(data['stepNumber'] + torch.ones_like(data['stepNumber'])).reshape([-1, 1]),
+            self.recentSymbolStampProjection(recentSymbolEmbeddings)
+        ], dim=1)
 
         # Append the stamp layer along side the pixel-by-pixel features
         stamp = additionalFeaturesWithStep.reshape([-1, self.config['additional_features_stamp_depth_size'],
@@ -250,7 +299,7 @@ class TraceNet(torch.nn.Module):
         stampTiler = stamp.repeat([1, 1, int(featureMapHeight / self.config['additional_features_stamp_edge_size']) + 1, int(featureMapWidth / self.config['additional_features_stamp_edge_size']) + 1])
         stampLayer = stampTiler[:, :, :featureMapHeight, :featureMapWidth].reshape([-1, self.config['additional_features_stamp_depth_size'], featureMapHeight, featureMapWidth])
 
-        mergedPixelFeatureMap = torch.cat([stampLayer, pixelFeatureMap], dim=1)
+        mergedPixelFeatureMap = torch.cat([symbolEmbeddingFeatures, stampLayer, pixelFeatureMap], dim=1)
 
         outputDict = {}
 
@@ -273,9 +322,9 @@ class TraceNet(torch.nn.Module):
 
         if data['outputFutureSymbolEmbedding']:
             # Compute the embedding based on the symbols provided for the future execution trace
-            decayingFutureSymbolEmbedding = self.symbolEmbedding(data['decayingFutureSymbolIndexes'],
-                                                    data['decayingFutureSymbolOffsets'],
-                                                    per_sample_weights=data['decayingFutureSymbolWeights'])
+            decayingFutureSymbolEmbedding = self.recentSymbolEmbedding(data['decayingFutureSymbolIndexes'],
+                                                                       data['decayingFutureSymbolOffsets'],
+                                                                       per_sample_weights=data['decayingFutureSymbolWeights'])
 
 
             outputDict['decayingFutureSymbolEmbedding'] = decayingFutureSymbolEmbedding
@@ -294,7 +343,10 @@ class TraceNet(torch.nn.Module):
             outputDict["actionProbabilities"] = actorActionProbs.type_as(mergedPixelFeatureMap)
 
         if data['computeStateValues']:
-            flatFeatureMap = additionalFeaturesWithStep.reshape(shape=[batchSize, -1])
+            flatFeatureMap = torch.cat([
+                additionalFeaturesWithStep.reshape(shape=[batchSize, -1]),
+                coverageSymbolEmbeddings
+            ], dim=1)
 
             stateValuePredictions = self.stateValueLinear(flatFeatureMap)
 

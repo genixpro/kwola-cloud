@@ -112,6 +112,8 @@ class ExecutionTrace(Document):
 
     codePrevalenceScore = FloatField()
 
+    codePrevalenceLogNormalizedZScore = FloatField()
+
     # This field is stores the execution trace for this round.
     # The dictionary maps file names to lists which then contain the line execution counts for that file
     # It is transparently compressed and decompressed on the fly

@@ -623,7 +623,11 @@ class TrainingManager:
             for key in samples[0].keys():
                 # We have to do something special here since they are not concatenated the normal way
                 if key == "symbolIndexes" or key == 'symbolWeights' \
+                        or key == 'coverageSymbolIndexes' or key == 'coverageSymbolWeights' \
+                        or key == 'recentSymbolIndexes' or key == 'recentSymbolWeights' \
                         or key == "nextSymbolIndexes" or key == 'nextSymbolWeights' \
+                        or key == "nextCoverageSymbolIndexes" or key == 'nextCoverageSymbolWeights' \
+                        or key == "nextRecentSymbolIndexes" or key == 'nextRecentSymbolWeights' \
                         or key == "decayingFutureSymbolIndexes" or key == 'decayingFutureSymbolWeights':
                     batch[key] = numpy.concatenate([sample[key][0] for sample in samples], axis=0)
 
@@ -633,10 +637,18 @@ class TrainingManager:
                         offsets.append(currentOffset)
                         currentOffset += len(sample[key][0])
 
-                    if 'next' in key:
+                    if 'nextCoverage' in key:
+                        batch['nextCoverageSymbolOffsets'] = numpy.array(offsets)
+                    elif 'nextRecent' in key:
+                        batch['nextRecentSymbolOffsets'] = numpy.array(offsets)
+                    elif 'next' in key:
                         batch['nextSymbolOffsets'] = numpy.array(offsets)
                     elif 'decaying' in key:
                         batch['decayingFutureSymbolOffsets'] = numpy.array(offsets)
+                    elif 'coverageSymbol' in key:
+                        batch['coverageSymbolOffsets'] = numpy.array(offsets)
+                    elif 'recentSymbol' in key:
+                        batch['recentSymbolOffsets'] = numpy.array(offsets)
                     else:
                         batch['symbolOffsets'] = numpy.array(offsets)
                 else:
