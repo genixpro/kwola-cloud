@@ -2622,16 +2622,19 @@ class DeepLearningAgent:
                     trace.cachedStartingRecentActionsImage = numpy.copy(lastTrace.cachedEndingRecentActionsImage)
                     trace.cachedEndingRecentActionsImage = numpy.copy(lastTrace.cachedEndingRecentActionsImage) * self.config['testing_recent_actions_image_decay_rate']
 
-                for x in range(width):
-                    for y in range(height):
-                        distX = x - trace.actionPerformed.x * self.config['model_image_downscale_ratio']
-                        distY = y - trace.actionPerformed.y * self.config['model_image_downscale_ratio']
-                        dist = math.sqrt(distX * distX + distY * distY)
+                gridX, gridY = numpy.meshgrid(range(width), range(height))
 
-                        if dist < self.config['testing_recent_actions_image_action_circle_radius']:
-                            gain = (self.config['testing_recent_actions_image_action_circle_radius'] - dist) / self.config['testing_recent_actions_image_action_circle_radius']
-                            trace.cachedEndingRecentActionsImage[self.actionsSorted.index(trace.actionPerformed.type), y, x] += gain * 0.7 + 0.3
+                distX = gridX - (trace.actionPerformed.x * self.config['model_image_downscale_ratio'])
+                distY = gridY - (trace.actionPerformed.y * self.config['model_image_downscale_ratio'])
 
+                dists = numpy.sqrt(distX * distX + distY * distY)
+
+                gains = (self.config['testing_recent_actions_image_action_circle_radius'] - dists) / self.config['testing_recent_actions_image_action_circle_radius']
+
+                xCoords = gridX[dists < self.config['testing_recent_actions_image_action_circle_radius']]
+                yCoords = gridY[dists < self.config['testing_recent_actions_image_action_circle_radius']]
+
+                trace.cachedEndingRecentActionsImage[self.actionsSorted.index(trace.actionPerformed.type), yCoords, xCoords] += gains[yCoords, xCoords] * 0.7 + 0.3
                 trace.cachedEndingRecentActionsImage = numpy.minimum(numpy.ones_like(trace.cachedEndingRecentActionsImage), trace.cachedEndingRecentActionsImage)
 
     def computeRecentActionsVector(self, traces):
