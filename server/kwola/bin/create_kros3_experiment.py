@@ -47,6 +47,7 @@ def main():
                                                                     batch_size=64,
                                                                     batches_per_iteration=2,
                                                                     testing_sequence_length=100,
+                                                                    iterations_per_training_step=250,
                                                                     email=None,
                                                                     password=None,
                                                                     name=None,
