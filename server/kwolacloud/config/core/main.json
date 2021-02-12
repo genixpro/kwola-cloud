@@ -136,6 +136,7 @@
   "loss_ratio_predicted_cursor": 1.00,
   "loss_ratio_trace_prediction": 1.00,
   "loss_state_value_weight": 0.1,
+  "neural_network_recent_actions_feature_size": 16,
   "model_image_downscale_ratio": 0.30,
   "pixel_features": 96,
   "precompute_sample_cache_num_workers": 1,
