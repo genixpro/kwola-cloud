@@ -53,6 +53,8 @@ def main():
                                                                     web_session_parallel_execution_sessions=12,
                                                                     web_session_no_network_activity_wait_time=0.0,
                                                                     web_session_perform_action_wait_time=0.1,
+                                                                    web_session_enable_offsite_check=False,
+                                                                    web_session_enable_load_failure_check=False,
                                                                     email=None,
                                                                     password=None,
                                                                     name=None,

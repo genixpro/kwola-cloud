@@ -300,6 +300,8 @@
   "web_session_enable_firefox": true,
   "web_session_enable_html_rewriting": true,
   "web_session_enable_js_rewriting": true,
+  "web_session_enable_load_failure_check": true,
+  "web_session_enable_offsite_check": true,
   "web_session_enable_shared_chrome_cache": true,
   "web_session_enable_shared_edge_cache": true,
   "web_session_enable_window_size_desktop": true,

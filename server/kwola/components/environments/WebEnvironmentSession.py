@@ -1081,10 +1081,11 @@ class WebEnvironmentSession:
             if self.hasBrowserDied:
                 return None, actionExecutionTimes
 
-            startTime = datetime.now()
-            networkWaitTime = self.checkOffsite(priorURL=self.targetURL)
-            actionExecutionTimes['checkOffsite-first-networkWaitTime'] = networkWaitTime
-            actionExecutionTimes['checkOffsite-first-body'] = ((datetime.now() - startTime).total_seconds() - networkWaitTime)
+            if self.config['web_session_enable_offsite_check']:
+                startTime = datetime.now()
+                networkWaitTime = self.checkOffsite(priorURL=self.targetURL)
+                actionExecutionTimes['checkOffsite-first-networkWaitTime'] = networkWaitTime
+                actionExecutionTimes['checkOffsite-first-body'] = ((datetime.now() - startTime).total_seconds() - networkWaitTime)
 
             executionTrace = ExecutionTrace(id=str(self.executionSession.id) + "-trace-" + str(self.traceNumber))
             executionTrace.actionExecutionTimes = actionExecutionTimes
@@ -1129,14 +1130,16 @@ class WebEnvironmentSession:
 
             executionTrace.didActionSucceed = success
 
-            startTime = datetime.now()
-            networkWaitTime = self.checkOffsite(priorURL=executionTrace.startURL)
-            actionExecutionTimes['checkOffsite-second-networkWaitTime'] = networkWaitTime
-            actionExecutionTimes['checkOffsite-second-body'] = ((datetime.now() - startTime).total_seconds() - networkWaitTime)
+            if self.config['web_session_enable_offsite_check']:
+                startTime = datetime.now()
+                networkWaitTime = self.checkOffsite(priorURL=executionTrace.startURL)
+                actionExecutionTimes['checkOffsite-second-networkWaitTime'] = networkWaitTime
+                actionExecutionTimes['checkOffsite-second-body'] = ((datetime.now() - startTime).total_seconds() - networkWaitTime)
 
-            startTime = datetime.now()
-            self.checkLoadFailure(priorURL=executionTrace.startURL)
-            actionExecutionTimes['checkLoadFailure'] = (datetime.now() - startTime).total_seconds()
+            if self.config['web_session_enable_load_failure_check']:
+                startTime = datetime.now()
+                self.checkLoadFailure(priorURL=executionTrace.startURL)
+                actionExecutionTimes['checkLoadFailure'] = (datetime.now() - startTime).total_seconds()
 
             self.hideInputCaret()
 
