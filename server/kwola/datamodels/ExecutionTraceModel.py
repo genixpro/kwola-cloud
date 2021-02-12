@@ -151,6 +151,14 @@ class ExecutionTrace(Document):
     # This is only "cached" because it can actually be recomputed on the fly
     cachedEndDecayingFutureBranchTrace = DictField(DynamicField(), default=None)
 
+    # The cached recent actions image is an image that shows exactly where specific actions were performed
+    # on the screen
+    cachedStartingRecentActionsImage = DynamicField(default=None)
+
+    # The cached recent actions image is an image that shows exactly where specific actions were performed
+    # on the screen
+    cachedEndingRecentActionsImage = DynamicField(default=None)
+
     timeForScreenshot = FloatField()
     timeForActionMapRetrieval = FloatField()
     timeForActionDecision = FloatField()
@@ -260,6 +268,8 @@ class ExecutionTrace(Document):
         cachedEndDecayingBranchTrace = self.cachedEndDecayingBranchTrace
         cachedStartDecayingFutureBranchTrace = self.cachedStartDecayingFutureBranchTrace
         cachedEndDecayingFutureBranchTrace = self.cachedEndDecayingFutureBranchTrace
+        cachedStartingRecentActionsImage = self.cachedStartingRecentActionsImage
+        cachedEndingRecentActionsImage = self.cachedEndingRecentActionsImage
 
         self.cachedUncompressedBranchTrace = None
         self.cachedStartCumulativeBranchTrace = None
@@ -268,6 +278,8 @@ class ExecutionTrace(Document):
         self.cachedEndDecayingBranchTrace = None
         self.cachedStartDecayingFutureBranchTrace = None
         self.cachedEndDecayingFutureBranchTrace = None
+        self.cachedStartingRecentActionsImage = None
+        self.cachedEndingRecentActionsImage = None
         saveObjectToDisk(self, "execution_traces", config)
         self.cachedUncompressedBranchTrace = cachedUncompressedBranchTrace
         self.cachedStartCumulativeBranchTrace = cachedStartCumulativeBranchTrace
@@ -276,6 +288,8 @@ class ExecutionTrace(Document):
         self.cachedEndDecayingBranchTrace = cachedEndDecayingBranchTrace
         self.cachedStartDecayingFutureBranchTrace = cachedStartDecayingFutureBranchTrace
         self.cachedEndDecayingFutureBranchTrace = cachedEndDecayingFutureBranchTrace
+        self.cachedStartingRecentActionsImage = cachedStartingRecentActionsImage
+        self.cachedEndingRecentActionsImage = cachedEndingRecentActionsImage
 
 
     @staticmethod

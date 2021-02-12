@@ -259,7 +259,7 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, trainingLoopsC
 
         # The actor does not start getting trained until after the first 5 training loops are completed
         actorTrainingStartLoop = 5 * torch.cuda.device_count()
-        shouldBeRandom = (trainingLoopsCompleted < actorTrainingStartLoop) or not (config['training_loops_needed'] < actorTrainingStartLoop)
+        shouldBeRandom = (trainingLoopsCompleted < actorTrainingStartLoop) and (config['training_loops_needed'] > actorTrainingStartLoop)
 
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
             "config": config.serialize(),

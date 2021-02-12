@@ -60,3 +60,31 @@ class TestTrainingLoop(unittest.TestCase):
             TrainAgentLoop.trainAgent(config, exitOnFail=True)
         finally:
             shutil.rmtree(configDir)
+
+    def test_kros3_all_actions(self):
+        configDir = KwolaCoreConfiguration.createNewLocalKwolaConfigDir("testing",
+                                                                        url="http://kros3.kwola.io/",
+                                                                        email=None,
+                                                                        password=None,
+                                                                        autologin=False,
+                                                                        name=None,
+                                                                        paragraph=None,
+                                                                        enableRandomEmailCommand=True,
+                                                                        enableScrolling=True,
+                                                                        enableTypeEmail=False,
+                                                                        enableTypePassword=False,
+                                                                        enableRandomNumberCommand=False,
+                                                                        enableRandomBracketCommand=False,
+                                                                        enableRandomMathCommand=False,
+                                                                        enableRandomOtherSymbolCommand=False,
+                                                                        enableDoubleClickCommand=False,
+                                                                        enableRightClickCommand=False,
+                                                                        custom_typing_action_strings=["test1", "test2", "test3", "test4"]
+                                                                        )
+
+        config = KwolaCoreConfiguration.loadConfigurationFromDirectory(configDir)
+
+        try:
+            TrainAgentLoop.trainAgent(config, exitOnFail=True)
+        finally:
+            shutil.rmtree(configDir)

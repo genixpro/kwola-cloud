@@ -229,7 +229,7 @@ class TrainingManager:
 
             getLogger().info(f"Finished the core training loop. Saving the training step {self.trainingStep.id}")
             self.trainingStep.endTime = datetime.now()
-            self.trainingStep.averageTimePerIteration = (self.trainingStep.endTime - self.trainingStep.startTime).total_seconds() / self.trainingStep.numberOfIterationsCompleted
+            self.trainingStep.averageTimePerIteration = (self.trainingStep.endTime - self.trainingStep.startTime).total_seconds() / max(1, self.trainingStep.numberOfIterationsCompleted)
             self.trainingStep.averageLoss = float(numpy.mean(self.trainingStep.totalLosses))
             self.trainingStep.status = "completed"
 

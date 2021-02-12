@@ -34,7 +34,9 @@ class TraceNet(torch.nn.Module):
                          self.config['additional_features_stamp_depth_size']
 
         self.timeEncodingSize = 1
-        self.symbolEmbeddingPixelFeaturesSize = self.config['symbol_embedding_size'] + self.config['additional_features_stamp_depth_size']
+        self.symbolEmbeddingPixelFeaturesSize = self.config['symbol_embedding_size'] + \
+                                                self.config['additional_features_stamp_depth_size'] + \
+                                                self.config['neural_network_recent_actions_feature_size']
 
         self.recentSymbolEmbedding = torch.nn.EmbeddingBag(self.config['symbol_dictionary_size'], self.config['symbol_embedding_size'], mode="sum")
         self.coverageSymbolEmbedding = torch.nn.EmbeddingBag(self.config['symbol_dictionary_size'], self.config['symbol_embedding_size'], mode="sum")
@@ -58,9 +60,17 @@ class TraceNet(torch.nn.Module):
             torch.nn.ELU()
         )
 
+        self.recentActionVectorProjection = torch.nn.Sequential(
+            torch.nn.Linear(
+                in_features=self.config['testing_recent_actions_vector_number_of_recent_traces'] * numActions,
+                out_features=self.config['neural_network_recent_actions_feature_size']
+            ),
+            torch.nn.ELU()
+        )
+
         self.mainModel = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=1,
+                in_channels=1 + numActions,
                 out_channels=self.config['layer_1_num_kernels'],
                 kernel_size=self.config['layer_1_kernel_size'],
                 stride=self.config['layer_1_stride'],
@@ -245,7 +255,12 @@ class TraceNet(torch.nn.Module):
         width = data['image'].shape[3]
         height = data['image'].shape[2]
 
-        pixelFeatureMap = self.mainModel(data['image'])
+        inputImage = torch.cat([
+            data['image'],
+            data['recentActionsImage']
+        ], dim=1)
+
+        pixelFeatureMap = self.mainModel(inputImage)
 
         featureMapHeight = pixelFeatureMap.shape[2]
         featureMapWidth = pixelFeatureMap.shape[3]
@@ -259,6 +274,8 @@ class TraceNet(torch.nn.Module):
 
         coverageAttentionKeys = self.coverageAttentionKeyEmbedding(data['coverageSymbolIndexes'])
         coverageAttentionValues = self.coverageAttentionValueEmbedding(data['coverageSymbolIndexes'])
+
+        recentActionFeatures = self.recentActionVectorProjection(data['recentActionsVector'])
 
         symbolEmbeddingFeaturesBySample = []
         for sampleIndex, sampleSymbolOffset, in zip(range(batchSize), data['coverageSymbolOffsets']):
@@ -299,7 +316,9 @@ class TraceNet(torch.nn.Module):
         stampTiler = stamp.repeat([1, 1, int(featureMapHeight / self.config['additional_features_stamp_edge_size']) + 1, int(featureMapWidth / self.config['additional_features_stamp_edge_size']) + 1])
         stampLayer = stampTiler[:, :, :featureMapHeight, :featureMapWidth].reshape([-1, self.config['additional_features_stamp_depth_size'], featureMapHeight, featureMapWidth])
 
-        mergedPixelFeatureMap = torch.cat([symbolEmbeddingFeatures, stampLayer, pixelFeatureMap], dim=1)
+        recentActionFeaturesImage = recentActionFeatures.reshape([batchSize, self.config['neural_network_recent_actions_feature_size'], 1, 1])
+        recentActionFeaturesImage = recentActionFeaturesImage.repeat([1, 1, featureMapHeight, featureMapWidth])
+        mergedPixelFeatureMap = torch.cat([symbolEmbeddingFeatures, recentActionFeaturesImage, stampLayer, pixelFeatureMap], dim=1)
 
         outputDict = {}
 

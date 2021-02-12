@@ -732,8 +732,25 @@ class DeepLearningAgent:
         processedImages = self.processImages(rawImages)
         actions = []
 
+        processedImageWidth = processedImages[0].shape[2]
+        processedImageHeight = processedImages[0].shape[1]
+
         processImagesTime = (datetime.now() - startTime).total_seconds()
         startTime = datetime.now()
+
+        recentActionImages = []
+        for traceList in pastExecutionTraces:
+            self.computeCachedRecentActionsImages(traceList, processedImageWidth, processedImageHeight)
+            if len(traceList) > 0:
+                recentActionImages.append(traceList[-1].cachedEndingRecentActionsImage)
+            else:
+                recentActionImage = numpy.zeros([len(self.actionsSorted), processedImageHeight, processedImageWidth], dtype=numpy.float32)
+                recentActionImages.append(recentActionImage)
+
+        recentActionVectors = []
+        for traceList in pastExecutionTraces:
+            vector = self.computeRecentActionsVector(traceList)
+            recentActionVectors.append(vector)
 
         # Here we have a pretty important mechanism. The name "recentActions" is a bit of a misnomer,
         # and we should probably come up with a new variable name. Basically, what we are doing here
@@ -805,11 +822,13 @@ class DeepLearningAgent:
         originalActionMapsBatch = []
         filteredActionMapsBatch = []
         recentActionsCountsBatch = []
+        recentActionsImageBatch = []
+        recentActionsVectorBatch = []
 
         modelDownscale = self.config['model_image_downscale_ratio']
 
-        zippedValues = zip(range(len(processedImages)), processedImages, coverageSymbolLists, recentSymbolLists, coverageSymbolWeights, recentSymbolWeights, envActionMaps, recentActions)
-        for sessionIndex, image, sampleCoverageSymbolList, sampleRecentSymbolList, sampleCoverageSymbolWeights, sampleRecentSymbolWeights, sampleActionMaps, sampleRecentActions in zippedValues:
+        zippedValues = zip(range(len(processedImages)), processedImages, coverageSymbolLists, recentSymbolLists, coverageSymbolWeights, recentSymbolWeights, envActionMaps, recentActions, recentActionImages, recentActionVectors)
+        for sessionIndex, image, sampleCoverageSymbolList, sampleRecentSymbolList, sampleCoverageSymbolWeights, sampleRecentSymbolWeights, sampleActionMaps, sampleRecentActions, recentActionImage, recentActionVector in zippedValues:
             # Ok here is a very important mechanism. Technically what is being calculated below is the "epsilon" value from classical
             # Q-learning. I'm just giving it a different name which suits my style. The "epsilon" is just the probability that the
             # algorithm will choose a random action instead of the prediction. In our situation, we have two values, because we have
@@ -882,6 +901,8 @@ class DeepLearningAgent:
                 recentActionsBatch.append(sampleRecentActions)
                 epsilonsPerSample.append(weightedRandomActionProbability)
                 recentActionsCountsBatch.append(sampleActionRecentActionCounts)
+                recentActionsImageBatch.append(recentActionImage)
+                recentActionsVectorBatch.append(recentActionVector)
             else:
                 # We will generate a pure random action for this sample. In that case, we just do it, generating the random action
                 actionX, actionY, actionType = self.getRandomAction(sampleActionRecentActionCounts, filteredSampleActionMaps, pixelActionMap)
@@ -941,6 +962,9 @@ class DeepLearningAgent:
             pixelActionMapTensor = self.variableWrapperFunc(torch.FloatTensor, pixelActionMapsBatchArray)
             stepNumberTensor = self.variableWrapperFunc(torch.FloatTensor, stepNumberArray)
 
+            recentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, recentActionsImageBatch)
+            recentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, recentActionsVectorBatch)
+
             neuralNetworkPredictionsTensorSetupTime = (datetime.now() - startTime).total_seconds()
             startTime = datetime.now()
 
@@ -966,6 +990,8 @@ class DeepLearningAgent:
                     "recentSymbolWeights": recentSymbolWeightsTensor,
                     "pixelActionMaps": pixelActionMapTensor,
                     "stepNumber": stepNumberTensor,
+                    "recentActionsImage": recentActionsImageTensor,
+                    "recentActionsVector": recentActionsVectorTensor,
                     "outputStamp": False,
                     "outputFutureSymbolEmbedding": False,
                     "computeExtras": False,
@@ -1563,6 +1589,17 @@ class DeepLearningAgent:
         self.symbolMapper.computeCachedDecayingBranchTrace(executionTracesFiltered)
         self.symbolMapper.computeCachedDecayingFutureBranchTrace(executionTracesFiltered)
 
+        firstProcessedImage = DeepLearningAgent.processRawImageParallel(rawImagesFiltered[0], self.config)
+        processedImageWidth = firstProcessedImage.shape[2]
+        processedImageHeight = firstProcessedImage.shape[1]
+        self.computeCachedRecentActionsImages(executionTracesFiltered, processedImageWidth, processedImageHeight)
+
+        recentActionsVectors = []
+        for traceIndex, trace in enumerate(executionTracesFiltered):
+            priorTraces = executionTracesFiltered[:traceIndex]
+            vector = self.computeRecentActionsVector(priorTraces)
+            recentActionsVectors.append(vector)
+
         presentRewards = DeepLearningAgent.computePresentRewards(executionTracesFiltered, self.config)
 
         discountedFutureRewards = DeepLearningAgent.computeDiscountedFutureRewards(executionTracesFiltered, self.config)
@@ -1575,12 +1612,13 @@ class DeepLearningAgent:
         if cutoffStepNumber is not None:
             executionTracesFiltered = executionTracesFiltered[:cutoffStepNumber]
             rawImagesFiltered = rawImagesFiltered[:cutoffStepNumber + 1]
+            recentActionsVectors = recentActionsVectors[:cutoffStepNumber]
 
         if includeNeuralNetworkCharts:
             neuralNetworkFutures = []
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.config['debug_video_workers']) as executor:
-                for trace, rawImage in zip(executionTracesFiltered, rawImagesFiltered):
-                    future = executor.submit(self.processDebugTraceThroughNeuralNetwork, trace, rawImage)
+                for trace, rawImage, recentActionsVector in zip(executionTracesFiltered, rawImagesFiltered, recentActionsVectors):
+                    future = executor.submit(self.processDebugTraceThroughNeuralNetwork, trace, rawImage, recentActionsVector)
                     neuralNetworkFutures.append(future)
             networkOutputs = [future.result() for future in neuralNetworkFutures]
         else:
@@ -1755,7 +1793,7 @@ class DeepLearningAgent:
 
         return videoData
 
-    def processDebugTraceThroughNeuralNetwork(self, trace, rawImage):
+    def processDebugTraceThroughNeuralNetwork(self, trace, rawImage, recentActionsVector):
         processedImage = DeepLearningAgent.processRawImageParallel(rawImage, self.config)
 
         pixelActionMap = self.createPixelActionMap(trace.actionMaps, processedImage.shape[1], processedImage.shape[2])
@@ -1789,6 +1827,9 @@ class DeepLearningAgent:
             recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(recentSymbolListOffsets))
             recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(recentSymbolWeightBatch))
 
+            recentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array([recentActionsVector]))
+            recentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array([trace.cachedStartingRecentActionsImage]))
+
             outputs = \
                 self.modelParallel({"image": self.variableWrapperFunc(torch.FloatTensor, numpy.array([processedImage])),
                                     "coverageSymbolIndexes": coverageSymbolIndexesTensor,
@@ -1799,6 +1840,8 @@ class DeepLearningAgent:
                                     "recentSymbolWeights": recentSymbolWeightsTensor,
                                     "pixelActionMaps": self.variableWrapperFunc(torch.FloatTensor,
                                                                                 numpy.array([pixelActionMap])),
+                                    "recentActionsVector": recentActionsVectorTensor,
+                                    "recentActionsImage": recentActionsImageTensor,
                                     "stepNumber": self.variableWrapperFunc(torch.FloatTensor,
                                                                            numpy.array([trace.frameNumber - 1])),
                                     "outputStamp": True,
@@ -2059,7 +2102,7 @@ class DeepLearningAgent:
             def addRightSideDebugCharts(plotImage, rawImage, trace):
                 chartTopMargin = self.config.debug_video_neural_network_chart_top_margin
 
-                neededFigures = 4 + len(self.actionsSorted) * 5
+                neededFigures = 5 + len(self.actionsSorted) * 5
 
                 squareSize = int(numpy.sqrt(neededFigures))
 
@@ -2153,6 +2196,13 @@ class DeepLearningAgent:
                 pixelActionMapAxes.set_xticks([])
                 pixelActionMapAxes.set_yticks([])
                 pixelActionMapAxes.set_title(f"{actionPixelCount} action pixels", fontsize=8)
+
+                recentActionsImageAxes = mainFigure.add_subplot(numColumns, numRows, currentFig)
+                currentFig += 1
+                recentActionsImageAxes.imshow(numpy.sum(trace.cachedStartingRecentActionsImage, axis=0), interpolation="bilinear")
+                recentActionsImageAxes.set_xticks([])
+                pixelActionMapAxes.set_yticks([])
+                recentActionsImageAxes.set_title(f"Recent Actions Image (amalgam)", fontsize=8)
 
                 presentRewardPredictions = numpy.array(networkOutput['presentRewards'].data)
                 discountedRewardPredictions = numpy.array(networkOutput['discountFutureRewards'].data)
@@ -2554,6 +2604,39 @@ class DeepLearningAgent:
         return processedImage
 
 
+    def computeCachedRecentActionsImages(self, traces, width, height):
+        for trace, lastTrace in zip(traces, [None] + traces):
+            if trace.cachedStartingRecentActionsImage is None:
+                if lastTrace is None or lastTrace.cachedEndingRecentActionsImage is None:
+                    trace.cachedStartingRecentActionsImage = numpy.zeros([len(self.actionsSorted), height, width], dtype=numpy.float32)
+                    trace.cachedEndingRecentActionsImage = numpy.zeros([len(self.actionsSorted), height, width], dtype=numpy.float32)
+                else:
+                    trace.cachedStartingRecentActionsImage = numpy.copy(lastTrace.cachedEndingRecentActionsImage)
+                    trace.cachedEndingRecentActionsImage = numpy.copy(lastTrace.cachedEndingRecentActionsImage) * self.config['testing_recent_actions_image_decay_rate']
+
+                for x in range(width):
+                    for y in range(height):
+                        distX = x - trace.actionPerformed.x * self.config['model_image_downscale_ratio']
+                        distY = y - trace.actionPerformed.y * self.config['model_image_downscale_ratio']
+                        dist = math.sqrt(distX * distX + distY * distY)
+
+                        if dist < self.config['testing_recent_actions_image_action_circle_radius']:
+                            gain = (self.config['testing_recent_actions_image_action_circle_radius'] - dist) / self.config['testing_recent_actions_image_action_circle_radius']
+                            trace.cachedEndingRecentActionsImage[self.actionsSorted.index(trace.actionPerformed.type), y, x] += gain * 0.7 + 0.3
+
+                trace.cachedEndingRecentActionsImage = numpy.minimum(numpy.ones_like(trace.cachedEndingRecentActionsImage), trace.cachedEndingRecentActionsImage)
+
+    def computeRecentActionsVector(self, traces):
+        vector = numpy.zeros([len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ])
+
+        for traceIndex, trace in enumerate(traces[-self.config['testing_recent_actions_vector_number_of_recent_traces']:]):
+            actionIndex = self.actionsSorted.index(trace.actionPerformed.type)
+            traceVectorPosition = min(len(traces) - 1, self.config['testing_recent_actions_vector_number_of_recent_traces'] - 1) - traceIndex
+            vector[traceVectorPosition * len(self.actionsSorted) + actionIndex] = 1
+
+        return vector
+
+
     def prepareBatchesForExecutionSession(self, executionSession):
         """
             This function prepares individual samples so that they can be fed to the neural network. This method
@@ -2587,6 +2670,16 @@ class DeepLearningAgent:
         self.symbolMapper.computeCachedDecayingBranchTrace(executionTraces)
         self.symbolMapper.computeCachedDecayingFutureBranchTrace(executionTraces)
 
+        processedImageWidth = processedImages[0].shape[2]
+        processedImageHeight = processedImages[0].shape[1]
+        self.computeCachedRecentActionsImages(executionTraces, processedImageWidth, processedImageHeight)
+
+        recentActionsVectors = []
+        for traceIndex, trace in enumerate(executionTraces):
+            priorTraces = executionTraces[:traceIndex]
+            vector = self.computeRecentActionsVector(priorTraces)
+            recentActionsVectors.append(vector)
+
         # First compute the present reward at each time step
         presentRewards = DeepLearningAgent.computePresentRewards(executionTraces, self.config)
 
@@ -2594,9 +2687,11 @@ class DeepLearningAgent:
         # these are the execution traces and images that are immediately following.
         nextTraces = list(executionTraces)[1:]
         nextProcessedImages = list(processedImages)[1:]
+        nextRecentActionVectors = list(recentActionsVectors)[1:]
 
         # Iterate over each trace along with all of the required data to compute the batch for that trace
-        for trace, nextTrace, processedImage, nextProcessedImage, presentReward in zip(executionTraces, nextTraces, processedImages, nextProcessedImages, presentRewards):
+        for trace, nextTrace, processedImage, nextProcessedImage, presentReward, recentActionsVector, nextRecentActionsVector \
+                in zip(executionTraces, nextTraces, processedImages, nextProcessedImages, presentRewards, recentActionsVectors, nextRecentActionVectors):
             width = processedImage.shape[2]
             height = processedImage.shape[1]
 
@@ -2665,6 +2760,8 @@ class DeepLearningAgent:
                 "recentSymbolIndexes": numpy.array([recentSymbols], dtype=numpy.int32),
                 "recentSymbolWeights": numpy.array([recentWeights], dtype=numpy.float16),
                 "pixelActionMaps": numpy.array([pixelActionMap], dtype=numpy.uint8),
+                "recentActionsVector": numpy.array([recentActionsVector], numpy.float32),
+                "recentActionsImage": numpy.array([trace.cachedStartingRecentActionsImage], numpy.float32),
                 "stepNumbers": numpy.array([trace.frameNumber - 1], dtype=numpy.int32),
 
                 "nextProcessedImages": numpy.array([nextProcessedImage], dtype=numpy.float16),
@@ -2674,6 +2771,8 @@ class DeepLearningAgent:
                 "nextRecentSymbolWeights": numpy.array([nextRecentWeights], dtype=numpy.float16),
                 "nextPixelActionMaps": numpy.array([nextPixelActionMap], dtype=numpy.uint8),
                 "nextStepNumbers": numpy.array([nextTrace.frameNumber], dtype=numpy.uint8),
+                "nextRecentActionsVector": numpy.array([nextRecentActionsVector], numpy.float32),
+                "nextRecentActionsImage": numpy.array([nextTrace.cachedStartingRecentActionsImage], numpy.float32),
 
                 "actionTypes": [trace.actionPerformed.type],
                 "actionXs": numpy.array([int(trace.actionPerformed.x * self.config['model_image_downscale_ratio'])], dtype=numpy.int16),
@@ -2706,6 +2805,8 @@ class DeepLearningAgent:
                 "recentSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
                 "recentSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
                 "pixelActionMaps": numpy.ones([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
+                "recentActionsVector": numpy.zeros([self.config['batch_size'], len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ], numpy.float32),
+                "recentActionsImage": numpy.zeros([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.float32),
                 "stepNumbers": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
 
                 "nextProcessedImages": numpy.zeros([self.config['batch_size'], 1,  height, width], dtype=numpy.float16),
@@ -2717,6 +2818,8 @@ class DeepLearningAgent:
                 "nextRecentSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
                 "nextPixelActionMaps": numpy.ones([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
                 "nextStepNumbers": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
+                "nextRecentActionsVector": numpy.zeros([self.config['batch_size'], len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ], numpy.float32),
+                "nextRecentActionsImage": numpy.zeros([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.float32),
 
                 "actionTypes": [self.actionsSorted[0]] * self.config['batch_size'],
                 "actionXs": numpy.zeros([self.config['batch_size']], dtype=numpy.int16),
@@ -2803,6 +2906,8 @@ class DeepLearningAgent:
             heightTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([batch["processedImages"].shape[2]]))
             presentRewardsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch["presentRewards"]))
             processedImagesTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['processedImages']))
+            recentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentActionsVector']))
+            recentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentActionsImage']))
             coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolIndexes']))
             coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolOffsets']))
             coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['coverageSymbolWeights']))
@@ -2820,6 +2925,8 @@ class DeepLearningAgent:
             nextRecentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentSymbolWeights']))
 
             nextStepNumbers = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextStepNumbers']))
+            nextRecentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentActionsVector']))
+            nextRecentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentActionsImage']))
 
             # Only create the following tensors if the loss is actually enabled for them
             if self.config['enable_trace_prediction_loss']:
@@ -2859,6 +2966,8 @@ class DeepLearningAgent:
                 "recentSymbolOffsets": recentSymbolListOffsetsTensor,
                 "recentSymbolWeights": recentSymbolWeightsTensor,
                 "pixelActionMaps": pixelActionMaps,
+                "recentActionsImage": recentActionsImageTensor,
+                "recentActionsVector": recentActionsVectorTensor,
                 "stepNumber": stepNumberTensor,
                 "action_type": batch['actionTypes'],
                 "action_x": batch['actionXs'],
@@ -2897,6 +3006,8 @@ class DeepLearningAgent:
                     "recentSymbolOffsets": nextRecentSymbolListOffsetsTensor,
                     "recentSymbolWeights": nextRecentSymbolWeightsTensor,
                     "pixelActionMaps": nextStatePixelActionMaps,
+                    "recentActionsImage": nextRecentActionsImageTensor,
+                    "recentActionsVector": nextRecentActionsVectorTensor,
                     "stepNumber": nextStepNumbers,
                     "outputStamp": False,
                     "outputFutureSymbolEmbedding": False,
