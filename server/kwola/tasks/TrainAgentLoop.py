@@ -245,7 +245,7 @@ def runTrainingSubprocess(config, trainingSequence, trainingStepIndex, gpuNumber
         raise
 
 
-def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugVideo=False):
+def runTestingSubprocess(config, trainingSequence, testStepIndex, trainingLoopsCompleted, generateDebugVideo=False):
     try:
         browsers = getAvailableBrowsers(config)
         windowSizes = getAvailableWindowSizes(config)
@@ -257,10 +257,14 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, generateDebugV
         testingStep = TestingStep(id=str(trainingSequence.id + "_testing_step_" + str(testStepIndex)), browser=chosenBrowser, windowSize=chosenWindowSize, testStepIndexWithinRun=testStepIndex)
         testingStep.saveToDisk(config)
 
+        # The actor does not start getting trained until after the first 5 training loops are completed
+        actorTrainingStartLoop = 5 * torch.cuda.device_count()
+        shouldBeRandom = (trainingLoopsCompleted < actorTrainingStartLoop) or not (config['training_loops_needed'] < actorTrainingStartLoop)
+
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
             "config": config.serialize(),
             "testingStepId": str(testingStep.id),
-            "shouldBeRandom": False,
+            "shouldBeRandom": shouldBeRandom,
             "generateDebugVideo": generateDebugVideo and config['enable_debug_videos'],
             "browser": chosenBrowser,
             "windowSize": chosenWindowSize
@@ -357,7 +361,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
                 generateDebugVideo = False
                 if testingStepNumber == 0 and enableDebugVideosThisLoop:
                     generateDebugVideo = True
-                future = executor.submit(runTestingSubprocess, config, trainingSequence, testStepIndex, generateDebugVideo=generateDebugVideo)
+                future = executor.submit(runTestingSubprocess, config, trainingSequence, testStepIndex, trainingSequence.trainingLoopsCompleted, generateDebugVideo=generateDebugVideo)
                 allFutures.append(future)
                 testStepFutures.append(future)
                 time.sleep(3)
