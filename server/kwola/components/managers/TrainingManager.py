@@ -669,7 +669,7 @@ class TrainingManager:
         except Exception as e:
             # Both KeyboardInterrupt and FileNotFoundError can occur when you Ctrl-C a process from the terminal.
             # We don't want to force recreating the sample cache just because of that.
-            if not isinstance(e, KeyboardInterrupt) and not isinstance(e, FileNotFoundError):
+            if not isinstance(e, KeyboardInterrupt) and not isinstance(e, FileNotFoundError) and not isinstance(e, multiprocessing.context.TimeoutError):
                 getLogger().error(f"prepareAndLoadSingleBatchForSubprocess failed! Error: {type(e)}. Destroying the batch cache for the traces and then putting a retry into the queue.\n{traceback.format_exc()}")
 
                 # As a precautionary measure, we destroy whatever data is in the
