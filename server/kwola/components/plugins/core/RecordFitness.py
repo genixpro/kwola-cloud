@@ -33,7 +33,7 @@ class RecordFitness(WebEnvironmentPluginBase):
 
     def browserSessionFinished(self, webDriver, proxy, executionSession):
         if executionSession.bestApplicationProvidedCumulativeFitness is not None:
-            getLogger().info(f"Session {executionSession.tabNumber} finished with fitness: {executionSession.bestApplicationProvidedCumulativeFitness:.0f}")
+            getLogger().info(f"Session {executionSession.id} finished with fitness: {executionSession.bestApplicationProvidedCumulativeFitness:.0f}")
 
     def extractFitness(self, webDriver):
         injected_javascript = (
