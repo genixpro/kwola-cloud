@@ -599,11 +599,11 @@ class DeepLearningAgent:
                 # We subtract / add 1 here just to compensate for the rounding error that is introduced
                 # from the image downscaling, which can sometimes cause pixels to be selected which are
                 # outside the bounds of the respective action map
-                top = max(0, int(math.ceil((element['top'] + 1) * self.config['model_image_downscale_ratio'])))
-                bottom = min(height, int(math.floor((element['bottom'] - 1) * self.config['model_image_downscale_ratio'])))
+                top = max(0, min(height, int(math.ceil((element['top'] + 1) * self.config['model_image_downscale_ratio']))))
+                bottom = max(0, min(height, int(math.floor((element['bottom'] - 1) * self.config['model_image_downscale_ratio']))))
 
-                left = max(0, int(math.ceil((element['left'] + 1) * self.config['model_image_downscale_ratio'])))
-                right = min(width, int(math.floor((element['right'] - 1) * self.config['model_image_downscale_ratio'])))
+                left = max(0, min(width, int(math.ceil((element['left'] + 1) * self.config['model_image_downscale_ratio']))))
+                right = max(0, min(width, int(math.floor((element['right'] - 1) * self.config['model_image_downscale_ratio']))))
 
                 pixelActionMap[actionTypeIndex, top:bottom, left:right] = 1
 
