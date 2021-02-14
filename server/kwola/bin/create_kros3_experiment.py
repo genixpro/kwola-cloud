@@ -48,6 +48,8 @@ def main():
                                                                     batches_per_iteration=2,
                                                                     testing_sequence_length=100,
                                                                     iterations_per_training_step=250,
+                                                                    random_action_test_step_index_max=300,
+                                                                    training_loops_needed=100,
                                                                     testing_sequences_in_parallel_per_training_loop=5,
                                                                     testing_sequences_per_training_loop=5,
                                                                     web_session_parallel_execution_sessions=12,
