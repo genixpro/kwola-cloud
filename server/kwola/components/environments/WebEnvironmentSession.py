@@ -952,7 +952,7 @@ class WebEnvironmentSession:
                     self.driver.execute_script("window.scrollTo(0, window.scrollY + 400)")
                 else:
                     self.driver.execute_script("window.scrollTo(0, Math.max(0, window.scrollY - 400))")
-                time.sleep(1.0)
+                time.sleep(self.config.web_session_perform_action_wait_time)
 
             if isinstance(action, ClearFieldAction):
                 if self.config['web_session_print_every_action']:

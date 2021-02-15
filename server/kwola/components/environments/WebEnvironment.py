@@ -60,18 +60,28 @@ class WebEnvironment:
     def __init__(self, config, sessionLimit=None, plugins=None, executionSessions=None, browser=None, windowSize=None):
         self.config = config
 
-        defaultPlugins = [
-            RecordCursorAtAction(),
-            RecordPageURLs(),
-            RecordExceptions(),
-            RecordLogEntriesAndLogErrors(config),
-            RecordNetworkErrors(),
-            RecordDotNetRPCErrors(),
+        defaultPlugins = [ ]
+
+        if config['web_session_enable_record_urls_plugin']:
+            defaultPlugins.append(RecordPageURLs())
+
+        if config['web_session_enable_record_cursor_plugin']:
+            defaultPlugins.append(RecordCursorAtAction())
+
+        if config['web_session_enable_record_error_plugins']:
+            defaultPlugins.extend([
+                RecordExceptions(),
+                RecordLogEntriesAndLogErrors(config),
+                RecordNetworkErrors(),
+                RecordDotNetRPCErrors()
+            ])
+
+        defaultPlugins.extend([
             RecordAllPaths(),
             RecordBranchTrace(),
             RecordScreenshots(config),
             RecordFitness()
-        ]
+        ])
 
         if config['enable_record_page_html']:
             defaultPlugins.append(RecordPageHTML(config))

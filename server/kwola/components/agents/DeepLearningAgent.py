@@ -2741,18 +2741,18 @@ class DeepLearningAgent:
             # more insight into whats actually happening to drive these reward values, and hopefully makes it learn faster
             # as a result.
             executionFeatures = [
-                trace.didActionSucceed,
-                trace.didErrorOccur,
-                trace.didNewErrorOccur,
-                trace.didCodeExecute,
-                trace.didNewBranchesExecute,
-                trace.hadNetworkTraffic,
-                trace.hadNewNetworkTraffic,
-                trace.didScreenshotChange,
-                trace.isScreenshotNew,
-                trace.didURLChange,
-                trace.isURLNew,
-                trace.hadLogOutput,
+                bool(trace.didActionSucceed),
+                bool(trace.didErrorOccur),
+                bool(trace.didNewErrorOccur),
+                bool(trace.didCodeExecute),
+                bool(trace.didNewBranchesExecute),
+                bool(trace.hadNetworkTraffic),
+                bool(trace.hadNewNetworkTraffic),
+                bool(trace.didScreenshotChange),
+                bool(trace.isScreenshotNew),
+                bool(trace.didURLChange),
+                bool(trace.isURLNew),
+                bool(trace.hadLogOutput)
             ]
 
             # We compute the reward pixel mask based on where the action was performed.
