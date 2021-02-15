@@ -440,6 +440,7 @@
     "web_session_print_javascript_translation_info": false,
     "web_session_restrict_url_to_regexes": [],
     "web_session_script_execution_timeout": 30,
+    "web_session_type_mode": "fast",
     "web_session_width": {
         "desktop": 1024,
         "mobile": 460,

@@ -906,7 +906,14 @@ class WebEnvironmentSession:
 
             if isinstance(action, ClickTapAction):
                 if self.config['web_session_click_mode'] == "fast":
-                    element.click()
+                    if action.times == 1:
+                        if self.config['web_session_print_every_action']:
+                            getLogger().info(f"Clicking {action.x} {action.y} from {action.source} as {action.type}")
+                        element.click()
+                    else:
+                        if self.config['web_session_print_every_action']:
+                            getLogger().info(f"Double Clicking {action.x} {action.y} from {action.source} as {action.type}")
+                        element.double_click()
                     time.sleep(self.config.web_session_perform_action_wait_time)
                 else:
                     actionChain = webdriver.common.action_chains.ActionChains(self.driver)
@@ -936,13 +943,18 @@ class WebEnvironmentSession:
             if isinstance(action, TypeAction):
                 if self.config['web_session_print_every_action']:
                     getLogger().info(f"Typing {action.text} at {action.x} {action.y} from {action.source} as {action.type}")
-                actionChain = webdriver.common.action_chains.ActionChains(self.driver)
-                actionChain.move_to_element_with_offset(element, 0, 0)
-                actionChain.click(on_element=element)
-                actionChain.pause(self.config.web_session_perform_action_wait_time)
-                actionChain.send_keys_to_element(element, action.text)
-                actionChain.pause(self.config.web_session_perform_action_wait_time)
-                actionChain.perform()
+
+                if self.config['web_session_type_mode'] == "fast":
+                    element.send_keys(action.text)
+                    time.sleep(self.config.web_session_perform_action_wait_time)
+                else:
+                    actionChain = webdriver.common.action_chains.ActionChains(self.driver)
+                    actionChain.move_to_element_with_offset(element, 0, 0)
+                    actionChain.click(on_element=element)
+                    actionChain.pause(self.config.web_session_perform_action_wait_time)
+                    actionChain.send_keys_to_element(element, action.text)
+                    actionChain.pause(self.config.web_session_perform_action_wait_time)
+                    actionChain.perform()
 
             if isinstance(action, ScrollingAction):
                 if self.config['web_session_print_every_action']:
