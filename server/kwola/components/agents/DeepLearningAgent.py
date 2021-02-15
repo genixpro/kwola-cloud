@@ -2640,11 +2640,13 @@ class DeepLearningAgent:
         for trace, lastTrace in zip(traces, [None] + traces):
             if trace.cachedStartingRecentActionsImage is None:
                 if lastTrace is None or lastTrace.cachedEndingRecentActionsImage is None:
-                    trace.cachedStartingRecentActionsImage = numpy.zeros([len(self.actionsSorted), height, width], dtype=numpy.float32)
-                    trace.cachedEndingRecentActionsImage = numpy.zeros([len(self.actionsSorted), height, width], dtype=numpy.float32)
+                    # We set through _data here to try and avoid some cpu heavy operations within mongoengine
+                    trace._data['cachedStartingRecentActionsImage'] = numpy.zeros([len(self.actionsSorted), height, width], dtype=numpy.float32)
+                    trace._data['cachedEndingRecentActionsImage'] = numpy.zeros([len(self.actionsSorted), height, width], dtype=numpy.float32)
                 else:
-                    trace.cachedStartingRecentActionsImage = numpy.copy(lastTrace.cachedEndingRecentActionsImage)
-                    trace.cachedEndingRecentActionsImage = numpy.copy(lastTrace.cachedEndingRecentActionsImage) * self.config['testing_recent_actions_image_decay_rate']
+                    # We set through _data here to try and avoid some cpu heavy operations within mongoengine
+                    trace._data['cachedStartingRecentActionsImage'] = numpy.copy(lastTrace.cachedEndingRecentActionsImage)
+                    trace._data['cachedEndingRecentActionsImage'] = numpy.copy(lastTrace.cachedEndingRecentActionsImage) * self.config['testing_recent_actions_image_decay_rate']
 
                 actionCircleCenterX = (trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio'])
                 actionCircleCenterY = (trace.actionPerformed.y * self.config['neural_network_model_image_downscale_ratio'])
@@ -2673,13 +2675,15 @@ class DeepLearningAgent:
                 circleTop = topAdjust
                 circleBottom = self.config['testing_recent_actions_image_action_circle_radius'] * 2 - bottomAdjust
 
-                trace.cachedEndingRecentActionsImage[self.actionsSorted.index(trace.actionPerformed.type), top:bottom, left:right] \
+                # We set through _data here to try and avoid some cpu heavy operations within mongoengine
+                trace._data['cachedEndingRecentActionsImage'][self.actionsSorted.index(trace.actionPerformed.type), top:bottom, left:right] \
                     += self.recentActionsImageCircle[
                        circleTop:circleBottom,
                        circleLeft:circleRight
                     ]
 
-                trace.cachedEndingRecentActionsImage = numpy.minimum(numpy.ones_like(trace.cachedEndingRecentActionsImage), trace.cachedEndingRecentActionsImage)
+                # We set through _data here to try and avoid some cpu heavy operations within mongoengine
+                trace._data['cachedEndingRecentActionsImage'] = numpy.minimum(numpy.ones_like(trace.cachedEndingRecentActionsImage), trace.cachedEndingRecentActionsImage)
 
     def computeRecentActionsVector(self, traces):
         vector = numpy.zeros([len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ])
