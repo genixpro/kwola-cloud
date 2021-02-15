@@ -260,7 +260,7 @@
     "training_enable_image_cropping": true,
     "training_enable_next_state_image_cropping": true,
     "training_execution_session_fetch_timeout": 60,
-    "training_gradient_exponential_moving_average_decay": 0.95,
+    "training_gradient_exponential_moving_average_decay": 0.90,
     "training_gradient_squared_exponential_moving_average_decay": 0.999,
     "training_initial_batch_prep_workers": 2,
     "training_iterations_between_db_saves": 25,
