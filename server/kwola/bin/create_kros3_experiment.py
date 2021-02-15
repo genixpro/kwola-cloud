@@ -44,8 +44,8 @@ def main():
 
     configDir = KwolaCoreConfiguration.createNewLocalKwolaConfigDir("standard_experiment",
                                                                     url="http://kros3.kwola.io/",
-                                                                    neural_network_batch_size=32,
-                                                                    neural_network_batches_per_iteration=2,
+                                                                    neural_network_batch_size=64,
+                                                                    neural_network_batches_per_iteration=1,
                                                                     random_action_test_step_index_max=300,
                                                                     testing_sequence_length=100,
                                                                     testing_sequences_in_parallel_per_training_loop=3,
@@ -58,6 +58,7 @@ def main():
                                                                     web_session_no_network_activity_wait_time=0.0,
                                                                     web_session_parallel_execution_sessions=12,
                                                                     web_session_perform_action_wait_time=0.1,
+                                                                    symbol_dictionary_size=1000,
                                                                     web_session_enable_record_cursor_plugin=False,
                                                                     web_session_enable_record_error_plugins=False,
                                                                     web_session_enable_record_urls_plugin=False,
