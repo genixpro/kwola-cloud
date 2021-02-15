@@ -905,20 +905,24 @@ class WebEnvironmentSession:
             """, action.x, action.y)
 
             if isinstance(action, ClickTapAction):
-                actionChain = webdriver.common.action_chains.ActionChains(self.driver)
-                actionChain.move_to_element_with_offset(element, 0, 0)
-                if action.times == 1:
-                    if self.config['web_session_print_every_action']:
-                        getLogger().info(f"Clicking {action.x} {action.y} from {action.source} as {action.type}")
-                    actionChain.click(on_element=element)
-                    actionChain.pause(self.config.web_session_perform_action_wait_time)
-                elif action.times == 2:
-                    if self.config['web_session_print_every_action']:
-                        getLogger().info(f"Double Clicking {action.x} {action.y} from {action.source} as {action.type}")
-                    actionChain.double_click(on_element=element)
-                    actionChain.pause(self.config.web_session_perform_action_wait_time)
+                if self.config['web_session_click_mode'] == "fast":
+                    element.click()
+                    time.sleep(self.config.web_session_perform_action_wait_time)
+                else:
+                    actionChain = webdriver.common.action_chains.ActionChains(self.driver)
+                    actionChain.move_to_element_with_offset(element, 0, 0)
+                    if action.times == 1:
+                        if self.config['web_session_print_every_action']:
+                            getLogger().info(f"Clicking {action.x} {action.y} from {action.source} as {action.type}")
+                        actionChain.click(on_element=element)
+                        actionChain.pause(self.config.web_session_perform_action_wait_time)
+                    elif action.times == 2:
+                        if self.config['web_session_print_every_action']:
+                            getLogger().info(f"Double Clicking {action.x} {action.y} from {action.source} as {action.type}")
+                        actionChain.double_click(on_element=element)
+                        actionChain.pause(self.config.web_session_perform_action_wait_time)
 
-                actionChain.perform()
+                    actionChain.perform()
 
             if isinstance(action, RightClickAction):
                 if self.config['web_session_print_every_action']:
