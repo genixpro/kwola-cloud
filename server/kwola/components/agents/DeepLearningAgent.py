@@ -91,11 +91,11 @@ class DeepLearningAgent:
         # We create a method that will convert torch CPU tensors into
         # torch CUDA tensors if this model is set in GPU mode.
         if self.whichGpu == "all":
-            self.variableWrapperFunc = lambda t, x: torch.as_tensor(x, dtype=t.dtype).cuda()
+            self.variableWrapperFunc = lambda t, x: torch.as_tensor(x, dtype=t.dtype).pin_memory().cuda(non_blocking=True)
         elif self.whichGpu is None:
             self.variableWrapperFunc = lambda t, x: torch.as_tensor(x, dtype=t.dtype)
         else:
-            self.variableWrapperFunc = lambda t, x: torch.as_tensor(x, dtype=t.dtype, device=f"cuda:{self.whichGpu}").cuda(device=f"cuda:{self.whichGpu}")
+            self.variableWrapperFunc = lambda t, x: torch.as_tensor(x, dtype=t.dtype).pin_memory().cuda(device=f"cuda:{self.whichGpu}", non_blocking=True)
 
         # Fetch the folder that we will store the model parameters in
         self.modelFileName = "deep_learning_model"

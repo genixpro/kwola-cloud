@@ -121,6 +121,8 @@ class TrainingManager:
         self.trainingStep = trainingStep
 
     def initializeGPU(self):
+        torch.backends.cudnn.benchmark = True
+
         if self.gpu is not None:
             for subprocessIndex in range(10):
                 try:

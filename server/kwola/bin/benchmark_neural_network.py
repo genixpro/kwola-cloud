@@ -46,6 +46,8 @@ def main():
         This is the entry point for the Kwola secondary command, kwola_run_test_step.
     """
     try:
+        torch.backends.cudnn.benchmark = True
+
         configDir = KwolaCoreConfiguration.createNewLocalKwolaConfigDir("standard_experiment",
                                                                         url="http://demo.kwolatesting.com/",
                                                                         email="",
@@ -78,21 +80,23 @@ def main():
 
         agent.initialize(enableTraining=True)
 
+        datapoints = 2
+
         agent.save()
         agent.load()
-        batches = [agent.prepareEmptyBatch()] * config['neural_network_batches_per_iteration']
+        batches = [[agent.prepareEmptyBatch()] * config['neural_network_batches_per_iteration']] * datapoints
 
         start = datetime.now()
 
         with profiler.profile(with_stack=True, record_shapes=False, use_cuda=True) as prof:
-            for batch in batches:
-                agent.learnFromBatches([batch], trainingStepIndex=100)
+            for batchList in batches:
+                agent.learnFromBatches(batchList, trainingStepIndex=100)
 
         print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=100))
 
         end = datetime.now()
 
-        timePerSample = (end - start).total_seconds() / (len(batches) * config['neural_network_batch_size'])
+        timePerSample = (end - start).total_seconds() / (len(batches) * config['neural_network_batch_size'] * config['neural_network_batches_per_iteration'])
 
         print(f"Average time per sample: f{timePerSample:.4}")
 
