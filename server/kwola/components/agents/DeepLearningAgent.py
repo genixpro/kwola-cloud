@@ -91,11 +91,11 @@ class DeepLearningAgent:
         # We create a method that will convert torch CPU tensors into
         # torch CUDA tensors if this model is set in GPU mode.
         if self.whichGpu == "all":
-            self.variableWrapperFunc = lambda t, x: t(x).cuda()
+            self.variableWrapperFunc = lambda t, x: torch.as_tensor(x, dtype=t.dtype).cuda()
         elif self.whichGpu is None:
-            self.variableWrapperFunc = lambda t, x: t(x)
+            self.variableWrapperFunc = lambda t, x: torch.as_tensor(x, dtype=t.dtype)
         else:
-            self.variableWrapperFunc = lambda t, x: t(x).cuda(device=f"cuda:{self.whichGpu}")
+            self.variableWrapperFunc = lambda t, x: torch.as_tensor(x, dtype=t.dtype, device=f"cuda:{self.whichGpu}").cuda(device=f"cuda:{self.whichGpu}")
 
         # Fetch the folder that we will store the model parameters in
         self.modelFileName = "deep_learning_model"
@@ -948,15 +948,17 @@ class DeepLearningAgent:
         # doesn't happen very often but in rare circumstances it can and we prepare for that here.
         if len(imageBatch) > 0:
             # Create numpy arrays for each of the
-            imageBatchArray = numpy.array(imageBatch)
+            imageBatchArray = numpy.array(imageBatch, dtype=numpy.float32)
             coverageSymbolListBatchArray = numpy.array(coverageSymbolListBatch)
             coverageSymbolListOffsetsArray = numpy.array(coverageSymbolListOffsets)
-            coverageSymbolWeightBatchArray = numpy.array(coverageSymbolWeightBatch)
+            coverageSymbolWeightBatchArray = numpy.array(coverageSymbolWeightBatch, dtype=numpy.float32)
             recentSymbolListBatchArray = numpy.array(recentSymbolListBatch)
             recentSymbolListOffsetsArray = numpy.array(recentSymbolListOffsets)
-            recentSymbolWeightBatchArray = numpy.array(recentSymbolWeightBatch)
-            pixelActionMapsBatchArray = numpy.array(pixelActionMapsBatch)
-            stepNumberArray = numpy.array([stepNumber] * len(imageBatch))
+            recentSymbolWeightBatchArray = numpy.array(recentSymbolWeightBatch, dtype=numpy.float32)
+            pixelActionMapsBatchArray = numpy.array(pixelActionMapsBatch, dtype=numpy.float32)
+            recentActionsImageBatchArray = numpy.array(recentActionsImageBatch, dtype=numpy.float32)
+            recentActionsVectorBatchArray = numpy.array(recentActionsVectorBatch, dtype=numpy.float32)
+            stepNumberArray = numpy.array([stepNumber] * len(imageBatch), dtype=numpy.float32)
 
             # Create torch tensors out of the numpy arrays, effectively preparing the data for input into the neural network.
             imageTensor = self.variableWrapperFunc(torch.FloatTensor, imageBatchArray)
@@ -970,8 +972,8 @@ class DeepLearningAgent:
             pixelActionMapTensor = self.variableWrapperFunc(torch.FloatTensor, pixelActionMapsBatchArray)
             stepNumberTensor = self.variableWrapperFunc(torch.FloatTensor, stepNumberArray)
 
-            recentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, recentActionsImageBatch)
-            recentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, recentActionsVectorBatch)
+            recentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, recentActionsImageBatchArray)
+            recentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, recentActionsVectorBatchArray)
 
             neuralNetworkPredictionsTensorSetupTime = (datetime.now() - startTime).total_seconds()
             startTime = datetime.now()
@@ -1832,12 +1834,12 @@ class DeepLearningAgent:
 
             coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(coverageSymbolListBatch))
             coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(coverageSymbolListOffsets))
-            coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(coverageSymbolWeightBatch))
+            coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(coverageSymbolWeightBatch, dtype=numpy.float32))
             recentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(recentSymbolListBatch))
             recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(recentSymbolListOffsets))
-            recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(recentSymbolWeightBatch))
+            recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(recentSymbolWeightBatch, dtype=numpy.float32))
 
-            recentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array([recentActionsVector]))
+            recentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array([recentActionsVector], dtype=numpy.float32))
             recentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array([trace.cachedStartingRecentActionsImage]))
 
             outputs = \
@@ -1849,11 +1851,11 @@ class DeepLearningAgent:
                                     "recentSymbolOffsets": recentSymbolListOffsetsTensor,
                                     "recentSymbolWeights": recentSymbolWeightsTensor,
                                     "pixelActionMaps": self.variableWrapperFunc(torch.FloatTensor,
-                                                                                numpy.array([pixelActionMap])),
+                                                                                numpy.array([pixelActionMap], dtype=numpy.float32)),
                                     "recentActionsVector": recentActionsVectorTensor,
                                     "recentActionsImage": recentActionsImageTensor,
                                     "stepNumber": self.variableWrapperFunc(torch.FloatTensor,
-                                                                           numpy.array([trace.frameNumber - 1])),
+                                                                           numpy.array([trace.frameNumber - 1], dtype=numpy.float32)),
                                     "outputStamp": True,
                                     "outputFutureSymbolEmbedding": False,
                                     "computeExtras": False,
