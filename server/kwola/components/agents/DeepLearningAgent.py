@@ -2853,30 +2853,35 @@ class DeepLearningAgent:
 
             :return: This returns a single dictionary object of the batch size needed
         """
-        width = 800
-        height = 600
+        width = int(1024 * self.config['neural_network_model_image_downscale_ratio'])
+        height = int(768 * self.config['neural_network_model_image_downscale_ratio'])
+
+        width += 8 - width % 8
+        height += 8 - height % 8
+
+        symbolCount = 100
 
         return {
                 "traceIds": ["test"] * self.config['neural_network_batch_size'],
                 "processedImages": numpy.zeros([self.config['neural_network_batch_size'], 1,  height, width], dtype=numpy.float16),
-                "coverageSymbolIndexes": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
-                "coverageSymbolWeights": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float16),
-                "coverageSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32),
-                "recentSymbolIndexes": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
-                "recentSymbolWeights": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float16),
-                "recentSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32),
+                "coverageSymbolIndexes": numpy.array(list(range(symbolCount * self.config['neural_network_batch_size'])), dtype=numpy.int32),
+                "coverageSymbolWeights": numpy.ones([self.config['neural_network_batch_size'] * symbolCount], dtype=numpy.float16),
+                "coverageSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32) * symbolCount,
+                "recentSymbolIndexes": numpy.array(list(range(symbolCount * self.config['neural_network_batch_size'])), dtype=numpy.int32),
+                "recentSymbolWeights": numpy.ones([self.config['neural_network_batch_size'] * symbolCount], dtype=numpy.float16),
+                "recentSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32) * symbolCount,
                 "pixelActionMaps": numpy.ones([self.config['neural_network_batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
                 "recentActionsVector": numpy.zeros([self.config['neural_network_batch_size'], len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ], numpy.float32),
                 "recentActionsImage": numpy.zeros([self.config['neural_network_batch_size'], len(self.actionsSorted), height, width], dtype=numpy.float32),
                 "stepNumbers": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
 
                 "nextProcessedImages": numpy.zeros([self.config['neural_network_batch_size'], 1,  height, width], dtype=numpy.float16),
-                "nextCoverageSymbolIndexes": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
-                "nextCoverageSymbolWeights": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float16),
-                "nextCoverageSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32),
-                "nextRecentSymbolIndexes": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
-                "nextRecentSymbolWeights": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float16),
-                "nextRecentSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32),
+                "nextCoverageSymbolIndexes": numpy.array(list(range(symbolCount * self.config['neural_network_batch_size'])), dtype=numpy.int32),
+                "nextCoverageSymbolWeights":  numpy.ones([self.config['neural_network_batch_size'] * symbolCount], dtype=numpy.float16),
+                "nextCoverageSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32) * symbolCount,
+                "nextRecentSymbolIndexes": numpy.array(list(range(symbolCount * self.config['neural_network_batch_size'])), dtype=numpy.int32),
+                "nextRecentSymbolWeights": numpy.ones([self.config['neural_network_batch_size'] * symbolCount], dtype=numpy.float16),
+                "nextRecentSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32) * symbolCount,
                 "nextPixelActionMaps": numpy.ones([self.config['neural_network_batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
                 "nextStepNumbers": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
                 "nextRecentActionsVector": numpy.zeros([self.config['neural_network_batch_size'], len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ], numpy.float32),
