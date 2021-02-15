@@ -196,7 +196,7 @@ class CreateLocalBugObjects(TestingStepPluginBase):
 
     @autoretry(exponentialBackOffBase=3)
     def generateVideoFilesForBugs(self, testingStep, bugObjects):
-        pool = multiprocessing.Pool(self.config['video_generation_processes'], maxtasksperchild=1)
+        pool = multiprocessing.Pool(self.config['testing_video_generation_processes'], maxtasksperchild=1)
         futures = []
         for bugIndex, bug in enumerate(bugObjects):
             future = pool.apply_async(func=createDebugVideoSubProcess, args=(

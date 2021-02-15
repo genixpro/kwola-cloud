@@ -209,7 +209,7 @@ class DeepLearningAgent:
             return lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=text)
 
         # Old style custom typing actions, now deprecated
-        for customTypingActionIndex, customTypingActionString in enumerate(config['custom_typing_action_strings']):
+        for customTypingActionIndex, customTypingActionString in enumerate(config['actions_custom_typing_action_strings']):
             actionName = f'typeCustom{customTypingActionIndex}'
             self.actions[actionName] = generateOldCustomTypingActionLambda(actionName, customTypingActionString)
             self.actionBaseWeights.append(config['random_weight_custom_type_action'])
@@ -223,7 +223,7 @@ class DeepLearningAgent:
             return lambda x, y: TypeAction(type=actionName, x=x, y=y, label=actionName, text=actionConfig.generateText())
 
         # New style custom typing actions
-        for typingActionIndex, typingActionData in enumerate(config['typing_actions']):
+        for typingActionIndex, typingActionData in enumerate(config['actions_typing_actions']):
             actionName = f'typeAction{typingActionIndex}'
             actionConfig = TypingActionConfiguration(**typingActionData)
 
@@ -542,9 +542,9 @@ class DeepLearningAgent:
             This method will process a given numpy array of raw images and prepare them to be processed inside the
             neural network.
 
-            :param images: A numpy array, with dimensions [batch_size, height, width, channels]
+            :param images: A numpy array, with dimensions [neural_network_batch_size, height, width, channels]
 
-            :return: A new numpy array containing the resulting processed images, with dimensions [batch_size, channels, height, width]
+            :return: A new numpy array containing the resulting processed images, with dimensions [neural_network_batch_size, channels, height, width]
         """
         convertedImageFutures = []
 
@@ -599,11 +599,11 @@ class DeepLearningAgent:
                 # We subtract / add 1 here just to compensate for the rounding error that is introduced
                 # from the image downscaling, which can sometimes cause pixels to be selected which are
                 # outside the bounds of the respective action map
-                top = max(0, min(height, int(math.ceil((element['top'] + 1) * self.config['model_image_downscale_ratio']))))
-                bottom = max(0, min(height, int(math.floor((element['bottom'] - 1) * self.config['model_image_downscale_ratio']))))
+                top = max(0, min(height, int(math.ceil((element['top'] + 1) * self.config['neural_network_model_image_downscale_ratio']))))
+                bottom = max(0, min(height, int(math.floor((element['bottom'] - 1) * self.config['neural_network_model_image_downscale_ratio']))))
 
-                left = max(0, min(width, int(math.ceil((element['left'] + 1) * self.config['model_image_downscale_ratio']))))
-                right = max(0, min(width, int(math.floor((element['right'] - 1) * self.config['model_image_downscale_ratio']))))
+                left = max(0, min(width, int(math.ceil((element['left'] + 1) * self.config['neural_network_model_image_downscale_ratio']))))
+                right = max(0, min(width, int(math.floor((element['right'] - 1) * self.config['neural_network_model_image_downscale_ratio']))))
 
                 pixelActionMap[actionTypeIndex, top:bottom, left:right] = 1
 
@@ -648,7 +648,7 @@ class DeepLearningAgent:
                     is the count of actions performed for each of the action maps that have been kept by the
                     filter.
         """
-        modelDownscale = self.config['model_image_downscale_ratio']
+        modelDownscale = self.config['neural_network_model_image_downscale_ratio']
 
         # Create variables to build up the filtered list of action maps
         filteredSampleActionMaps = []
@@ -831,7 +831,7 @@ class DeepLearningAgent:
         recentActionsImageBatch = []
         recentActionsVectorBatch = []
 
-        modelDownscale = self.config['model_image_downscale_ratio']
+        modelDownscale = self.config['neural_network_model_image_downscale_ratio']
 
         zippedValues = zip(range(len(processedImages)), processedImages, coverageSymbolLists, recentSymbolLists, coverageSymbolWeights, recentSymbolWeights, envActionMaps, recentActions, recentActionImages, recentActionVectors)
         for sessionIndex, image, sampleCoverageSymbolList, sampleRecentSymbolList, sampleCoverageSymbolWeights, sampleRecentSymbolWeights, sampleActionMaps, sampleRecentActions, recentActionImage, recentActionVector in zippedValues:
@@ -1270,8 +1270,8 @@ class DeepLearningAgent:
         width = pixelActionMap.shape[2]
         height = pixelActionMap.shape[1]
 
-        nonShrunkWidth = int(width / self.config['model_image_downscale_ratio'])
-        nonShrunkHeight = int(height / self.config['model_image_downscale_ratio'])
+        nonShrunkWidth = int(width / self.config['neural_network_model_image_downscale_ratio'])
+        nonShrunkHeight = int(height / self.config['neural_network_model_image_downscale_ratio'])
 
         # Here we have an extra check just in case there were no action maps to choose our random action from.
         if len(sampleActionMaps) == 0:
@@ -1943,37 +1943,37 @@ class DeepLearningAgent:
             discountedFutureReward = discountedFutureRewards[traceIndex]
 
             def addCropViewToImage(image, trace):
-                imageCropWidth = imageWidth * self.config['model_image_downscale_ratio']
-                imageCropHeight = imageHeight * self.config['model_image_downscale_ratio']
+                imageCropWidth = imageWidth * self.config['neural_network_model_image_downscale_ratio']
+                imageCropHeight = imageHeight * self.config['neural_network_model_image_downscale_ratio']
 
-                actionCropX = trace.actionPerformed.x * self.config['model_image_downscale_ratio']
-                actionCropY = trace.actionPerformed.y * self.config['model_image_downscale_ratio']
+                actionCropX = trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio']
+                actionCropY = trace.actionPerformed.y * self.config['neural_network_model_image_downscale_ratio']
 
                 cropLeft, cropTop, cropRight, cropBottom = self.calculateTrainingCropPosition(actionCropX, actionCropY, imageCropWidth, imageCropHeight)
 
-                cropLeft = max(0, min(int(cropLeft / self.config['model_image_downscale_ratio']), imageWidth))
-                cropTop = max(0, min(int(cropTop / self.config['model_image_downscale_ratio']), imageHeight))
-                cropRight = max(0, min(int(cropRight / self.config['model_image_downscale_ratio']), imageWidth))
-                cropBottom = max(0, min(int(cropBottom / self.config['model_image_downscale_ratio']), imageHeight))
+                cropLeft = max(0, min(int(cropLeft / self.config['neural_network_model_image_downscale_ratio']), imageWidth))
+                cropTop = max(0, min(int(cropTop / self.config['neural_network_model_image_downscale_ratio']), imageHeight))
+                cropRight = max(0, min(int(cropRight / self.config['neural_network_model_image_downscale_ratio']), imageWidth))
+                cropBottom = max(0, min(int(cropBottom / self.config['neural_network_model_image_downscale_ratio']), imageHeight))
                 cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)))
                 image[cropRectangle] = [self.config.debug_video_crop_box_color_r, self.config.debug_video_crop_box_color_g, self.config.debug_video_crop_box_color_b]
 
-                cropLeft -= int(self.config['training_crop_center_random_x_displacement'] / self.config['model_image_downscale_ratio'])
+                cropLeft -= int(self.config['training_crop_center_random_x_displacement'] / self.config['neural_network_model_image_downscale_ratio'])
                 cropLeft = max(0, cropLeft)
-                cropRight += int(self.config['training_crop_center_random_x_displacement'] / self.config['model_image_downscale_ratio'])
+                cropRight += int(self.config['training_crop_center_random_x_displacement'] / self.config['neural_network_model_image_downscale_ratio'])
                 cropRight = min(imageWidth, cropRight)
-                cropTop -= int(self.config['training_crop_center_random_y_displacement'] / self.config['model_image_downscale_ratio'])
+                cropTop -= int(self.config['training_crop_center_random_y_displacement'] / self.config['neural_network_model_image_downscale_ratio'])
                 cropTop = max(0, cropTop)
-                cropBottom += int(self.config['training_crop_center_random_y_displacement'] / self.config['model_image_downscale_ratio'])
+                cropBottom += int(self.config['training_crop_center_random_y_displacement'] / self.config['neural_network_model_image_downscale_ratio'])
                 cropBottom = min(imageHeight, cropBottom)
                 cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)), shape=[topSize + imageHeight, leftSize+imageWidth], clip=True)
                 image[cropRectangle] = [self.config.debug_video_crop_box_color_r, self.config.debug_video_crop_box_color_g, self.config.debug_video_crop_box_color_b]
 
                 cropLeft, cropTop, cropRight, cropBottom = self.calculateTrainingCropPosition(actionCropX, actionCropY, imageCropWidth, imageCropHeight, nextStepCrop=True)
-                cropLeft = max(0, min(int(cropLeft / self.config['model_image_downscale_ratio']), imageWidth))
-                cropTop = max(0, min(int(cropTop / self.config['model_image_downscale_ratio']), imageHeight))
-                cropRight = max(0, min(int(cropRight / self.config['model_image_downscale_ratio']), imageWidth))
-                cropBottom = max(0, min(int(cropBottom / self.config['model_image_downscale_ratio']), imageHeight))
+                cropLeft = max(0, min(int(cropLeft / self.config['neural_network_model_image_downscale_ratio']), imageWidth))
+                cropTop = max(0, min(int(cropTop / self.config['neural_network_model_image_downscale_ratio']), imageHeight))
+                cropRight = max(0, min(int(cropRight / self.config['neural_network_model_image_downscale_ratio']), imageWidth))
+                cropBottom = max(0, min(int(cropBottom / self.config['neural_network_model_image_downscale_ratio']), imageHeight))
                 cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)))
                 image[cropRectangle] = [self.config.debug_video_next_step_crop_box_color_r, self.config.debug_video_next_step_crop_box_color_g, self.config.debug_video_next_step_crop_box_color_b]
 
@@ -2227,8 +2227,8 @@ class DeepLearningAgent:
                         actionY = actionProbabilities[0][actionIndex].max(axis=1).argmax(axis=0)
                         actionX = actionProbabilities[0][actionIndex, actionY].argmax(axis=0)
 
-                        actionX = int(actionX / self.config["model_image_downscale_ratio"])
-                        actionY = int(actionY / self.config["model_image_downscale_ratio"])
+                        actionX = int(actionX / self.config["neural_network_model_image_downscale_ratio"])
+                        actionY = int(actionY / self.config["neural_network_model_image_downscale_ratio"])
 
                         targetCircleCoords1 = skimage.draw.circle_perimeter(int(topSize + actionY),
                                                                                    int(leftSize + actionX), self.config.debug_video_action_prediction_circle_1_radius,
@@ -2415,8 +2415,8 @@ class DeepLearningAgent:
 
                 stampAxes.set_xticks([])
                 stampAxes.set_yticks([])
-                stampImageWidth = self.config['additional_features_stamp_edge_size'] * self.config['additional_features_stamp_edge_size']
-                stampImageHeight = self.config['additional_features_stamp_depth_size']
+                stampImageWidth = self.config['neural_network_additional_features_stamp_edge_size'] * self.config['neural_network_additional_features_stamp_edge_size']
+                stampImageHeight = self.config['neural_network_additional_features_stamp_depth_size']
 
                 stampIm = stampAxes.imshow(numpy.array(stamp.data[0]).reshape([stampImageWidth, stampImageHeight]), cmap=greyColorMap, interpolation="nearest", vmin=minMemoryValue, vmax=maxMemoryValue)
                 mainFigure.colorbar(stampIm, ax=stampAxes, orientation='vertical')
@@ -2512,18 +2512,18 @@ class DeepLearningAgent:
         if len(action.intersectingActionMaps) > 0:
             box = self.boundingBoxForActionMaps(action.intersectingActionMaps)
 
-            localLeft = int(box['left'] * self.config['model_image_downscale_ratio'])
-            localRight = int(box['right'] * self.config['model_image_downscale_ratio'])
-            localTop = int(box['top'] * self.config['model_image_downscale_ratio'])
-            localBottom = int(box['bottom'] * self.config['model_image_downscale_ratio'])
+            localLeft = int(box['left'] * self.config['neural_network_model_image_downscale_ratio'])
+            localRight = int(box['right'] * self.config['neural_network_model_image_downscale_ratio'])
+            localTop = int(box['top'] * self.config['neural_network_model_image_downscale_ratio'])
+            localBottom = int(box['bottom'] * self.config['neural_network_model_image_downscale_ratio'])
         else:
-            localLeft = int(action.x * self.config['model_image_downscale_ratio'])
-            localRight = int(action.x * self.config['model_image_downscale_ratio'])
-            localTop = int(action.y * self.config['model_image_downscale_ratio'])
-            localBottom = int(action.y * self.config['model_image_downscale_ratio'])
+            localLeft = int(action.x * self.config['neural_network_model_image_downscale_ratio'])
+            localRight = int(action.x * self.config['neural_network_model_image_downscale_ratio'])
+            localTop = int(action.y * self.config['neural_network_model_image_downscale_ratio'])
+            localBottom = int(action.y * self.config['neural_network_model_image_downscale_ratio'])
 
-        x = min(width - 1, int(action.x * self.config['model_image_downscale_ratio']))
-        y = min(height - 1, int(action.y * self.config['model_image_downscale_ratio']))
+        x = min(width - 1, int(action.x * self.config['neural_network_model_image_downscale_ratio']))
+        y = min(height - 1, int(action.y * self.config['neural_network_model_image_downscale_ratio']))
 
         localLeft = max(localLeft, x - 2)
         localRight = min(localRight, x + 2)
@@ -2624,8 +2624,8 @@ class DeepLearningAgent:
 
                 gridX, gridY = numpy.meshgrid(range(width), range(height))
 
-                distX = gridX - (trace.actionPerformed.x * self.config['model_image_downscale_ratio'])
-                distY = gridY - (trace.actionPerformed.y * self.config['model_image_downscale_ratio'])
+                distX = gridX - (trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio'])
+                distY = gridY - (trace.actionPerformed.y * self.config['neural_network_model_image_downscale_ratio'])
 
                 dists = numpy.sqrt(distX * distX + distY * distY)
 
@@ -2786,8 +2786,8 @@ class DeepLearningAgent:
                 "nextRecentActionsImage": numpy.array([nextTrace.cachedStartingRecentActionsImage], numpy.float32),
 
                 "actionTypes": [trace.actionPerformed.type],
-                "actionXs": numpy.array([int(trace.actionPerformed.x * self.config['model_image_downscale_ratio'])], dtype=numpy.int16),
-                "actionYs": numpy.array([int(trace.actionPerformed.y * self.config['model_image_downscale_ratio'])], dtype=numpy.int16),
+                "actionXs": numpy.array([int(trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio'])], dtype=numpy.int16),
+                "actionYs": numpy.array([int(trace.actionPerformed.y * self.config['neural_network_model_image_downscale_ratio'])], dtype=numpy.int16),
                 "decayingFutureSymbolIndexes": numpy.array([decayingFutureSymbolIndexes], dtype=numpy.int32),
                 "decayingFutureSymbolWeights": numpy.array([decayingFutureSymbolWeights], dtype=numpy.float16),
                 "presentRewards": numpy.array([presentReward], dtype=numpy.float32),
@@ -2807,43 +2807,43 @@ class DeepLearningAgent:
         height = 600
 
         return {
-                "traceIds": ["test"] * self.config['batch_size'],
-                "processedImages": numpy.zeros([self.config['batch_size'], 1,  height, width], dtype=numpy.float16),
-                "coverageSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
-                "coverageSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
-                "coverageSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
-                "recentSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
-                "recentSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
-                "recentSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
-                "pixelActionMaps": numpy.ones([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
-                "recentActionsVector": numpy.zeros([self.config['batch_size'], len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ], numpy.float32),
-                "recentActionsImage": numpy.zeros([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.float32),
-                "stepNumbers": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
+                "traceIds": ["test"] * self.config['neural_network_batch_size'],
+                "processedImages": numpy.zeros([self.config['neural_network_batch_size'], 1,  height, width], dtype=numpy.float16),
+                "coverageSymbolIndexes": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
+                "coverageSymbolWeights": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float16),
+                "coverageSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32),
+                "recentSymbolIndexes": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
+                "recentSymbolWeights": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float16),
+                "recentSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32),
+                "pixelActionMaps": numpy.ones([self.config['neural_network_batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
+                "recentActionsVector": numpy.zeros([self.config['neural_network_batch_size'], len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ], numpy.float32),
+                "recentActionsImage": numpy.zeros([self.config['neural_network_batch_size'], len(self.actionsSorted), height, width], dtype=numpy.float32),
+                "stepNumbers": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
 
-                "nextProcessedImages": numpy.zeros([self.config['batch_size'], 1,  height, width], dtype=numpy.float16),
-                "nextCoverageSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
-                "nextCoverageSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
-                "nextCoverageSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
-                "nextRecentSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
-                "nextRecentSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
-                "nextRecentSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
-                "nextPixelActionMaps": numpy.ones([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
-                "nextStepNumbers": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
-                "nextRecentActionsVector": numpy.zeros([self.config['batch_size'], len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ], numpy.float32),
-                "nextRecentActionsImage": numpy.zeros([self.config['batch_size'], len(self.actionsSorted), height, width], dtype=numpy.float32),
+                "nextProcessedImages": numpy.zeros([self.config['neural_network_batch_size'], 1,  height, width], dtype=numpy.float16),
+                "nextCoverageSymbolIndexes": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
+                "nextCoverageSymbolWeights": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float16),
+                "nextCoverageSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32),
+                "nextRecentSymbolIndexes": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
+                "nextRecentSymbolWeights": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float16),
+                "nextRecentSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32),
+                "nextPixelActionMaps": numpy.ones([self.config['neural_network_batch_size'], len(self.actionsSorted), height, width], dtype=numpy.uint8),
+                "nextStepNumbers": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
+                "nextRecentActionsVector": numpy.zeros([self.config['neural_network_batch_size'], len(self.actionsSorted) * self.config['testing_recent_actions_vector_number_of_recent_traces'] ], numpy.float32),
+                "nextRecentActionsImage": numpy.zeros([self.config['neural_network_batch_size'], len(self.actionsSorted), height, width], dtype=numpy.float32),
 
-                "actionTypes": [self.actionsSorted[0]] * self.config['batch_size'],
-                "actionXs": numpy.zeros([self.config['batch_size']], dtype=numpy.int16),
-                "actionYs": numpy.zeros([self.config['batch_size']], dtype=numpy.int16),
+                "actionTypes": [self.actionsSorted[0]] * self.config['neural_network_batch_size'],
+                "actionXs": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int16),
+                "actionYs": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int16),
 
-                "decayingFutureSymbolIndexes": numpy.zeros([self.config['batch_size']], dtype=numpy.int32),
-                "decayingFutureSymbolWeights": numpy.ones([self.config['batch_size']], dtype=numpy.float16),
-                "decayingFutureSymbolOffsets": numpy.array(range(self.config['batch_size']), dtype=numpy.int32),
+                "decayingFutureSymbolIndexes": numpy.zeros([self.config['neural_network_batch_size']], dtype=numpy.int32),
+                "decayingFutureSymbolWeights": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float16),
+                "decayingFutureSymbolOffsets": numpy.array(range(self.config['neural_network_batch_size']), dtype=numpy.int32),
 
-                "presentRewards": numpy.ones([self.config['batch_size']], dtype=numpy.float32),
-                "rewardPixelMasks": numpy.ones([self.config['batch_size'], height, width], dtype=numpy.uint8),
-                "executionFeatures": numpy.zeros([self.config['batch_size'], 12], dtype=numpy.uint8),
-                "cursors": numpy.zeros([self.config['batch_size'], len(self.cursors)], dtype=numpy.uint8)
+                "presentRewards": numpy.ones([self.config['neural_network_batch_size']], dtype=numpy.float32),
+                "rewardPixelMasks": numpy.ones([self.config['neural_network_batch_size'], height, width], dtype=numpy.uint8),
+                "executionFeatures": numpy.zeros([self.config['neural_network_batch_size'], 12], dtype=numpy.uint8),
+                "cursors": numpy.zeros([self.config['neural_network_batch_size'], len(self.cursors)], dtype=numpy.uint8)
             }
 
 
@@ -2895,7 +2895,7 @@ class DeepLearningAgent:
         oneTensorFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([1]))
         stateValueLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_state_value_weight']]))
         presentRewardLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_present_reward_weight']]))
-        discountedFutureRewardLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_discounted_future_reward_weight']]))
+        discountedFutureRewardLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_neural_network_discounted_future_reward_weight']]))
         advantageLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_advantage_weight']]))
         actionProbabilityLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_action_probability_weight']]))
         executionFeatureLossWeightFloat = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['loss_execution_feature_weight']]))
@@ -3338,8 +3338,8 @@ class DeepLearningAgent:
         grey = skimage.color.rgb2gray(rawImage[:, :, :3])
 
         # Compute what the size of the image should look like after downscaling.
-        shrunkWidth = int(width * config['model_image_downscale_ratio'])
-        shrunkHeight = int(height * config['model_image_downscale_ratio'])
+        shrunkWidth = int(width * config['neural_network_model_image_downscale_ratio'])
+        shrunkHeight = int(height * config['neural_network_model_image_downscale_ratio'])
 
         # Make sure the image aligns to the nearest 8 pixels,
         # this is because the image gets downsampled and upsampled

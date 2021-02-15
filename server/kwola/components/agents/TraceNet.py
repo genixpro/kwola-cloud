@@ -29,13 +29,13 @@ class TraceNet(torch.nn.Module):
 
         self.config = config
 
-        self.stampSize = self.config['additional_features_stamp_edge_size'] * \
-                         self.config['additional_features_stamp_edge_size'] * \
-                         self.config['additional_features_stamp_depth_size']
+        self.stampSize = self.config['neural_network_additional_features_stamp_edge_size'] * \
+                         self.config['neural_network_additional_features_stamp_edge_size'] * \
+                         self.config['neural_network_additional_features_stamp_depth_size']
 
         self.timeEncodingSize = 1
         self.symbolEmbeddingPixelFeaturesSize = self.config['symbol_embedding_size'] + \
-                                                self.config['additional_features_stamp_depth_size'] + \
+                                                self.config['neural_network_additional_features_stamp_depth_size'] + \
                                                 self.config['neural_network_recent_actions_feature_size']
 
         self.recentSymbolEmbedding = torch.nn.EmbeddingBag(self.config['symbol_dictionary_size'], self.config['symbol_embedding_size'], mode="sum")
@@ -47,7 +47,7 @@ class TraceNet(torch.nn.Module):
 
         self.queryProjection = torch.nn.Sequential(
             torch.nn.Linear(
-                in_features=self.config['pixel_features'],
+                in_features=self.config['neural_network_pixel_features'],
                 out_features=self.config['symbol_embedding_size']
             )
         )
@@ -71,79 +71,79 @@ class TraceNet(torch.nn.Module):
         self.mainModel = torch.nn.Sequential(
             torch.nn.Conv2d(
                 in_channels=1 + numActions,
-                out_channels=self.config['layer_1_num_kernels'],
-                kernel_size=self.config['layer_1_kernel_size'],
-                stride=self.config['layer_1_stride'],
-                dilation=self.config['layer_1_dilation'],
-                padding=self.config['layer_1_padding']
+                out_channels=self.config['neural_network_layer_1_num_kernels'],
+                kernel_size=self.config['neural_network_layer_1_kernel_size'],
+                stride=self.config['neural_network_layer_1_stride'],
+                dilation=self.config['neural_network_layer_1_dilation'],
+                padding=self.config['neural_network_layer_1_padding']
             ),
             torch.nn.ELU(),
-            torch.nn.BatchNorm2d(num_features=self.config['layer_1_num_kernels']),
+            torch.nn.BatchNorm2d(num_features=self.config['neural_network_layer_1_num_kernels']),
 
             torch.nn.Conv2d(
-                in_channels=self.config['layer_1_num_kernels'],
-                out_channels=self.config['layer_2_num_kernels'],
-                kernel_size=self.config['layer_2_kernel_size'],
-                stride=self.config['layer_2_stride'],
-                dilation=self.config['layer_2_dilation'],
-                padding=self.config['layer_2_padding']
+                in_channels=self.config['neural_network_layer_1_num_kernels'],
+                out_channels=self.config['neural_network_layer_2_num_kernels'],
+                kernel_size=self.config['neural_network_layer_2_kernel_size'],
+                stride=self.config['neural_network_layer_2_stride'],
+                dilation=self.config['neural_network_layer_2_dilation'],
+                padding=self.config['neural_network_layer_2_padding']
             ),
             torch.nn.ELU(),
-            torch.nn.BatchNorm2d(num_features=self.config['layer_2_num_kernels']),
+            torch.nn.BatchNorm2d(num_features=self.config['neural_network_layer_2_num_kernels']),
 
             torch.nn.Conv2d(
-                in_channels=self.config['layer_2_num_kernels'],
-                out_channels=self.config['layer_3_num_kernels'],
-                kernel_size=self.config['layer_3_kernel_size'],
-                stride=self.config['layer_3_stride'],
-                dilation=self.config['layer_3_dilation'],
-                padding=self.config['layer_3_padding']
+                in_channels=self.config['neural_network_layer_2_num_kernels'],
+                out_channels=self.config['neural_network_layer_3_num_kernels'],
+                kernel_size=self.config['neural_network_layer_3_kernel_size'],
+                stride=self.config['neural_network_layer_3_stride'],
+                dilation=self.config['neural_network_layer_3_dilation'],
+                padding=self.config['neural_network_layer_3_padding']
             ),
             torch.nn.ELU(),
-            torch.nn.BatchNorm2d(num_features=self.config['layer_3_num_kernels']),
+            torch.nn.BatchNorm2d(num_features=self.config['neural_network_layer_3_num_kernels']),
 
             torch.nn.Conv2d(
-                in_channels=self.config['layer_3_num_kernels'],
-                out_channels=self.config['pixel_features'],
-                kernel_size=self.config['layer_4_kernel_size'],
-                stride=self.config['layer_4_stride'],
-                dilation=self.config['layer_4_dilation'],
-                padding=self.config['layer_4_padding']
+                in_channels=self.config['neural_network_layer_3_num_kernels'],
+                out_channels=self.config['neural_network_pixel_features'],
+                kernel_size=self.config['neural_network_layer_4_kernel_size'],
+                stride=self.config['neural_network_layer_4_stride'],
+                dilation=self.config['neural_network_layer_4_dilation'],
+                padding=self.config['neural_network_layer_4_padding']
             ),
             torch.nn.ELU(),
-            torch.nn.BatchNorm2d(num_features=self.config['pixel_features'])
+            torch.nn.BatchNorm2d(num_features=self.config['neural_network_pixel_features'])
         )
 
         self.stateValueLinear = torch.nn.Sequential(
             torch.nn.Linear(
                 in_features=int(self.stampSize + self.config['symbol_embedding_size']),
-                out_features=self.config['layer_5_num_kernels']
+                out_features=self.config['neural_network_layer_5_num_kernels']
             ),
             torch.nn.ELU(),
-            torch.nn.BatchNorm1d(num_features=self.config['layer_5_num_kernels']),
+            torch.nn.BatchNorm1d(num_features=self.config['neural_network_layer_5_num_kernels']),
             torch.nn.Linear(
-                in_features=self.config['layer_5_num_kernels'],
+                in_features=self.config['neural_network_layer_5_num_kernels'],
                 out_features=1
             )
         )
 
         self.presentRewardConvolution = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
-                out_channels=self.config['layer_5_num_kernels'],
-                kernel_size=self.config['layer_5_kernel_size'],
-                stride=self.config['layer_5_stride'],
-                dilation=self.config['layer_5_dilation'],
-                padding=self.config['layer_5_padding']
+                in_channels=self.config['neural_network_pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
+                out_channels=self.config['neural_network_layer_5_num_kernels'],
+                kernel_size=self.config['neural_network_layer_5_kernel_size'],
+                stride=self.config['neural_network_layer_5_stride'],
+                dilation=self.config['neural_network_layer_5_dilation'],
+                padding=self.config['neural_network_layer_5_padding']
             ),
             torch.nn.ELU(),
-            torch.nn.BatchNorm2d(num_features=self.config['layer_5_num_kernels']),
+            torch.nn.BatchNorm2d(num_features=self.config['neural_network_layer_5_num_kernels']),
             torch.nn.Conv2d(
-                in_channels=self.config['layer_5_num_kernels'],
+                in_channels=self.config['neural_network_layer_5_num_kernels'],
                 out_channels=numActions,
-                kernel_size=self.config['present_reward_convolution_kernel_size'],
-                stride=self.config['present_reward_convolution_stride'],
-                padding=self.config['present_reward_convolution_padding'],
+                kernel_size=self.config['neural_network_present_reward_convolution_kernel_size'],
+                stride=self.config['neural_network_present_reward_convolution_stride'],
+                padding=self.config['neural_network_present_reward_convolution_padding'],
                 bias=False
             ),
             torch.nn.Upsample(scale_factor=8, mode="bilinear", align_corners=False)
@@ -151,21 +151,21 @@ class TraceNet(torch.nn.Module):
 
         self.discountedFutureRewardConvolution = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
-                out_channels=self.config['layer_5_num_kernels'],
-                kernel_size=self.config['layer_5_kernel_size'],
-                stride=self.config['layer_5_stride'],
-                dilation=self.config['layer_5_dilation'],
-                padding=self.config['layer_5_padding']
+                in_channels=self.config['neural_network_pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
+                out_channels=self.config['neural_network_layer_5_num_kernels'],
+                kernel_size=self.config['neural_network_layer_5_kernel_size'],
+                stride=self.config['neural_network_layer_5_stride'],
+                dilation=self.config['neural_network_layer_5_dilation'],
+                padding=self.config['neural_network_layer_5_padding']
             ),
             torch.nn.ELU(),
-            torch.nn.BatchNorm2d(num_features=self.config['layer_5_num_kernels']),
+            torch.nn.BatchNorm2d(num_features=self.config['neural_network_layer_5_num_kernels']),
             torch.nn.Conv2d(
-                in_channels=self.config['layer_5_num_kernels'],
+                in_channels=self.config['neural_network_layer_5_num_kernels'],
                 out_channels=numActions,
-                kernel_size=self.config['discounted_future_reward_convolution_kernel_size'],
-                stride=self.config['discounted_future_reward_convolution_stride'],
-                padding=self.config['discounted_future_reward_convolution_padding'],
+                kernel_size=self.config['neural_network_discounted_future_reward_convolution_kernel_size'],
+                stride=self.config['neural_network_discounted_future_reward_convolution_stride'],
+                padding=self.config['neural_network_discounted_future_reward_convolution_padding'],
                 bias=False
             ),
             torch.nn.Upsample(scale_factor=8, mode="bilinear", align_corners=False)
@@ -173,21 +173,21 @@ class TraceNet(torch.nn.Module):
 
         self.actorConvolution = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
-                out_channels=self.config['layer_5_num_kernels'],
-                kernel_size=self.config['layer_5_kernel_size'],
-                stride=self.config['layer_5_stride'],
-                dilation=self.config['layer_5_dilation'],
-                padding=self.config['layer_5_padding']
+                in_channels=self.config['neural_network_pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
+                out_channels=self.config['neural_network_layer_5_num_kernels'],
+                kernel_size=self.config['neural_network_layer_5_kernel_size'],
+                stride=self.config['neural_network_layer_5_stride'],
+                dilation=self.config['neural_network_layer_5_dilation'],
+                padding=self.config['neural_network_layer_5_padding']
             ),
             torch.nn.ELU(),
-            torch.nn.BatchNorm2d(num_features=self.config['layer_5_num_kernels']),
+            torch.nn.BatchNorm2d(num_features=self.config['neural_network_layer_5_num_kernels']),
             torch.nn.Conv2d(
-                in_channels=self.config['layer_5_num_kernels'],
+                in_channels=self.config['neural_network_layer_5_num_kernels'],
                 out_channels=numActions,
-                kernel_size=self.config['actor_convolution_kernel_size'],
-                stride=self.config['actor_convolution_stride'],
-                padding=self.config['actor_convolution_padding'],
+                kernel_size=self.config['neural_network_actor_convolution_kernel_size'],
+                stride=self.config['neural_network_actor_convolution_stride'],
+                padding=self.config['neural_network_actor_convolution_padding'],
                 bias=False
             ),
             torch.nn.Upsample(scale_factor=8, mode="bilinear", align_corners=False)
@@ -195,21 +195,21 @@ class TraceNet(torch.nn.Module):
 
         self.advantageConvolution = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
-                out_channels=self.config['layer_5_num_kernels'],
-                kernel_size=self.config['layer_5_kernel_size'],
-                stride=self.config['layer_5_stride'],
-                dilation=self.config['layer_5_dilation'],
-                padding=self.config['layer_5_padding']
+                in_channels=self.config['neural_network_pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
+                out_channels=self.config['neural_network_layer_5_num_kernels'],
+                kernel_size=self.config['neural_network_layer_5_kernel_size'],
+                stride=self.config['neural_network_layer_5_stride'],
+                dilation=self.config['neural_network_layer_5_dilation'],
+                padding=self.config['neural_network_layer_5_padding']
             ),
             torch.nn.ELU(),
-            torch.nn.BatchNorm2d(num_features=self.config['layer_5_num_kernels']),
+            torch.nn.BatchNorm2d(num_features=self.config['neural_network_layer_5_num_kernels']),
             torch.nn.Conv2d(
-                in_channels=self.config['layer_5_num_kernels'],
+                in_channels=self.config['neural_network_layer_5_num_kernels'],
                 out_channels=numActions,
-                kernel_size=self.config['advantage_convolution_kernel_size'],
-                stride=self.config['advantage_convolution_stride'],
-                padding=self.config['advantage_convolution_padding'],
+                kernel_size=self.config['neural_network_advantage_convolution_kernel_size'],
+                stride=self.config['neural_network_advantage_convolution_stride'],
+                padding=self.config['neural_network_advantage_convolution_padding'],
                 bias=False
             ),
             torch.nn.Upsample(scale_factor=8, mode="bilinear", align_corners=False)
@@ -222,7 +222,7 @@ class TraceNet(torch.nn.Module):
         if self.config['enable_trace_prediction_loss']:
             self.predictedExecutionTraceLinear = torch.nn.Sequential(
                 torch.nn.Linear(
-                    in_features=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
+                    in_features=self.config['neural_network_pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                     out_features=self.config['symbol_embedding_size']
                 ),
                 torch.nn.ELU()
@@ -231,7 +231,7 @@ class TraceNet(torch.nn.Module):
         if self.config['enable_execution_feature_prediction_loss']:
             self.predictedExecutionFeaturesLinear = torch.nn.Sequential(
                 torch.nn.Linear(
-                    in_features=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
+                    in_features=self.config['neural_network_pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                     out_features=executionFeaturePredictorSize
                 ),
                 torch.nn.Sigmoid()
@@ -240,7 +240,7 @@ class TraceNet(torch.nn.Module):
         if self.config['enable_cursor_prediction_loss']:
             self.predictedCursorLinear = torch.nn.Sequential(
                 torch.nn.Linear(
-                    in_features=self.config['pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
+                    in_features=self.config['neural_network_pixel_features'] + self.symbolEmbeddingPixelFeaturesSize,
                     out_features=cursorCount
                 ),
                 torch.nn.Sigmoid()
@@ -287,7 +287,7 @@ class TraceNet(torch.nn.Module):
                 coverageAttentionKeyEmbeddings = coverageAttentionKeys[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
                 coverageAttentionValueEmbeddings = coverageAttentionValues[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
 
-            samplePixelFeatures = pixelFeatureMap[sampleIndex, :, :, :].transpose(0, 2).reshape([featureMapHeight * featureMapWidth, self.config['pixel_features']])
+            samplePixelFeatures = pixelFeatureMap[sampleIndex, :, :, :].transpose(0, 2).reshape([featureMapHeight * featureMapWidth, self.config['neural_network_pixel_features']])
             queries = self.queryProjection(samplePixelFeatures)
             queries = queries.reshape([-1, 1, self.config['symbol_embedding_size']])
 
@@ -307,14 +307,14 @@ class TraceNet(torch.nn.Module):
         ], dim=1)
 
         # Append the stamp layer along side the pixel-by-pixel features
-        stamp = additionalFeaturesWithStep.reshape([-1, self.config['additional_features_stamp_depth_size'],
-                                                    self.config['additional_features_stamp_edge_size'],
-                                                    self.config['additional_features_stamp_edge_size']])
+        stamp = additionalFeaturesWithStep.reshape([-1, self.config['neural_network_additional_features_stamp_depth_size'],
+                                                    self.config['neural_network_additional_features_stamp_edge_size'],
+                                                    self.config['neural_network_additional_features_stamp_edge_size']])
 
         featureMapHeight = pixelFeatureMap.shape[2]
         featureMapWidth = pixelFeatureMap.shape[3]
-        stampTiler = stamp.repeat([1, 1, int(featureMapHeight / self.config['additional_features_stamp_edge_size']) + 1, int(featureMapWidth / self.config['additional_features_stamp_edge_size']) + 1])
-        stampLayer = stampTiler[:, :, :featureMapHeight, :featureMapWidth].reshape([-1, self.config['additional_features_stamp_depth_size'], featureMapHeight, featureMapWidth])
+        stampTiler = stamp.repeat([1, 1, int(featureMapHeight / self.config['neural_network_additional_features_stamp_edge_size']) + 1, int(featureMapWidth / self.config['neural_network_additional_features_stamp_edge_size']) + 1])
+        stampLayer = stampTiler[:, :, :featureMapHeight, :featureMapWidth].reshape([-1, self.config['neural_network_additional_features_stamp_depth_size'], featureMapHeight, featureMapWidth])
 
         recentActionFeaturesImage = recentActionFeatures.reshape([batchSize, self.config['neural_network_recent_actions_feature_size'], 1, 1])
         recentActionFeaturesImage = recentActionFeaturesImage.repeat([1, 1, featureMapHeight, featureMapWidth])

@@ -234,7 +234,7 @@ class CreateCloudBugObjects(TestingStepPluginBase):
 
     @autoretry(exponentialBackOffBase=3)
     def generateVideoFilesForBugs(self, bugObjects):
-        pool = multiprocessing.Pool(self.config['video_generation_processes'], maxtasksperchild=1)
+        pool = multiprocessing.Pool(self.config['testing_video_generation_processes'], maxtasksperchild=1)
         futures = []
 
         for bugIndex, bug in enumerate(bugObjects):

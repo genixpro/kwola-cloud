@@ -77,7 +77,7 @@ class TrainingManager:
 
         self.trainingStep = None
 
-        self.totalBatchesNeeded = self.config['iterations_per_training_step'] * self.config['batches_per_iteration'] + int(self.config['training_surplus_batches'])
+        self.totalBatchesNeeded = self.config['training_iterations_per_training_step'] * self.config['neural_network_batches_per_iteration'] + int(self.config['training_surplus_batches'])
         self.batchesPrepared = 0
         self.batchFutures = []
         self.recentCacheHits = []
@@ -194,7 +194,7 @@ class TrainingManager:
 
             self.queueBatchesForPrecomputation()
 
-            while self.trainingStep.numberOfIterationsCompleted < self.config['iterations_per_training_step']:
+            while self.trainingStep.numberOfIterationsCompleted < self.config['training_iterations_per_training_step']:
                 loopStart = datetime.now()
 
                 self.updateBatchPrepStarvedState()
@@ -210,14 +210,14 @@ class TrainingManager:
 
                 self.trainingStep.numberOfIterationsCompleted += 1
 
-                if self.trainingStep.numberOfIterationsCompleted % self.config['print_loss_iterations'] == (self.config['print_loss_iterations'] - 1):
+                if self.trainingStep.numberOfIterationsCompleted % self.config['training_print_loss_iterations'] == (self.config['training_print_loss_iterations'] - 1):
                     if self.gpu is None or self.gpu == 0:
                         getLogger().info(f"Completed {self.trainingStep.numberOfIterationsCompleted + 1} batches. Overall average time per batch: {numpy.average(self.loopTimes[-25:]):.3f}. Core learning time: {numpy.average(self.coreLearningTimes[-25:]):.3f}")
                         self.printMovingAverageLosses()
-                        if self.config['print_cache_hit_rate']:
-                            getLogger().info(f"Batch cache hit rate {100 * numpy.mean(self.recentCacheHits[-self.config['print_cache_hit_rate_moving_average_length']:]):.0f}%")
+                        if self.config['training_print_cache_hit_rate']:
+                            getLogger().info(f"Batch cache hit rate {100 * numpy.mean(self.recentCacheHits[-self.config['training_print_cache_hit_rate_moving_average_length']:]):.0f}%")
 
-                if self.trainingStep.numberOfIterationsCompleted % self.config['iterations_between_db_saves'] == (self.config['iterations_between_db_saves'] - 1):
+                if self.trainingStep.numberOfIterationsCompleted % self.config['training_iterations_between_db_saves'] == (self.config['training_iterations_between_db_saves'] - 1):
                     if self.gpu is None or self.gpu == 0:
                         self.trainingStep.saveToDisk(self.config)
 
@@ -366,7 +366,7 @@ class TrainingManager:
     def fetchBatchesForIteration(self):
         batches = []
 
-        for batchIndex in range(self.config['batches_per_iteration']):
+        for batchIndex in range(self.config['neural_network_batches_per_iteration']):
             chosenBatchIndex = 0
             found = False
             for futureIndex, future in enumerate(self.batchFutures):
@@ -592,7 +592,7 @@ class TrainingManager:
             traceProbabilities = numpy.array(traceWeights) / numpy.sum(traceWeights)
             traceIds = [weight[1] for weight in tracesWithWeightObjects]
 
-            chosenExecutionTraceIds = numpy.random.choice(traceIds, [config['batch_size']], p=traceProbabilities)
+            chosenExecutionTraceIds = numpy.random.choice(traceIds, [config['neural_network_batch_size']], p=traceProbabilities)
 
         except Exception:
             getLogger().error(f"prepareAndLoadSingleBatchForSubprocess failed! Putting a retry into the queue.\n{traceback.format_exc()}")
@@ -914,7 +914,7 @@ class TrainingManager:
         return batch, cacheHit
 
     def printMovingAverageLosses(self):
-        movingAverageLength = int(self.config['print_loss_moving_average_length'])
+        movingAverageLength = int(self.config['training_print_loss_moving_average_length'])
 
         averageStart = max(0, min(len(self.trainingStep.totalRewardLosses) - 1, movingAverageLength))
 

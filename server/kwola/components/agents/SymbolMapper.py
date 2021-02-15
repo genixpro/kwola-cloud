@@ -199,7 +199,7 @@ class SymbolMapper:
             locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(executionTrace.cachedEndDecayingBranchTrace)
 
         for locSymbolMapping, branchValue, fileName in zip(locSymbols, locBranchValues, locFileNames):
-            if float(branchValue) > self.config['decaying_branch_trace_minimum_weight_for_symbol_inclusion']:
+            if float(branchValue) > self.config['symbol_decaying_branch_trace_minimum_weight_for_symbol_inclusion']:
                 symbolIndexes.append(locSymbolMapping.symbolIndex)
                 weights.append(float(branchValue))
 
@@ -501,7 +501,7 @@ class SymbolMapper:
         }
 
         executionTraces[0].cachedEndDecayingBranchTrace = {
-            name: SymbolMapper.createSparseTraceArray(value.minimum(1) * self.config['decaying_branch_trace_scale'])
+            name: SymbolMapper.createSparseTraceArray(value.minimum(1) * self.config['symbol_decaying_branch_trace_scale'])
             for name, value in executionTraces[0].branchTrace.items()
         }
 
@@ -513,10 +513,10 @@ class SymbolMapper:
                 trace.cachedEndDecayingBranchTrace = copy.deepcopy(lastTrace.cachedEndDecayingBranchTrace)
 
                 for fileName in trace.cachedEndDecayingBranchTrace.keys():
-                    trace.cachedEndDecayingBranchTrace[fileName] *= self.config['decaying_branch_trace_decay_rate']
+                    trace.cachedEndDecayingBranchTrace[fileName] *= self.config['symbol_decaying_branch_trace_decay_rate']
 
                 for fileName in trace.branchTrace.keys():
-                    branchesExecuted = SymbolMapper.createSparseTraceArray(trace.branchTrace[fileName].minimum(1) * self.config['decaying_branch_trace_scale'])
+                    branchesExecuted = SymbolMapper.createSparseTraceArray(trace.branchTrace[fileName].minimum(1) * self.config['symbol_decaying_branch_trace_scale'])
 
                     if fileName in trace.cachedEndDecayingBranchTrace:
                         if trace.branchTrace[fileName].shape[0] == trace.cachedEndDecayingBranchTrace[fileName].shape[0]:
@@ -555,7 +555,7 @@ class SymbolMapper:
         }
 
         reversedExecutionTraces[0].cachedStartDecayingFutureBranchTrace = {
-            name: SymbolMapper.createSparseTraceArray(value.minimum(1) * self.config['decaying_future_branch_trace_scale'])
+            name: SymbolMapper.createSparseTraceArray(value.minimum(1) * self.config['symbol_decaying_future_branch_trace_scale'])
             for name, value in reversedExecutionTraces[0].branchTrace.items()
         }
 
@@ -568,12 +568,12 @@ class SymbolMapper:
                 trace.cachedEndDecayingFutureBranchTrace = copy.deepcopy(nextTrace.cachedStartDecayingFutureBranchTrace)
 
                 for fileName in trace.cachedStartDecayingFutureBranchTrace.keys():
-                    trace.cachedStartDecayingFutureBranchTrace[fileName] *= self.config['decaying_future_execution_trace_decay_rate']
+                    trace.cachedStartDecayingFutureBranchTrace[fileName] *= self.config['symbol_decaying_future_execution_trace_decay_rate']
 
                 for fileName in trace.branchTrace.keys():
                     traceNumpyArray = trace.branchTrace[fileName]
 
-                    branchesExecuted = SymbolMapper.createSparseTraceArray(traceNumpyArray.minimum(numpy.ones_like(traceNumpyArray, dtype=numpy.float64, shape=traceNumpyArray.shape)) * self.config['decaying_future_branch_trace_scale'])
+                    branchesExecuted = SymbolMapper.createSparseTraceArray(traceNumpyArray.minimum(numpy.ones_like(traceNumpyArray, dtype=numpy.float64, shape=traceNumpyArray.shape)) * self.config['symbol_decaying_future_branch_trace_scale'])
 
                     if fileName in trace.cachedStartDecayingFutureBranchTrace:
                         if trace.branchTrace[fileName].shape[0] == trace.cachedStartDecayingFutureBranchTrace[fileName].shape[0]:

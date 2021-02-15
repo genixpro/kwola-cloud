@@ -190,7 +190,7 @@ class TestingRunManager:
 
     def reviewRunningTestingSteps(self):
         logging.info(f"Reviewing the running testing steps. Number running: {len(self.run.runningTestingStepJobIds)}")
-        trainingIterationsNeededPerSession = (self.config['iterations_per_sample'] * self.run.configuration.testingSequenceLength) / (self.config['batch_size'] * self.config['batches_per_iteration'])
+        trainingIterationsNeededPerSession = (self.config['iterations_per_sample'] * self.run.configuration.testingSequenceLength) / (self.config['batch_size'] * self.config['neural_network_batches_per_iteration'])
 
         # This is only temporary, to be compatible with data that did not have runningTestingStepStartTimes.
         if len(self.run.runningTestingStepStartTimes) == 0 and len(self.run.runningTestingStepJobIds) > 0:
@@ -376,7 +376,7 @@ class TestingRunManager:
                         self.run.failedTrainingSteps += 1
                     elif resultObj.result['success']:
 
-                        self.run.trainingIterationsCompleted += self.config['iterations_per_training_step']
+                        self.run.trainingIterationsCompleted += self.config['training_iterations_per_training_step']
                         self.run.trainingStepsCompleted += 1
                     else:
                         errorMessage = f"A training step appears to have failed on testing run {self.run.id} with job name {job.kubeJobName()}."
@@ -423,7 +423,7 @@ class TestingRunManager:
                         warningMessage = f"A training step has succeeded for testing run {self.run.id} with job name {job.kubeJobName()}. But it also appears to have hung on exit and had to be forcibly shut down."
                         logging.warning(warningMessage)
 
-                        self.run.trainingIterationsCompleted += self.config['iterations_per_training_step']
+                        self.run.trainingIterationsCompleted += self.config['training_iterations_per_training_step']
                         self.run.trainingStepsCompleted += 1
 
                     job.cleanup()

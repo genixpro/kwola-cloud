@@ -136,7 +136,7 @@ class WebEnvironmentSession:
     def initialize(self):
         self.fetchTargetWebpage()
 
-        if self.config.autologin:
+        if self.config.web_session_autologin:
             self.runAutoLogin()
 
         self.traceNumber = 0
@@ -837,7 +837,7 @@ class WebEnvironmentSession:
             for actionMapData in elementActionMaps:
                 actionMap = ActionMap(**actionMapData)
 
-                if self.config['prevent_offsite_links']:
+                if self.config['web_session_prevent_offsite_links']:
                     if actionMap.elementType == 'a':
                         if actionMap.attributes['href'] and self.isURLOffsite(actionMap.attributes['href'], current_page_url):
                             # Skip this element because it links to an offsite page.
@@ -1042,7 +1042,7 @@ class WebEnvironmentSession:
     def checkOffsite(self, priorURL):
         try:
             # If the browser went off site and off site links are disabled, then we send it back to the url it started from
-            if self.config['prevent_offsite_links']:
+            if self.config['web_session_prevent_offsite_links']:
                 networkWaitTime = self.waitUntilNoNetworkActivity()
 
                 current_url = self.driver.current_url

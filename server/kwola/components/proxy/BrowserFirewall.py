@@ -34,7 +34,7 @@ class BrowserFirewall:
 
     def requestheaders(self, flow):
         try:
-            if self.config["block_private_networks"]:
+            if self.config["web_session_block_private_networks"]:
                 parsed = urllib.parse.urlparse(flow.request.url)
                 ip = socket.gethostbyname(parsed.netloc)
                 if ip.startswith("192.168.") or \

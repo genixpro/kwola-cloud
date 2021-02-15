@@ -259,7 +259,7 @@ def runTestingSubprocess(config, trainingSequence, testStepIndex, trainingLoopsC
 
         # The actor does not start getting trained until after the first 5 training loops are completed
         actorTrainingStartLoop = 5
-        shouldBeRandom = (trainingLoopsCompleted < actorTrainingStartLoop + 1) and (config['training_loops_needed'] > actorTrainingStartLoop)
+        shouldBeRandom = (trainingLoopsCompleted < actorTrainingStartLoop + 1) and (config['train_agent_loop_loops_needed'] > actorTrainingStartLoop)
 
         process = ManagedTaskSubprocess([sys.executable, "-m", "kwola.tasks.RunTestingStep"], {
             "config": config.serialize(),
@@ -326,7 +326,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
     loopsCompleted = 0
 
-    while trainingSequence.trainingLoopsCompleted < config['training_loops_needed']:
+    while trainingSequence.trainingLoopsCompleted < config['train_agent_loop_loops_needed']:
         getLogger().info(f"Starting a single training loop. Loops completed: {trainingSequence.trainingLoopsCompleted}")
 
         with ThreadPoolExecutor(max_workers=(config['testing_sequences_in_parallel_per_training_loop'] + numberOfTrainingStepsInParallel)) as executor:
@@ -341,7 +341,7 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
 
             enableDebugVideosThisLoop = bool(trainingSequence.trainingLoopsCompleted % config['debug_video_generation_frequency'] == 0)
             # Also generate a debug video on the very last iteration of the sequence.
-            if trainingSequence.trainingLoopsCompleted == (config['training_loops_needed'] - 1):
+            if trainingSequence.trainingLoopsCompleted == (config['train_agent_loop_loops_needed'] - 1):
                 enableDebugVideosThisLoop = True
 
             if torch.cuda.device_count() > 0:
@@ -402,9 +402,9 @@ def runMainTrainingLoop(config, trainingSequence, exitOnFail=False):
                         lastTrainFinish = future.result()['finishTime']
 
                 if lastTestFinish > lastTrainFinish:
-                    config['iterations_per_training_step'] += config['iterations_per_training_step_adjustment_size_per_loop']
+                    config['training_iterations_per_training_step'] += config['training_iterations_per_training_step_adjustment_size_per_loop']
                 else:
-                    config['iterations_per_training_step'] = max(5, config['iterations_per_training_step'] - config['iterations_per_training_step_adjustment_size_per_loop'])
+                    config['training_iterations_per_training_step'] = max(5, config['training_iterations_per_training_step'] - config['training_iterations_per_training_step_adjustment_size_per_loop'])
                 config.saveConfig()
 
             time.sleep(3)
@@ -431,9 +431,9 @@ def trainAgent(config, exitOnFail=False):
 
     config = KwolaCoreConfiguration(config)
 
-    if config['wait_for_other_kwola_processes_to_exit']:
+    if config['train_agent_loop_wait_for_other_kwola_processes_to_exit']:
         if checkIfProcessRunning("kwola"):
-            getLogger().info("Waiting for the other Kwola process to finish running. If you want to run multiple Kwola processes at once, please change the wait_for_other_kwola_processes_to_exit configuration variable.")
+            getLogger().info("Waiting for the other Kwola process to finish running. If you want to run multiple Kwola processes at once, please change the train_agent_loop_wait_for_other_kwola_processes_to_exit configuration variable.")
             while checkIfProcessRunning("kwola"):
                 time.sleep(1)
 
@@ -488,7 +488,7 @@ def trainAgent(config, exitOnFail=False):
     trainingSequence.endTime = datetime.now()
     trainingSequence.saveToDisk(config)
 
-    if config['email_results'] and loopsCompleted > 0:
+    if config['train_agent_loop_email_results'] and loopsCompleted > 0:
         from ..components.utils.email import sendExperimentResults
         sendExperimentResults(config)
 

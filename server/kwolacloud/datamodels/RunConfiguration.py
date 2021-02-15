@@ -153,14 +153,14 @@ class RunConfiguration(DynamicEmbeddedDocument):
         kwolaConfigData['enableRandomDateTimeCommand'] = self.enableRandomDateTimeCommand
         kwolaConfigData['enableRandomCreditCardCommand'] = self.enableRandomCreditCardCommand
         kwolaConfigData['enableRandomURLCommand'] = self.enableRandomURLCommand
-        kwolaConfigData['autologin'] = self.autologin
-        kwolaConfigData['prevent_offsite_links'] = self.preventOffsiteLinks
+        kwolaConfigData['web_session_autologin'] = self.web_session_autologin
+        kwolaConfigData['web_session_prevent_offsite_links'] = self.preventOffsiteLinks
         kwolaConfigData['testing_sequence_length'] = self.testingSequenceLength
         if self.enablePathWhitelist:
             kwolaConfigData['web_session_restrict_url_to_regexes'] = self.urlWhitelistRegexes
         else:
             kwolaConfigData['web_session_restrict_url_to_regexes'] = []
-        kwolaConfigData['custom_typing_action_strings'] = self.customTypingActionStrings
+        kwolaConfigData['actions_custom_typing_action_strings'] = self.customTypingActionStrings
         kwolaConfigData['enable_5xx_error'] = self.enable5xxError
         kwolaConfigData['enable_400_error'] = self.enable400Error
         kwolaConfigData['enable_401_error'] = self.enable401Error
@@ -174,7 +174,7 @@ class RunConfiguration(DynamicEmbeddedDocument):
         kwolaConfigData['web_session_enable_window_size_desktop'] = self.enableWindowSizeDesktop
         kwolaConfigData['web_session_enable_window_size_tablet'] = self.enableWindowSizeTablet
         kwolaConfigData['web_session_enable_window_size_mobile'] = self.enableWindowSizeMobile
-        kwolaConfigData['typing_actions'] = [
+        kwolaConfigData['actions_typing_actions'] = [
             json.loads(action.to_json()) for action in self.typingActions
         ]
 
