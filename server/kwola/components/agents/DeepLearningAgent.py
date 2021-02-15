@@ -382,6 +382,8 @@ class DeepLearningAgent:
 
         self.symbolMapper = SymbolMapper(self.config)
 
+        self.createPrecomputedRecentActionsCircle()
+
     def randomString(self, chars, len):
         """
             Generates a random string.
@@ -2611,6 +2613,24 @@ class DeepLearningAgent:
 
         return processedImage
 
+    def createPrecomputedRecentActionsCircle(self):
+        width = self.config['testing_recent_actions_image_action_circle_radius'] * 2
+        height = self.config['testing_recent_actions_image_action_circle_radius'] * 2
+
+        centerX = self.config['testing_recent_actions_image_action_circle_radius']
+        centerY = self.config['testing_recent_actions_image_action_circle_radius']
+
+        self.recentActionsImageCircle = numpy.zeros([height, width])
+        for x in range(width):
+            for y in range(height):
+                distX = (x - centerX)
+                distY = (y - centerY)
+                dist = math.sqrt(distX * distX + distY * distY)
+
+                gain = (self.config['testing_recent_actions_image_action_circle_radius'] - dist) / self.config['testing_recent_actions_image_action_circle_radius']
+
+                self.recentActionsImageCircle[y, x] = gain * 0.7 + 0.3
+
 
     def computeCachedRecentActionsImages(self, traces, width, height):
         for trace, lastTrace in zip(traces, [None] + traces):
@@ -2622,19 +2642,39 @@ class DeepLearningAgent:
                     trace.cachedStartingRecentActionsImage = numpy.copy(lastTrace.cachedEndingRecentActionsImage)
                     trace.cachedEndingRecentActionsImage = numpy.copy(lastTrace.cachedEndingRecentActionsImage) * self.config['testing_recent_actions_image_decay_rate']
 
-                gridX, gridY = numpy.meshgrid(range(width), range(height))
+                actionCircleCenterX = (trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio'])
+                actionCircleCenterY = (trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio'])
 
-                distX = gridX - (trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio'])
-                distY = gridY - (trace.actionPerformed.y * self.config['neural_network_model_image_downscale_ratio'])
+                left = int(actionCircleCenterX - self.config['testing_recent_actions_image_action_circle_radius'])
+                right = int(left + self.config['testing_recent_actions_image_action_circle_radius'] * 2)
 
-                dists = numpy.sqrt(distX * distX + distY * distY)
+                leftAdjust = 0 if left >= 0 else -left
+                rightAdjust = 0 if right < width else (right - width)
 
-                gains = (self.config['testing_recent_actions_image_action_circle_radius'] - dists) / self.config['testing_recent_actions_image_action_circle_radius']
+                left += leftAdjust
+                right -= rightAdjust
 
-                xCoords = gridX[dists < self.config['testing_recent_actions_image_action_circle_radius']]
-                yCoords = gridY[dists < self.config['testing_recent_actions_image_action_circle_radius']]
+                top = int(actionCircleCenterY - self.config['testing_recent_actions_image_action_circle_radius'])
+                bottom = int(top + self.config['testing_recent_actions_image_action_circle_radius'] * 2)
 
-                trace.cachedEndingRecentActionsImage[self.actionsSorted.index(trace.actionPerformed.type), yCoords, xCoords] += gains[yCoords, xCoords] * 0.7 + 0.3
+                topAdjust = 0 if top >= 0 else -top
+                bottomAdjust = 0 if bottom < height else (bottom - height)
+
+                top += topAdjust
+                bottom -= bottomAdjust
+
+                circleLeft = leftAdjust
+                circleRight = self.config['testing_recent_actions_image_action_circle_radius'] * 2 - rightAdjust
+
+                circleTop = topAdjust
+                circleBottom = self.config['testing_recent_actions_image_action_circle_radius'] * 2 - bottomAdjust
+
+                trace.cachedEndingRecentActionsImage[self.actionsSorted.index(trace.actionPerformed.type), top:bottom, left:right] \
+                    += self.recentActionsImageCircle[
+                       circleTop:circleBottom,
+                       circleLeft:circleRight
+                    ]
+
                 trace.cachedEndingRecentActionsImage = numpy.minimum(numpy.ones_like(trace.cachedEndingRecentActionsImage), trace.cachedEndingRecentActionsImage)
 
     def computeRecentActionsVector(self, traces):
