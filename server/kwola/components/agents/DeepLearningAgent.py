@@ -382,7 +382,7 @@ class DeepLearningAgent:
 
         self.symbolMapper = SymbolMapper(self.config)
 
-        self.createPrecomputedRecentActionsCircle()
+        self.recentActionsImageCircle = None
 
     def randomString(self, chars, len):
         """
@@ -2627,12 +2627,16 @@ class DeepLearningAgent:
                 distY = (y - centerY)
                 dist = math.sqrt(distX * distX + distY * distY)
 
-                gain = (self.config['testing_recent_actions_image_action_circle_radius'] - dist) / self.config['testing_recent_actions_image_action_circle_radius']
+                if dist < self.config['testing_recent_actions_image_action_circle_radius']:
+                    gain = (self.config['testing_recent_actions_image_action_circle_radius'] - dist) / self.config['testing_recent_actions_image_action_circle_radius']
 
-                self.recentActionsImageCircle[y, x] = gain * 0.7 + 0.3
+                    self.recentActionsImageCircle[y, x] = gain * 0.7 + 0.3
 
 
     def computeCachedRecentActionsImages(self, traces, width, height):
+        if self.recentActionsImageCircle is None:
+            self.createPrecomputedRecentActionsCircle()
+
         for trace, lastTrace in zip(traces, [None] + traces):
             if trace.cachedStartingRecentActionsImage is None:
                 if lastTrace is None or lastTrace.cachedEndingRecentActionsImage is None:
@@ -2643,7 +2647,7 @@ class DeepLearningAgent:
                     trace.cachedEndingRecentActionsImage = numpy.copy(lastTrace.cachedEndingRecentActionsImage) * self.config['testing_recent_actions_image_decay_rate']
 
                 actionCircleCenterX = (trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio'])
-                actionCircleCenterY = (trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio'])
+                actionCircleCenterY = (trace.actionPerformed.y * self.config['neural_network_model_image_downscale_ratio'])
 
                 left = int(actionCircleCenterX - self.config['testing_recent_actions_image_action_circle_radius'])
                 right = int(left + self.config['testing_recent_actions_image_action_circle_radius'] * 2)
