@@ -383,7 +383,9 @@ class TraceNet(torch.nn.Module):
                 advantageValues = self.advantageConvolution(mergedPixelFeatureMap) * data['pixelActionMaps'] + (1.0 - data['pixelActionMaps']) * self.config['reward_impossible_action']
                 outputDict['advantage'] = advantageValues
 
-        if data['computeExtras']:
+        if data['computeExtras'] and (self.config['enable_trace_prediction_loss']
+                                      or self.config['enable_execution_feature_prediction_loss']
+                                      or self.config['enable_cursor_prediction_loss']):
             with profiler.record_function("extras"):
                 if 'action_type' in data:
                     action_types = data['action_type']

@@ -101,7 +101,15 @@ def main():
 
         timePerSample = (end - start).total_seconds() / (len(batches) * config['neural_network_batch_size'] * config['neural_network_batches_per_iteration'])
 
-        print(f"Average time per sample: f{timePerSample:.6}")
+        print(f"Average time per sample (with profiling enabled): f{timePerSample:.6}")
+
+        start = datetime.now()
+        for batchListIndex, batchList in enumerate(batches):
+            with profiler.record_function(f"batch_{batchListIndex}"):
+                agent.learnFromBatches(batchList, trainingStepIndex=100)
+        end = datetime.now()
+        timePerSample = (end - start).total_seconds() / (len(batches) * config['neural_network_batch_size'] * config['neural_network_batches_per_iteration'])
+        print(f"Average time per sample (with profiling disabled): f{timePerSample:.6}")
 
         return True
     except Exception:
