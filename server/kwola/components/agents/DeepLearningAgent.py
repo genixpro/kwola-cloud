@@ -1657,7 +1657,7 @@ class DeepLearningAgent:
                 totalRewardPredictions = numpy.array((output['presentRewards'] + output['discountFutureRewards']).data)
                 advantagePredictions = numpy.array((output['advantage']).data)
                 stateValue = numpy.array((output['stateValues'][0]).data)
-                stamp = numpy.array((output['stamp']).data)
+                stamp = numpy.array((output['stamp']).data)[1:] # The first value in the stamp is the step counter, so ignore that.
 
                 presentRewardPredictions = presentRewardPredictions[presentRewardPredictions > self.config['reward_impossible_action_threshold']]
                 discountedRewardPredictions = discountedRewardPredictions[discountedRewardPredictions > self.config['reward_impossible_action_threshold']]
