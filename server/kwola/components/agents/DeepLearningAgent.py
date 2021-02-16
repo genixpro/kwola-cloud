@@ -3103,24 +3103,21 @@ class DeepLearningAgent:
                 actionProbabilityLosses = []
                 presentRewardLosses = []
                 discountedFutureRewardLosses = []
+                
+                # Here we just zip together all of the various data for each sample in this batch, so that we can iterate
+                # over all of it at the same time and process each sample in the batch separately
+                zippedValues = zip(range(len(presentRewardPredictions)), presentRewardPredictions, discountedFutureRewardPredictions,
+                                   nextStatePresentRewardPredictions, nextStateDiscountedFutureRewardPredictions,
+                                   rewardPixelMasks, presentRewardsTensor, stateValuePredictions, advantagePredictions,
+                                   batch['actionTypes'], batch['actionXs'], batch['actionYs'],
+                                   pixelActionMaps, actionProbabilityPredictions, batch['processedImages'])
 
                 with profiler.record_function("post_processing"):
                     # Here we are just iterating over all of the relevant data and tensors for each sample in the batch
-                    for sampleIndex in range(self.config['neural_network_batch_size']):
-                        presentRewardImage = presentRewardPredictions[sampleIndex]
-                        discountedFutureRewardImage = discountedFutureRewardPredictions[sampleIndex]
-                        nextStatePresentRewardImage = nextStatePresentRewardPredictions[sampleIndex]
-                        nextStateDiscountedFutureRewardImage = nextStateDiscountedFutureRewardPredictions[sampleIndex]
-                        origRewardPixelMask = rewardPixelMasks[sampleIndex]
-                        presentReward = presentRewardsTensor[sampleIndex]
-                        stateValuePrediction = stateValuePredictions[sampleIndex]
-                        advantageImage = advantagePredictions[sampleIndex]
-                        actionType = batch['actionTypes'][sampleIndex]
-                        actionX = batch['actionXs'][sampleIndex]
-                        actionY = batch['actionYs'][sampleIndex]
-                        pixelActionMap = pixelActionMaps[sampleIndex]
-                        actionProbabilityImage = actionProbabilityPredictions[sampleIndex]
-                        processedImage = batch['processedImages'][sampleIndex]
+                    for sampleIndex, presentRewardImage, discountedFutureRewardImage, \
+                        nextStatePresentRewardImage, nextStateDiscountedFutureRewardImage, \
+                        origRewardPixelMask, presentReward, stateValuePrediction, advantageImage, \
+                        actionType, actionX, actionY, pixelActionMap, actionProbabilityImage, processedImage in zippedValues:
 
                         with profiler.record_function("masks"):
                             comboPixelMask = origRewardPixelMask * pixelActionMap[self.actionsSorted.index(actionType)]
