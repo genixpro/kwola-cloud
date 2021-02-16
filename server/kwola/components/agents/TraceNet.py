@@ -21,7 +21,7 @@
 
 import torch
 import torch.cuda
-
+import torch.autograd.profiler as profiler
 
 class TraceNet(torch.nn.Module):
     def __init__(self, config, numActions, executionFeaturePredictorSize, cursorCount):
@@ -260,79 +260,84 @@ class TraceNet(torch.nn.Module):
             data['recentActionsImage']
         ], dim=1)
 
-        pixelFeatureMap = self.mainModel(inputImage)
+        with profiler.record_function("main_convolution"):
+            pixelFeatureMap = self.mainModel(inputImage)
 
         featureMapHeight = pixelFeatureMap.shape[2]
         featureMapWidth = pixelFeatureMap.shape[3]
 
-        # Compute the embedding based on the symbols provided. symbols are usually traces of which lines of code got executed.
-        recentSymbolEmbeddings = self.recentSymbolEmbedding(data['recentSymbolIndexes'], data['recentSymbolOffsets'], per_sample_weights=data['recentSymbolWeights'])
-        recentSymbolEmbeddings = torch.nn.functional.normalize(recentSymbolEmbeddings, dim=1)
+        with profiler.record_function("embeddings"):
+            # Compute the embedding based on the symbols provided. symbols are usually traces of which lines of code got executed.
+            recentSymbolEmbeddings = self.recentSymbolEmbedding(data['recentSymbolIndexes'], data['recentSymbolOffsets'], per_sample_weights=data['recentSymbolWeights'])
+            recentSymbolEmbeddings = torch.nn.functional.normalize(recentSymbolEmbeddings, dim=1)
 
-        coverageSymbolEmbeddings = self.coverageSymbolEmbedding(data['coverageSymbolIndexes'], data['coverageSymbolOffsets'], per_sample_weights=data['coverageSymbolWeights'])
-        coverageSymbolEmbeddings = torch.nn.functional.normalize(coverageSymbolEmbeddings, dim=1)
+            coverageSymbolEmbeddings = self.coverageSymbolEmbedding(data['coverageSymbolIndexes'], data['coverageSymbolOffsets'], per_sample_weights=data['coverageSymbolWeights'])
+            coverageSymbolEmbeddings = torch.nn.functional.normalize(coverageSymbolEmbeddings, dim=1)
 
-        coverageAttentionKeys = self.coverageAttentionKeyEmbedding(data['coverageSymbolIndexes'])
-        coverageAttentionValues = self.coverageAttentionValueEmbedding(data['coverageSymbolIndexes'])
+            coverageAttentionKeys = self.coverageAttentionKeyEmbedding(data['coverageSymbolIndexes'])
+            coverageAttentionValues = self.coverageAttentionValueEmbedding(data['coverageSymbolIndexes'])
 
-        recentActionFeatures = self.recentActionVectorProjection(data['recentActionsVector'])
+            recentActionFeatures = self.recentActionVectorProjection(data['recentActionsVector'])
 
-        symbolEmbeddingFeaturesBySample = []
-        for sampleIndex, sampleSymbolOffset, in zip(range(batchSize), data['coverageSymbolOffsets']):
-            if sampleIndex == (batchSize - 1):
-                coverageAttentionKeyEmbeddings = coverageAttentionKeys[sampleSymbolOffset:].reshape([-1, 1, self.config['symbol_embedding_size']])
-                coverageAttentionValueEmbeddings = coverageAttentionValues[sampleSymbolOffset:].reshape([-1, 1, self.config['symbol_embedding_size']])
-            else:
-                nextOffset = data['coverageSymbolOffsets'][sampleIndex + 1]
-                coverageAttentionKeyEmbeddings = coverageAttentionKeys[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
-                coverageAttentionValueEmbeddings = coverageAttentionValues[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
+        with profiler.record_function("attention"):
+            symbolEmbeddingFeaturesBySample = []
+            for sampleIndex, sampleSymbolOffset, in zip(range(batchSize), data['coverageSymbolOffsets']):
+                if sampleIndex == (batchSize - 1):
+                    coverageAttentionKeyEmbeddings = coverageAttentionKeys[sampleSymbolOffset:].reshape([-1, 1, self.config['symbol_embedding_size']])
+                    coverageAttentionValueEmbeddings = coverageAttentionValues[sampleSymbolOffset:].reshape([-1, 1, self.config['symbol_embedding_size']])
+                else:
+                    nextOffset = data['coverageSymbolOffsets'][sampleIndex + 1]
+                    coverageAttentionKeyEmbeddings = coverageAttentionKeys[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
+                    coverageAttentionValueEmbeddings = coverageAttentionValues[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
 
-            samplePixelFeatures = pixelFeatureMap[sampleIndex, :, :, :].transpose(0, 2).reshape([featureMapHeight * featureMapWidth, self.config['neural_network_pixel_features']])
-            queries = self.queryProjection(samplePixelFeatures)
-            queries = queries.reshape([-1, 1, self.config['symbol_embedding_size']])
+                samplePixelFeatures = pixelFeatureMap[sampleIndex, :, :, :].transpose(0, 2).reshape([featureMapHeight * featureMapWidth, self.config['neural_network_pixel_features']])
+                queries = self.queryProjection(samplePixelFeatures)
+                queries = queries.reshape([-1, 1, self.config['symbol_embedding_size']])
 
-            attentionResults, attentionResultWeights = self.coverageSymbolAttentionLayer(queries, coverageAttentionKeyEmbeddings, coverageAttentionValueEmbeddings)
+                attentionResults, attentionResultWeights = self.coverageSymbolAttentionLayer(queries, coverageAttentionKeyEmbeddings, coverageAttentionValueEmbeddings)
 
-            symbolEmbeddingFeatures = attentionResults.reshape([1, featureMapWidth, featureMapHeight, self.config['symbol_embedding_size']])
-            symbolEmbeddingFeatures = symbolEmbeddingFeatures.transpose(1, 3)
+                symbolEmbeddingFeatures = attentionResults.reshape([1, featureMapWidth, featureMapHeight, self.config['symbol_embedding_size']])
+                symbolEmbeddingFeatures = symbolEmbeddingFeatures.transpose(1, 3)
 
-            symbolEmbeddingFeaturesBySample.append(symbolEmbeddingFeatures)
+                symbolEmbeddingFeaturesBySample.append(symbolEmbeddingFeatures)
 
-        symbolEmbeddingFeatures = torch.cat(symbolEmbeddingFeaturesBySample, dim=0)
+            symbolEmbeddingFeatures = torch.cat(symbolEmbeddingFeaturesBySample, dim=0)
 
-        # Concatenate the step number with the rest of the additional features
-        additionalFeaturesWithStep = torch.cat([
-            torch.log10(data['stepNumber'] + torch.ones_like(data['stepNumber'])).reshape([-1, 1]),
-            self.recentSymbolStampProjection(recentSymbolEmbeddings)
-        ], dim=1)
+        with profiler.record_function("feature_amalgamation"):
+            # Concatenate the step number with the rest of the additional features
+            additionalFeaturesWithStep = torch.cat([
+                torch.log10(data['stepNumber'] + torch.ones_like(data['stepNumber'])).reshape([-1, 1]),
+                self.recentSymbolStampProjection(recentSymbolEmbeddings)
+            ], dim=1)
 
-        # Append the stamp layer along side the pixel-by-pixel features
-        stamp = additionalFeaturesWithStep.reshape([-1, self.config['neural_network_additional_features_stamp_depth_size'],
-                                                    self.config['neural_network_additional_features_stamp_edge_size'],
-                                                    self.config['neural_network_additional_features_stamp_edge_size']])
+            # Append the stamp layer along side the pixel-by-pixel features
+            stamp = additionalFeaturesWithStep.reshape([-1, self.config['neural_network_additional_features_stamp_depth_size'],
+                                                        self.config['neural_network_additional_features_stamp_edge_size'],
+                                                        self.config['neural_network_additional_features_stamp_edge_size']])
 
-        featureMapHeight = pixelFeatureMap.shape[2]
-        featureMapWidth = pixelFeatureMap.shape[3]
-        stampTiler = stamp.repeat([1, 1, int(featureMapHeight / self.config['neural_network_additional_features_stamp_edge_size']) + 1, int(featureMapWidth / self.config['neural_network_additional_features_stamp_edge_size']) + 1])
-        stampLayer = stampTiler[:, :, :featureMapHeight, :featureMapWidth].reshape([-1, self.config['neural_network_additional_features_stamp_depth_size'], featureMapHeight, featureMapWidth])
+            featureMapHeight = pixelFeatureMap.shape[2]
+            featureMapWidth = pixelFeatureMap.shape[3]
+            stampTiler = stamp.repeat([1, 1, int(featureMapHeight / self.config['neural_network_additional_features_stamp_edge_size']) + 1, int(featureMapWidth / self.config['neural_network_additional_features_stamp_edge_size']) + 1])
+            stampLayer = stampTiler[:, :, :featureMapHeight, :featureMapWidth].reshape([-1, self.config['neural_network_additional_features_stamp_depth_size'], featureMapHeight, featureMapWidth])
 
-        recentActionFeaturesImage = recentActionFeatures.reshape([batchSize, self.config['neural_network_recent_actions_feature_size'], 1, 1])
-        recentActionFeaturesImage = recentActionFeaturesImage.repeat([1, 1, featureMapHeight, featureMapWidth])
-        mergedPixelFeatureMap = torch.cat([symbolEmbeddingFeatures, recentActionFeaturesImage, stampLayer, pixelFeatureMap], dim=1)
+            recentActionFeaturesImage = recentActionFeatures.reshape([batchSize, self.config['neural_network_recent_actions_feature_size'], 1, 1])
+            recentActionFeaturesImage = recentActionFeaturesImage.repeat([1, 1, featureMapHeight, featureMapWidth])
+            mergedPixelFeatureMap = torch.cat([symbolEmbeddingFeatures, recentActionFeaturesImage, stampLayer, pixelFeatureMap], dim=1)
 
         outputDict = {}
 
         if data['computeRewards']:
-            presentRewardPredictions = self.presentRewardConvolution(mergedPixelFeatureMap)
-            discountFutureRewardPredictions = self.discountedFutureRewardConvolution(mergedPixelFeatureMap)
+            with profiler.record_function("rewards"):
+                presentRewardPredictions = self.presentRewardConvolution(mergedPixelFeatureMap)
+                discountFutureRewardPredictions = self.discountedFutureRewardConvolution(mergedPixelFeatureMap)
 
-            presentRewards = presentRewardPredictions * data['pixelActionMaps'] + (1.0 - data['pixelActionMaps']) * self.config['reward_impossible_action']
-            discountFutureRewards = discountFutureRewardPredictions * data['pixelActionMaps'] + (1.0 - data['pixelActionMaps']) * self.config['reward_impossible_action']
+                presentRewards = presentRewardPredictions * data['pixelActionMaps'] + (1.0 - data['pixelActionMaps']) * self.config['reward_impossible_action']
+                discountFutureRewards = discountFutureRewardPredictions * data['pixelActionMaps'] + (1.0 - data['pixelActionMaps']) * self.config['reward_impossible_action']
 
-            totalReward = (presentRewards + discountFutureRewards)
+                totalReward = (presentRewards + discountFutureRewards)
 
-            outputDict['presentRewards'] = presentRewards
-            outputDict['discountFutureRewards'] = discountFutureRewards
+                outputDict['presentRewards'] = presentRewards
+                outputDict['discountFutureRewards'] = discountFutureRewards
         else:
             totalReward = None
 
@@ -349,64 +354,68 @@ class TraceNet(torch.nn.Module):
             outputDict['decayingFutureSymbolEmbedding'] = decayingFutureSymbolEmbedding
 
         if data["computeActionProbabilities"]:
-            # We have to do this clamp here to preserve numerical stability and prevent calculations from going
-            # out of bounds in the torch.exp command below.
-            actorLogProbs = self.actorConvolution(mergedPixelFeatureMap).clamp(-30, 30)
+            with profiler.record_function("action_probabilities"):
+                # We have to do this clamp here to preserve numerical stability and prevent calculations from going
+                # out of bounds in the torch.exp command below.
+                actorLogProbs = self.actorConvolution(mergedPixelFeatureMap).clamp(-30, 30)
 
-            actorProbExp = torch.exp(actorLogProbs) * data['pixelActionMaps']
-            actorProbSums = torch.sum(actorProbExp.reshape(shape=[-1, width * height * self.numActions]), dim=1).unsqueeze(1).unsqueeze(1).unsqueeze(1)
-            actorProbSums = torch.max(torch.eq(actorProbSums, 0).type_as(actorProbSums) * 1.0, actorProbSums)
-            actorActionProbs = torch.true_divide(actorProbExp, actorProbSums)
-            actorActionProbs = actorActionProbs.reshape([-1, self.numActions, height, width])
+                actorProbExp = torch.exp(actorLogProbs) * data['pixelActionMaps']
+                actorProbSums = torch.sum(actorProbExp.reshape(shape=[-1, width * height * self.numActions]), dim=1).unsqueeze(1).unsqueeze(1).unsqueeze(1)
+                actorProbSums = torch.max(torch.eq(actorProbSums, 0).type_as(actorProbSums) * 1.0, actorProbSums)
+                actorActionProbs = torch.true_divide(actorProbExp, actorProbSums)
+                actorActionProbs = actorActionProbs.reshape([-1, self.numActions, height, width])
 
-            outputDict["actionProbabilities"] = actorActionProbs.type_as(mergedPixelFeatureMap)
+                outputDict["actionProbabilities"] = actorActionProbs.type_as(mergedPixelFeatureMap)
 
         if data['computeStateValues']:
-            flatFeatureMap = torch.cat([
-                additionalFeaturesWithStep.reshape(shape=[batchSize, -1]),
-                coverageSymbolEmbeddings
-            ], dim=1)
+            with profiler.record_function("state_value"):
+                flatFeatureMap = torch.cat([
+                    additionalFeaturesWithStep.reshape(shape=[batchSize, -1]),
+                    coverageSymbolEmbeddings
+                ], dim=1)
 
             stateValuePredictions = self.stateValueLinear(flatFeatureMap)
 
             outputDict['stateValues'] = stateValuePredictions
 
         if data['computeAdvantageValues']:
-            advantageValues = self.advantageConvolution(mergedPixelFeatureMap) * data['pixelActionMaps'] + (1.0 - data['pixelActionMaps']) * self.config['reward_impossible_action']
-            outputDict['advantage'] = advantageValues
+            with profiler.record_function("advantage"):
+                advantageValues = self.advantageConvolution(mergedPixelFeatureMap) * data['pixelActionMaps'] + (1.0 - data['pixelActionMaps']) * self.config['reward_impossible_action']
+                outputDict['advantage'] = advantageValues
 
         if data['computeExtras']:
-            if 'action_type' in data:
-                action_types = data['action_type']
-                action_xs = data['action_x']
-                action_ys = data['action_y']
-            else:
-                action_types = []
-                action_xs = []
-                action_ys = []
-                for sampleReward in totalReward:
-                    action_type = sampleReward.reshape([self.numActions, width * height]).max(dim=1)[0].argmax(0)
-                    action_types.append(action_type)
+            with profiler.record_function("extras"):
+                if 'action_type' in data:
+                    action_types = data['action_type']
+                    action_xs = data['action_x']
+                    action_ys = data['action_y']
+                else:
+                    action_types = []
+                    action_xs = []
+                    action_ys = []
+                    for sampleReward in totalReward:
+                        action_type = sampleReward.reshape([self.numActions, width * height]).max(dim=1)[0].argmax(0)
+                        action_types.append(action_type)
 
-                    action_y = sampleReward[action_type].max(dim=1)[0].argmax(0)
-                    action_ys.append(action_y)
+                        action_y = sampleReward[action_type].max(dim=1)[0].argmax(0)
+                        action_ys.append(action_y)
 
-                    action_x = sampleReward[action_type, action_y].argmax(0)
-                    action_xs.append(action_x)
+                        action_x = sampleReward[action_type, action_y].argmax(0)
+                        action_xs.append(action_x)
 
-            forwardFeaturesForAuxillaryLosses = []
-            for sampleIndex, action_type, action_x, action_y in zip(range(len(action_types)), action_types, action_xs, action_ys):
-                featuresForAuxillaryLosses = mergedPixelFeatureMap[sampleIndex, :, int(torch.floor_divide(action_y, 8)), int(torch.floor_divide(action_x, 8))].unsqueeze(0)
-                forwardFeaturesForAuxillaryLosses.append(featuresForAuxillaryLosses)
+                forwardFeaturesForAuxillaryLosses = []
+                for sampleIndex, action_type, action_x, action_y in zip(range(len(action_types)), action_types, action_xs, action_ys):
+                    featuresForAuxillaryLosses = mergedPixelFeatureMap[sampleIndex, :, int(torch.floor_divide(action_y, 8)), int(torch.floor_divide(action_x, 8))].unsqueeze(0)
+                    forwardFeaturesForAuxillaryLosses.append(featuresForAuxillaryLosses)
 
-            joinedFeatures = torch.cat(forwardFeaturesForAuxillaryLosses, dim=0)
+                joinedFeatures = torch.cat(forwardFeaturesForAuxillaryLosses, dim=0)
 
-            if self.config['enable_trace_prediction_loss']:
-                outputDict['predictedTraces'] = self.predictedExecutionTraceLinear(joinedFeatures)
-            if self.config['enable_execution_feature_prediction_loss']:
-                outputDict['predictedExecutionFeatures'] = self.predictedExecutionFeaturesLinear(joinedFeatures)
-            if self.config['enable_cursor_prediction_loss']:
-                outputDict['predictedCursor'] = self.predictedCursorLinear(joinedFeatures)
+                if self.config['enable_trace_prediction_loss']:
+                    outputDict['predictedTraces'] = self.predictedExecutionTraceLinear(joinedFeatures)
+                if self.config['enable_execution_feature_prediction_loss']:
+                    outputDict['predictedExecutionFeatures'] = self.predictedExecutionFeaturesLinear(joinedFeatures)
+                if self.config['enable_cursor_prediction_loss']:
+                    outputDict['predictedCursor'] = self.predictedCursorLinear(joinedFeatures)
 
         return outputDict
 

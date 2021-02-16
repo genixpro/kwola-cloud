@@ -72,6 +72,8 @@ from ..utils.retry import autoretry
 from faker import Faker
 from ...config.logger import setupLocalLogging
 from .SymbolMapper import SymbolMapper
+import torch.autograd.profiler as profiler
+
 mpl.use("Agg")
 
 
@@ -2959,347 +2961,355 @@ class DeepLearningAgent:
         rewardImpossibleAction = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['reward_impossible_action_threshold']]))
         maxDiscountedReward = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['reward_max_discounted_reward']]))
 
-        for batch in batches:
-            # Here we create torch tensors out of literally all possible data we will need to do any calculations.
-            # The reason its done all upfront like this is because this allows the code to pipeline the data it
-            # is sending into the GPU. This ensures that all of the GPU calculations are done without any interruptions
-            # due to the python coding needing to send data to the GPU
-            rewardPixelMasks = self.variableWrapperFunc(torch.IntTensor, numpy.array(batch['rewardPixelMasks']))
-            pixelActionMaps = self.variableWrapperFunc(torch.IntTensor, numpy.array(batch['pixelActionMaps']))
-            nextStatePixelActionMaps = self.variableWrapperFunc(torch.IntTensor, numpy.array(batch['nextPixelActionMaps']))
-            discountRate = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['reward_discount_rate']]))
-            widthTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([batch["processedImages"].shape[3]]))
-            heightTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([batch["processedImages"].shape[2]]))
-            presentRewardsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch["presentRewards"]))
-            processedImagesTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['processedImages']))
-            recentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentActionsVector']))
-            recentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentActionsImage']))
-            coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolIndexes']))
-            coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolOffsets']))
-            coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['coverageSymbolWeights']))
-            recentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['recentSymbolIndexes']))
-            recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['recentSymbolOffsets']))
-            recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentSymbolWeights']))
-            stepNumberTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['stepNumbers']))
-            nextProcessedImagesTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextProcessedImages']))
+        for batchIndex, batch in enumerate(batches):
+            with profiler.record_function(f"partial_batch_{batchIndex}"):
+                with profiler.record_function("data_transfer"):
+                    # Here we create torch tensors out of literally all possible data we will need to do any calculations.
+                    # The reason its done all upfront like this is because this allows the code to pipeline the data it
+                    # is sending into the GPU. This ensures that all of the GPU calculations are done without any interruptions
+                    # due to the python coding needing to send data to the GPU
+                    rewardPixelMasks = self.variableWrapperFunc(torch.IntTensor, numpy.array(batch['rewardPixelMasks']))
+                    pixelActionMaps = self.variableWrapperFunc(torch.IntTensor, numpy.array(batch['pixelActionMaps']))
+                    nextStatePixelActionMaps = self.variableWrapperFunc(torch.IntTensor, numpy.array(batch['nextPixelActionMaps']))
+                    discountRate = self.variableWrapperFunc(torch.FloatTensor, numpy.array([self.config['reward_discount_rate']]))
+                    widthTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([batch["processedImages"].shape[3]]))
+                    heightTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([batch["processedImages"].shape[2]]))
+                    presentRewardsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch["presentRewards"]))
+                    processedImagesTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['processedImages']))
+                    recentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentActionsVector']))
+                    recentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentActionsImage']))
+                    coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolIndexes']))
+                    coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolOffsets']))
+                    coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['coverageSymbolWeights']))
+                    recentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['recentSymbolIndexes']))
+                    recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['recentSymbolOffsets']))
+                    recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentSymbolWeights']))
+                    stepNumberTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['stepNumbers']))
+                    nextProcessedImagesTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextProcessedImages']))
 
-            nextCoverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextCoverageSymbolIndexes']))
-            nextCoverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextCoverageSymbolOffsets']))
-            nextCoverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextCoverageSymbolWeights']))
-            nextRecentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextRecentSymbolIndexes']))
-            nextRecentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextRecentSymbolOffsets']))
-            nextRecentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentSymbolWeights']))
+                    nextCoverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextCoverageSymbolIndexes']))
+                    nextCoverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextCoverageSymbolOffsets']))
+                    nextCoverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextCoverageSymbolWeights']))
+                    nextRecentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextRecentSymbolIndexes']))
+                    nextRecentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextRecentSymbolOffsets']))
+                    nextRecentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentSymbolWeights']))
 
-            nextStepNumbers = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextStepNumbers']))
-            nextRecentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentActionsVector']))
-            nextRecentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentActionsImage']))
+                    nextStepNumbers = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextStepNumbers']))
+                    nextRecentActionsVectorTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentActionsVector']))
+                    nextRecentActionsImageTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentActionsImage']))
 
-            # Only create the following tensors if the loss is actually enabled for them
-            if self.config['enable_trace_prediction_loss']:
-                decayingFutureSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(
-                    batch['decayingFutureSymbolIndexes']))
-                decayingFutureSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(
-                    batch['decayingFutureSymbolOffsets']))
-                decayingFutureSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(
-                    batch['decayingFutureSymbolWeights']))
-            else:
-                decayingFutureSymbolIndexesTensor = None
-                decayingFutureSymbolListOffsetsTensor = None
-                decayingFutureSymbolWeightsTensor = None
+                    # Only create the following tensors if the loss is actually enabled for them
+                    if self.config['enable_trace_prediction_loss']:
+                        decayingFutureSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(
+                            batch['decayingFutureSymbolIndexes']))
+                        decayingFutureSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(
+                            batch['decayingFutureSymbolOffsets']))
+                        decayingFutureSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(
+                            batch['decayingFutureSymbolWeights']))
+                    else:
+                        decayingFutureSymbolIndexesTensor = None
+                        decayingFutureSymbolListOffsetsTensor = None
+                        decayingFutureSymbolWeightsTensor = None
 
-            if self.config['enable_execution_feature_prediction_loss']:
-                executionFeaturesTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['executionFeatures']))
-            else:
-                executionFeaturesTensor = None
+                    if self.config['enable_execution_feature_prediction_loss']:
+                        executionFeaturesTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['executionFeatures']))
+                    else:
+                        executionFeaturesTensor = None
 
-            if self.config['enable_cursor_prediction_loss']:
-                cursorsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['cursors']))
-            else:
-                cursorsTensor = None
+                    if self.config['enable_cursor_prediction_loss']:
+                        cursorsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['cursors']))
+                    else:
+                        cursorsTensor = None
 
-            self.model.train()
-            self.modelParallel.train()
-            self.targetNetwork.eval()
+                with profiler.record_function("setup"):
+                    self.model.train()
+                    self.modelParallel.train()
+                    self.targetNetwork.eval()
 
-            # Run the current images & states through the neural network and get
-            # all of the various predictions
-            currentStateOutputs = self.modelParallel({
-                "image": processedImagesTensor,
-                "coverageSymbolIndexes": coverageSymbolIndexesTensor,
-                "coverageSymbolOffsets": coverageSymbolListOffsetsTensor,
-                "coverageSymbolWeights": coverageSymbolWeightsTensor,
-                "recentSymbolIndexes": recentSymbolIndexesTensor,
-                "recentSymbolOffsets": recentSymbolListOffsetsTensor,
-                "recentSymbolWeights": recentSymbolWeightsTensor,
-                "pixelActionMaps": pixelActionMaps,
-                "recentActionsImage": recentActionsImageTensor,
-                "recentActionsVector": recentActionsVectorTensor,
-                "stepNumber": stepNumberTensor,
-                "action_type": batch['actionTypes'],
-                "action_x": batch['actionXs'],
-                "action_y": batch['actionYs'],
-                "decayingFutureSymbolIndexes": decayingFutureSymbolIndexesTensor,
-                "decayingFutureSymbolWeights": decayingFutureSymbolWeightsTensor,
-                "decayingFutureSymbolOffsets": decayingFutureSymbolListOffsetsTensor,
-                "outputStamp": False,
-                "outputFutureSymbolEmbedding": self.config['enable_trace_prediction_loss'],
-                "computeExtras": True,
-                "computeActionProbabilities": True,
-                "computeStateValues": True,
-                "computeAdvantageValues": True,
-                "computeRewards": True
-            })
+                with profiler.record_function("current_state_model"):
+                    # Run the current images & states through the neural network and get
+                    # all of the various predictions
+                    currentStateOutputs = self.modelParallel({
+                        "image": processedImagesTensor,
+                        "coverageSymbolIndexes": coverageSymbolIndexesTensor,
+                        "coverageSymbolOffsets": coverageSymbolListOffsetsTensor,
+                        "coverageSymbolWeights": coverageSymbolWeightsTensor,
+                        "recentSymbolIndexes": recentSymbolIndexesTensor,
+                        "recentSymbolOffsets": recentSymbolListOffsetsTensor,
+                        "recentSymbolWeights": recentSymbolWeightsTensor,
+                        "pixelActionMaps": pixelActionMaps,
+                        "recentActionsImage": recentActionsImageTensor,
+                        "recentActionsVector": recentActionsVectorTensor,
+                        "stepNumber": stepNumberTensor,
+                        "action_type": batch['actionTypes'],
+                        "action_x": batch['actionXs'],
+                        "action_y": batch['actionYs'],
+                        "decayingFutureSymbolIndexes": decayingFutureSymbolIndexesTensor,
+                        "decayingFutureSymbolWeights": decayingFutureSymbolWeightsTensor,
+                        "decayingFutureSymbolOffsets": decayingFutureSymbolListOffsetsTensor,
+                        "outputStamp": False,
+                        "outputFutureSymbolEmbedding": self.config['enable_trace_prediction_loss'],
+                        "computeExtras": True,
+                        "computeActionProbabilities": True,
+                        "computeStateValues": True,
+                        "computeAdvantageValues": True,
+                        "computeRewards": True
+                    })
 
-            # Here we just create some convenient local variables for each of the outputs
-            # from the neural network
-            presentRewardPredictions = currentStateOutputs['presentRewards']
-            discountedFutureRewardPredictions = currentStateOutputs['discountFutureRewards']
-            stateValuePredictions = currentStateOutputs['stateValues']
-            advantagePredictions = currentStateOutputs['advantage']
-            actionProbabilityPredictions = currentStateOutputs['actionProbabilities']
+                # Here we just create some convenient local variables for each of the outputs
+                # from the neural network
+                presentRewardPredictions = currentStateOutputs['presentRewards']
+                discountedFutureRewardPredictions = currentStateOutputs['discountFutureRewards']
+                stateValuePredictions = currentStateOutputs['stateValues']
+                advantagePredictions = currentStateOutputs['advantage']
+                actionProbabilityPredictions = currentStateOutputs['actionProbabilities']
 
-            with torch.no_grad():
-                # Here we use the target network to get the predictions made on the next state.
-                # This is part of a key mechanism in Q-learning, which is to calculate the discounted
-                # reward value for my current action assuming that I take the best possible action
-                # on the next step.
-                nextStateOutputs = self.targetNetwork({
-                    "image": nextProcessedImagesTensor,
-                    "coverageSymbolIndexes": nextCoverageSymbolIndexesTensor,
-                    "coverageSymbolOffsets": nextCoverageSymbolListOffsetsTensor,
-                    "coverageSymbolWeights": nextCoverageSymbolWeightsTensor,
-                    "recentSymbolIndexes": nextRecentSymbolIndexesTensor,
-                    "recentSymbolOffsets": nextRecentSymbolListOffsetsTensor,
-                    "recentSymbolWeights": nextRecentSymbolWeightsTensor,
-                    "pixelActionMaps": nextStatePixelActionMaps,
-                    "recentActionsImage": nextRecentActionsImageTensor,
-                    "recentActionsVector": nextRecentActionsVectorTensor,
-                    "stepNumber": nextStepNumbers,
-                    "outputStamp": False,
-                    "outputFutureSymbolEmbedding": False,
-                    "computeExtras": False,
-                    "computeActionProbabilities": False,
-                    "computeStateValues": False,
-                    "computeAdvantageValues": False,
-                    "computeRewards": True
-                })
+                with profiler.record_function("next_state_prediction"):
+                    with torch.no_grad():
+                        # Here we use the target network to get the predictions made on the next state.
+                        # This is part of a key mechanism in Q-learning, which is to calculate the discounted
+                        # reward value for my current action assuming that I take the best possible action
+                        # on the next step.
+                        nextStateOutputs = self.targetNetwork({
+                            "image": nextProcessedImagesTensor,
+                            "coverageSymbolIndexes": nextCoverageSymbolIndexesTensor,
+                            "coverageSymbolOffsets": nextCoverageSymbolListOffsetsTensor,
+                            "coverageSymbolWeights": nextCoverageSymbolWeightsTensor,
+                            "recentSymbolIndexes": nextRecentSymbolIndexesTensor,
+                            "recentSymbolOffsets": nextRecentSymbolListOffsetsTensor,
+                            "recentSymbolWeights": nextRecentSymbolWeightsTensor,
+                            "pixelActionMaps": nextStatePixelActionMaps,
+                            "recentActionsImage": nextRecentActionsImageTensor,
+                            "recentActionsVector": nextRecentActionsVectorTensor,
+                            "stepNumber": nextStepNumbers,
+                            "outputStamp": False,
+                            "outputFutureSymbolEmbedding": False,
+                            "computeExtras": False,
+                            "computeActionProbabilities": False,
+                            "computeStateValues": False,
+                            "computeAdvantageValues": False,
+                            "computeRewards": True
+                        })
 
-                # Again create some convenient local variables for the outputs from the target network.
-                nextStatePresentRewardPredictions = nextStateOutputs['presentRewards']
-                nextStateDiscountedFutureRewardPredictions = nextStateOutputs['discountFutureRewards']
+                        # Again create some convenient local variables for the outputs from the target network.
+                        nextStatePresentRewardPredictions = nextStateOutputs['presentRewards']
+                        nextStateDiscountedFutureRewardPredictions = nextStateOutputs['discountFutureRewards']
 
-            # Here we create a bunch of lists to store the loss tensors for each of the samples within the batch.
-            # We process each sample separately just because it makes the math more straightforward
-            totalSampleLosses = []
-            stateValueLosses = []
-            advantageLosses = []
-            actionProbabilityLosses = []
-            presentRewardLosses = []
-            discountedFutureRewardLosses = []
+                # Here we create a bunch of lists to store the loss tensors for each of the samples within the batch.
+                # We process each sample separately just because it makes the math more straightforward
+                totalSampleLosses = []
+                stateValueLosses = []
+                advantageLosses = []
+                actionProbabilityLosses = []
+                presentRewardLosses = []
+                discountedFutureRewardLosses = []
 
-            # Here we just zip together all of the various data for each sample in this batch, so that we can iterate
-            # over all of it at the same time and process each sample in the batch separately
-            zippedValues = zip(range(len(presentRewardPredictions)), presentRewardPredictions, discountedFutureRewardPredictions,
-                               nextStatePresentRewardPredictions, nextStateDiscountedFutureRewardPredictions,
-                               rewardPixelMasks, presentRewardsTensor, stateValuePredictions, advantagePredictions,
-                               batch['actionTypes'], batch['actionXs'], batch['actionYs'],
-                               pixelActionMaps, actionProbabilityPredictions, batch['processedImages'])
+                # Here we just zip together all of the various data for each sample in this batch, so that we can iterate
+                # over all of it at the same time and process each sample in the batch separately
+                zippedValues = zip(range(len(presentRewardPredictions)), presentRewardPredictions, discountedFutureRewardPredictions,
+                                   nextStatePresentRewardPredictions, nextStateDiscountedFutureRewardPredictions,
+                                   rewardPixelMasks, presentRewardsTensor, stateValuePredictions, advantagePredictions,
+                                   batch['actionTypes'], batch['actionXs'], batch['actionYs'],
+                                   pixelActionMaps, actionProbabilityPredictions, batch['processedImages'])
 
-            # Here we are just iterating over all of the relevant data and tensors for each sample in the batch
-            for sampleIndex, presentRewardImage, discountedFutureRewardImage, \
-                nextStatePresentRewardImage, nextStateDiscountedFutureRewardImage, \
-                origRewardPixelMask, presentReward, stateValuePrediction, advantageImage, \
-                actionType, actionX, actionY, pixelActionMap, actionProbabilityImage, processedImage in zippedValues:
+                with profiler.record_function("post_processing"):
+                    # Here we are just iterating over all of the relevant data and tensors for each sample in the batch
+                    for sampleIndex, presentRewardImage, discountedFutureRewardImage, \
+                        nextStatePresentRewardImage, nextStateDiscountedFutureRewardImage, \
+                        origRewardPixelMask, presentReward, stateValuePrediction, advantageImage, \
+                        actionType, actionX, actionY, pixelActionMap, actionProbabilityImage, processedImage in zippedValues:
 
-                comboPixelMask = origRewardPixelMask * pixelActionMap[self.actionsSorted.index(actionType)]
+                        comboPixelMask = origRewardPixelMask * pixelActionMap[self.actionsSorted.index(actionType)]
 
-                # Here, we fetch out the reward and advantage images associated with the action that the AI actually
-                # took in the trace. We then multiply by the reward pixel mask. This gives us a reward image that only
-                # has values in the area covering the HTML element the algorithm actually touched with its action
-                # at this step.
-                presentRewardsMasked = presentRewardImage[self.actionsSorted.index(actionType)] * comboPixelMask
-                discountedFutureRewardsMasked = discountedFutureRewardImage[self.actionsSorted.index(actionType)] * comboPixelMask
-                advantageMasked = advantageImage[self.actionsSorted.index(actionType)] * comboPixelMask
+                        # Here, we fetch out the reward and advantage images associated with the action that the AI actually
+                        # took in the trace. We then multiply by the reward pixel mask. This gives us a reward image that only
+                        # has values in the area covering the HTML element the algorithm actually touched with its action
+                        # at this step.
+                        presentRewardsMasked = presentRewardImage[self.actionsSorted.index(actionType)] * comboPixelMask
+                        discountedFutureRewardsMasked = discountedFutureRewardImage[self.actionsSorted.index(actionType)] * comboPixelMask
+                        advantageMasked = advantageImage[self.actionsSorted.index(actionType)] * comboPixelMask
 
-                # Here, we compute the best possible action we can take in the subsequent step from this one, and what is
-                # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
-                # the action we took in this sequence, could lead to in the future.
-                if trainingStepIndex < 2 * self.gpuWorldSize:
-                    nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage)
-                else:
-                    nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage + nextStateDiscountedFutureRewardImage)
+                        # Here, we compute the best possible action we can take in the subsequent step from this one, and what is
+                        # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
+                        # the action we took in this sequence, could lead to in the future.
+                        if trainingStepIndex < 2 * self.gpuWorldSize:
+                            nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage)
+                        else:
+                            nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage + nextStateDiscountedFutureRewardImage)
 
-                isNextStateValid = torch.ge(nextStateBestPossibleTotalReward, rewardImpossibleAction)
-                discountedFutureReward = nextStateBestPossibleTotalReward * discountRate * isNextStateValid
-                discountedFutureReward = torch.min(maxDiscountedReward, discountedFutureReward)
+                        isNextStateValid = torch.ge(nextStateBestPossibleTotalReward, rewardImpossibleAction)
+                        discountedFutureReward = nextStateBestPossibleTotalReward * discountRate * isNextStateValid
+                        discountedFutureReward = torch.min(maxDiscountedReward, discountedFutureReward)
 
-                # Here we are basically calculating the target images. E.g., this is what we want the neural network to be predicting as outputs.
-                # For the present reward, we want the neural network to predict the exact present reward value that we have for this execution trace.
-                # For the discounted future reward, we use the above calculated value which is based on the best possible action it could take
-                # in the next step after this one.
-                # In both cases, the image is constructed with the same mask that the reward images were masked with above. This ensures that we
-                # are only updating the values for the pixels of the html element the algo actually clicked on
-                targetPresentRewards = torch.ones_like(presentRewardImage[self.actionsSorted.index(actionType)]) * presentReward * comboPixelMask
-                targetDiscountedFutureRewards = torch.ones_like(discountedFutureRewardImage[self.actionsSorted.index(actionType)]) * discountedFutureReward * comboPixelMask
+                        # Here we are basically calculating the target images. E.g., this is what we want the neural network to be predicting as outputs.
+                        # For the present reward, we want the neural network to predict the exact present reward value that we have for this execution trace.
+                        # For the discounted future reward, we use the above calculated value which is based on the best possible action it could take
+                        # in the next step after this one.
+                        # In both cases, the image is constructed with the same mask that the reward images were masked with above. This ensures that we
+                        # are only updating the values for the pixels of the html element the algo actually clicked on
+                        targetPresentRewards = torch.ones_like(presentRewardImage[self.actionsSorted.index(actionType)]) * presentReward * comboPixelMask
+                        targetDiscountedFutureRewards = torch.ones_like(discountedFutureRewardImage[self.actionsSorted.index(actionType)]) * discountedFutureReward * comboPixelMask
 
-                # We basically do the same with the advantage to create the target advantage image, and again its multiplied by the same
-                # pixel mask. The difference with advantage is that the advantage is updated to be the difference between the predicted reward
-                # value for the action we took v.s. the average reward value no matter what action we take. E.g. its a measure of how much
-                # better a particular action is versus the average action.
-                targetAdvantage = ((presentReward.detach() + discountedFutureReward.detach()) - stateValuePrediction.detach())
-                targetAdvantageImage = torch.ones_like(advantageImage[self.actionsSorted.index(actionType)]) * targetAdvantage * comboPixelMask
+                        # We basically do the same with the advantage to create the target advantage image, and again its multiplied by the same
+                        # pixel mask. The difference with advantage is that the advantage is updated to be the difference between the predicted reward
+                        # value for the action we took v.s. the average reward value no matter what action we take. E.g. its a measure of how much
+                        # better a particular action is versus the average action.
+                        targetAdvantage = ((presentReward.detach() + discountedFutureReward.detach()) - stateValuePrediction.detach())
+                        targetAdvantageImage = torch.ones_like(advantageImage[self.actionsSorted.index(actionType)]) * targetAdvantage * comboPixelMask
 
-                # Now to train the "actor" in the actor critic model, we have to do something different. Instead of
-                # training the actor to predict how much better / worse particular actions are versus other actions,
-                # now we just straight up train the actor to predict what is the best action it should take when its
-                # in a given state. Therefore, we use the advantage calculations to determine what is the best action
-                # to take. We then construct a target image which basically has a square of 1's on the location the
-                # AI should click and 0's everywhere else.
-                bestActionX, bestActionY, bestActionType = self.getActionInfoTensorsFromRewardMap(advantageImage.detach())
-                actionProbabilityTargetImage = torch.zeros_like(actionProbabilityImage)
-                bestLeft = torch.max(bestActionX - actionProbRewardSquareEdgeHalfSize, zeroTensor)
-                bestRight = torch.min(bestActionX + actionProbRewardSquareEdgeHalfSize, widthTensor - 1)
-                bestTop = torch.max(bestActionY - actionProbRewardSquareEdgeHalfSize, zeroTensor)
-                bestBottom = torch.min(bestActionY + actionProbRewardSquareEdgeHalfSize, heightTensor - 1)
-                actionProbabilityTargetImage[bestActionType, bestTop:bestBottom, bestLeft:bestRight] = 1
-                actionProbabilityTargetImage[bestActionType] *= pixelActionMap[bestActionType]
-                countActionProbabilityTargetPixels = actionProbabilityTargetImage[bestActionType].sum()
-                # The max here is just for safety, if any weird bugs happen we don't want any NaN values or division by zero
-                actionProbabilityTargetImage[bestActionType] /= torch.max(oneTensorFloat, countActionProbabilityTargetPixels)
+                        # Now to train the "actor" in the actor critic model, we have to do something different. Instead of
+                        # training the actor to predict how much better / worse particular actions are versus other actions,
+                        # now we just straight up train the actor to predict what is the best action it should take when its
+                        # in a given state. Therefore, we use the advantage calculations to determine what is the best action
+                        # to take. We then construct a target image which basically has a square of 1's on the location the
+                        # AI should click and 0's everywhere else.
+                        bestActionX, bestActionY, bestActionType = self.getActionInfoTensorsFromRewardMap(advantageImage.detach())
+                        actionProbabilityTargetImage = torch.zeros_like(actionProbabilityImage)
+                        bestLeft = torch.max(bestActionX - actionProbRewardSquareEdgeHalfSize, zeroTensor)
+                        bestRight = torch.min(bestActionX + actionProbRewardSquareEdgeHalfSize, widthTensor - 1)
+                        bestTop = torch.max(bestActionY - actionProbRewardSquareEdgeHalfSize, zeroTensor)
+                        bestBottom = torch.min(bestActionY + actionProbRewardSquareEdgeHalfSize, heightTensor - 1)
+                        actionProbabilityTargetImage[bestActionType, bestTop:bestBottom, bestLeft:bestRight] = 1
+                        actionProbabilityTargetImage[bestActionType] *= pixelActionMap[bestActionType]
+                        countActionProbabilityTargetPixels = actionProbabilityTargetImage[bestActionType].sum()
+                        # The max here is just for safety, if any weird bugs happen we don't want any NaN values or division by zero
+                        actionProbabilityTargetImage[bestActionType] /= torch.max(oneTensorFloat, countActionProbabilityTargetPixels)
 
-                # The max here is just for safety, if any weird bugs happen we don't want any NaN values or division by zero
-                countPixelMask = torch.max(oneTensorLong, comboPixelMask.sum())
+                        # The max here is just for safety, if any weird bugs happen we don't want any NaN values or division by zero
+                        countPixelMask = torch.max(oneTensorLong, comboPixelMask.sum())
 
-                # Now here we create tensors which represent the different between the predictions of the neural network and
-                # our target values that were all calculated above.
-                presentRewardLossMap = (targetPresentRewards - presentRewardsMasked) * comboPixelMask
-                discountedFutureRewardLossMap = (targetDiscountedFutureRewards - discountedFutureRewardsMasked) * comboPixelMask
-                advantageLossMap = (targetAdvantageImage - advantageMasked) * comboPixelMask
-                actionProbabilityLossMap = (actionProbabilityTargetImage - actionProbabilityImage) * pixelActionMap
+                        # Now here we create tensors which represent the different between the predictions of the neural network and
+                        # our target values that were all calculated above.
+                        presentRewardLossMap = (targetPresentRewards - presentRewardsMasked) * comboPixelMask
+                        discountedFutureRewardLossMap = (targetDiscountedFutureRewards - discountedFutureRewardsMasked) * comboPixelMask
+                        advantageLossMap = (targetAdvantageImage - advantageMasked) * comboPixelMask
+                        actionProbabilityLossMap = (actionProbabilityTargetImage - actionProbabilityImage) * pixelActionMap
 
-                # Here we compute an average loss value for all pixels in the reward pixel mask.
-                presentRewardLoss = torch.true_divide(presentRewardLossMap.pow(2).sum(), countPixelMask) * isNextStateValid
-                discountedFutureRewardLoss = torch.true_divide(discountedFutureRewardLossMap.pow(2).sum(), countPixelMask) * isNextStateValid
-                advantageLoss = torch.true_divide(advantageLossMap.pow(2).sum(), countPixelMask)
-                actionProbabilityLoss = actionProbabilityLossMap.abs().sum()
-                # Additionally, we calculate a loss for the 'state' value, which is the average value the neural network
-                # is expected to produce no matter what action it takes. We calculate a loss but the assumption is that
-                # the network could never actually calculate this perfectly accurately. It just serves as a barometer
-                # that allows us to calculate the advantage values.
-                stateValueLoss = (stateValuePrediction - (presentReward.detach() + discountedFutureReward.detach())).pow(2)
+                        # Here we compute an average loss value for all pixels in the reward pixel mask.
+                        presentRewardLoss = torch.true_divide(presentRewardLossMap.pow(2).sum(), countPixelMask) * isNextStateValid
+                        discountedFutureRewardLoss = torch.true_divide(discountedFutureRewardLossMap.pow(2).sum(), countPixelMask) * isNextStateValid
+                        advantageLoss = torch.true_divide(advantageLossMap.pow(2).sum(), countPixelMask)
+                        actionProbabilityLoss = actionProbabilityLossMap.abs().sum()
+                        # Additionally, we calculate a loss for the 'state' value, which is the average value the neural network
+                        # is expected to produce no matter what action it takes. We calculate a loss but the assumption is that
+                        # the network could never actually calculate this perfectly accurately. It just serves as a barometer
+                        # that allows us to calculate the advantage values.
+                        stateValueLoss = (stateValuePrediction - (presentReward.detach() + discountedFutureReward.detach())).pow(2)
 
-                # Now we multiply each of the various losses by their weights. These weights are just
-                # used to balance the losses against each other, since they have varying absolute magnitudes and
-                # varying importance
-                presentRewardLoss = presentRewardLoss * presentRewardLossWeightFloat
-                discountedFutureRewardLoss = discountedFutureRewardLoss * discountedFutureRewardLossWeightFloat
-                advantageLoss = advantageLoss * advantageLossWeightFloat
-                actionProbabilityLoss = actionProbabilityLoss * actionProbabilityLossWeightFloat
-                stateValueLoss = stateValueLoss * stateValueLossWeightFloat
+                        # Now we multiply each of the various losses by their weights. These weights are just
+                        # used to balance the losses against each other, since they have varying absolute magnitudes and
+                        # varying importance
+                        presentRewardLoss = presentRewardLoss * presentRewardLossWeightFloat
+                        discountedFutureRewardLoss = discountedFutureRewardLoss * discountedFutureRewardLossWeightFloat
+                        advantageLoss = advantageLoss * advantageLossWeightFloat
+                        actionProbabilityLoss = actionProbabilityLoss * actionProbabilityLossWeightFloat
+                        stateValueLoss = stateValueLoss * stateValueLossWeightFloat
 
-                # Now we add a scalar tensor for each of the loss values into the lists
-                presentRewardLosses.append(presentRewardLoss.unsqueeze(0))
-                discountedFutureRewardLosses.append(discountedFutureRewardLoss.unsqueeze(0))
-                advantageLosses.append(advantageLoss.unsqueeze(0))
-                actionProbabilityLosses.append(actionProbabilityLoss.unsqueeze(0))
-                stateValueLosses.append(stateValueLoss)
-                totalSampleLosses.append(presentRewardLoss + discountedFutureRewardLoss + advantageLoss + actionProbabilityLoss)
+                        # Now we add a scalar tensor for each of the loss values into the lists
+                        presentRewardLosses.append(presentRewardLoss.unsqueeze(0))
+                        discountedFutureRewardLosses.append(discountedFutureRewardLoss.unsqueeze(0))
+                        advantageLosses.append(advantageLoss.unsqueeze(0))
+                        actionProbabilityLosses.append(actionProbabilityLoss.unsqueeze(0))
+                        stateValueLosses.append(stateValueLoss)
+                        totalSampleLosses.append(presentRewardLoss + discountedFutureRewardLoss + advantageLoss + actionProbabilityLoss)
 
-            extraLosses = []
+                    extraLosses = []
 
-            # If the trace prediction loss is enabled, then we calculate it and add it to the list of extra losses.
-            # These extra or secondary losses are just here to help stabilize / regularize the neural network and
-            # help it to train faster.
-            if self.config['enable_trace_prediction_loss']:
-                tracePredictionLoss = (currentStateOutputs['predictedTraces'] - currentStateOutputs['decayingFutureSymbolEmbedding']).pow(2).mean() * executionTraceLossWeightFloat
-                extraLosses.append(tracePredictionLoss.unsqueeze(0))
-            else:
-                tracePredictionLoss = zeroTensor
+                    # If the trace prediction loss is enabled, then we calculate it and add it to the list of extra losses.
+                    # These extra or secondary losses are just here to help stabilize / regularize the neural network and
+                    # help it to train faster.
+                    if self.config['enable_trace_prediction_loss']:
+                        tracePredictionLoss = (currentStateOutputs['predictedTraces'] - currentStateOutputs['decayingFutureSymbolEmbedding']).pow(2).mean() * executionTraceLossWeightFloat
+                        extraLosses.append(tracePredictionLoss.unsqueeze(0))
+                    else:
+                        tracePredictionLoss = zeroTensor
 
-            # If the execution feature prediction is enabled, then we calculate the loss for it and add it to the list of extra losses.
-            if self.config['enable_execution_feature_prediction_loss']:
-                predictedExecutionFeaturesLoss = (currentStateOutputs['predictedExecutionFeatures'] - executionFeaturesTensor).abs().mean() * executionFeatureLossWeightFloat
-                extraLosses.append(predictedExecutionFeaturesLoss.unsqueeze(0))
-            else:
-                predictedExecutionFeaturesLoss = zeroTensor
+                    # If the execution feature prediction is enabled, then we calculate the loss for it and add it to the list of extra losses.
+                    if self.config['enable_execution_feature_prediction_loss']:
+                        predictedExecutionFeaturesLoss = (currentStateOutputs['predictedExecutionFeatures'] - executionFeaturesTensor).abs().mean() * executionFeatureLossWeightFloat
+                        extraLosses.append(predictedExecutionFeaturesLoss.unsqueeze(0))
+                    else:
+                        predictedExecutionFeaturesLoss = zeroTensor
 
-            # If the cursor prediction is enabled, then we calculate the loss for it and add it to the list of extra losses.
-            if self.config['enable_cursor_prediction_loss']:
-                predictedCursorLoss = (currentStateOutputs['predictedCursor'] - cursorsTensor).abs().mean() * cursorPredictionLossWeightFloat
-                extraLosses.append(predictedCursorLoss.unsqueeze(0))
-            else:
-                predictedCursorLoss = zeroTensor
+                    # If the cursor prediction is enabled, then we calculate the loss for it and add it to the list of extra losses.
+                    if self.config['enable_cursor_prediction_loss']:
+                        predictedCursorLoss = (currentStateOutputs['predictedCursor'] - cursorsTensor).abs().mean() * cursorPredictionLossWeightFloat
+                        extraLosses.append(predictedCursorLoss.unsqueeze(0))
+                    else:
+                        predictedCursorLoss = zeroTensor
 
-            # Here we calculate the mean value for all of the losses across all of the various samples
-            presentRewardLoss = torch.mean(torch.cat(presentRewardLosses))
-            discountedFutureRewardLoss = torch.mean(torch.cat(discountedFutureRewardLosses))
-            stateValueLoss = torch.mean(torch.cat(stateValueLosses))
-            advantageLoss = torch.mean(torch.cat(advantageLosses))
-            actionProbabilityLoss = torch.mean(torch.cat(actionProbabilityLosses))
+                    # Here we calculate the mean value for all of the losses across all of the various samples
+                    presentRewardLoss = torch.mean(torch.cat(presentRewardLosses))
+                    discountedFutureRewardLoss = torch.mean(torch.cat(discountedFutureRewardLosses))
+                    stateValueLoss = torch.mean(torch.cat(stateValueLosses))
+                    advantageLoss = torch.mean(torch.cat(advantageLosses))
+                    actionProbabilityLoss = torch.mean(torch.cat(actionProbabilityLosses))
 
-            # This is the final, total loss for all different loss functions across all the different samples
+                    # This is the final, total loss for all different loss functions across all the different samples
 
-            totalRewardLoss = presentRewardLoss
-            if trainingStepIndex >= 1 * self.gpuWorldSize:
-                totalRewardLoss = totalRewardLoss + discountedFutureRewardLoss
-            else:
-                totalRewardLoss = totalRewardLoss + discountedFutureRewardLoss * 0
+                    totalRewardLoss = presentRewardLoss
+                    if trainingStepIndex >= 1 * self.gpuWorldSize:
+                        totalRewardLoss = totalRewardLoss + discountedFutureRewardLoss
+                    else:
+                        totalRewardLoss = totalRewardLoss + discountedFutureRewardLoss * 0
 
-            if trainingStepIndex >= 3 * self.gpuWorldSize:
-                totalRewardLoss = totalRewardLoss + stateValueLoss
-            else:
-                totalRewardLoss = totalRewardLoss + stateValueLoss * 0
+                    if trainingStepIndex >= 3 * self.gpuWorldSize:
+                        totalRewardLoss = totalRewardLoss + stateValueLoss
+                    else:
+                        totalRewardLoss = totalRewardLoss + stateValueLoss * 0
 
-            if trainingStepIndex >= 4 * self.gpuWorldSize:
-                totalRewardLoss = totalRewardLoss + advantageLoss
-            else:
-                totalRewardLoss = totalRewardLoss + advantageLoss * 0
+                    if trainingStepIndex >= 4 * self.gpuWorldSize:
+                        totalRewardLoss = totalRewardLoss + advantageLoss
+                    else:
+                        totalRewardLoss = totalRewardLoss + advantageLoss * 0
 
-            if trainingStepIndex >= 5 * self.gpuWorldSize:
-                totalRewardLoss = totalRewardLoss + actionProbabilityLoss
-            else:
-                totalRewardLoss = totalRewardLoss + actionProbabilityLoss * 0
+                    if trainingStepIndex >= 5 * self.gpuWorldSize:
+                        totalRewardLoss = totalRewardLoss + actionProbabilityLoss
+                    else:
+                        totalRewardLoss = totalRewardLoss + actionProbabilityLoss * 0
 
-            # totalRewardLoss = presentRewardLoss + discountedFutureRewardLoss + stateValueLoss + advantageLoss + actionProbabilityLoss
+                    # totalRewardLoss = presentRewardLoss + discountedFutureRewardLoss + stateValueLoss + advantageLoss + actionProbabilityLoss
 
-            # We do a check here because if there are no extra loss functions, then
-            # torch will give us an error saying we are concatenating and summing an
-            # empty tensor, which is true.
-            if len(extraLosses) > 0:
-                totalLoss = totalRewardLoss + torch.sum(torch.cat(extraLosses))
-            else:
-                totalLoss = totalRewardLoss
+                    # We do a check here because if there are no extra loss functions, then
+                    # torch will give us an error saying we are concatenating and summing an
+                    # empty tensor, which is true.
+                    if len(extraLosses) > 0:
+                        totalLoss = totalRewardLoss + torch.sum(torch.cat(extraLosses))
+                    else:
+                        totalLoss = totalRewardLoss
 
-            totalRebalancedLoss = 0
+                    totalRebalancedLoss = 0
 
-            # Do the backward pass. This will accumulate gradient values for all of the
-            # parameters in the neural network
-            totalLoss.backward()
+                with profiler.record_function("backward_pass"):
+                    # Do the backward pass. This will accumulate gradient values for all of the
+                    # parameters in the neural network
+                    totalLoss.backward()
 
-            # Add the total loss for this batch to the list of batch losses.
-            totalLosses.append(totalLoss)
+                    # Add the total loss for this batch to the list of batch losses.
+                    totalLosses.append(totalLoss)
 
-            batchResultTensors.append((
-                presentRewardLoss,
-                discountedFutureRewardLoss,
-                stateValueLoss,
-                advantageLoss,
-                actionProbabilityLoss,
-                tracePredictionLoss,
-                predictedExecutionFeaturesLoss,
-                predictedCursorLoss,
-                totalRewardLoss,
-                totalLoss,
-                totalRebalancedLoss,
-                totalSampleLosses,
-                batch
-            ))
+                    batchResultTensors.append((
+                        presentRewardLoss,
+                        discountedFutureRewardLoss,
+                        stateValueLoss,
+                        advantageLoss,
+                        actionProbabilityLoss,
+                        tracePredictionLoss,
+                        predictedExecutionFeaturesLoss,
+                        predictedCursorLoss,
+                        totalRewardLoss,
+                        totalLoss,
+                        totalRebalancedLoss,
+                        totalSampleLosses,
+                        batch
+                    ))
 
         # Put a check in so that we don't do the optimizer step if there are NaNs in the loss
         if numpy.count_nonzero(numpy.isnan([totalLoss.data.item() for totalLoss in totalLosses])) == 0:
             # Now we use the optimizer to update all of the parameters of the neural network.
             # The optimizer will update based on all of the accumulated gradients from the loops above.
-            self.optimizer.step()
+            with profiler.record_function("optimizer_step"):
+                self.optimizer.step()
         else:
             message = ""
 

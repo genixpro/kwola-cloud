@@ -89,16 +89,19 @@ def main():
         start = datetime.now()
 
         with profiler.profile(with_stack=True, record_shapes=False, use_cuda=True) as prof:
-            for batchList in batches:
-                agent.learnFromBatches(batchList, trainingStepIndex=100)
+            for batchListIndex, batchList in enumerate(batches):
+                with profiler.record_function(f"batch_{batchListIndex}"):
+                    agent.learnFromBatches(batchList, trainingStepIndex=100)
 
-        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=100))
+        print(prof.key_averages(group_by_stack_n=0).table(sort_by="cuda_time_total", row_limit=100, top_level_events_only=True))
+
+        prof.export_chrome_trace("trace.json")
 
         end = datetime.now()
 
         timePerSample = (end - start).total_seconds() / (len(batches) * config['neural_network_batch_size'] * config['neural_network_batches_per_iteration'])
 
-        print(f"Average time per sample: f{timePerSample:.4}")
+        print(f"Average time per sample: f{timePerSample:.6}")
 
         return True
     except Exception:
