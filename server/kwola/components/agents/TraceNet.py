@@ -274,34 +274,28 @@ class TraceNet(torch.nn.Module):
             coverageSymbolEmbeddings = self.coverageSymbolEmbedding(data['coverageSymbolIndexes'], data['coverageSymbolOffsets'], per_sample_weights=data['coverageSymbolWeights'])
             coverageSymbolEmbeddings = torch.nn.functional.normalize(coverageSymbolEmbeddings, dim=1)
 
-            coverageAttentionKeys = self.coverageAttentionKeyEmbedding(data['coverageSymbolIndexes'])
-            coverageAttentionValues = self.coverageAttentionValueEmbedding(data['coverageSymbolIndexes'])
+            coverageAttentionKeys = self.coverageAttentionKeyEmbedding(data['coverageSymbolsSet'])
+            coverageAttentionValues = self.coverageAttentionValueEmbedding(data['coverageSymbolsSet'])
 
             recentActionFeatures = self.recentActionVectorProjection(data['recentActionsVector'])
 
         with profiler.record_function("attention"):
-            symbolEmbeddingFeaturesBySample = []
-            for sampleIndex, sampleSymbolOffset, in zip(range(batchSize), data['coverageSymbolOffsets']):
-                if sampleIndex == (batchSize - 1):
-                    coverageAttentionKeyEmbeddings = coverageAttentionKeys[sampleSymbolOffset:].reshape([-1, 1, self.config['symbol_embedding_size']])
-                    coverageAttentionValueEmbeddings = coverageAttentionValues[sampleSymbolOffset:].reshape([-1, 1, self.config['symbol_embedding_size']])
-                else:
-                    nextOffset = data['coverageSymbolOffsets'][sampleIndex + 1]
-                    coverageAttentionKeyEmbeddings = coverageAttentionKeys[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
-                    coverageAttentionValueEmbeddings = coverageAttentionValues[sampleSymbolOffset:nextOffset].reshape([-1, 1, self.config['symbol_embedding_size']])
+            pixelFeatureTransposed = pixelFeatureMap[:, :, :, :].transpose(1, 3).transpose(0, 2).reshape([batchSize * featureMapHeight * featureMapWidth, self.config['neural_network_pixel_features']])
 
-                samplePixelFeatures = pixelFeatureMap[sampleIndex, :, :, :].transpose(0, 2).reshape([featureMapHeight * featureMapWidth, self.config['neural_network_pixel_features']])
-                queries = self.queryProjection(samplePixelFeatures)
-                queries = queries.reshape([-1, 1, self.config['symbol_embedding_size']])
+            queries = self.queryProjection(pixelFeatureTransposed)
+            queries = queries.reshape([-1, batchSize, self.config['symbol_embedding_size']])
 
-                attentionResults, attentionResultWeights = self.coverageSymbolAttentionLayer(queries, coverageAttentionKeyEmbeddings, coverageAttentionValueEmbeddings)
+            coverageAttentionKeys = coverageAttentionKeys.reshape([-1, 1, self.config['symbol_embedding_size']]).repeat([1, batchSize, 1])
+            coverageAttentionValues = coverageAttentionValues.reshape([-1, 1, self.config['symbol_embedding_size']]).repeat([1, batchSize, 1])
 
-                symbolEmbeddingFeatures = attentionResults.reshape([1, featureMapWidth, featureMapHeight, self.config['symbol_embedding_size']])
-                symbolEmbeddingFeatures = symbolEmbeddingFeatures.transpose(1, 3)
+            attentionResults, attentionResultWeights = self.coverageSymbolAttentionLayer(queries,
+                                                                                         coverageAttentionKeys,
+                                                                                         coverageAttentionValues,
+                                                                                         data['coverageSymbolsKeyMask']
+                                                                                         )
 
-                symbolEmbeddingFeaturesBySample.append(symbolEmbeddingFeatures)
-
-            symbolEmbeddingFeatures = torch.cat(symbolEmbeddingFeaturesBySample, dim=0)
+            symbolEmbeddingFeatures = attentionResults.reshape([featureMapHeight, featureMapWidth, batchSize, self.config['symbol_embedding_size']])
+            symbolEmbeddingFeatures = symbolEmbeddingFeatures.transpose(0, 2).transpose(1, 3)
 
         with profiler.record_function("feature_amalgamation"):
             # Concatenate the step number with the rest of the additional features

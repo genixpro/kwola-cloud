@@ -987,12 +987,15 @@ class DeepLearningAgent:
             recentActionsImageBatchArray = numpy.array(recentActionsImageBatch, dtype=numpy.float32)
             recentActionsVectorBatchArray = numpy.array(recentActionsVectorBatch, dtype=numpy.float32)
             stepNumberArray = numpy.array([stepNumber] * len(imageBatch), dtype=numpy.float32)
+            coverageSymbolSet, coverageKeyMask = DeepLearningAgent.computeCoverageSymbolsMergedList(coverageSymbolListBatchArray, coverageSymbolListOffsetsArray)
 
             # Create torch tensors out of the numpy arrays, effectively preparing the data for input into the neural network.
             imageTensor = self.variableWrapperFunc(torch.FloatTensor, imageBatchArray)
             coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, coverageSymbolListBatchArray)
             coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, coverageSymbolListOffsetsArray)
             coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, coverageSymbolWeightBatchArray)
+            coverageSymbolsSetTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(coverageSymbolSet))
+            coverageSymbolsKeyMaskTensor = self.variableWrapperFunc(torch.BoolTensor, numpy.array(coverageKeyMask))
 
             recentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, recentSymbolListBatchArray)
             recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, recentSymbolListOffsetsArray)
@@ -1023,6 +1026,8 @@ class DeepLearningAgent:
                     "coverageSymbolIndexes": coverageSymbolIndexesTensor,
                     "coverageSymbolOffsets": coverageSymbolListOffsetsTensor,
                     "coverageSymbolWeights": coverageSymbolWeightsTensor,
+                    "coverageSymbolsSet": coverageSymbolsSetTensor,
+                    "coverageSymbolsKeyMask": coverageSymbolsKeyMaskTensor,
                     "recentSymbolIndexes": recentSymbolIndexesTensor,
                     "recentSymbolOffsets": recentSymbolListOffsetsTensor,
                     "recentSymbolWeights": recentSymbolWeightsTensor,
@@ -1863,6 +1868,11 @@ class DeepLearningAgent:
             coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(coverageSymbolListBatch))
             coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(coverageSymbolListOffsets))
             coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(coverageSymbolWeightBatch, dtype=numpy.float32))
+
+            coverageSymbolSet, coverageKeyMask = DeepLearningAgent.computeCoverageSymbolsMergedList(numpy.array(coverageSymbolListBatch), numpy.array(coverageSymbolListOffsets))
+            coverageSymbolsSetTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(coverageSymbolSet))
+            coverageSymbolsKeyMaskTensor = self.variableWrapperFunc(torch.BoolTensor, numpy.array(coverageKeyMask))
+
             recentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(recentSymbolListBatch))
             recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(recentSymbolListOffsets))
             recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(recentSymbolWeightBatch, dtype=numpy.float32))
@@ -1875,6 +1885,8 @@ class DeepLearningAgent:
                                     "coverageSymbolIndexes": coverageSymbolIndexesTensor,
                                     "coverageSymbolOffsets": coverageSymbolListOffsetsTensor,
                                     "coverageSymbolWeights": coverageSymbolWeightsTensor,
+                                    "coverageSymbolsSet": coverageSymbolsSetTensor,
+                                    "coverageSymbolsKeyMask": coverageSymbolsKeyMaskTensor,
                                     "recentSymbolIndexes": recentSymbolIndexesTensor,
                                     "recentSymbolOffsets": recentSymbolListOffsetsTensor,
                                     "recentSymbolWeights": recentSymbolWeightsTensor,
@@ -2725,6 +2737,32 @@ class DeepLearningAgent:
 
         return vector
 
+    @staticmethod
+    def computeCoverageSymbolsMergedList(coverageSymbolIndexes, coverageSymbolOffsets):
+        mergedSymbolSet = sorted([0] + list(set(coverageSymbolIndexes)))
+
+        coverageSymbolKeyMasks = []
+
+        for offset, nextOffset in zip(coverageSymbolOffsets, list(coverageSymbolOffsets[1:]) + [None]):
+            if nextOffset is not None:
+                recentSymbols = set(coverageSymbolIndexes[offset:nextOffset])
+            else:
+                recentSymbols = set(coverageSymbolIndexes[offset:])
+
+            keyMask = []
+            for symbol in mergedSymbolSet:
+                if symbol in recentSymbols:
+                    keyMask.append(False)
+                else:
+                    keyMask.append(True)
+
+            if all(keyMask):
+                keyMask[mergedSymbolSet.index(0)] = False
+
+            coverageSymbolKeyMasks.append(keyMask)
+
+        return numpy.array(mergedSymbolSet, dtype=numpy.int32), numpy.array(coverageSymbolKeyMasks, dtype=numpy.bool)
+
 
     def prepareBatchesForExecutionSession(self, executionSession):
         """
@@ -2889,7 +2927,7 @@ class DeepLearningAgent:
 
         symbolCount = 100
 
-        return {
+        batch = {
                 "traceIds": ["test"] * self.config['neural_network_batch_size'],
                 "processedImages": numpy.zeros([self.config['neural_network_batch_size'], 1,  height, width], dtype=numpy.float16),
                 "coverageSymbolIndexes": numpy.array(list(range(symbolCount * self.config['neural_network_batch_size'])), dtype=numpy.int32),
@@ -2928,6 +2966,16 @@ class DeepLearningAgent:
                 "executionFeatures": numpy.zeros([self.config['neural_network_batch_size'], 12], dtype=numpy.uint8),
                 "cursors": numpy.zeros([self.config['neural_network_batch_size'], len(self.cursors)], dtype=numpy.uint8)
             }
+
+        symbolSet, keyMask = DeepLearningAgent.computeCoverageSymbolsMergedList(batch['coverageSymbolIndexes'], batch['coverageSymbolOffsets'])
+        batch['coverageSymbolsSet'] = symbolSet
+        batch['coverageSymbolsKeyMask'] = keyMask
+
+        symbolSet, keyMask = DeepLearningAgent.computeCoverageSymbolsMergedList(batch['nextCoverageSymbolIndexes'], batch['nextCoverageSymbolOffsets'])
+        batch['nextCoverageSymbolsSet'] = symbolSet
+        batch['nextCoverageSymbolsKeyMask'] = keyMask
+
+        return batch
 
 
     def learnFromBatches(self, batches, trainingStepIndex):
@@ -3007,6 +3055,8 @@ class DeepLearningAgent:
                     coverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolIndexes']))
                     coverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolOffsets']))
                     coverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['coverageSymbolWeights']))
+                    coverageSymbolsSetTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['coverageSymbolsSet']))
+                    coverageSymbolsKeyMaskTensor = self.variableWrapperFunc(torch.BoolTensor, numpy.array(batch['coverageSymbolsKeyMask']))
                     recentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['recentSymbolIndexes']))
                     recentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['recentSymbolOffsets']))
                     recentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['recentSymbolWeights']))
@@ -3016,6 +3066,8 @@ class DeepLearningAgent:
                     nextCoverageSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextCoverageSymbolIndexes']))
                     nextCoverageSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextCoverageSymbolOffsets']))
                     nextCoverageSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextCoverageSymbolWeights']))
+                    nextCoverageSymbolsSetTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextCoverageSymbolsSet']))
+                    nextCoverageSymbolsKeyMaskTensor = self.variableWrapperFunc(torch.BoolTensor, numpy.array(batch['nextCoverageSymbolsKeyMask']))
                     nextRecentSymbolIndexesTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextRecentSymbolIndexes']))
                     nextRecentSymbolListOffsetsTensor = self.variableWrapperFunc(torch.LongTensor, numpy.array(batch['nextRecentSymbolOffsets']))
                     nextRecentSymbolWeightsTensor = self.variableWrapperFunc(torch.FloatTensor, numpy.array(batch['nextRecentSymbolWeights']))
@@ -3060,6 +3112,8 @@ class DeepLearningAgent:
                         "coverageSymbolIndexes": coverageSymbolIndexesTensor,
                         "coverageSymbolOffsets": coverageSymbolListOffsetsTensor,
                         "coverageSymbolWeights": coverageSymbolWeightsTensor,
+                        "coverageSymbolsSet": coverageSymbolsSetTensor,
+                        "coverageSymbolsKeyMask": coverageSymbolsKeyMaskTensor,
                         "recentSymbolIndexes": recentSymbolIndexesTensor,
                         "recentSymbolOffsets": recentSymbolListOffsetsTensor,
                         "recentSymbolWeights": recentSymbolWeightsTensor,
@@ -3101,6 +3155,8 @@ class DeepLearningAgent:
                             "coverageSymbolIndexes": nextCoverageSymbolIndexesTensor,
                             "coverageSymbolOffsets": nextCoverageSymbolListOffsetsTensor,
                             "coverageSymbolWeights": nextCoverageSymbolWeightsTensor,
+                            "coverageSymbolsSet": nextCoverageSymbolsSetTensor,
+                            "coverageSymbolsKeyMask": nextCoverageSymbolsKeyMaskTensor,
                             "recentSymbolIndexes": nextRecentSymbolIndexesTensor,
                             "recentSymbolOffsets": nextRecentSymbolListOffsetsTensor,
                             "recentSymbolWeights": nextRecentSymbolWeightsTensor,

@@ -659,6 +659,14 @@ class TrainingManager:
                     else:
                         batch[key] = [sample[key][0] for sample in samples]
 
+            symbolSet, keyMask = DeepLearningAgent.computeCoverageSymbolsMergedList(batch['coverageSymbolIndexes'], batch['coverageSymbolOffsets'])
+            batch['coverageSymbolsSet'] = symbolSet
+            batch['coverageSymbolsKeyMask'] = keyMask
+
+            symbolSet, keyMask = DeepLearningAgent.computeCoverageSymbolsMergedList(batch['nextCoverageSymbolIndexes'], batch['nextCoverageSymbolOffsets'])
+            batch['nextCoverageSymbolsSet'] = symbolSet
+            batch['nextCoverageSymbolsKeyMask'] = keyMask
+
             cacheHitRate = numpy.mean(cacheHits)
 
             resultFileDescriptor, resultFileName = tempfile.mkstemp()
