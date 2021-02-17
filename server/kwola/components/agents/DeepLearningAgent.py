@@ -101,6 +101,8 @@ class DeepLearningAgent:
 
         # Fetch the folder that we will store the model parameters in
         self.modelFileName = "deep_learning_model"
+        self.optimizerStateFileName = "optimizer_state"
+        self.enableTraining = False
 
         self.fakeStringGenerator = Faker()
 
@@ -434,6 +436,23 @@ class DeepLearningAgent:
 
             getLogger().info("I have successfully loaded the model from disk. ")
 
+        if self.enableTraining:
+            optimizerStateFileData = self.config.loadKwolaFileData("models", self.optimizerStateFileName, printErrorOnFailure=False)
+            if optimizerStateFileData is None:
+                getLogger().warning("I was unable to load the optimizer state from disk. Starting with a fresh optimizer")
+            else:
+                buffer = io.BytesIO(optimizerStateFileData)
+
+                # Depending on whether GPU is turned on, we try load the state dict
+                # directly into GPU / CUDA memory.
+                device = self.getTorchDevices()[0]
+                stateDict = torch.load(buffer, map_location=device)
+
+                self.optimizer.load_state_dict(stateDict)
+
+                getLogger().info("I have successfully loaded the optimizes state from disk. ")
+
+
     @autoretry()
     def save(self, saveName=""):
         """
@@ -451,6 +470,11 @@ class DeepLearningAgent:
         torch.save(self.model.state_dict(), buffer)
 
         self.config.saveKwolaFileData("models", self.modelFileName + saveName, buffer.getvalue())
+
+        if self.enableTraining:
+            buffer = io.BytesIO()
+            torch.save(self.optimizer.state_dict(), buffer)
+            self.config.saveKwolaFileData("models", self.optimizerStateFileName, buffer.getvalue())
 
     def loadSymbolMap(self):
         # We also need to load the symbol map - this is the mapping between symbol strings
@@ -488,6 +512,8 @@ class DeepLearningAgent:
                                    costs more RAM, so you should avoid it if you can.
 
         """
+        self.enableTraining = enableTraining
+
         devices = self.getTorchDevices()
         outputDevice = devices[0]
 
@@ -2943,7 +2969,7 @@ class DeepLearningAgent:
         # multiple backward passes before we use the optimizer to update the network parameters.
         # Therefore we zero it beforehand so we can accumulate the gradients from multiple
         # batches.
-        self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
 
         actionProbRewardSquareEdgeHalfSize = self.variableWrapperFunc(torch.IntTensor, numpy.array([int(self.config['training_action_prob_reward_square_size'] / 2)]))
         zeroTensor = self.variableWrapperFunc(torch.IntTensor, numpy.array([0]))
