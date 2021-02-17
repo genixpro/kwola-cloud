@@ -450,7 +450,7 @@ class DeepLearningAgent:
 
                 self.optimizer.load_state_dict(stateDict)
 
-                getLogger().info("I have successfully loaded the optimizes state from disk. ")
+                getLogger().info("I have successfully loaded the optimizer state from disk. ")
 
 
     @autoretry()
@@ -3120,15 +3120,6 @@ class DeepLearningAgent:
                         # Again create some convenient local variables for the outputs from the target network.
                         nextStatePresentRewardPredictions = nextStateOutputs['presentRewards']
                         nextStateDiscountedFutureRewardPredictions = nextStateOutputs['discountFutureRewards']
-
-                # Here we create a bunch of lists to store the loss tensors for each of the samples within the batch.
-                # We process each sample separately just because it makes the math more straightforward
-                totalSampleLosses = []
-                stateValueLosses = []
-                advantageLosses = []
-                actionProbabilityLosses = []
-                presentRewardLosses = []
-                discountedFutureRewardLosses = []
                 
                 # Here we just zip together all of the various data for each sample in this batch, so that we can iterate
                 # over all of it at the same time and process each sample in the batch separately
@@ -3139,6 +3130,12 @@ class DeepLearningAgent:
                                    pixelActionMaps, actionProbabilityPredictions, batch['processedImages'])
 
                 with profiler.record_function("post_processing"):
+                    comboPixelMasks = []
+                    presentRewardsMasks = []
+                    discountedFutureRewardsMasks = []
+                    advantageMasks = []
+                    actionProbabilityTargetImage = torch.zeros_like(actionProbabilityPredictions)
+
                     # Here we are just iterating over all of the relevant data and tensors for each sample in the batch
                     for sampleIndex, presentRewardImage, discountedFutureRewardImage, \
                         nextStatePresentRewardImage, nextStateDiscountedFutureRewardImage, \
@@ -3152,99 +3149,111 @@ class DeepLearningAgent:
                             # took in the trace. We then multiply by the reward pixel mask. This gives us a reward image that only
                             # has values in the area covering the HTML element the algorithm actually touched with its action
                             # at this step.
-                            presentRewardsMasked = presentRewardImage[self.actionsSorted.index(actionType)] * comboPixelMask
-                            discountedFutureRewardsMasked = discountedFutureRewardImage[self.actionsSorted.index(actionType)] * comboPixelMask
-                            advantageMasked = advantageImage[self.actionsSorted.index(actionType)] * comboPixelMask
+                            presentRewardsMasked = presentRewardImage[self.actionsSorted.index(actionType)]
+                            discountedFutureRewardsMasked = discountedFutureRewardImage[self.actionsSorted.index(actionType)]
+                            advantageMasked = advantageImage[self.actionsSorted.index(actionType)]
 
-                        with profiler.record_function("next_state_discount"):
-                            # Here, we compute the best possible action we can take in the subsequent step from this one, and what is
-                            # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
-                            # the action we took in this sequence, could lead to in the future.
-                            if trainingStepIndex < 2 * self.gpuWorldSize:
-                                nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage)
-                            else:
-                                nextStateBestPossibleTotalReward = torch.max(nextStatePresentRewardImage + nextStateDiscountedFutureRewardImage)
+                            comboPixelMasks.append(comboPixelMask.unsqueeze(0))
+                            presentRewardsMasks.append(presentRewardsMasked.unsqueeze(0))
+                            discountedFutureRewardsMasks.append(discountedFutureRewardsMasked.unsqueeze(0))
+                            advantageMasks.append(advantageMasked.unsqueeze(0))
 
-                            isNextStateValid = torch.ge(nextStateBestPossibleTotalReward, rewardImpossibleAction)
-                            discountedFutureReward = nextStateBestPossibleTotalReward * discountRate * isNextStateValid
-                            discountedFutureReward = torch.min(maxDiscountedReward, discountedFutureReward)
+                        if not self.config['testing_use_advantage_values_for_predictions']:
+                            with profiler.record_function("action_probabilities"):
+                                # Now to train the "actor" in the actor critic model, we have to do something different. Instead of
+                                # training the actor to predict how much better / worse particular actions are versus other actions,
+                                # now we just straight up train the actor to predict what is the best action it should take when its
+                                # in a given state. Therefore, we use the advantage calculations to determine what is the best action
+                                # to take. We then construct a target image which basically has a square of 1's on the location the
+                                # AI should click and 0's everywhere else.
+                                bestActionX, bestActionY, bestActionType = self.getActionInfoTensorsFromRewardMap(advantageImage.detach())
+                                bestLeft = torch.max(bestActionX - actionProbRewardSquareEdgeHalfSize, zeroTensor)
+                                bestRight = torch.min(bestActionX + actionProbRewardSquareEdgeHalfSize, widthTensor - 1)
+                                bestTop = torch.max(bestActionY - actionProbRewardSquareEdgeHalfSize, zeroTensor)
+                                bestBottom = torch.min(bestActionY + actionProbRewardSquareEdgeHalfSize, heightTensor - 1)
+                                actionProbabilityTargetImage[sampleIndex, bestActionType, bestTop:bestBottom, bestLeft:bestRight] = 1
+                                actionProbabilityTargetImage[sampleIndex, bestActionType] *= pixelActionMap[bestActionType]
 
-                        with profiler.record_function("reward_targets"):
-                            # Here we are basically calculating the target images. E.g., this is what we want the neural network to be predicting as outputs.
-                            # For the present reward, we want the neural network to predict the exact present reward value that we have for this execution trace.
-                            # For the discounted future reward, we use the above calculated value which is based on the best possible action it could take
-                            # in the next step after this one.
-                            # In both cases, the image is constructed with the same mask that the reward images were masked with above. This ensures that we
-                            # are only updating the values for the pixels of the html element the algo actually clicked on
-                            targetPresentRewards = torch.ones_like(presentRewardImage[self.actionsSorted.index(actionType)]) * presentReward * comboPixelMask
-                            targetDiscountedFutureRewards = torch.ones_like(discountedFutureRewardImage[self.actionsSorted.index(actionType)]) * discountedFutureReward * comboPixelMask
+                    comboPixelMask = torch.cat(comboPixelMasks, dim=0)
+                    presentRewardsMasked = torch.cat(presentRewardsMasks, dim=0) * comboPixelMask
+                    discountedFutureRewardsMasked = torch.cat(discountedFutureRewardsMasks, dim=0) * comboPixelMask
+                    advantageMasked = torch.cat(advantageMasks, dim=0) * comboPixelMask
 
-                        with profiler.record_function("advantage_targets"):
-                            # We basically do the same with the advantage to create the target advantage image, and again its multiplied by the same
-                            # pixel mask. The difference with advantage is that the advantage is updated to be the difference between the predicted reward
-                            # value for the action we took v.s. the average reward value no matter what action we take. E.g. its a measure of how much
-                            # better a particular action is versus the average action.
-                            targetAdvantage = ((presentReward.detach() + discountedFutureReward.detach()) - stateValuePrediction.detach())
-                            targetAdvantageImage = torch.ones_like(advantageImage[self.actionsSorted.index(actionType)]) * targetAdvantage * comboPixelMask
+                    with profiler.record_function("next_state_discount"):
+                        # Here, we compute the best possible action we can take in the subsequent step from this one, and what is
+                        # its reward. This gives us the value for the discounted future reward, e.g. what is the reward that
+                        # the action we took in this sequence, could lead to in the future.
+                        if trainingStepIndex < 2 * self.gpuWorldSize:
+                            nextStateBestPossibleTotalReward = torch.max(torch.max(torch.max(nextStatePresentRewardPredictions, dim=3)[0], dim=2)[0], dim=1)[0]
+                        else:
+                            nextStateBestPossibleTotalReward = torch.max(torch.max(torch.max(nextStatePresentRewardPredictions + nextStateDiscountedFutureRewardPredictions, dim=3)[0], dim=2)[0], dim=1)[0]
 
-                        with profiler.record_function("action_probabilities"):
-                            # Now to train the "actor" in the actor critic model, we have to do something different. Instead of
-                            # training the actor to predict how much better / worse particular actions are versus other actions,
-                            # now we just straight up train the actor to predict what is the best action it should take when its
-                            # in a given state. Therefore, we use the advantage calculations to determine what is the best action
-                            # to take. We then construct a target image which basically has a square of 1's on the location the
-                            # AI should click and 0's everywhere else.
-                            bestActionX, bestActionY, bestActionType = self.getActionInfoTensorsFromRewardMap(advantageImage.detach())
-                            actionProbabilityTargetImage = torch.zeros_like(actionProbabilityImage)
-                            bestLeft = torch.max(bestActionX - actionProbRewardSquareEdgeHalfSize, zeroTensor)
-                            bestRight = torch.min(bestActionX + actionProbRewardSquareEdgeHalfSize, widthTensor - 1)
-                            bestTop = torch.max(bestActionY - actionProbRewardSquareEdgeHalfSize, zeroTensor)
-                            bestBottom = torch.min(bestActionY + actionProbRewardSquareEdgeHalfSize, heightTensor - 1)
-                            actionProbabilityTargetImage[bestActionType, bestTop:bestBottom, bestLeft:bestRight] = 1
-                            actionProbabilityTargetImage[bestActionType] *= pixelActionMap[bestActionType]
-                            countActionProbabilityTargetPixels = actionProbabilityTargetImage[bestActionType].sum()
-                            # The max here is just for safety, if any weird bugs happen we don't want any NaN values or division by zero
-                            actionProbabilityTargetImage[bestActionType] /= torch.max(oneTensorFloat, countActionProbabilityTargetPixels)
+                        isNextStateValid = torch.ge(nextStateBestPossibleTotalReward, rewardImpossibleAction)
+                        discountedFutureReward = nextStateBestPossibleTotalReward * discountRate * isNextStateValid
+                        discountedFutureReward = torch.min(maxDiscountedReward, discountedFutureReward)
 
-                            # The max here is just for safety, if any weird bugs happen we don't want any NaN values or division by zero
-                            countPixelMask = torch.max(oneTensorLong, comboPixelMask.sum())
+                    with profiler.record_function("reward_targets"):
+                        # Here we are basically calculating the target images. E.g., this is what we want the neural network to be predicting as outputs.
+                        # For the present reward, we want the neural network to predict the exact present reward value that we have for this execution trace.
+                        # For the discounted future reward, we use the above calculated value which is based on the best possible action it could take
+                        # in the next step after this one.
+                        # In both cases, the image is constructed with the same mask that the reward images were masked with above. This ensures that we
+                        # are only updating the values for the pixels of the html element the algo actually clicked on
+                        targetPresentRewards = comboPixelMask * presentRewardsTensor.unsqueeze(-1).unsqueeze(-1)
+                        targetDiscountedFutureRewards = comboPixelMask * discountedFutureReward.unsqueeze(-1).unsqueeze(-1)
 
-                        with profiler.record_function("loss_maps"):
-                            # Now here we create tensors which represent the different between the predictions of the neural network and
-                            # our target values that were all calculated above.
-                            presentRewardLossMap = (targetPresentRewards - presentRewardsMasked) * comboPixelMask
-                            discountedFutureRewardLossMap = (targetDiscountedFutureRewards - discountedFutureRewardsMasked) * comboPixelMask
-                            advantageLossMap = (targetAdvantageImage - advantageMasked) * comboPixelMask
-                            actionProbabilityLossMap = (actionProbabilityTargetImage - actionProbabilityImage) * pixelActionMap
+                    with profiler.record_function("advantage_targets"):
+                        # We basically do the same with the advantage to create the target advantage image, and again its multiplied by the same
+                        # pixel mask. The difference with advantage is that the advantage is updated to be the difference between the predicted reward
+                        # value for the action we took v.s. the average reward value no matter what action we take. E.g. its a measure of how much
+                        # better a particular action is versus the average action.
+                        targetAdvantage = ((presentRewardsTensor.detach().unsqueeze(-1) + discountedFutureReward.detach().unsqueeze(-1)) - stateValuePredictions.detach())
+                        targetAdvantageImage = comboPixelMask * targetAdvantage.unsqueeze(-1)
 
-                        with profiler.record_function("average_losses"):
-                            # Here we compute an average loss value for all pixels in the reward pixel mask.
-                            presentRewardLoss = torch.true_divide(presentRewardLossMap.pow(2).sum(), countPixelMask) * isNextStateValid
-                            discountedFutureRewardLoss = torch.true_divide(discountedFutureRewardLossMap.pow(2).sum(), countPixelMask) * isNextStateValid
-                            advantageLoss = torch.true_divide(advantageLossMap.pow(2).sum(), countPixelMask)
-                            actionProbabilityLoss = actionProbabilityLossMap.abs().sum()
-                            # Additionally, we calculate a loss for the 'state' value, which is the average value the neural network
-                            # is expected to produce no matter what action it takes. We calculate a loss but the assumption is that
-                            # the network could never actually calculate this perfectly accurately. It just serves as a barometer
-                            # that allows us to calculate the advantage values.
-                            stateValueLoss = (stateValuePrediction - (presentReward.detach() + discountedFutureReward.detach())).pow(2)
+                    countActionProbabilityTargetPixels = actionProbabilityTargetImage.sum(dim=2).sum(dim=2)
 
-                            # Now we multiply each of the various losses by their weights. These weights are just
-                            # used to balance the losses against each other, since they have varying absolute magnitudes and
-                            # varying importance
-                            presentRewardLoss = presentRewardLoss * presentRewardLossWeightFloat
-                            discountedFutureRewardLoss = discountedFutureRewardLoss * discountedFutureRewardLossWeightFloat
-                            advantageLoss = advantageLoss * advantageLossWeightFloat
-                            actionProbabilityLoss = actionProbabilityLoss * actionProbabilityLossWeightFloat
-                            stateValueLoss = stateValueLoss * stateValueLossWeightFloat
+                    # The max here is just for safety, if any weird bugs happen we don't want any NaN values or division by zero
+                    actionProbabilityTargetImage *= torch.true_divide(oneTensorFloat, torch.max(oneTensorFloat, countActionProbabilityTargetPixels.unsqueeze(2).unsqueeze(2)))
 
-                            # Now we add a scalar tensor for each of the loss values into the lists
-                            presentRewardLosses.append(presentRewardLoss.unsqueeze(0))
-                            discountedFutureRewardLosses.append(discountedFutureRewardLoss.unsqueeze(0))
-                            advantageLosses.append(advantageLoss.unsqueeze(0))
-                            actionProbabilityLosses.append(actionProbabilityLoss.unsqueeze(0))
-                            stateValueLosses.append(stateValueLoss)
-                            totalSampleLosses.append(presentRewardLoss + discountedFutureRewardLoss + advantageLoss + actionProbabilityLoss)
+                    # The max here is just for safety, if any weird bugs happen we don't want any NaN values or division by zero
+                    countPixelMask = torch.max(oneTensorLong, comboPixelMask.sum(dim=1).sum(dim=1))
+
+                    with profiler.record_function("loss_maps"):
+                        # Now here we create tensors which represent the different between the predictions of the neural network and
+                        # our target values that were all calculated above.
+                        presentRewardLossMap = (targetPresentRewards - presentRewardsMasked) * comboPixelMask
+                        discountedFutureRewardLossMap = (targetDiscountedFutureRewards - discountedFutureRewardsMasked) * comboPixelMask
+                        advantageLossMap = (targetAdvantageImage - advantageMasked) * comboPixelMask
+                        actionProbabilityLossMap = (actionProbabilityTargetImage - actionProbabilityPredictions) * pixelActionMaps
+
+                    with profiler.record_function("average_losses"):
+                        # Here we compute an average loss value for all pixels in the reward pixel mask.
+                        presentRewardLoss = torch.true_divide(presentRewardLossMap.pow(2).sum(dim=1).sum(dim=1), countPixelMask) * isNextStateValid
+                        discountedFutureRewardLoss = torch.true_divide(discountedFutureRewardLossMap.pow(2).sum(dim=1).sum(dim=1), countPixelMask) * isNextStateValid
+                        advantageLoss = torch.true_divide(advantageLossMap.pow(2).sum(dim=1).sum(dim=1), countPixelMask)
+                        actionProbabilityLoss = actionProbabilityLossMap.abs().sum(dim=1).sum(dim=1).sum(dim=1)
+                        # Additionally, we calculate a loss for the 'state' value, which is the average value the neural network
+                        # is expected to produce no matter what action it takes. We calculate a loss but the assumption is that
+                        # the network could never actually calculate this perfectly accurately. It just serves as a barometer
+                        # that allows us to calculate the advantage values.
+                        stateValueLoss = (stateValuePredictions - (presentRewardsTensor.detach().unsqueeze(-1) + discountedFutureReward.detach().unsqueeze(-1))).pow(2)[:, 0]
+
+                        # Now we multiply each of the various losses by their weights. These weights are just
+                        # used to balance the losses against each other, since they have varying absolute magnitudes and
+                        # varying importance
+                        presentRewardLoss = presentRewardLoss * presentRewardLossWeightFloat
+                        discountedFutureRewardLoss = discountedFutureRewardLoss * discountedFutureRewardLossWeightFloat
+                        advantageLoss = advantageLoss * advantageLossWeightFloat
+                        actionProbabilityLoss = actionProbabilityLoss * actionProbabilityLossWeightFloat
+                        stateValueLoss = stateValueLoss * stateValueLossWeightFloat
+
+                        # Now we add a scalar tensor for each of the loss values into the lists
+                        presentRewardLosses = presentRewardLoss
+                        discountedFutureRewardLosses = discountedFutureRewardLoss
+                        advantageLosses = advantageLoss
+                        actionProbabilityLosses = actionProbabilityLoss
+                        stateValueLosses = stateValueLoss
+                        totalSampleLosses = presentRewardLoss + discountedFutureRewardLoss + advantageLoss + actionProbabilityLoss
 
                     extraLosses = []
 
@@ -3272,14 +3281,13 @@ class DeepLearningAgent:
                         predictedCursorLoss = zeroTensor
 
                     # Here we calculate the mean value for all of the losses across all of the various samples
-                    presentRewardLoss = torch.mean(torch.cat(presentRewardLosses))
-                    discountedFutureRewardLoss = torch.mean(torch.cat(discountedFutureRewardLosses))
-                    stateValueLoss = torch.mean(torch.cat(stateValueLosses))
-                    advantageLoss = torch.mean(torch.cat(advantageLosses))
-                    actionProbabilityLoss = torch.mean(torch.cat(actionProbabilityLosses))
+                    presentRewardLoss = torch.mean(presentRewardLosses)
+                    discountedFutureRewardLoss = torch.mean(discountedFutureRewardLosses)
+                    stateValueLoss = torch.mean(stateValueLosses)
+                    advantageLoss = torch.mean(advantageLosses)
+                    actionProbabilityLoss = torch.mean(actionProbabilityLosses)
 
                     # This is the final, total loss for all different loss functions across all the different samples
-
                     totalRewardLoss = presentRewardLoss
                     if trainingStepIndex >= 1 * self.gpuWorldSize:
                         totalRewardLoss = totalRewardLoss + discountedFutureRewardLoss
@@ -3296,7 +3304,7 @@ class DeepLearningAgent:
                     else:
                         totalRewardLoss = totalRewardLoss + advantageLoss * 0
 
-                    if trainingStepIndex >= 5 * self.gpuWorldSize:
+                    if trainingStepIndex >= 5 * self.gpuWorldSize and (not self.config['testing_use_advantage_values_for_predictions']):
                         totalRewardLoss = totalRewardLoss + actionProbabilityLoss
                     else:
                         totalRewardLoss = totalRewardLoss + actionProbabilityLoss * 0

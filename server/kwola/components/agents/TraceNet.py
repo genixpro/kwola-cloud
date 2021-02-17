@@ -374,9 +374,9 @@ class TraceNet(torch.nn.Module):
                     coverageSymbolEmbeddings
                 ], dim=1)
 
-            stateValuePredictions = self.stateValueLinear(flatFeatureMap)
+                stateValuePredictions = self.stateValueLinear(flatFeatureMap)
 
-            outputDict['stateValues'] = stateValuePredictions
+                outputDict['stateValues'] = stateValuePredictions
 
         if data['computeAdvantageValues']:
             with profiler.record_function("advantage"):
