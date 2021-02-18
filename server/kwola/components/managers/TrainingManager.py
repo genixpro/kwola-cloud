@@ -594,10 +594,11 @@ class TrainingManager:
 
             # Adjust the minimum weights to ensure that every trace gets included at least once in each training step, ensuring that
             # we atleast have an up to date loss value for each trace, because without that up to date loss value, we don't even
-            # know what we should set the weights as
-            samplesPerTrainingStep = config['training_iterations_per_training_step'] * config['neural_network_batch_size'] * config['neural_network_batches_per_iteration']
-            dynamicMinimumWeight = (1. / samplesPerTrainingStep) * numpy.sum(traceWeights)
-            traceWeights = numpy.maximum(traceWeights, dynamicMinimumWeight)
+            # know what we should set the weights as. We do 10 iterations here to ensure we converge on the final number.
+            for n in range(5):
+                samplesPerTrainingStep = config['training_iterations_per_training_step'] * config['neural_network_batch_size'] * config['neural_network_batches_per_iteration']
+                dynamicMinimumWeight = (1. / max(len(traceWeights), samplesPerTrainingStep)) * numpy.sum(traceWeights)
+                traceWeights = numpy.maximum(traceWeights, dynamicMinimumWeight)
 
             traceProbabilities = numpy.array(traceWeights) / numpy.sum(traceWeights)
             traceIds = [weight[1] for weight in tracesWithWeightObjects]
