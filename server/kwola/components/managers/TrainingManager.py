@@ -47,6 +47,7 @@ import sys
 import tempfile
 import time
 import torch
+import snappy
 import torch.distributed
 import traceback
 from pprint import pformat
@@ -438,10 +439,10 @@ class TrainingManager:
     def writeSingleExecutionTracePreparedSampleData(traceBatch, config):
         traceId = traceBatch['traceIds'][0]
 
-        cacheFile = traceId + "-sample.pickle.gz"
+        cacheFile = traceId + "-sample.pickle.snappy"
 
         pickleBytes = pickle.dumps(traceBatch, protocol=pickle.HIGHEST_PROTOCOL)
-        compressedPickleBytes = gzip.compress(pickleBytes)
+        compressedPickleBytes = snappy.compress(pickleBytes)
 
         config.saveKwolaFileData("prepared_samples", cacheFile, compressedPickleBytes)
 
@@ -481,10 +482,10 @@ class TrainingManager:
             in the event of an error."""
         config = KwolaCoreConfiguration(config)
 
-        cacheFile = executionTraceId + "-sample.pickle.gz"
+        cacheFile = executionTraceId + "-sample.pickle.snappy"
 
         # Just for compatibility with the old naming scheme
-        oldCacheFileName = executionTraceId + ".pickle.gz"
+        oldCacheFileName = executionTraceId + ".pickle.snappy"
 
         config.deleteKwolaFileData("prepared_samples", cacheFile)
         config.deleteKwolaFileData("prepared_samples", oldCacheFileName)
@@ -494,7 +495,7 @@ class TrainingManager:
         try:
             config = KwolaCoreConfiguration(config)
 
-            cacheFile = executionTraceId + "-sample.pickle.gz"
+            cacheFile = executionTraceId + "-sample.pickle.snappy"
 
             fileData = config.loadKwolaFileData("prepared_samples", cacheFile)
             if fileData is None:
@@ -502,9 +503,9 @@ class TrainingManager:
                 cacheHit = False
 
                 fileData = config.loadKwolaFileData("prepared_samples", cacheFile)
-                sampleBatch = pickle.loads(gzip.decompress(fileData))
+                sampleBatch = pickle.loads(snappy.decompress(fileData))
             else:
-                sampleBatch = pickle.loads(gzip.decompress(fileData))
+                sampleBatch = pickle.loads(snappy.decompress(fileData))
                 cacheHit = True
 
             imageWidth = sampleBatch['processedImages'].shape[3]
@@ -703,6 +704,7 @@ class TrainingManager:
                     stepId = fileName
                     stepId = stepId.replace(".json", "")
                     stepId = stepId.replace(".gz", "")
+                    stepId = stepId.replace(".snappy", "")
                     stepId = stepId.replace(".pickle", "")
                     stepId = stepId.replace(".enc", "")
 
