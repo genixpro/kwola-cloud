@@ -94,7 +94,17 @@ def main():
                                                                     web_session_enable_window_size_desktop=True,
                                                                     web_session_enable_window_size_tablet=False,
                                                                     web_session_enable_window_size_mobile=False,
-                                                                    actions_custom_typing_action_strings=["test1", "test2", "test3", "test4"]
-                                                                    )
+                                                                    actions_custom_typing_action_strings=["test1", "test2", "test3", "test4"],
+                                                                    web_session_height={
+                                                                        "desktop": 600,
+                                                                        "mobile": 740,
+                                                                        "tablet": 1024
+                                                                    },
+                                                                    web_session_width={
+                                                                        "desktop": 800,
+                                                                        "mobile": 460,
+                                                                        "tablet": 800
+                                                                    }
+                                                                )
 
     getLogger().info(f"New Kros3 experiment configuration created in directory {configDir}")
