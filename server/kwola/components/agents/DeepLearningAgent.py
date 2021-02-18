@@ -1993,7 +1993,7 @@ class DeepLearningAgent:
                 actionCropX = trace.actionPerformed.x * self.config['neural_network_model_image_downscale_ratio']
                 actionCropY = trace.actionPerformed.y * self.config['neural_network_model_image_downscale_ratio']
 
-                cropLeft, cropTop, cropRight, cropBottom = self.calculateTrainingCropPosition(actionCropX, actionCropY, imageCropWidth, imageCropHeight)
+                cropLeft, cropTop, cropRight, cropBottom = DeepLearningAgent.calculateTrainingCropPosition(self.config, actionCropX, actionCropY, imageCropWidth, imageCropHeight)
 
                 cropLeft = max(0, min(int(cropLeft / self.config['neural_network_model_image_downscale_ratio']), imageWidth))
                 cropTop = max(0, min(int(cropTop / self.config['neural_network_model_image_downscale_ratio']), imageHeight))
@@ -2013,7 +2013,7 @@ class DeepLearningAgent:
                 cropRectangle = skimage.draw.rectangle_perimeter((int(topSize + cropTop), int(leftSize + cropLeft)), (int(topSize + cropBottom), int(leftSize + cropRight)), shape=[topSize + imageHeight, leftSize+imageWidth], clip=True)
                 image[cropRectangle] = [self.config.debug_video_crop_box_color_r, self.config.debug_video_crop_box_color_g, self.config.debug_video_crop_box_color_b]
 
-                cropLeft, cropTop, cropRight, cropBottom = self.calculateTrainingCropPosition(actionCropX, actionCropY, imageCropWidth, imageCropHeight, nextStepCrop=True)
+                cropLeft, cropTop, cropRight, cropBottom = DeepLearningAgent.calculateTrainingCropPosition(self.config, actionCropX, actionCropY, imageCropWidth, imageCropHeight, nextStepCrop=True)
                 cropLeft = max(0, min(int(cropLeft / self.config['neural_network_model_image_downscale_ratio']), imageWidth))
                 cropTop = max(0, min(int(cropTop / self.config['neural_network_model_image_downscale_ratio']), imageHeight))
                 cropRight = max(0, min(int(cropRight / self.config['neural_network_model_image_downscale_ratio']), imageWidth))
@@ -2597,7 +2597,8 @@ class DeepLearningAgent:
 
         return rewardPixelMask
 
-    def calculateTrainingCropPosition(self, centerX, centerY, imageWidth, imageHeight, nextStepCrop=False):
+    @staticmethod
+    def calculateTrainingCropPosition(config, centerX, centerY, imageWidth, imageHeight, nextStepCrop=False):
         """
             This method is used to calculate the coordinates for cropping the image for use in training.
 
@@ -2610,11 +2611,11 @@ class DeepLearningAgent:
             :return: A tuple containing four integers representing the bounds of the crop, (left, top, right, bottom)
         """
 
-        cropWidth = self.config['training_crop_width']
-        cropHeight = self.config['training_crop_height']
+        cropWidth = config['training_crop_width']
+        cropHeight = config['training_crop_height']
         if nextStepCrop:
-            cropWidth = self.config['training_next_step_crop_width']
-            cropHeight = self.config['training_next_step_crop_height']
+            cropWidth = config['training_next_step_crop_width']
+            cropHeight = config['training_next_step_crop_height']
 
         # Find the left and top positions that are centered on the given center coordinates
         cropLeft = centerX - cropWidth / 2
@@ -2637,8 +2638,8 @@ class DeepLearningAgent:
         # Return a tuple with all of the bounds
         return (cropLeft, cropTop, cropRight, cropBottom)
 
-
-    def augmentProcessedImageForTraining(self, processedImage):
+    @staticmethod
+    def augmentProcessedImageForTraining(processedImage):
         """
             This method is used to apply augmentations to a given image prior to injecting it into the neural network.
             These random augmentations are just used to improve the generalization power of the neural network.

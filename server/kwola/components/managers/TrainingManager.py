@@ -494,8 +494,6 @@ class TrainingManager:
         try:
             config = KwolaCoreConfiguration(config)
 
-            agent = DeepLearningAgent(config, whichGpu=None)
-
             cacheFile = executionTraceId + "-sample.pickle.gz"
 
             fileData = config.loadKwolaFileData("prepared_samples", cacheFile)
@@ -517,7 +515,7 @@ class TrainingManager:
                 randomXDisplacement = random.randint(-config['training_crop_center_random_x_displacement'], config['training_crop_center_random_x_displacement'])
                 randomYDisplacement = random.randint(-config['training_crop_center_random_y_displacement'], config['training_crop_center_random_y_displacement'])
 
-                cropLeft, cropTop, cropRight, cropBottom = agent.calculateTrainingCropPosition(sampleBatch['actionXs'][0] + randomXDisplacement, sampleBatch['actionYs'][0] + randomYDisplacement, imageWidth, imageHeight)
+                cropLeft, cropTop, cropRight, cropBottom = DeepLearningAgent.calculateTrainingCropPosition(config, sampleBatch['actionXs'][0] + randomXDisplacement, sampleBatch['actionYs'][0] + randomYDisplacement, imageWidth, imageHeight)
             else:
                 cropLeft = 0
                 cropRight = imageWidth
@@ -529,7 +527,7 @@ class TrainingManager:
                 nextStateCropCenterX = random.randint(10, imageWidth - 10)
                 nextStateCropCenterY = random.randint(10, imageHeight - 10)
 
-                nextStateCropLeft, nextStateCropTop, nextStateCropRight, nextStateCropBottom = agent.calculateTrainingCropPosition(nextStateCropCenterX, nextStateCropCenterY, imageWidth, imageHeight, nextStepCrop=True)
+                nextStateCropLeft, nextStateCropTop, nextStateCropRight, nextStateCropBottom = DeepLearningAgent.calculateTrainingCropPosition(config, nextStateCropCenterX, nextStateCropCenterY, imageWidth, imageHeight, nextStepCrop=True)
             else:
                 nextStateCropLeft = 0
                 nextStateCropRight = imageWidth
@@ -554,7 +552,7 @@ class TrainingManager:
             # Instead, we want the pure version in the cache and create a
             # new augmentation every time we load it.
             processedImage = sampleBatch['processedImages'][0]
-            augmentedImage = agent.augmentProcessedImageForTraining(processedImage)
+            augmentedImage = DeepLearningAgent.augmentProcessedImageForTraining(processedImage)
             sampleBatch['processedImages'][0] = augmentedImage
 
             fileDescriptor, fileName = tempfile.mkstemp(".bin", dir=batchDirectory)
