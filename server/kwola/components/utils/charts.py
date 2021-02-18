@@ -444,7 +444,7 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
 
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'totalLosses', "Total Loss", 'total_loss_chart.png']))
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'presentRewardLosses', "Present Reward Loss", 'present_reward_loss_chart.png']))
-    futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'discountedFutureRewardLosses', "Discounted Future Reward Loss", 'cddiscounted_future_reward_loss_chart.png']))
+    futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'discountedFutureRewardLosses', "Discounted Future Reward Loss", 'discounted_future_reward_loss_chart.png']))
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'stateValueLosses', "State Value Loss", 'state_value_loss_chart.png']))
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'advantageLosses', "Advantage Loss", 'advantage_loss_chart.png']))
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'actionProbabilityLosses', "Action Probability Loss", 'action_probability_loss_chart.png']))
