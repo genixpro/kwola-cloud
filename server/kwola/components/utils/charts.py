@@ -129,6 +129,61 @@ def generateFitnessChart(config, applicationId):
         pool.close()
         pool.join()
 
+def averageTracesWithNewBranchesForTestingStep(config, testingStepId):
+    testingStep = TestingStep.loadFromDisk(testingStepId, config)
+
+    stepTraceWithNewBranchCounts = []
+    for sessionId in testingStep.executionSessions:
+        session = ExecutionSession.loadFromDisk(sessionId, config)
+        if session.status == "completed" and session.countTracesWithNewBranches is not None:
+            stepTraceWithNewBranchCounts.append(session.countTracesWithNewBranches)
+
+    if len(stepTraceWithNewBranchCounts) > 0:
+        return numpy.mean(stepTraceWithNewBranchCounts)
+    else:
+        return None
+
+
+def generateTracesWithNewBranchesChart(config, applicationId):
+    getLogger().info(f"Generating the traces with new branches chart")
+
+    config = KwolaCoreConfiguration(config)
+
+    testingSteps = sorted(
+        [step for step in TrainingManager.loadAllTestingSteps(config, applicationId=applicationId) if step.status == "completed"],
+        key=lambda step: step.startTime, reverse=False)
+
+    countTracesWithNewBranchesFutures = []
+
+    pool = multiprocessing.Pool(config['chart_generation_dataload_workers'])
+
+    for step in testingSteps:
+        countTracesWithNewBranchesFutures.append(pool.apply_async(averageTracesWithNewBranchesForTestingStep, [config, step.id]))
+
+    countTracesWithNewBranchesValues = [future.get() for future in countTracesWithNewBranchesFutures if future.get() is not None]
+
+    if len(countTracesWithNewBranchesValues) > 0:
+        fig, ax = plt.subplots()
+
+        countTracesWithNewBranchesValues = scipy.signal.medfilt(countTracesWithNewBranchesValues, kernel_size=9)
+
+        ax.plot(range(len(countTracesWithNewBranchesValues)), countTracesWithNewBranchesValues, color='green')
+
+        ax.set_ylim(0, 100)
+
+        ax.set(xlabel='Testing Step #', ylabel='Traces with new branches',
+               title='# of testing traces that have new branches')
+        ax.grid()
+
+        _, localFilePath = tempfile.mkstemp(suffix=".png")
+        fig.savefig(localFilePath)
+        with open(localFilePath, 'rb') as f:
+            config.saveKwolaFileData("charts", "traces_with_new_branches.png", f.read())
+        os.unlink(localFilePath)
+
+        pool.close()
+        pool.join()
+
 def generateCoverageChart(config, applicationId):
     getLogger().info(f"Generating the coverage chart")
 
@@ -439,6 +494,7 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
 
     futures.append(pool.apply_async(generateRewardChart, [config.serialize(), applicationId]))
     futures.append(pool.apply_async(generateFitnessChart, [config.serialize(), applicationId]))
+    futures.append(pool.apply_async(generateTracesWithNewBranchesChart, [config.serialize(), applicationId]))
     if enableCumulativeCoverage:
         futures.append(pool.apply_async(generateCoverageChart, [config.serialize(), applicationId]))
 

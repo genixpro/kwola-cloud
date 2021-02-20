@@ -71,6 +71,8 @@ class ExecutionSession(Document):
 
     bestApplicationProvidedCumulativeFitness = FloatField()
 
+    countTracesWithNewBranches = FloatField(default=None)
+
     def saveToDisk(self, config):
         saveObjectToDisk(self, "execution_sessions", config)
 
