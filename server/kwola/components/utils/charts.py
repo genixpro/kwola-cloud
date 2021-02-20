@@ -169,7 +169,7 @@ def generateTracesWithNewBranchesChart(config, applicationId):
 
         ax.plot(range(len(countTracesWithNewBranchesValues)), countTracesWithNewBranchesValues, color='green')
 
-        ax.set_ylim(0, 100)
+        ax.set_ylim(0, config['testing_sequence_length'])
 
         ax.set(xlabel='Testing Step #', ylabel='Traces with new branches',
                title='# of testing traces that have new branches')
