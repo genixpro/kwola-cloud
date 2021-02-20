@@ -172,6 +172,8 @@ class TrainingManager:
                 getLogger().info(f"==== Training Step Completed ====")
                 return {"success": False, "exception": errorMessage}
 
+            TrainingManager.clearOldPreparedSamples(self.config, self.applicationId)
+
             self.agent = DeepLearningAgent(config=self.config, whichGpu=self.gpu, gpuWorldSize=self.gpuWorldSize)
             self.agent.initialize()
             try:
@@ -722,6 +724,31 @@ class TrainingManager:
         trace.saveToDisk(config)
 
     @staticmethod
+    def clearOldPreparedSamples(config, applicationId):
+        existingPreparedSampleFiles = set(config.listAllFilesInFolder("prepared_samples"))
+
+        testingSteps = TrainingManager.loadTestingStepsForTraining(config, applicationId)
+        for testStepIndex, testStep in enumerate(testingSteps):
+            for sessionId in testStep.executionSessions:
+                session = ExecutionSession.loadFromDisk(sessionId, config)
+                for traceId in session.executionTraces:
+                    cacheFile = traceId + "-sample.pickle.snappy"
+                    if cacheFile in existingPreparedSampleFiles:
+                        existingPreparedSampleFiles.remove(cacheFile)
+
+        # Delete all the remaining files
+        for remainingFile in existingPreparedSampleFiles:
+            config.deleteKwolaFileData("prepared_samples", remainingFile)
+
+        getLogger().info(f"Removed {len(existingPreparedSampleFiles)} old prepared sample files that are no longer needed.")
+
+    @staticmethod
+    def loadTestingStepsForTraining(config, applicationId):
+        testingSteps = sorted([step for step in TrainingManager.loadAllTestingSteps(config, applicationId) if step.status == "completed"], key=lambda step: step.startTime, reverse=True)
+        testingSteps = list(testingSteps)[:int(config['training_number_of_recent_testing_sequences_to_use'])]
+        return testingSteps
+
+    @staticmethod
     def prepareAndLoadBatchesSubprocess(config, batchDirectory, subProcessCommandQueue, subProcessBatchResultQueue, subprocessIndex=0, applicationId=None):
         try:
             setupLocalLogging(config)
@@ -730,8 +757,7 @@ class TrainingManager:
 
             getLogger().info(f"Starting initialization for batch preparation sub process.")
 
-            testingSteps = sorted([step for step in TrainingManager.loadAllTestingSteps(config, applicationId) if step.status == "completed"], key=lambda step: step.startTime, reverse=True)
-            testingSteps = list(testingSteps)[:int(config['training_number_of_recent_testing_sequences_to_use'])]
+            testingSteps = TrainingManager.loadTestingStepsForTraining()
 
             if len(testingSteps) == 0:
                 getLogger().warning(f"Error, no test sequences to train on for training step.")
