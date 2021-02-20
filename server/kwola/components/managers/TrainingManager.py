@@ -757,7 +757,7 @@ class TrainingManager:
 
             getLogger().info(f"Starting initialization for batch preparation sub process.")
 
-            testingSteps = TrainingManager.loadTestingStepsForTraining()
+            testingSteps = TrainingManager.loadTestingStepsForTraining(config, applicationId)
 
             if len(testingSteps) == 0:
                 getLogger().warning(f"Error, no test sequences to train on for training step.")
