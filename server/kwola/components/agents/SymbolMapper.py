@@ -169,7 +169,7 @@ class SymbolMapper:
                 if logNormalizedStd == 0:
                     logNormalizedStd = 1
 
-                trace.codePrevalenceLogNormalizedZScore = (numpy.log(symbolCount) - logNormalizedMean) / logNormalizedStd
+                trace.codePrevalenceLogNormalizedZScore = max(-3, min(3, (numpy.log(symbolCount) - logNormalizedMean) / logNormalizedStd))
 
     def computeCoverageSymbolsList(self, executionTrace, beforeOrAfter):
         symbolIndexes = []
