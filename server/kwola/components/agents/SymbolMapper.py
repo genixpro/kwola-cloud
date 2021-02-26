@@ -141,9 +141,6 @@ class SymbolMapper:
         for trace in executionTraces:
             locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(trace.branchTrace)
 
-            if self.config['training_use_only_new_branch_traces_for_code_prevalence_scores'] and not trace.didNewBranchesExecute:
-                continue
-
             symbolCounts = [locSymbolMapping.countRecentTracesWithSymbol() for locSymbolMapping in locSymbols]
 
             if len(symbolCounts) == 0:
@@ -151,7 +148,10 @@ class SymbolMapper:
             else:
                 allTraceSymbolCounts.append(numpy.min(symbolCounts))
 
-        sortedSymbolCounts = sorted([count for count in allTraceSymbolCounts if count > 0])
+        if self.config['training_use_only_new_branch_traces_for_code_prevalence_scores']:
+            sortedSymbolCounts = sorted([count for count, trace in zip(allTraceSymbolCounts, executionTraces) if count > 0 and trace.didNewBranchesExecute])
+        else:
+            sortedSymbolCounts = sorted([count for count in allTraceSymbolCounts if count > 0])
 
         if len(sortedSymbolCounts) == 0:
             for trace, symbolCount in zip(executionTraces, allTraceSymbolCounts):
