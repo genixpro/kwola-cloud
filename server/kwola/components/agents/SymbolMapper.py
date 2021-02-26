@@ -141,6 +141,9 @@ class SymbolMapper:
         for trace in executionTraces:
             locSymbols, locBranchValues, locFileNames = self.getAllLOCSymbolMappingsForBranchTrace(trace.branchTrace)
 
+            if self.config['training_use_only_new_branch_traces_for_code_prevalence_scores'] and not trace.didNewBranchesExecute:
+                continue
+
             symbolCounts = [locSymbolMapping.countRecentTracesWithSymbol() for locSymbolMapping in locSymbols]
 
             if len(symbolCounts) == 0:

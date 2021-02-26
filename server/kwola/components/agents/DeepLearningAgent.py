@@ -550,12 +550,23 @@ class DeepLearningAgent:
         # The optimizer is what actually updates the neural network parameters
         # based on the calculated gradients.
         if enableTraining:
-            self.optimizer = optim.Adamax(
-                                          self.model.parameters(),
-                                          lr=self.config['training_learning_rate'],
-                                          betas=(self.config['training_gradient_exponential_moving_average_decay'],
-                                                self.config['training_gradient_squared_exponential_moving_average_decay'])
-                                      )
+            if self.config['training_optimizer'] == "adamax":
+                self.optimizer = optim.Adamax(
+                                              self.model.parameters(),
+                                              lr=self.config['training_learning_rate'],
+                                              betas=(self.config['training_gradient_exponential_moving_average_decay'],
+                                                    self.config['training_gradient_squared_exponential_moving_average_decay']),
+                                              weight_decay=self.config['training_optimizer_weight_decay']
+                                          )
+            elif self.config['training_optimizer'] == "adam":
+                self.optimizer = optim.Adam(
+                                              self.model.parameters(),
+                                              lr=self.config['training_learning_rate'],
+                                              betas=(self.config['training_gradient_exponential_moving_average_decay'],
+                                                    self.config['training_gradient_squared_exponential_moving_average_decay']),
+                                              weight_decay=self.config['training_optimizer_weight_decay']
+                                          )
+
         else:
             self.optimizer = None
 
