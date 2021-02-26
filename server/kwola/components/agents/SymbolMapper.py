@@ -168,7 +168,12 @@ class SymbolMapper:
                 trace.codePrevalenceScore = None
                 trace.codePrevalenceLogNormalizedZScore = None
             else:
-                trace.codePrevalenceScore = float(sortedSymbolCounts.index(symbolCount) / len(sortedSymbolCounts))
+                try:
+                    trace.codePrevalenceScore = float(sortedSymbolCounts.index(symbolCount) / len(sortedSymbolCounts))
+                except ValueError:
+                    newSorted = sorted(sortedSymbolCounts + [symbolCount])
+                    trace.codePrevalenceScore = float(newSorted.index(symbolCount) / len(newSorted))
+
                 if logNormalizedStd == 0:
                     logNormalizedStd = 1
 
