@@ -6,6 +6,7 @@
     "bug_reproduction_timeout": 5400,
     "change_detection_task_timeout": 36000,
     "chart_enable_cumulative_coverage_chart": false,
+    "chart_enable_coverage_chart": false,
     "chart_enable_cumulative_errors_chart": false,
     "chart_generate_cumulative_coverage_frequency": 25,
     "chart_generation_dataload_workers": 2,

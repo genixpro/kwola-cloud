@@ -495,7 +495,7 @@ def generateAllCharts(config, applicationId=None, enableCumulativeCoverage=False
     futures.append(pool.apply_async(generateRewardChart, [config.serialize(), applicationId]))
     futures.append(pool.apply_async(generateFitnessChart, [config.serialize(), applicationId]))
     futures.append(pool.apply_async(generateTracesWithNewBranchesChart, [config.serialize(), applicationId]))
-    if enableCumulativeCoverage:
+    if config['chart_enable_coverage_chart'] and enableCumulativeCoverage:
         futures.append(pool.apply_async(generateCoverageChart, [config.serialize(), applicationId]))
 
     futures.append(pool.apply_async(generateLossChart, [config.serialize(), applicationId, 'totalLosses', "Total Loss", 'total_loss_chart.png']))

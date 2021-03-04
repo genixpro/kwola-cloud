@@ -5,6 +5,7 @@
     ],
     "actions_typing_actions": [],
     "chart_enable_cumulative_coverage_chart": true,
+    "chart_enable_coverage_chart": true,
     "chart_enable_cumulative_errors_chart": true,
     "chart_generate_cumulative_coverage_frequency": 25,
     "chart_generation_dataload_workers": 16,
