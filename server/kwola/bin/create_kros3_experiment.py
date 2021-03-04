@@ -48,6 +48,7 @@ def main():
                                                                     chart_generate_cumulative_coverage_frequency=50,
                                                                     chart_enable_cumulative_coverage_chart=False,
                                                                     chart_enable_cumulative_errors_chart=False,
+                                                                    chart_enable_coverage_chart=False,
                                                                     neural_network_batch_size=64,
                                                                     neural_network_batches_per_iteration=1,
                                                                     random_action_test_step_index_max=300,
