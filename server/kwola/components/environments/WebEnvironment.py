@@ -282,7 +282,7 @@ class WebEnvironment:
     def runSessionCompletedHooks(self):
         sessionCompletedFutures = []
         for session in self.sessions:
-            future = AsyncThreadFuture(session.runSessionCompletedHooks, [], timeout=30)
+            future = AsyncThreadFuture(session.runSessionCompletedHooks, [], timeout=None)
             sessionCompletedFutures.append(future)
 
         for future, session in zip(sessionCompletedFutures, self.sessions):
