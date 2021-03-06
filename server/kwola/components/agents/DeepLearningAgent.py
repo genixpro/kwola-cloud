@@ -559,11 +559,18 @@ class DeepLearningAgent:
                                               weight_decay=self.config['training_optimizer_weight_decay']
                                           )
             elif self.config['training_optimizer'] == "adam":
-                self.optimizer = optim.Adam(
+                self.optimizer = optim.AdamW(
                                               self.model.parameters(),
                                               lr=self.config['training_learning_rate'],
                                               betas=(self.config['training_gradient_exponential_moving_average_decay'],
                                                     self.config['training_gradient_squared_exponential_moving_average_decay']),
+                                              weight_decay=self.config['training_optimizer_weight_decay']
+                                          )
+            elif self.config['training_optimizer'] == "sgd":
+                self.optimizer = torch.optim.SGD(
+                                              self.model.parameters(),
+                                              lr=self.config['training_learning_rate'],
+                                              momentum=self.config['training_sgd_momentum'],
                                               weight_decay=self.config['training_optimizer_weight_decay']
                                           )
 

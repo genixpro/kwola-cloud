@@ -291,6 +291,7 @@
     "training_reset_workers_every_n_batches": 100,
     "training_reward_normalizer_fit_population_size": 1000,
     "training_save_model_checkpoints": false,
+    "training_sgd_momentum": 0.9,
     "training_step_timeout": 1800,
     "training_surplus_batches": 10,
     "training_trace_selection_cache_not_full_state_one_side_bias": 0.5,
