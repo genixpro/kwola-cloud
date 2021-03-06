@@ -224,7 +224,7 @@
     "testing_fetch_action_map_timeout": 15,
     "testing_get_image_timeout": 15,
     "testing_max_repeat_action_maps_without_new_branches": 3,
-    "testing_precompute_sample_cache_num_workers": 4,
+    "testing_precompute_sample_cache_num_workers": 16,
     "testing_precompute_sample_cache_single_threaded": false,
     "testing_print_every": 5,
     "testing_recent_actions_image_action_circle_radius": 40,
@@ -240,7 +240,7 @@
     "testing_step_timeout": 1800,
     "testing_subprocess_pool_size": 3,
     "testing_trace_load_workers": 8,
-    "testing_trace_save_workers": 8,
+    "testing_trace_save_workers": 32,
     "testing_use_advantage_values_for_predictions": false,
     "testing_video_generation_processes": 4,
     "train_agent_loop_delete_folders_on_finish": [

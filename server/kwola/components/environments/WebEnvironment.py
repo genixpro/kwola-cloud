@@ -280,8 +280,16 @@ class WebEnvironment:
 
 
     def runSessionCompletedHooks(self):
-        for tab in self.sessions:
-            tab.runSessionCompletedHooks()
+        sessionCompletedFutures = []
+        for session in self.sessions:
+            future = AsyncThreadFuture(session.runSessionCompletedHooks, [], timeout=30)
+            sessionCompletedFutures.append(future)
+
+        for future, session in zip(sessionCompletedFutures, self.sessions):
+            try:
+                result = future.result()
+            except TimeoutError:
+                getLogger().warning(f"Received a timeout error while attempting to run the session completed hook for {session}")
 
 
     def synchronizeNoActivityTimeouts(self):
